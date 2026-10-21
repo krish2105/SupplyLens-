@@ -1,69 +1,61 @@
 # SupplyLens project status
 
 **Updated:** 2026-10-21 (UTC) · **Commit:** see `git log -1`
-**Verified gate:** none complete. **P0 vertical slice implemented and verified locally.**
-P0 as a whole is NOT passed: trained-model comparison, retrieval/agent evaluation sets,
-clean containerised setup, backup/restore and several security suites remain (see TASKS.md).
+**Verified gate:** P0 *largely* demonstrated locally — 46 of 80 acceptance items passed locally, 18 partial,
+12 not run, 4 blocked on external systems (`docs/acceptance/acceptance_register.csv`). P0 is not claimed complete:
+load testing, WebGL-failure automation, manual screen-reader review, a full container run and CI execution remain.
+P1/P2 items needing a real identity provider, ERP sandbox or pilot users are blocked.
 
-## What works now (verified by commands in EVIDENCE_INDEX.md)
+## What works (all verified by commands in EVIDENCE_INDEX.md)
 
-- Real data: UCI Online Retail II downloaded with receipt; 1,067,371 rows reconcile exactly
-  (1,003,214 accepted + 21,335 returns + 42,822 quarantined). Raw SHA-256 unchanged after ingestion.
-  Found and fixed a source defect: the two publisher sheets overlap (1–9 Dec 2010, 830 invoices,
-  21,988 rows) — now quarantined as `cross_sheet_overlap` instead of double-counted.
-- PostgreSQL 17 + pgvector schema with forced RLS on 28 tenant tables; app role is non-owner, no BYPASSRLS.
-- Seasonal-naive forecast service (training-only intervals), persisted forecast runs, model registry.
-- CP-SAT planner + independent validator + time-aware terms resolution (knowledge cutoff vs effective date,
-  supersession, conflict detection, explained infeasibility). Spec reference case passes (A 30u/USD150 on
-  19 Oct, B 30u/USD180 on 20 Oct), plus delayed-knowledge and conflict variants.
-- Hybrid retrieval: Postgres full-text (lexical) + bge-m3 (Ollama) vectors, RRF, rule-based reranker,
-  tenant/ACL/known-at/effective-date filters in SQL; lexical fallback when Ollama is down.
-- Deterministic LangGraph investigator (ACCEPT→PLAN→GATHER_EVIDENCE→COMPUTE→CHECK→PREPARE_ACTION) with
-  per-node Postgres checkpoints, resume without duplicate drafts, tool/time budgets.
-- Actions: approval bound to payload hash + versions + expiry, separation of duties, optimistic concurrency,
-  outbox in the approval transaction, sandbox ERP with idempotency keys and fault injection, UNKNOWN_OUTCOME
-  reconciliation without blind resend, fenced leases.
-- FastAPI /api/v1 with dev session cookie, CSRF header, Idempotency-Key replay/conflict, SSE run stream.
-- Next.js web app: 10 screens, Light/Dark/System, dual-clock rail, linked 3D/2D/table selection, ECharts
-  forecast lab with backtest panel, scenario studio, policies with amendment diff, approvals with evidence packet.
-- Tests: 58 pytest (real Postgres) + 14 Playwright (journeys + axe on desktop/mobile) passing; `next build` passes.
+- **Data:** UCI Online Retail II (reconciled to the row), plus ACORD, CUAD (73 supply agreements, 2,176 expert labels),
+  World Bank IPF awards (295,058), InventoryBench (pinned). Raw files immutable and hashed; provenance per dataset.
+- **Forecasting research (F1):** frozen protocol, 506 products. Seasonal naive MAE 21.41 → LightGBM 15.37 → TCN 15.08
+  (3 seeds 15.03 ± 0.04). Both trained models beat the baseline (CI excludes 0); TCN vs LightGBM tied (CI includes 0).
+  TCN is champion by the frozen validation rule and serves forecasts with hash-verified artifacts and a replay guard.
+- **Decision research (S1, simulated):** lower forecast error did not lower simulated cost; the ordering policy
+  dominated. Product switched to a q90 order-up-to basis on this evidence.
+- **Retrieval (R1/R2/C1):** temporal logic removes wrong-version citations (92.6% → 100% top-1 on 118 generated
+  questions); hybrid wins inside real contracts (hit@3 76.7%) but loses to vector-only on ACORD (negative result kept).
+- **InventoryBench (official evaluator):** SupplyLens policy 0.482 vs base-stock 0.433 vs last-value 0.453.
+- **Agent (AGT):** 57 scenarios × 3, 100% oracle-verified, 0 unapproved external writes.
+- **Security:** forced RLS on 30 tenant tables; 64-case cross-tenant/role matrix + RLS tests pass.
+- **Ops:** OpenAPI + generated TS types with drift check; rate limits; backup/restore drill passed (6.2 s / 6.6 s);
+  Dockerfiles, Compose stack and CI workflow written.
+- **Product UI:** 15 screens (Overview, Exceptions, Inventory with linked 3D/2D/table, Forecast lab with model
+  comparison, Scenario studio, Investigations with live stream, Approvals with evidence packets, Policies with
+  amendment diff and expert clause labels, Supplier market, Research, Value, Data admission, Administration,
+  Settings, sign-in), ⌘K command palette, Light/Dark/System, 3 workspaces.
+- **Tests:** 131 pytest (real PostgreSQL) · 37 Playwright (journeys + axe in light/dark, desktop/mobile) · `next build`.
 
 ## Current task
-Session 1 complete through the P0 vertical slice.
+Session 2 complete. API container image build: see EVIDENCE_INDEX E-27.
 
-## Exact next step
-Phase 2 — forecasting research: freeze cohort and chronological splits on UCI (training cutoff, validation
-origins, untouched final 28 days), implement LightGBM quantile and compact quantile TCN in `ml/`, run the
-frozen protocol (MAE, MASE with undefined handling, pinball per quantile/horizon, 80% coverage/width,
-crossing rate; 3 TCN seeds), register artifacts with hashes, and surface measured results in the Forecast lab.
+## Exact next steps
+1. Run `docker compose up --build` end to end (needs a larger colima VM: `colima start --cpu 4 --memory 8`).
+2. Push to a GitHub remote so `.github/workflows/ci.yml` actually runs (needs owner approval to create/push).
+3. Train a lead-time-demand model (aggregate target) to replace the summed-q90 heuristic (S1 follow-up).
+4. Human review of a sample of the R2 questions; add a cross-encoder reranker condition (R1b).
+5. Manual screen-reader pass; automate the WebGL-failure path; Web Vitals measurement (UX-011).
 
 ## Open blockers / owner decisions
-- M5 skipped by owner decision (academic-only; requires owner to accept Kaggle rules).
-- No generative LLM by owner decision; adapter slot exists but is disabled.
-- ContractNLI requires the owner to accept publisher terms manually.
-- Enterprise identity (OIDC), real ERP sandbox credentials: not supplied → NOT_CONFIGURED / NOT_IMPLEMENTED.
-- Docker (colima) has 2 CPU / 2 GB; full-stack compose run not yet verified.
+- No generative LLM (owner decision) → LLM agent ablations (ML-006 adaptive agent) not run.
+- M5 not admitted (owner must accept Kaggle rules). ContractNLI needs manual terms acceptance.
+- Enterprise identity, ERP sandbox, pilot users: not available → BUS-012/013/022, EXE-013 blocked.
 
-## Data available but not yet admitted
-The owner separately ran `download_datasets.py --profile core` inside `SupplyLens_Starter_Updated_Datasets/`
-(receipts 2026-10-21 17:51–18:02 UTC): CUAD (115 MB), ACORD (20 MB), InventoryBench (1.9 GB),
-World Bank IPF awards (295,058 rows, complete), TED (1 notice — query returned almost nothing; widen query).
-These are not yet copied into this repo's `data/raw/` or ingested.
+## Running processes (local, not durable)
+API `uvicorn supplylens.api.app:app` :8000 · worker `python -m supplylens_worker.main` · web `npm --prefix apps/web run dev` :3100.
 
-## Running processes (local dev, not durable)
-- API: `uv run uvicorn supplylens.api.app:app --port 8000`
-- Worker: `uv run python -m supplylens_worker.main`
-- Web: `npm --prefix apps/web run dev` (port 3100; port 3000 is used by another project)
-
-## Environment assumptions
-macOS 27 arm64 (M4 Pro, 24 GB), Python 3.12 via uv 0.11.18, Node 26.10, Homebrew PostgreSQL 17.11 +
-pgvector 0.8.6 on /tmp:5432, Ollama with bge-m3:567m. Timestamps are UTC; DB sessions forced to UTC.
+## Environment
+macOS 27 arm64 (M4 Pro, 24 GB), Python 3.12.13 (uv 0.11.18), Node 26.10, PostgreSQL 17.11 + pgvector 0.8.6,
+Ollama bge-m3:567m, PyTorch 2.14.1 (MPS), LightGBM 4.7.0, OR-Tools 9.15, Next.js 16.4.2.
 
 ## Last verified commands (2026-10-21 UTC)
 ```
-uv run pytest -q                                   # 58 passed
-npx --prefix apps/web tsc --noEmit                 # no errors
-(cd apps/web && npx playwright test)               # 14 passed
-(cd apps/web && NEXT_DIST_DIR=.next-build npx next build)   # 12 routes built
-shasum -a 256 data/raw/core/online_retail_ii/online_retail_ii.zip   # 572e3627…7bfb (matches receipt)
+uv run pytest -q                                            # 131 passed
+./scripts/check_contracts.sh                                # contracts match
+npx --prefix apps/web tsc --noEmit -p apps/web              # ok
+(cd apps/web && NEXT_DIST_DIR=.next-build npx next build)   # 16 routes
+(cd apps/web && npx playwright test)                        # 37 passed
+./scripts/backup_restore_drill.sh                           # all_ok true
 ```

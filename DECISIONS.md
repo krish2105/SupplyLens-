@@ -16,13 +16,25 @@
 | D-012 | 2026-10-21 | Workspace as-of = 2011-12-08 23:59 UTC (9 Dec is partial) | Avoid partial-day origin | 9 Dec | Accepted |
 | D-013 | 2026-10-21 | UCI operational layer is simulated from assumption set `uci-sim-ops v1` (seed 20111208): purchase cost = 45–65% of median selling price, 4 fictional suppliers, generated agreements labelled SIMULATED, two amendments | Source has sales only (BUS-003, ML-007) | Leave planning unavailable | Accepted |
 | D-014 | 2026-10-21 | Reference case added to Demo workspace as fictional documents (spec chapter 4 values) | Make EXE-003 visible in the UI | Tests only | Accepted |
-| D-015 | 2026-10-21 | Replenishment need = q50 path + assumed safety days; q90 sum shown only as uncalibrated reference | Spec: summing daily quantiles is not a calibrated lead-time quantile | Sum q90 | Accepted |
+| D-015 | 2026-10-21 | Replenishment need = q50 path + assumed safety days; q90 sum shown only as uncalibrated reference | Spec: summing daily quantiles is not a calibrated lead-time quantile | Sum q90 | Superseded by D-024 |
 | D-016 | 2026-10-21 | Planner allows explicit shortfall with an assumed penalty in investigations; reference case runs with shortfall disallowed | Budget-constrained portfolios are otherwise always infeasible | Hard coverage only | Accepted |
 | D-017 | 2026-10-21 | Dev sign-in via signed HttpOnly cookie, CSRF header, same-origin proxy through Next | OIDC not configured; spec forbids home-grown passwords (none used) | — | Accepted (dev only) |
 | D-018 | 2026-10-21 | GET endpoints accept `?ws=` for the workspace (EventSource cannot set headers); mutations still require the header | SSE requirement | Polling | Accepted |
 | D-019 | 2026-10-21 | Web dev server on port 3100 | Port 3000 used by another local project | — | Accepted |
 | D-020 | 2026-10-21 | Light-theme accent darkened to #0F6B55 and risk to #8A5208 | axe measured 4.39:1 and 4.01:1 on soft chips | Larger text | Accepted |
+| D-021 | 2026-10-21 | Owner instruction "build everything e2e": admit the core datasets the owner had downloaded (ACORD, CUAD, World Bank, InventoryBench) | Owner's later instruction supersedes D-003 scope | Stay UCI-only | Accepted (owner) |
+| D-022 | 2026-10-21 | Contract research workspace for public corpora; never joined to UCI or fictional suppliers | Keep unrelated domains separate (README_DATASETS) | Load into UCI workspace | Accepted |
+| D-023 | 2026-10-21 | LightGBM and PyTorch run in separate processes (TCN via `python -m supplylens_ml.tcn`) | Both bundle OpenMP; loading both crashes (OMP #15); KMP_DUPLICATE_LIB_OK is unsafe | Env-var workaround | Accepted |
+| D-024 | 2026-10-21 | Replenishment basis = sum of daily q90 over the window (labelled heuristic) | Study S1: median-based targets under-stock heavily on heavy-tailed sales | q50 + safety days | Accepted (evidence S1) |
+| D-025 | 2026-10-21 | Champion = TCN by frozen validation rule even though TCN vs LightGBM is not significant on test | Selection rule fixed before test scoring | Pick on test | Accepted |
+| D-026 | 2026-10-21 | Trained models refuse forecast origins before their training cutoff; decision flows fall back to seasonal naive and say so | Prevent replay leakage | Allow with warning | Accepted |
+| D-027 | 2026-10-21 | InventoryBench scored only with its unmodified official evaluator at pinned commit 62b1f11, run with `python -I` | DAT-005: pin and inspect evaluator | Re-implement scoring | Accepted |
+| D-028 | 2026-10-21 | Retrieval abstains when named identifiers appear in no permitted result | Unknown-product questions must not be answered from a neighbour | Always answer | Accepted |
+| D-029 | 2026-10-21 | pgvector must be created by a superuser before restore; restore list excludes EXTENSION entries | First restore drill failed on this | — | Accepted |
+| D-030 | 2026-10-21 | Linux containers use PyTorch CPU wheels via a uv index scoped to `sys_platform == 'linux'` | Default Linux wheel pulls multi-GB CUDA libraries | CUDA image | Accepted |
+| D-031 | 2026-10-21 | Model promotion is an audited tenant-admin action requiring a recorded evaluation | Spec: promotion via evaluation; audit | Automatic only | Accepted |
 
 ## Authorisation scope recorded
-Routine local development, local databases, dataset download of UCI (owner-approved). No deployments,
+Routine local development, local databases, dataset download of UCI (owner-approved); use of the core datasets the
+owner downloaded (owner instruction "build everything e2e"). No deployments,
 spending, external writes or credentials were used. The sandbox ERP is local only.
