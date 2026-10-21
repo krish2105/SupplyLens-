@@ -1,0 +1,39 @@
+{
+  "experiment_id": "IB-20261021T192006Z",
+  "study": "IB",
+  "benchmark": "InventoryBench",
+  "benchmark_commit": "62b1f1162f19a41d428d47c6cd4ca431f098f6f3",
+  "instances": 600,
+  "scorer": "eval/evaluate_results.py (official, unmodified)",
+  "metric": "mean normalized reward = max(0, reward / (profit x total demand))",
+  "policies": {
+    "last_value": {
+      "overall_score": 0.4532904639694408,
+      "batches": {
+        "real_trajectory/lead_time_0": 0.7581577361178183,
+        "real_trajectory/lead_time_4": 0.24904064196910483,
+        "real_trajectory/lead_time_stochastic": 0.35267301382139926
+      }
+    },
+    "base_stock": {
+      "overall_score": 0.43347587460162224,
+      "batches": {
+        "real_trajectory/lead_time_0": 0.6705026904057436,
+        "real_trajectory/lead_time_4": 0.28458782119782955,
+        "real_trajectory/lead_time_stochastic": 0.3453371122012935
+      }
+    },
+    "supplylens": {
+      "overall_score": 0.4819708559398085,
+      "batches": {
+        "real_trajectory/lead_time_0": 0.7780912073697576,
+        "real_trajectory/lead_time_4": 0.2863071269760296,
+        "real_trajectory/lead_time_stochastic": 0.38151423347363833
+      }
+    }
+  },
+  "notes": [
+    "No LLM is used; this compares deterministic decision logic only.",
+    "Real trajectories derive from H&M sales; check upstream data terms before redistribution."
+  ]
+}

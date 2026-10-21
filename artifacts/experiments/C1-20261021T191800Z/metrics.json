@@ -1,0 +1,80 @@
+{
+  "experiment_id": "C1-20261021T191800Z",
+  "commit": "966114825b14d1e5c83701f219cce20c03561c8a",
+  "embedding_model": "bge-m3:567m",
+  "study": "C1",
+  "corpus": "CUAD v1 supply/distribution/manufacturing agreements (73 contracts)",
+  "task": "locate expert-labelled clause category within one contract; query = CUAD category description",
+  "chunking": "paragraph-packed windows of about 1,400 characters",
+  "conditions": {
+    "lexical": {
+      "items": 485,
+      "hit@1": 0.44123711340206184,
+      "hit@3": 0.668041237113402,
+      "hit@5": 0.7587628865979381,
+      "hit@3_by_category": {
+        "Anti-Assignment": 0.589,
+        "Audit Rights": 0.422,
+        "Cap On Liability": 0.854,
+        "Exclusivity": 0.353,
+        "Governing Law": 0.922,
+        "Insurance": 0.556,
+        "Liquidated Damages": 0.571,
+        "Minimum Commitment": 0.548,
+        "Most Favored Nation": 0.0,
+        "Notice Period To Terminate Renewal": 0.929,
+        "Price Restrictions": 0.2,
+        "Renewal Term": 0.95,
+        "Termination For Convenience": 0.92,
+        "Volume Restriction": 0.3,
+        "Warranty Duration": 0.55
+      }
+    },
+    "vector": {
+      "items": 485,
+      "hit@1": 0.5237113402061856,
+      "hit@3": 0.7216494845360825,
+      "hit@5": 0.7917525773195876,
+      "hit@3_by_category": {
+        "Anti-Assignment": 0.857,
+        "Audit Rights": 0.689,
+        "Cap On Liability": 0.729,
+        "Exclusivity": 0.294,
+        "Governing Law": 0.922,
+        "Insurance": 0.778,
+        "Liquidated Damages": 0.429,
+        "Minimum Commitment": 0.738,
+        "Most Favored Nation": 0.2,
+        "Notice Period To Terminate Renewal": 0.857,
+        "Price Restrictions": 1.0,
+        "Renewal Term": 0.85,
+        "Termination For Convenience": 0.52,
+        "Volume Restriction": 0.3,
+        "Warranty Duration": 0.625
+      }
+    },
+    "hybrid_rrf": {
+      "items": 485,
+      "hit@1": 0.5381443298969072,
+      "hit@3": 0.7670103092783506,
+      "hit@5": 0.8391752577319588,
+      "hit@3_by_category": {
+        "Anti-Assignment": 0.821,
+        "Audit Rights": 0.622,
+        "Cap On Liability": 0.875,
+        "Exclusivity": 0.441,
+        "Governing Law": 0.984,
+        "Insurance": 0.75,
+        "Liquidated Damages": 0.429,
+        "Minimum Commitment": 0.69,
+        "Most Favored Nation": 0.2,
+        "Notice Period To Terminate Renewal": 0.893,
+        "Price Restrictions": 0.2,
+        "Renewal Term": 0.925,
+        "Termination For Convenience": 0.84,
+        "Volume Restriction": 0.4,
+        "Warranty Duration": 0.75
+      }
+    }
+  }
+}

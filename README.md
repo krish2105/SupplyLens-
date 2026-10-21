@@ -1,63 +1,95 @@
+<div align="center">
+
 # SupplyLens
 
-Evidence-grounded inventory and procurement decisions: trained unit-sales forecasts, time-aware
-supplier-policy evidence, constrained replenishment planning, approval-bound purchase-order drafts, and a
-sandbox execution path that is read back and reconciled before it counts as done.
+**Evidence-grounded inventory and procurement decisions**
 
-> **Status:** P0 controlled product demonstrated locally (46/80 acceptance items passed, 18 partial; see
-> `PROJECT_STATUS.md` and `docs/acceptance/acceptance_register.csv`). Not a production system: no real ERP,
-> no enterprise sign-in, no generative LLM (owner decision).
+Trained demand forecasts · time-aware supplier-policy evidence · constrained replenishment planning ·
+approval-bound purchase orders that are reconciled before they count as done.
 
-## Results at a glance (from `docs/research/results.md`)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![FastAPI](https://img.shields.io/badge/FastAPI-0.158-009688)
+![Next.js](https://img.shields.io/badge/Next.js-16-000000) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-336791)
+![Tests](https://img.shields.io/badge/tests-131%20backend%20%C2%B7%2037%20browser-0F6B55)
+
+<img src="docs/images/overview-dark.png" alt="SupplyLens overview with linked 3D warehouse" width="900" />
+
+</div>
+
+## Why SupplyLens
+
+Planners need to know *what to order, from whom, and why* — and to prove it later. SupplyLens connects real
+sales history, the supplier terms that were actually in force on the decision date, and an optimiser that never
+invents a plan. Every recommendation carries an evidence packet (data cutoff, forecast version, cited contract
+clause, constraint checks), every external write needs a bound approval, and every order is read back from the
+target system before it is marked complete.
+
+## Highlights
+
+- **Two clocks for every decision** — *known by* (knowledge cutoff) and *in force on* (effective date), so
+  historical replays never use documents that arrived later and amendments apply only from their effective date.
+- **Trained forecasting** — LightGBM quantile and a compact quantile TCN, evaluated against seasonal naive on a
+  frozen chronological protocol; artifacts are hash-verified before serving.
+- **Deterministic planning** — OR-Tools CP-SAT with MOQ, pack multiples, lead times, budget and capacity, an
+  independent validator, and explanations when a plan is infeasible.
+- **Hybrid temporal retrieval** — PostgreSQL full-text + local `bge-m3` vectors, reciprocal-rank fusion,
+  supersession-aware reranking, abstention when the evidence is missing.
+- **Controlled execution** — stateful LangGraph investigator, approvals bound to payload hash and expiry,
+  separation of duties, transactional outbox, idempotent sandbox ERP, unknown-outcome reconciliation.
+- **Multi-tenant by construction** — forced row-level security on 30 tables, non-owner database role,
+  CSRF protection, idempotency keys, rate limits, append-only audit trail.
+- **Interface** — 15 screens, linked 3D/2D/table inventory, live investigation stream, ⌘K command palette,
+  Light/Dark/System themes, WCAG-checked with axe on desktop and mobile.
+
+| Forecast lab | Research results |
+|---|---|
+| <img src="docs/images/forecast-lab.png" alt="Forecast lab" /> | <img src="docs/images/research.png" alt="Research results" /> |
+| **Policies & evidence** | **Supplier market** |
+| <img src="docs/images/policies.png" alt="Policies and evidence" /> | <img src="docs/images/market.png" alt="Supplier market" /> |
+
+## Measured results
+
+All figures come from experiment artifacts in `artifacts/experiments/`; details in
+[`docs/research/results.md`](docs/research/results.md).
 
 | Study | Result |
 |---|---|
-| F1 forecasting, 506 UCI products | MAE: seasonal naive 21.41 → LightGBM 15.37 → quantile TCN 15.08; trained models beat the baseline (CI excludes 0), TCN vs LightGBM tied |
-| S1 simulated inventory | Better forecasts did **not** lower simulated cost; switching the ordering policy cut it by about £21k for every model |
-| R2 time-aware retrieval | Wrong-version citations 7.4% → 0% with effective-date logic (118 generated questions) |
-| C1 / R1 public contracts | Hybrid best inside CUAD contracts (hit@3 76.7%); vector-only best on ACORD (negative result for hybrid) |
-| InventoryBench (official evaluator) | SupplyLens policy 0.482 vs base-stock 0.433 |
-| Agent scenarios | 57 × 3 oracle-checked, 100% verified, 0 unapproved external writes |
+| Forecasting (506 products, held-out 28 days) | MAE: seasonal naive 21.41 → LightGBM 15.37 → quantile TCN 15.08; trained models beat the baseline (95% CI excludes 0); TCN vs LightGBM statistically tied |
+| Inventory simulation (simulated costs) | Lower forecast error did not lower simulated cost; changing the ordering policy cut it by ~£21k for every model |
+| Time-aware retrieval (118 questions) | Wrong-version citations 7.4% → 0% with effective-date logic |
+| Clause localisation (73 CUAD contracts) | Hybrid hit@3 76.7% vs vector 72.2% vs lexical 66.8% |
+| InventoryBench (official evaluator, 1,320 instances) | SupplyLens policy 0.482 vs base-stock 0.433 |
+| Investigator scenarios | 57 scenarios × 3 trials, 100% oracle-verified, 0 unapproved external writes |
 
-## Workspaces
+Negative results are kept: vector-only retrieval beats the hybrid on ACORD, and accuracy-optimal medians
+under-stock on heavy-tailed sales.
 
-| Workspace | Contents | Labels |
+## Data
+
+| Workspace | Sources | Labels |
 |---|---|---|
-| UCI Research | Real UCI Online Retail II sales (1,067,371 rows, CC BY 4.0) + simulated stock, suppliers, costs and agreements | Observed / Simulated |
-| Contract research | ACORD clauses, 73 CUAD supply agreements with expert labels, 295,058 World Bank awards (CC BY 4.0) | Observed (public) |
-| Demo (fictional) | Execution-pack fixtures and the spec's reference policy-change case | Synthetic |
+| UCI Research | UCI Online Retail II — 1,067,371 rows, reconciled to the row (CC BY 4.0) + simulated stock, suppliers and agreements | Observed / Simulated |
+| Contract research | ACORD clauses, 73 CUAD supply agreements with 2,176 expert labels, 295,058 World Bank awards (CC BY 4.0) | Observed |
+| Demo | Fictional fixtures and a reference policy-change case | Synthetic |
 
-No public dataset is joined to another. Selling price is never treated as purchase cost.
-
-## Product
-
-Overview · Exceptions · Inventory (linked 3D schematic / 2D floor plan / table) · Forecast lab (model choice,
-backtest, model comparison) · Scenario studio · Investigations (deterministic LangGraph run, live event stream) ·
-Approvals (exact payload, evidence packet, separation of duties, reconciliation) · Policies & evidence (hybrid
-temporal search, amendment diff, expert clause labels) · Supplier market · Research · Value · Data admission ·
-Administration · Settings. ⌘K command palette, Light/Dark/System themes, keyboard and screen-size support.
+Datasets are never joined across domains, raw files are immutable and hashed, and simulated values are labelled
+everywhere they appear. Raw data is not committed; see `scripts/download_datasets.py`.
 
 ## Architecture
 
 ```
-apps/web/            Next.js 16, TypeScript strict, Tailwind 4, ECharts 6, React Three Fiber 9, Motion
-services/api/        FastAPI + Pydantic v2 + SQLAlchemy 2 + Alembic + psycopg 3 (package supplylens)
-services/worker/     PostgreSQL job queue + outbox dispatcher (package supplylens_worker)
-ml/                  UCI adapter, panel, seasonal naive, LightGBM quantile, quantile TCN (separate process), metrics
-optimisation/        CP-SAT planner, independent validator, temporal terms, replenishment
-evaluations/         Frozen studies: forecast, simulation, retrieval, InventoryBench, agent
+apps/web/            Next.js 16, TypeScript, Tailwind 4, ECharts, React Three Fiber
+services/api/        FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, psycopg 3
+services/worker/     PostgreSQL job queue (SKIP LOCKED, leases, fencing) + outbox dispatcher
+ml/                  Data adapters, LightGBM quantile, quantile TCN (PyTorch), metrics
+optimisation/        CP-SAT planner, validator, temporal terms resolution, replenishment
+evaluations/         Frozen studies: forecasting, simulation, retrieval, InventoryBench, agent
 packages/contracts/  OpenAPI document + generated TypeScript types (drift-checked)
-tests/               131 pytest tests against real PostgreSQL; apps/web/e2e: 37 Playwright tests
-infra/, docker-compose.yml, .github/workflows/ci.yml
+infra/               Dockerfiles, PostgreSQL bootstrap; docker-compose.yml; CI workflow
 ```
 
-PostgreSQL 17 + pgvector is the only database; tenant tables use forced row-level security and the app connects as a
-non-owner role. Embeddings run locally (Ollama `bge-m3`).
+## Getting started
 
-## Run locally
-
-Prerequisites: Homebrew PostgreSQL 17 + pgvector on `/tmp:5432`, `uv`, Node 20+, Ollama with `bge-m3:567m` (optional).
-Full first-install sequence: `docs/operations/runbook.md`.
+Requirements: PostgreSQL 17 with pgvector, [uv](https://docs.astral.sh/uv/), Node 20+, optionally Ollama with `bge-m3`.
 
 ```bash
 cp .env.example .env && ./scripts/dev_db.sh && uv sync
@@ -65,33 +97,32 @@ uv run alembic -c services/api/alembic.ini upgrade head
 python3 scripts/download_datasets.py --dataset online_retail_ii
 uv run python -m supplylens.bootstrap
 uv run python evaluations/forecast_study.py
+
+uv run uvicorn supplylens.api.app:app --port 8000      # API
+uv run python -m supplylens_worker.main                 # worker
+npm --prefix apps/web install && npm --prefix apps/web run dev   # http://localhost:3100
 ```
+
+Full setup, backup/restore and operating procedures: [`docs/operations/runbook.md`](docs/operations/runbook.md).
+
+## Testing
 
 ```bash
-uv run uvicorn supplylens.api.app:app --host 127.0.0.1 --port 8000
-uv run python -m supplylens_worker.main
-npm --prefix apps/web install && npm --prefix apps/web run dev
+uv run pytest -q                       # 131 tests against real PostgreSQL
+(cd apps/web && npx playwright test)   # 37 browser journeys and accessibility scans
+./scripts/check_contracts.sh           # API contract drift
+./scripts/backup_restore_drill.sh      # restore rehearsal with hash verification
 ```
 
-Open http://localhost:3100 and choose a development account.
+## Project status
 
-## Verify
+A complete controlled product, verified locally. Not production-ready: enterprise sign-in (OIDC), a real ERP
+connector and pilot validation are outstanding. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md) and the
+[acceptance register](docs/acceptance/acceptance_register.csv).
 
-```bash
-uv run pytest -q
-./scripts/check_contracts.sh
-(cd apps/web && npx playwright test)
-./scripts/backup_restore_drill.sh
-```
+## Acknowledgements
 
-## Try the reference case
+UCI Online Retail II (Chen, 2012, doi:10.24432/C5CG6D); ACORD and CUAD (The Atticus Project); World Bank IPF
+contract awards; InventoryBench (Peng et al.). Public datasets are used under CC BY 4.0 with attribution.
 
-Demo workspace → Investigations → *Known by* 20 Oct 2026 09:00 → Start: 30 units from Reference Supplier B for
-USD 180 (A's amendment raised its MOQ). With 19 Oct: 30 units from A for USD 150. Sign in as Dev Approver →
-Approvals → approve → the worker submits to the sandbox ERP, reads it back and marks it **RECONCILED**.
-
-## Licences and attribution
-
-UCI Online Retail II (Chen, 2012, doi:10.24432/C5CG6D), ACORD and CUAD (The Atticus Project), World Bank IPF
-contract awards: CC BY 4.0. InventoryBench code MIT; its H&M-derived data terms were not reviewed for
-redistribution. Raw data is not committed (`data/raw/` is git-ignored).
+© 2026 Krishna Mathur. All rights reserved.

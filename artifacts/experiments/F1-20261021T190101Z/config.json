@@ -1,0 +1,82 @@
+{
+  "study_id": "F1",
+  "version": "1.0.0",
+  "frozen_at": "2026-10-21",
+  "question": "Do trained LightGBM and quantile-TCN models improve daily unit-sales forecasts over seasonal naive for UCI Online Retail II products?",
+  "target": "daily fulfilled positive units per StockCode (unit-sales, not unconstrained demand)",
+  "data": {
+    "dataset": "UCI Online Retail II",
+    "start": "2009-12-01",
+    "end": "2011-12-08",
+    "note": "2011-12-09 is a partial trading day and is excluded"
+  },
+  "cohort": {
+    "selection_end": "2011-09-15",
+    "lookback_days": 365,
+    "min_selling_days": 150,
+    "rule": "uses only sales on or before selection_end; requires 56 days of history"
+  },
+  "horizon": 28,
+  "window": 56,
+  "quantiles": [
+    0.1,
+    0.5,
+    0.9
+  ],
+  "train_origin_start": "2010-02-01",
+  "train_origin_step_days": {
+    "lightgbm": 7,
+    "tcn": 2
+  },
+  "validation_origins": [
+    "2011-09-15",
+    "2011-10-13"
+  ],
+  "test_origin": "2011-11-10",
+  "refit_policy": "each origin refits on labels available on or before that origin (operational walk-forward)",
+  "selection_rule": "lowest mean validation pinball (average of q10/q50/q90) across validation origins; TCN averaged over seeds",
+  "search": {
+    "lightgbm": [
+      {
+        "num_leaves": 31,
+        "rounds": 400
+      },
+      {
+        "num_leaves": 63,
+        "rounds": 600,
+        "min_data_in_leaf": 100
+      }
+    ],
+    "tcn": [
+      {
+        "ch": 32,
+        "dropout": 0.1,
+        "epochs": 12
+      },
+      {
+        "ch": 64,
+        "dropout": 0.2,
+        "epochs": 12
+      }
+    ]
+  },
+  "seeds": {
+    "lightgbm": [
+      0
+    ],
+    "tcn": [
+      0,
+      1,
+      2
+    ]
+  },
+  "postprocessing": "negative values clipped to 0 and quantiles sorted, applied identically to all models after measuring raw crossing",
+  "metrics": [
+    "MAE",
+    "MASE (seasonal-7 scale from history up to origin; undefined reported)",
+    "pinball per quantile and horizon",
+    "80% coverage and width",
+    "raw quantile crossing rate",
+    "paired per-series bootstrap of MAE differences"
+  ]
+}

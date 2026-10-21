@@ -1,0 +1,57 @@
+{
+  "dataset": "UCI Online Retail II",
+  "doi": "10.24432/C5CG6D",
+  "license": "CC BY 4.0",
+  "transform_version": "uci-v1",
+  "source_file": "online_retail_ii.zip",
+  "sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+  "bytes": 45622418,
+  "sheets": {
+    "Year 2009-2010": {
+      "input_rows": 525461,
+      "accepted": 502322,
+      "returned": 11683,
+      "quarantined": 11456,
+      "quarantine_reasons": {
+        "exact_duplicate_line": 6830,
+        "non_merchandise_code": 3097,
+        "zero_price": 1529
+      }
+    },
+    "Year 2010-2011": {
+      "input_rows": 541910,
+      "accepted": 500892,
+      "returned": 9652,
+      "quarantined": 31366,
+      "quarantine_reasons": {
+        "cross_sheet_overlap": 21988,
+        "exact_duplicate_line": 5221,
+        "non_merchandise_code": 2996,
+        "zero_price": 1161
+      }
+    }
+  },
+  "totals": {
+    "input_rows": 1067371,
+    "accepted": 1003214,
+    "returned": 21335,
+    "quarantined": 42822,
+    "accepted_units": 11187774,
+    "accepted_value_minor_gbp": 1964269215,
+    "returned_units": -1033911
+  },
+  "date_span": [
+    "2009-12-01 07:45:00",
+    "2011-12-09 12:50:00"
+  ],
+  "distinct_skus_accepted": 4707,
+  "distinct_customers": 5852,
+  "missing_customer_id_rows": 226637,
+  "notes": [
+    "Target is fulfilled positive units (unit-sales), not unconstrained demand.",
+    "Country is customer residence, not a warehouse; one location UCI-ONLINE is used.",
+    "Returns are stored separately and not netted against sales.",
+    "Exact duplicate sale lines keep the first occurrence; the rest are quarantined.",
+    "Prices converted to integer pence with ROUND_HALF_UP; source has at most 3 decimals."
+  ]
+}

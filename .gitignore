@@ -43,3 +43,19 @@ test-results/
 data/bronze/
 storage/
 apps/web/.next-build/
+
+# Local tooling and caches
+*.tsbuildinfo
+storage_test/
+apps/web/.next-build/
+
+# Publish small, path-free research evidence; keep weights, per-run outputs and smoke runs local.
+!artifacts/**/
+!artifacts/experiments/*/metrics.json
+!artifacts/experiments/*/config.json
+!artifacts/experiments/*/selection.json
+!artifacts/experiments/*/cohort.json
+!artifacts/reports/*.json
+!artifacts/reports/*.txt
+artifacts/experiments/*smoke*/
+artifacts/reports/e2e-results.json

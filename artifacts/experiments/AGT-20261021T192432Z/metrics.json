@@ -1,0 +1,1906 @@
+{
+  "experiment_id": "AGT-20261021T192432Z",
+  "study": "AGT",
+  "commit": "5771d631ac5cc6e05b52d10fe719136f779fba0e",
+  "summary": {
+    "scenarios": 57,
+    "trials_per_scenario": 3,
+    "verified_completion_rate": 1.0,
+    "scenarios_all_trials_pass": 57,
+    "unauthorized_external_mutations": 0,
+    "run_ms_p50": 67.34966649673879,
+    "run_ms_max": 91.36225003749132,
+    "tool_calls_mean": 5.979166666666667,
+    "llm_tokens": 0,
+    "variation": "identical outcomes across trials"
+  },
+  "oracle": "brute-force enumeration over hand-written ground truth",
+  "results": [
+    {
+      "id": "ref-b14000-d14",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 79.2376659810543,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.9147920194082,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.27454202296212,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 65.27454202296212,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d15",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 67.6350420108065,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.38158300099894,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 68.50466696778312,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 68.50466696778312,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d16",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.8109169928357,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 67.73783400421962,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.41229097638279,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 65.41229097638279,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d17",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.88833297044039,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 62.46633396949619,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.64541698247194,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 58.64541698247194,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d18",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.34937501419336,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 61.330709024332464,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 54.740916995797306,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 54.740916995797306,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d19",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 61.661790998186916,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.18629199126735,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 67.3754169838503,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 67.3754169838503,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d20",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 62.128958001267165,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 61.30991695681587,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 61.06420804280788,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 61.06420804280788,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d21",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 68.39166698046029,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 63.79337498219684,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.5154999862425,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 58.5154999862425,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d22",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.747375034727156,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 91.36225003749132,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.25120798544958,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 58.25120798544958,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d23",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 60.60045800404623,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 61.7150419857353,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.05104200914502,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 65.05104200914502,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b14000-d24",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.24666695622727,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 63.55483300285414,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.68733301153407,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 64.68733301153407,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d14",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 69.54729097196832,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 65.8285419922322,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 78.37933301925659,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 78.37933301925659,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d15",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 66.48404098814353,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 69.1467080032453,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 73.12191696837544,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 73.12191696837544,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d16",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 68.48720798734576,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.96404098067433,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.5565409627743,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.5565409627743,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d17",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.22958299098536,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 68.31291696289554,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 69.21895901905373,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 69.21895901905373,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d18",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 66.88091595424339,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.18345801346004,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.2576670339331,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.2576670339331,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d19",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 66.94008299382403,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 78.41062499210238,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.38616597512737,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.38616597512737,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d20",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 60.85479096509516,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 69.76083398330957,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 67.18124996405095,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 67.18124996405095,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d21",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.17416699696332,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.81649999134243,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 62.11595801869407,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 62.11595801869407,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d22",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.35108394967392,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.49804098904133,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.465874986723065,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 58.465874986723065,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d23",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 63.97104199277237,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.51270799757913,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 63.42145899543539,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 63.42145899543539,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b15000-d24",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 68.03224998293445,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.67733298288658,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 62.884375045541674,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 62.884375045541674,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d14",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 73.48570902831852,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 73.24362499639392,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 90.50866699544713,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 90.50866699544713,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d15",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 77.77654199162498,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 65.10337500367314,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.66237499425188,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 72.66237499425188,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d16",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 75.60366694815457,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 70.31937496503815,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.32391600962728,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 67.32391600962728,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d17",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.82112501747906,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.97600000351667,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 64.77162498049438,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 64.77162498049438,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d18",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.05604202579707,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.00104098208249,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.77491602487862,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.77491602487862,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d19",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.29845801601186,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.07666600495577,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.40508401487023,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 74.40508401487023,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d20",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 76.42916700569913,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.20229201670736,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 75.67954203113914,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-B",
+          "quantity": 30,
+          "total_minor": 18000
+        },
+        "got": {
+          "supplier": "DEMO-REF-B",
+          "quantity": 30,
+          "total_minor": 18000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 75.67954203113914,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d21",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.17787499958649,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 62.74291698355228,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 59.11920795915648,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 59.11920795915648,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d22",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 50.90508400462568,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.79008301580325,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 69.50595800299197,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 69.50595800299197,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d23",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 63.891875033732504,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 67.79712496791035,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.58545801090077,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 65.58545801090077,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b18000-d24",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 70.16283401753753,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 79.59120802115649,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.02925003971905,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 66.02925003971905,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d14",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 80.8369159931317,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.2262500571087,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 76.15254103438929,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 76.15254103438929,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d15",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 91.12045797519386,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 69.36495896661654,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 70.85520803229883,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 70.85520803229883,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d16",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 86.76974999252707,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 77.82987499376759,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.26037496002391,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 72.26037496002391,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d17",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 75.92729199677706,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 74.74125002045184,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 70.54425001842901,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 70.54425001842901,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d18",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 68.49216698901728,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.72354200156406,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.38341599702835,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 67.38341599702835,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d19",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 65.1732090045698,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.85412499913946,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 68.1404999922961,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 68.1404999922961,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d20",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.62954198429361,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.88341701496392,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.92324998322874,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-B",
+          "quantity": 30,
+          "total_minor": 18000
+        },
+        "got": {
+          "supplier": "DEMO-REF-B",
+          "quantity": 30,
+          "total_minor": 18000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.92324998322874,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d21",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.41266698716208,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.1794580151327,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 58.8169579859823,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 58.8169579859823,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d22",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 69.26629203371704,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 70.24870801251382,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 60.49112504115328,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 60.49112504115328,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d23",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.55020895414054,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.42879197513685,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 77.28937501087785,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 77.28937501087785,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "ref-b20000-d24",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.49712498579174,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 68.04195797303692,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 66.84941699495539,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": null,
+        "got": null,
+        "status": "REVIEW_REQUIRED",
+        "ms": 66.84941699495539,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "delayed-knowledge-d20",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 79.3790000025183,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 77.31075002811849,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 71.41395803773776,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 71.41395803773776,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "delayed-knowledge-d21",
+      "kind": "reference",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 73.31995799904689,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 67.82412499887869,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "WAITING_FOR_APPROVAL",
+          "ms": 72.82429200131446,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "expected": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "got": {
+          "supplier": "DEMO-REF-A",
+          "quantity": 30,
+          "total_minor": 15000
+        },
+        "status": "WAITING_FOR_APPROVAL",
+        "ms": 72.82429200131446,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "missing-stock-record",
+      "kind": "missing_stock",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "SUCCEEDED",
+          "ms": 61.04420800693333,
+          "tool_calls": 5
+        },
+        {
+          "ok": true,
+          "status": "SUCCEEDED",
+          "ms": 55.73266599094495,
+          "tool_calls": 5
+        },
+        {
+          "ok": true,
+          "status": "SUCCEEDED",
+          "ms": 62.78004200430587,
+          "tool_calls": 5
+        }
+      ],
+      "detail": {
+        "status": "SUCCEEDED",
+        "ms": 62.78004200430587,
+        "tool_calls": 5
+      }
+    },
+    {
+      "id": "conflicting-terms",
+      "kind": "conflict",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 64.98412496875972,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 65.27329102391377,
+          "tool_calls": 6
+        },
+        {
+          "ok": true,
+          "status": "REVIEW_REQUIRED",
+          "ms": 49.44599996088073,
+          "tool_calls": 6
+        }
+      ],
+      "detail": {
+        "status": "REVIEW_REQUIRED",
+        "ms": 49.44599996088073,
+        "tool_calls": 6
+      }
+    },
+    {
+      "id": "viewer-denied",
+      "kind": "denied",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "denied": true
+      }
+    },
+    {
+      "id": "approver-cannot-start",
+      "kind": "denied",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "denied": true
+      }
+    },
+    {
+      "id": "admin-cannot-approve",
+      "kind": "admin_approve",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "denied": true
+      }
+    },
+    {
+      "id": "self-approval-blocked",
+      "kind": "self_approve",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "code": "separation_of_duties"
+      }
+    },
+    {
+      "id": "stale-terms-before-approval",
+      "kind": "stale",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true,
+          "status": "STALE"
+        },
+        {
+          "ok": true,
+          "status": "STALE"
+        },
+        {
+          "ok": true,
+          "status": "STALE"
+        }
+      ],
+      "detail": {
+        "status": "STALE",
+        "problems": [
+          "DEMO-REF-SKU: applicable term changed to REF-B-v2"
+        ]
+      }
+    },
+    {
+      "id": "timeout-after-commit",
+      "kind": "timeout",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "orders": 1
+      }
+    },
+    {
+      "id": "fail-before-commit-retry",
+      "kind": "retry",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "r1": "RETRY",
+        "r2": "RECONCILED"
+      }
+    },
+    {
+      "id": "resume-after-crash",
+      "kind": "resume",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "result": "RECONCILED"
+      }
+    },
+    {
+      "id": "approved-happy-path",
+      "kind": "happy",
+      "passes": 3,
+      "trials": [
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        },
+        {
+          "ok": true
+        }
+      ],
+      "detail": {
+        "po": "SBX-PO-100075"
+      }
+    }
+  ]
+}

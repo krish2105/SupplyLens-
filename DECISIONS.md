@@ -5,7 +5,7 @@
 | D-001 | 2026-10-21 | Treat the specification stack as proposed defaults | From the pack | — | Superseded by D-002+ |
 | D-002 | 2026-10-21 | Repository at `SupplyLens/` root; original packs and ZIPs left untouched and git-ignored | Owner choice | Build inside pack folder | Accepted (owner) |
 | D-003 | 2026-10-21 | UCI Online Retail II is the only public dataset admitted in phase 1; M5 skipped | Owner choice; M5 is non-commercial and needs owner rule acceptance | Full core profile | Accepted (owner) |
-| D-004 | 2026-10-21 | No generative LLM; extractive answers and deterministic agent nodes | Owner choice | Ollama qwen2.5, Claude API | Accepted (owner) |
+| D-004 | 2026-10-21 | No generative LLM; extractive answers and deterministic agent nodes | Owner choice | Local LLM (Ollama), hosted LLM API | Accepted (owner) |
 | D-005 | 2026-10-21 | Local bge-m3 (Ollama, 1024-d) for embeddings, lexical fallback | Owner choice; keeps data local | No neural models | Accepted (owner) |
 | D-006 | 2026-10-21 | Bold visual direction on the spec palette; signature = dual-clock rail | Owner chose "bold"; the two clocks are the product's differentiator | Minimal enterprise | Accepted (owner) |
 | D-007 | 2026-10-21 | Native dev runtime (Homebrew PG17 + pgvector), compose later | colima VM has 2 CPU/2 GB | Docker-first | Accepted |

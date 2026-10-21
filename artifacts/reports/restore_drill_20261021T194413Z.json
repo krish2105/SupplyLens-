@@ -1,0 +1,122 @@
+{
+  "source_db": "supplylens",
+  "drill_db": "supplylens_restore_drill",
+  "dump_file": "storage/backups/supplylens-20261021T194413Z.dump",
+  "dump_bytes": 69706567,
+  "backup_seconds": 6.15,
+  "restore_seconds": 6.57,
+  "tables": {
+    "datasets": {
+      "source": 2,
+      "restored": 2,
+      "match": true
+    },
+    "sales_lines": {
+      "source": 1003214,
+      "restored": 1003214,
+      "match": true
+    },
+    "return_lines": {
+      "source": 21335,
+      "restored": 21335,
+      "match": true
+    },
+    "quarantine": {
+      "source": 42822,
+      "restored": 42822,
+      "match": true
+    },
+    "sales_daily": {
+      "source": 529744,
+      "restored": 529744,
+      "match": true
+    },
+    "products": {
+      "source": 4744,
+      "restored": 4744,
+      "match": true
+    },
+    "supplier_terms": {
+      "source": 144,
+      "restored": 144,
+      "match": true
+    },
+    "documents": {
+      "source": 82,
+      "restored": 82,
+      "match": true
+    },
+    "document_versions": {
+      "source": 86,
+      "restored": 86,
+      "match": true
+    },
+    "chunks": {
+      "source": 7339,
+      "restored": 7339,
+      "match": true
+    },
+    "clause_labels": {
+      "source": 2176,
+      "restored": 2176,
+      "match": true
+    },
+    "public_awards": {
+      "source": 295058,
+      "restored": 295058,
+      "match": true
+    },
+    "model_versions": {
+      "source": 3,
+      "restored": 3,
+      "match": true
+    },
+    "forecast_runs": {
+      "source": 5,
+      "restored": 5,
+      "match": true
+    },
+    "agent_runs": {
+      "source": 14,
+      "restored": 14,
+      "match": true
+    },
+    "agent_events": {
+      "source": 119,
+      "restored": 119,
+      "match": true
+    },
+    "actions": {
+      "source": 17,
+      "restored": 17,
+      "match": true
+    },
+    "approvals": {
+      "source": 7,
+      "restored": 7,
+      "match": true
+    },
+    "outbox": {
+      "source": 7,
+      "restored": 7,
+      "match": true
+    },
+    "audit_events": {
+      "source": 39,
+      "restored": 39,
+      "match": true
+    }
+  },
+  "sandbox_erp_orders": {
+    "source": 7,
+    "restored": 7,
+    "match": true
+  },
+  "document_versions_verified": 86,
+  "document_versions_failed": [],
+  "model_artifacts_verified": 6,
+  "model_artifacts_failed": [],
+  "reconciled_actions_in_restore": 7,
+  "all_ok": true,
+  "scope_note": "Local single-host rehearsal: logical dump + restore. Not point-in-time recovery; not an off-host backup."
+}

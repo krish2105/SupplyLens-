@@ -1,0 +1,25 @@
+{
+  "seasonal_naive": {
+    "config_index": 0,
+    "validation_pinball": 8.25138281102955,
+    "config": {}
+  },
+  "lightgbm": {
+    "config_index": 0,
+    "validation_pinball": 5.42115545236256,
+    "config": {
+      "num_leaves": 31,
+      "rounds": 400
+    }
+  },
+  "tcn": {
+    "config_index": 1,
+    "validation_pinball": 5.342309312478265,
+    "config": {
+      "ch": 64,
+      "dropout": 0.2,
+      "epochs": 12
+    }
+  },
+  "champion_by_validation": "tcn"
+}

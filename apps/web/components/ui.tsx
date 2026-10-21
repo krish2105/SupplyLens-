@@ -96,8 +96,8 @@ export function Status({ value }: { value: string | null | undefined }) {
 export function Stat({ label, value, sub, kind }: { label: string; value: ReactNode; sub?: ReactNode; kind?: string }) {
   return (
     <div className="min-w-0">
-      <div className="flex items-center gap-2"><Eyebrow>{label}</Eyebrow>{kind && <Provenance kind={kind} />}</div>
-      <div className="num mt-1 text-2xl font-semibold">{value}</div>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1"><Eyebrow>{label}</Eyebrow>{kind && <Provenance kind={kind} />}</div>
+      <div className="num mt-1 text-[clamp(1.25rem,2.2vw,1.5rem)] font-semibold leading-tight [overflow-wrap:anywhere]">{value}</div>
       {sub && <div className="mt-0.5 text-xs text-muted">{sub}</div>}
     </div>
   );

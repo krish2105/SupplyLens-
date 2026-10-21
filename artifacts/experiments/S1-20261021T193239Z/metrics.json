@@ -1,0 +1,370 @@
+{
+  "experiment_id": "S1-20261021T193239Z",
+  "study": "S1",
+  "forecast_study": "F1-20261021T190101Z",
+  "products": 506,
+  "window": [
+    "2011-11-11",
+    "2011-12-08"
+  ],
+  "assumptions": {
+    "lead_time_days": 3,
+    "review_days": 7,
+    "z": 1.2816,
+    "holding_rate_annual": 0.25,
+    "unit_cost_share_of_price": 0.55,
+    "currency": "GBP",
+    "notes": "All cost parameters are assumptions (UCI has selling prices only); lost margin = price - cost per lost unit."
+  },
+  "value_kind": "simulated",
+  "base_case": "L3_h25",
+  "results": {
+    "L3_h25": {
+      "seasonal_naive": {
+        "fill_rate": 0.859,
+        "lost_margin": 35525.106,
+        "holding_cost": 1546.6075,
+        "total_cost": 37071.7135,
+        "stockout_product_days": 1044,
+        "avg_inventory_units": 75623.1071,
+        "orders_placed": 991
+      },
+      "lightgbm": {
+        "fill_rate": 0.7906,
+        "lost_margin": 52501.95,
+        "holding_cost": 1163.3589,
+        "total_cost": 53665.3089,
+        "stockout_product_days": 1619,
+        "avg_inventory_units": 55816.6429,
+        "orders_placed": 1233
+      },
+      "tcn": {
+        "fill_rate": 0.7949,
+        "lost_margin": 51838.245,
+        "holding_cost": 1076.3734,
+        "total_cost": 52914.6184,
+        "stockout_product_days": 1656,
+        "avg_inventory_units": 52212.0,
+        "orders_placed": 1129
+      },
+      "seasonal_naive__sum_q90": {
+        "fill_rate": 0.9505,
+        "lost_margin": 12611.259,
+        "holding_cost": 3058.8524,
+        "total_cost": 15670.1114,
+        "stockout_product_days": 210,
+        "avg_inventory_units": 151995.4643,
+        "orders_placed": 1511
+      },
+      "lightgbm__sum_q90": {
+        "fill_rate": 0.9514,
+        "lost_margin": 13256.73,
+        "holding_cost": 3138.2456,
+        "total_cost": 16394.9756,
+        "stockout_product_days": 236,
+        "avg_inventory_units": 147586.2857,
+        "orders_placed": 1574
+      },
+      "tcn__sum_q90": {
+        "fill_rate": 0.9488,
+        "lost_margin": 13534.8345,
+        "holding_cost": 2723.4829,
+        "total_cost": 16258.3174,
+        "stockout_product_days": 252,
+        "avg_inventory_units": 131159.3571,
+        "orders_placed": 1662
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.894,
+        "lost_margin": 26308.386,
+        "holding_cost": 920.4454,
+        "total_cost": 27228.8314,
+        "stockout_product_days": 1961,
+        "avg_inventory_units": 44165.2143,
+        "orders_placed": 1146
+      }
+    },
+    "L1_h25": {
+      "seasonal_naive": {
+        "fill_rate": 0.8507,
+        "lost_margin": 37627.2855,
+        "holding_cost": 1616.1212,
+        "total_cost": 39243.4067,
+        "stockout_product_days": 988,
+        "avg_inventory_units": 78511.8214,
+        "orders_placed": 1008
+      },
+      "lightgbm": {
+        "fill_rate": 0.7819,
+        "lost_margin": 54806.688,
+        "holding_cost": 1212.5687,
+        "total_cost": 56019.2567,
+        "stockout_product_days": 1512,
+        "avg_inventory_units": 58086.3571,
+        "orders_placed": 1293
+      },
+      "tcn": {
+        "fill_rate": 0.7902,
+        "lost_margin": 53040.186,
+        "holding_cost": 1150.4535,
+        "total_cost": 54190.6395,
+        "stockout_product_days": 1490,
+        "avg_inventory_units": 55743.5357,
+        "orders_placed": 1184
+      },
+      "seasonal_naive__sum_q90": {
+        "fill_rate": 0.9368,
+        "lost_margin": 15718.464,
+        "holding_cost": 2868.3887,
+        "total_cost": 18586.8527,
+        "stockout_product_days": 256,
+        "avg_inventory_units": 141857.7143,
+        "orders_placed": 1518
+      },
+      "lightgbm__sum_q90": {
+        "fill_rate": 0.9442,
+        "lost_margin": 14991.4845,
+        "holding_cost": 3164.9788,
+        "total_cost": 18156.4633,
+        "stockout_product_days": 238,
+        "avg_inventory_units": 149025.3214,
+        "orders_placed": 1587
+      },
+      "tcn__sum_q90": {
+        "fill_rate": 0.9434,
+        "lost_margin": 15153.309,
+        "holding_cost": 2814.1297,
+        "total_cost": 17967.4387,
+        "stockout_product_days": 254,
+        "avg_inventory_units": 135480.2857,
+        "orders_placed": 1664
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.9225,
+        "lost_margin": 19285.848,
+        "holding_cost": 1041.8501,
+        "total_cost": 20327.6981,
+        "stockout_product_days": 1485,
+        "avg_inventory_units": 49816.7857,
+        "orders_placed": 1234
+      }
+    },
+    "L7_h25": {
+      "seasonal_naive": {
+        "fill_rate": 0.8451,
+        "lost_margin": 40634.892,
+        "holding_cost": 2120.3284,
+        "total_cost": 42755.2204,
+        "stockout_product_days": 1156,
+        "avg_inventory_units": 103669.0714,
+        "orders_placed": 1052
+      },
+      "lightgbm": {
+        "fill_rate": 0.7793,
+        "lost_margin": 55347.831,
+        "holding_cost": 1722.9094,
+        "total_cost": 57070.7404,
+        "stockout_product_days": 1704,
+        "avg_inventory_units": 82885.5714,
+        "orders_placed": 1063
+      },
+      "tcn": {
+        "fill_rate": 0.7748,
+        "lost_margin": 56541.1725,
+        "holding_cost": 1614.6125,
+        "total_cost": 58155.785,
+        "stockout_product_days": 1763,
+        "avg_inventory_units": 78064.9643,
+        "orders_placed": 1037
+      },
+      "seasonal_naive__sum_q90": {
+        "fill_rate": 0.9464,
+        "lost_margin": 14198.4585,
+        "holding_cost": 3948.5719,
+        "total_cost": 18147.0304,
+        "stockout_product_days": 244,
+        "avg_inventory_units": 196293.6786,
+        "orders_placed": 1559
+      },
+      "lightgbm__sum_q90": {
+        "fill_rate": 0.9494,
+        "lost_margin": 13215.474,
+        "holding_cost": 4396.9942,
+        "total_cost": 17612.4682,
+        "stockout_product_days": 231,
+        "avg_inventory_units": 208615.8571,
+        "orders_placed": 1449
+      },
+      "tcn__sum_q90": {
+        "fill_rate": 0.9465,
+        "lost_margin": 13784.7645,
+        "holding_cost": 3834.5802,
+        "total_cost": 17619.3447,
+        "stockout_product_days": 235,
+        "avg_inventory_units": 184993.8214,
+        "orders_placed": 1599
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.7715,
+        "lost_margin": 56945.4795,
+        "holding_cost": 1468.0227,
+        "total_cost": 58413.5022,
+        "stockout_product_days": 2609,
+        "avg_inventory_units": 70488.3571,
+        "orders_placed": 496
+      }
+    },
+    "L3_h15": {
+      "seasonal_naive": {
+        "fill_rate": 0.859,
+        "lost_margin": 35525.106,
+        "holding_cost": 927.9645,
+        "total_cost": 36453.0705,
+        "stockout_product_days": 1044,
+        "avg_inventory_units": 75623.1071,
+        "orders_placed": 991
+      },
+      "lightgbm": {
+        "fill_rate": 0.7906,
+        "lost_margin": 52501.95,
+        "holding_cost": 698.0154,
+        "total_cost": 53199.9654,
+        "stockout_product_days": 1619,
+        "avg_inventory_units": 55816.6429,
+        "orders_placed": 1233
+      },
+      "tcn": {
+        "fill_rate": 0.7949,
+        "lost_margin": 51838.245,
+        "holding_cost": 645.824,
+        "total_cost": 52484.069,
+        "stockout_product_days": 1656,
+        "avg_inventory_units": 52212.0,
+        "orders_placed": 1129
+      },
+      "seasonal_naive__sum_q90": {
+        "fill_rate": 0.9505,
+        "lost_margin": 12611.259,
+        "holding_cost": 1835.3114,
+        "total_cost": 14446.5704,
+        "stockout_product_days": 210,
+        "avg_inventory_units": 151995.4643,
+        "orders_placed": 1511
+      },
+      "lightgbm__sum_q90": {
+        "fill_rate": 0.9514,
+        "lost_margin": 13256.73,
+        "holding_cost": 1882.9474,
+        "total_cost": 15139.6774,
+        "stockout_product_days": 236,
+        "avg_inventory_units": 147586.2857,
+        "orders_placed": 1574
+      },
+      "tcn__sum_q90": {
+        "fill_rate": 0.9488,
+        "lost_margin": 13534.8345,
+        "holding_cost": 1634.0897,
+        "total_cost": 15168.9242,
+        "stockout_product_days": 252,
+        "avg_inventory_units": 131159.3571,
+        "orders_placed": 1662
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.894,
+        "lost_margin": 26308.386,
+        "holding_cost": 552.2672,
+        "total_cost": 26860.6532,
+        "stockout_product_days": 1961,
+        "avg_inventory_units": 44165.2143,
+        "orders_placed": 1146
+      }
+    },
+    "L3_h40": {
+      "seasonal_naive": {
+        "fill_rate": 0.859,
+        "lost_margin": 35525.106,
+        "holding_cost": 2474.572,
+        "total_cost": 37999.678,
+        "stockout_product_days": 1044,
+        "avg_inventory_units": 75623.1071,
+        "orders_placed": 991
+      },
+      "lightgbm": {
+        "fill_rate": 0.7906,
+        "lost_margin": 52501.95,
+        "holding_cost": 1861.3743,
+        "total_cost": 54363.3243,
+        "stockout_product_days": 1619,
+        "avg_inventory_units": 55816.6429,
+        "orders_placed": 1233
+      },
+      "tcn": {
+        "fill_rate": 0.7949,
+        "lost_margin": 51838.245,
+        "holding_cost": 1722.1974,
+        "total_cost": 53560.4424,
+        "stockout_product_days": 1656,
+        "avg_inventory_units": 52212.0,
+        "orders_placed": 1129
+      },
+      "seasonal_naive__sum_q90": {
+        "fill_rate": 0.9505,
+        "lost_margin": 12611.259,
+        "holding_cost": 4894.1638,
+        "total_cost": 17505.4228,
+        "stockout_product_days": 210,
+        "avg_inventory_units": 151995.4643,
+        "orders_placed": 1511
+      },
+      "lightgbm__sum_q90": {
+        "fill_rate": 0.9514,
+        "lost_margin": 13256.73,
+        "holding_cost": 5021.193,
+        "total_cost": 18277.923,
+        "stockout_product_days": 236,
+        "avg_inventory_units": 147586.2857,
+        "orders_placed": 1574
+      },
+      "tcn__sum_q90": {
+        "fill_rate": 0.9488,
+        "lost_margin": 13534.8345,
+        "holding_cost": 4357.5726,
+        "total_cost": 17892.4071,
+        "stockout_product_days": 252,
+        "avg_inventory_units": 131159.3571,
+        "orders_placed": 1662
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.894,
+        "lost_margin": 26308.386,
+        "holding_cost": 1472.7127,
+        "total_cost": 27781.0987,
+        "stockout_product_days": 1961,
+        "avg_inventory_units": 44165.2143,
+        "orders_placed": 1146
+      }
+    }
+  },
+  "paired_fill_difference": {
+    "lightgbm_minus_seasonal_naive_fill": {
+      "mean": -0.056002398962128414,
+      "ci95": [
+        -0.06408964744624378,
+        -0.047938496659692104
+      ]
+    },
+    "tcn_minus_seasonal_naive_fill": {
+      "mean": -0.06112911635799174,
+      "ci95": [
+        -0.06870085343328564,
+        -0.054080732711776706
+      ]
+    }
+  },
+  "caveats": [
+    "Recorded sales are a demand proxy; real lost sales are unobserved.",
+    "Costs are assumptions; simulated cost differences are not realised savings.",
+    "The perfect-foresight reference orders exactly the next review window's sales; with long lead times it is not an upper bound.",
+    "Diagnostic: summed q50 of LightGBM/TCN covers about 50%/42% of test-window volume vs 87% for seasonal naive (heavy-tailed daily sales), so accuracy-optimal medians under-stock."
+  ]
+}

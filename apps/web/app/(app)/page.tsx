@@ -107,11 +107,15 @@ export default function OverviewPage() {
           {o?.dataset ? (
             <div className="mt-3 space-y-3">
               <p className="font-semibold">{o.dataset.name} <span className="text-muted">· {o.dataset.license}</span></p>
-              <div className="grid grid-cols-3 gap-3">
-                <Stat label="Accepted" value={int(o.dataset.totals.accepted)} kind="observed" />
-                <Stat label="Returns" value={int(o.dataset.totals.returned)} />
-                <Stat label="Quarantined" value={int(o.dataset.totals.quarantined)} />
-              </div>
+              <dl className="divide-y divide-line rounded-xl border border-line">
+                {([["Accepted sales", o.dataset.totals.accepted, "observed"], ["Returns & cancellations", o.dataset.totals.returned, null],
+                   ["Quarantined", o.dataset.totals.quarantined, null]] as const).map(([label, v, kind]) => (
+                  <div key={label} className="flex items-center justify-between gap-3 px-3 py-2">
+                    <dt className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted">{label}{kind && <Provenance kind={kind} />}</dt>
+                    <dd className="num shrink-0 text-lg font-semibold">{int(v)}</dd>
+                  </div>
+                ))}
+              </dl>
               <p className="text-xs text-muted">{int(o.dataset.totals.input_rows)} source rows, {day(o.dataset.date_span[0])} to {day(o.dataset.date_span[1])}. SHA-256 <span className="num">{short(o.dataset.sha256, 12)}</span>.</p>
               <Link href={{ pathname: "/data", query: { ws } }} className="text-sm text-accent underline-offset-2 hover:underline">See reconciliation</Link>
             </div>
