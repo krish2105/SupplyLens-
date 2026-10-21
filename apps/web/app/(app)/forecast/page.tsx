@@ -19,6 +19,7 @@ const PLANNED = [
   { family: "lightgbm_quantile", note: "Global quantile model (q0.1/0.5/0.9), lagged features shifted before origin." },
   { family: "tcn_quantile", note: "Compact causal dilated TCN with a direct 28×3 quantile head, 3 seeds." },
 ];
+const FAMILY_LABEL: Record<string, string> = { seasonal_naive: "Seasonal naive", lightgbm_quantile: "LightGBM quantile", tcn_quantile: "Quantile TCN" };
 
 export default function ForecastPage() {
   const ws = useWs();
@@ -35,9 +36,10 @@ export default function ForecastPage() {
   const [runId, setRunId] = useState<string | null>(null);
   const run = useTenantQuery<Run>(["forecast", runId], runId ? `/api/v1/forecasts/${runId}` : null);
   const [zoom, setZoom] = useState<[number, number] | null>(null);
+  const [family, setFamily] = useState<string>("");
 
   const create = useMutation({
-    mutationFn: () => post<Run>("/api/v1/forecasts", { sku_ids: [sku], origin: known!.slice(0, 10), horizon: 28 }),
+    mutationFn: () => post<Run>("/api/v1/forecasts", { sku_ids: [sku], origin: known!.slice(0, 10), horizon: 28, ...(family ? { model_family: family } : {}) }),
     onSuccess: (r) => { setRunId(r.id); qc.setQueryData([getTenant(), "forecast", r.id], r); qc.invalidateQueries({ queryKey: [ws, "models"] }); },
   });
 
@@ -84,8 +86,12 @@ export default function ForecastPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Forecast lab" title="Unit-sales forecasts with honest intervals"
-        actions={<Button onClick={() => create.mutate()} busy={create.isPending} disabled={!sku || !known || role === "viewer" || role === "approver" || role === "tenant_admin"}
-          title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button>}>
+        actions={<><label className="flex items-center gap-2 text-sm"><span className="text-muted">Model</span>
+          <select value={family} onChange={(e) => setFamily(e.target.value)} className="rounded-lg border border-line bg-surface px-2 py-2 text-sm">
+            <option value="">Champion ({FAMILY_LABEL[models.data?.find((m) => m.status === "CHAMPION")?.family ?? "seasonal_naive"]})</option>
+            {models.data?.map((m) => <option key={m.id} value={m.family}>{FAMILY_LABEL[m.family] ?? m.family} · {m.status.toLowerCase()}</option>)}
+          </select></label><Button onClick={() => create.mutate()} busy={create.isPending} disabled={!sku || !known || role === "viewer" || role === "approver" || role === "tenant_admin"}
+          title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button></>}>
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
       {create.error && <ErrorState error={create.error} />}
@@ -152,17 +158,76 @@ export default function ForecastPage() {
               <tbody>
                 {models.data?.map((m) => (
                   <tr key={m.id} className="border-b border-line/60"><td className="py-2"><Mono>{m.family} {m.version}</Mono></td><td><Status value={m.status} /></td>
-                    <td className="text-xs text-muted">{Object.keys(m.metrics).length ? JSON.stringify(m.metrics) : "Baseline; frozen evaluation not yet run"}</td></tr>
+                    <td className="num text-xs text-muted">{m.metrics && (m.metrics as any).mae != null ? `test MAE ${num((m.metrics as any).mae, 2)} · pinball ${num((m.metrics as any).pinball_mean, 3)} · cov80 ${num(((m.metrics as any).coverage_80 ?? 0) * 100, 1)}% · val pinball ${num((m.metrics as any).validation_pinball, 3)}` : "Baseline; frozen evaluation not yet run"}</td></tr>
                 ))}
-                {PLANNED.map((p) => (
+                {PLANNED.filter((p) => !models.data?.some((m) => m.family === p.family)).map((p) => (
                   <tr key={p.family} className="border-b border-line/60"><td className="py-2"><Mono>{p.family}</Mono></td><td><Status value="NOT_IMPLEMENTED" /></td>
                     <td className="text-xs text-muted">{p.note} Not trained yet.</td></tr>
                 ))}
               </tbody>
             </table>
           </Card>
+          <StudyPanel />
         </div>
       </div>
     </div>
+  );
+}
+
+type Study = { available: boolean; message?: string; experiment_id: string; cohort_size: number; test_window: [string, string];
+  selection: Record<string, any>; summary: Record<string, any>; tcn_seed_mean: Record<string, number>; tcn_seed_sd: Record<string, number>;
+  comparisons: Record<string, { mean_diff: number; ci95: [number, number]; n_series: number; share_a_better: number }>;
+  pinball_by_horizon: Record<string, Record<string, number[]>>; environment: Record<string, string>; config: any; dataset_sha256: string };
+
+const STUDY_NAME: Record<string, string> = { seasonal_naive: "Seasonal naive", lightgbm: "LightGBM quantile", tcn: "Quantile TCN (seed 0)" };
+
+function StudyPanel() {
+  const st = useTenantQuery<Study>(["study-f1"], "/api/v1/research/forecast-study");
+  const option = useMemo(() => {
+    if (!st.data?.available) return null;
+    const b = baseOption();
+    const colors: Record<string, string> = { seasonal_naive: token("--muted"), lightgbm: token("--accent"), tcn: token("--forecast") };
+    const fams = Object.keys(st.data.pinball_by_horizon);
+    return { ...b, xAxis: { ...(b.xAxis as object), type: "category", name: "horizon (days)", data: Array.from({ length: 28 }, (_, i) => i + 1) },
+      yAxis: { ...(b.yAxis as object), type: "value", name: "median pinball" },
+      series: fams.map((f) => ({ type: "line", name: STUDY_NAME[f], data: st.data!.pinball_by_horizon[f]!.q50, symbol: "none", lineStyle: { color: colors[f], width: 2 }, itemStyle: { color: colors[f] } })) };
+  }, [st.data]);
+  if (st.isLoading) return <Card className="p-5"><Skeleton className="h-40" /></Card>;
+  if (!st.data?.available) return <Card className="p-5"><Eyebrow>Model comparison study</Eyebrow><p className="mt-2 text-sm text-muted">{st.data?.message}</p></Card>;
+  const d = st.data;
+  const fams = ["seasonal_naive", "lightgbm", "tcn"].filter((f) => d.summary[f]);
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <Eyebrow>Model comparison study {d.experiment_id}</Eyebrow>
+        <span className="text-xs text-muted">{d.cohort_size} products · test {day(d.test_window[0])}–{day(d.test_window[1])} · champion by validation: <b>{STUDY_NAME[d.selection.champion_by_validation]}</b></span>
+      </div>
+      <div className="mt-3 overflow-x-auto" tabIndex={0} role="region" aria-label="Model comparison table, scrollable">
+        <table className="w-full text-sm">
+          <caption className="sr-only">Held-out test metrics for the three model families</caption>
+          <thead><tr className="border-b border-line text-left text-xs text-muted">
+            <th className="py-2 font-medium">Model</th><th className="font-medium">Val. pinball</th><th className="font-medium">MAE</th><th className="font-medium">MASE</th>
+            <th className="font-medium">Pinball q10 / q50 / q90</th><th className="font-medium">80% coverage</th><th className="font-medium">Width</th><th className="font-medium">Raw crossing</th></tr></thead>
+          <tbody>
+            {fams.map((f) => { const m = d.summary[f]; return (
+              <tr key={f} className="border-b border-line/60">
+                <td className="py-2 font-medium">{STUDY_NAME[f]}{d.selection.champion_by_validation === f && <span className="ml-2"><Status value="CHAMPION" /></span>}</td>
+                <td className="num">{num(d.selection[f]?.validation_pinball, 3)}</td><td className="num">{num(m.mae, 2)}</td>
+                <td className="num">{m.mase == null ? "undefined" : num(m.mase, 3)}{m.mase_undefined_series ? <span className="text-muted"> ({m.mase_undefined_series} undef.)</span> : null}</td>
+                <td className="num">{num(m.pinball.q10, 2)} / {num(m.pinball.q50, 2)} / {num(m.pinball.q90, 2)}</td>
+                <td className="num">{num(m.coverage_80 * 100, 1)}%</td><td className="num">{num(m.width_80, 1)}</td><td className="num">{num(m.crossing_rate_raw * 100, 2)}%</td>
+              </tr>); })}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2 text-xs text-muted">TCN across seeds {d.config.seeds.tcn.join(", ")}: MAE {num(d.tcn_seed_mean.mae, 2)} ± {num(d.tcn_seed_sd.mae, 2)}, pinball {num(d.tcn_seed_mean.pinball_mean, 3)} ± {num(d.tcn_seed_sd.pinball_mean, 3)}.</p>
+      {option && <div className="mt-3"><Chart option={option} height={240} label="Median pinball loss by forecast horizon for each model" /></div>}
+      <ul className="mt-3 space-y-1 text-sm">
+        {Object.entries(d.comparisons).map(([k, c]) => (
+          <li key={k}><Mono>{k.replaceAll("_", " ")}</Mono>: mean per-product MAE difference <span className="num font-semibold">{num(c.mean_diff, 2)}</span> (95% CI {num(c.ci95[0], 2)} to {num(c.ci95[1], 2)}), first model better on {num(c.share_a_better * 100, 0)}% of {c.n_series} products.</li>
+        ))}
+      </ul>
+      <p className="mt-3 text-xs text-muted">Selection used validation origins {d.config.validation_origins.join(", ")} only; the test window was scored once afterwards. Sales are a demand proxy (stockouts unobserved). Device: {d.environment.tcn_device}, torch {d.environment.torch}, LightGBM {d.environment.lightgbm}.</p>
+    </Card>
   );
 }

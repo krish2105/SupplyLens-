@@ -14,7 +14,7 @@ from ..actions.service import ActionError
 from ..authz import Forbidden
 from ..db import app_engine
 from ..forecasting.service import ForecastError
-from . import routes_core, routes_decisions
+from . import routes_core, routes_decisions, routes_market, routes_research
 
 log = logging.getLogger("supplylens.api")
 
@@ -22,6 +22,8 @@ app = FastAPI(title="SupplyLens API", version="0.1.0",
               description="Evidence-grounded inventory and procurement decisions. /api/v1 is the versioned contract.")
 app.include_router(routes_core.router)
 app.include_router(routes_decisions.router)
+app.include_router(routes_research.router)
+app.include_router(routes_market.router)
 
 
 @app.middleware("http")

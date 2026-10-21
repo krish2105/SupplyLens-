@@ -17,6 +17,11 @@ TENANTS = {
         "research",
         "Real UCI Online Retail II sales (CC BY 4.0). Stock, suppliers and costs are SIMULATED.",
     ),
+    "contract-research": (
+        "Contract research",
+        "research",
+        "Public contract corpora (ACORD, CUAD; CC BY 4.0) and World Bank awards for retrieval research and market context.",
+    ),
     "demo": (
         "Demo (fictional)",
         "demo",

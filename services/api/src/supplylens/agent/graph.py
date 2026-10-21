@@ -154,7 +154,7 @@ def gather(state):
     if st["dataset_id"]:
         _tool(state)
         fr = run_forecast(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, cutoff.date(),
-                          horizon=28, created_by=uuid.UUID(state["actor_id"]))
+                          horizon=28, created_by=uuid.UUID(state["actor_id"]), allow_baseline_fallback=True)
         forecast = {"available": True, "run_id": str(fr.run_id), "model_version_id": str(fr.model_version_id),
                     "origin": fr.origin.isoformat(), "quality_flags": fr.quality_flags,
                     "points": {sku: [{"day": r.day.date().isoformat(), "q50": r.q50, "q90": r.q90}

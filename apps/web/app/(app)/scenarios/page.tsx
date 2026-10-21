@@ -22,7 +22,7 @@ const CONTROLS: { k: keyof Inputs; label: string; unit: string; min: number; max
   { k: "supplier_delay_days", label: "Supplier delay", unit: "days added to every lead time", min: 0, max: 30, step: 1 },
   { k: "budget_minor", label: "Purchasing budget", unit: "per run", min: 0, max: 10_000_000, step: 50_000, scale: 100 },
   { k: "safety_days", label: "Safety buffer", unit: "days of mean forecast demand", min: 0, max: 30, step: 1 },
-  { k: "coverage_days", label: "Coverage window", unit: "days", min: 7, max: 60, step: 1 },
+  { k: "coverage_days", label: "Coverage window", unit: "days (forecast horizon is 28)", min: 7, max: 28, step: 1 },
 ];
 
 export default function ScenariosPage() {

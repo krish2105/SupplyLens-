@@ -44,3 +44,29 @@ def test_rejects_origin_after_data_and_bad_horizon(dataset, tenant_a):
 def test_unknown_sku_is_flagged_not_invented(dataset, tenant_a):
     run = run_forecast(tenant_a, dataset, ["S1", "NOPE"], date(2011, 2, 27), horizon=7)
     assert run.quality_flags == {"NOPE": "insufficient_history"}
+
+
+def test_trained_model_cannot_replay_origins_before_its_training_cutoff(dataset, tenant_a):
+    import json as _json
+    with tenant_session(tenant_a) as s:
+        s.execute(text("""INSERT INTO model_versions (id, tenant_id, family, version, status, dataset_id, training_cutoff,
+            artifact_path, artifact_sha256) VALUES (:i,:t,'lightgbm_quantile','1.0.0','CHAMPION',:d,'2011-03-01','x',:a)"""),
+                  {"i": uuid.uuid4(), "t": tenant_a, "d": dataset, "a": _json.dumps([{"file": "missing.txt", "sha256": "0"}])})
+    with pytest.raises(ForecastError) as e:
+        run_forecast(tenant_a, dataset, ["S1"], date(2011, 2, 27), horizon=7)
+    assert e.value.code == "model_trained_after_origin"
+    # Decision flows fall back to the baseline and say so.
+    run = run_forecast(tenant_a, dataset, ["S1"], date(2011, 2, 27), horizon=7, allow_baseline_fallback=True)
+    assert "seasonal_naive baseline used" in run.quality_flags["_model"]
+
+
+def test_untrusted_artifact_is_refused(dataset, tenant_a):
+    import json as _json
+    with tenant_session(tenant_a) as s:
+        s.execute(text("""INSERT INTO model_versions (id, tenant_id, family, version, status, dataset_id, training_cutoff,
+            artifact_path, artifact_sha256) VALUES (:i,:t,'lightgbm_quantile','1.0.0','CHAMPION',:d,'2011-01-01','tests',:a)"""),
+                  {"i": uuid.uuid4(), "t": tenant_a, "d": dataset,
+                   "a": _json.dumps([{"file": f"lightgbm_q{q}.txt", "sha256": "deadbeef"} for q in (10, 50, 90)])})
+    with pytest.raises(ForecastError) as e:
+        run_forecast(tenant_a, dataset, ["S1"], date(2011, 3, 10), horizon=7)
+    assert e.value.code == "artifact_untrusted"

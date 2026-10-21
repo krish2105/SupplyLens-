@@ -30,7 +30,7 @@ class ScenarioInput(BaseModel):
     demand_multiplier: float = Field(default=1.0, ge=0.25, le=3.0)
     supplier_delay_days: int = Field(default=0, ge=0, le=60)
     safety_days: int | None = Field(default=None, ge=0, le=60)
-    coverage_days: int | None = Field(default=None, ge=7, le=60)
+    coverage_days: int | None = Field(default=None, ge=7, le=28)
     allow_shortfall: bool = True
     shortage_penalty_minor: int = Field(default=500, ge=0, le=1_000_000)
     currency: str | None = None
@@ -56,8 +56,8 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
     coverage = inp.coverage_days or planning.get("coverage_days", 21)
     if not st.dataset_id:
         raise ValueError("scenario studio needs a sales history to forecast; this workspace has none")
-    fr = run_forecast(actor.tenant_id, st.dataset_id, skus, cutoff.date(), horizon=max(28, coverage),
-                      created_by=actor.user_id)
+    fr = run_forecast(actor.tenant_id, st.dataset_id, skus, cutoff.date(), horizon=28,
+                      created_by=actor.user_id, allow_baseline_fallback=True)
     needs = {}
     for r in rows:
         pts = fr.points[fr.points["sku_id"] == r["sku_id"]]

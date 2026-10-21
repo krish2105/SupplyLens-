@@ -35,6 +35,7 @@ class ForecastIn(BaseModel):
     sku_ids: list[str] = Field(min_length=1, max_length=200)
     origin: date | None = None
     horizon: int = Field(default=28, ge=1, le=90)
+    model_family: str | None = Field(default=None, pattern="^(seasonal_naive|lightgbm_quantile|tcn_quantile)$")
 
 
 @router.post("/forecasts")
@@ -45,7 +46,7 @@ def create_forecast(body: ForecastIn, a: Actor = Depends(actor)):
     if not st or not st.dataset_id:
         raise HTTPException(422, {"code": "no_sales_history", "message": "this workspace has no sales dataset"})
     run = run_forecast(a.tenant_id, st.dataset_id, body.sku_ids, body.origin or st.operational_as_of.date(),
-                       body.horizon, created_by=a.user_id)
+                       body.horizon, created_by=a.user_id, model_family=body.model_family)
     return get_forecast(str(run.run_id), a)
 
 
@@ -133,8 +134,11 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
     res = search(a.tenant_id, q, as_of=cutoff, role=a.role, effective_date=effective_date, mode=mode,
                  supplier_id=supplier_id, entities=ents, k=max(1, min(k, 20)))
     results = [e.__dict__ for e in res["results"]]
-    answer = {"type": "extractive", "claims": [], "abstained": not results}
-    if results:
+    answer = {"type": "extractive", "claims": [], "abstained": not results or res["abstain"]}
+    if res["abstain"]:
+        answer["message"] = ("No permitted document known at this cutoff mentions " + ", ".join(ents) +
+                             ". Related passages are listed but not used as an answer.")
+    elif results:
         top = results[0]
         answer["claims"].append({"text": top["excerpt"], "citation": {
             "document_id": top["document_id"], "version_id": top["version_id"], "version_label": top["version_label"],
