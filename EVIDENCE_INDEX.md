@@ -30,7 +30,8 @@ Ollama bge-m3:567m. Dates are UTC. Commits: see `git log` (rows recorded at comm
 | E-23 | ARC-02 | packages/contracts/openapi.json, api.d.ts | `./scripts/check_contracts.sh` | — | 2026-10-21 | 45 paths; regenerated contract matches |
 | E-24 | ARC-06, BUS-014 (local) | artifacts/reports/restore_drill_20261021T194413Z.json | `./scripts/backup_restore_drill.sh` | — | 2026-10-21 | 70 MB dump; backup 6.2 s, restore 6.6 s; 20 tables + sandbox orders reconcile; 86 documents and 6 model artifacts hash-verified. First attempt failed (pgvector needs superuser) and was fixed |
 | E-25 | IB benchmark | artifacts/experiments/IB-20261021T192006Z | `uv run python evaluations/inventorybench_study.py` | InventoryBench @62b1f11 | 2026-10-21 | official evaluator, 1,320 instances: supplylens 0.482, base_stock 0.433, last_value 0.453 |
+| E-27 | ARC-01 (partial) | storage/docker_build_api.log | `docker compose build api`; `docker run --rm supplylens-api ...` | — | 2026-10-21 | image built (3.98 GB, CPU torch 2.14.1+cpu), runs as non-root `supplylens`, app imports with 45 API paths, TCN entry point runs. Full `compose up` not run |
 | E-26 | Full suites | artifacts/reports/pytest-final.txt | `uv run pytest -q`; `tsc`; `next build` | — | 2026-10-21 | 131 passed; types ok; 16 routes built |
 
-Not yet evidenced (do not cite as done): full `docker compose up` run, CI on GitHub, load/performance targets
+Not yet evidenced (do not cite as done): full `docker compose up` run (only the API image was built and smoke-tested), CI on GitHub, load/performance targets
 (ARC-07, UX-011), manual screen-reader review, WebGL-failure automation, OIDC, ERP sandbox, pilot outcomes.
