@@ -120,7 +120,7 @@ def load(tenant_id) -> dict:
                        "z": r["zone_id"], "a": n // 3 + 1, "r": n % 3 + 1, "x": (zi % 2) * 14.0 + (n // 3) * 4.0,
                        "zz": (zi // 2) * 12.0 + (n % 3) * 2.6, "k": r["sku_id"]})
         s.execute(text("INSERT INTO inventory_positions VALUES (:t,'DEMO-WH-01','DEMO-ZONE-D','DEMO-REF-SKU',"
-                       "'2027-02-15',0,0,0,200,'synthetic',NULL)"), {"t": tenant_id})
+                       "'2026-10-01',0,0,0,200,'synthetic',NULL)"), {"t": tenant_id})
         s.execute(text("INSERT INTO warehouse_slots VALUES (:t,'DEMO-WH-01','D-4-1','DEMO-ZONE-D',4,1,26.0,12.0,"
                        "'DEMO-REF-SKU',true)"), {"t": tenant_id})
         s.execute(text("""INSERT INTO tenant_settings VALUES (:t, :a, 'GBP', NULL, NULL, CAST(:p AS jsonb))
