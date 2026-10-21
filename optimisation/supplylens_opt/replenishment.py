@@ -1,8 +1,10 @@
 """Turn a sales forecast and a stock position into a replenishment need.
 
-Uses the median (q50) path. Summing daily quantiles does not give a calibrated
-lead-time quantile (temporal dependence), so the buffer is an explicit, labelled
-assumption (`safety_days` of mean daily q50), not a probabilistic guarantee.
+Default basis `q90_sum`: order up to the sum of daily q90 over the coverage window. Study S1
+showed that median-based targets under-stock heavily on heavy-tailed daily sales (summed q50 of
+the trained models covered only 42-50% of held-out volume). Summing daily quantiles is NOT a
+calibrated lead-time quantile (temporal dependence); it is a declared heuristic chosen on
+simulated evidence. `q50_plus_safety` (q50 path + `safety_days` of mean daily q50) remains available.
 """
 from __future__ import annotations
 
@@ -33,11 +35,12 @@ class NeedAssessment(BaseModel):
     need_by: date
     days_of_cover: float | None
     status: str
-    method: str = "q50 path + assumed safety days; q90 sum shown for reference only (not calibrated)"
+    basis: str = "q90_sum"
+    method: str = ""
 
 
 def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_days: int,
-           safety_days: int) -> NeedAssessment:
+           safety_days: int, basis: str = "q90_sum") -> NeedAssessment:
     """forecast: rows with day (date), q50, q90 starting after decision_date."""
     available = pos.on_hand - pos.allocated
     position = available + pos.on_order
@@ -45,8 +48,14 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
     q50 = sum(f["q50"] for f in window)
     q90 = sum(f["q90"] for f in window)
     mean_daily = q50 / max(len(window), 1)
-    safety = math.ceil(mean_daily * safety_days)
-    required = max(0, math.ceil(q50 + safety - position))
+    if basis == "q90_sum":
+        safety = math.ceil(max(q90 - q50, 0))
+        required = max(0, math.ceil(q90 - position))
+        method = "order up to sum of daily q90 over the window (heuristic, not a calibrated quantile; see study S1)"
+    else:
+        safety = math.ceil(mean_daily * safety_days)
+        required = max(0, math.ceil(q50 + safety - position))
+        method = "q50 path + assumed safety days"
     if pos.capacity is not None:
         required = min(required, max(pos.capacity - position, 0))
     stockout, running = None, float(available)
@@ -69,4 +78,5 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
                           coverage_days=coverage_days, demand_q50=round(q50, 2),
                           demand_q90_sum_uncalibrated=round(q90, 2), safety_units=safety,
                           required_units=required, projected_stockout=stockout, need_by=need_by,
-                          days_of_cover=round(cover, 1) if cover is not None else None, status=status)
+                          days_of_cover=round(cover, 1) if cover is not None else None, status=status,
+                          basis=basis, method=method)
