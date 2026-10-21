@@ -1,0 +1,9 @@
+{
+  "data_origin": "synthetic",
+  "note": "known_at values are SYNTHETIC assumptions added by SupplyLens so time-aware retrieval can be exercised; the pack did not specify when the fictional documents were received.",
+  "documents": [
+    {"file": "DEMO-SUP-001-framework-v1.txt", "supplier_id": "DEMO-SUP-001", "title": "Demo Northstar framework agreement", "doc_type": "framework_agreement", "version_label": "v1", "valid_from": "2027-01-01", "valid_to": "2027-03-31", "known_at": "2026-12-01T09:00:00+00:00"},
+    {"file": "DEMO-SUP-001-amendment-v2.txt", "supplier_id": "DEMO-SUP-001", "title": "Demo Northstar framework agreement", "doc_type": "amendment", "version_label": "v2", "valid_from": "2027-04-01", "known_at": "2027-03-01T09:00:00+00:00", "supersedes": "DEMO-SUP-001-framework-v1.txt"},
+    {"file": "DEMO-SUP-002-framework-v1.txt", "supplier_id": "DEMO-SUP-002", "title": "Demo Meridian framework agreement", "doc_type": "framework_agreement", "version_label": "v1", "valid_from": "2027-01-01", "known_at": "2026-12-01T09:00:00+00:00"}
+  ]
+}

@@ -1,0 +1,6 @@
+FICTIONAL DOCUMENT - SUPPLYLENS REFERENCE TEST CASE - NOT A REAL CONTRACT
+Supply agreement REF-A, version v1. Supplier: Reference Supplier A (FICTIONAL).
+Effective date: 2026-01-01.
+
+Schedule item DEMO-REF-SKU (Reference component):
+Unit price USD 5.00 per unit. Minimum order quantity 20 units, in multiples of 10 units. Standard lead time 2 calendar days.
