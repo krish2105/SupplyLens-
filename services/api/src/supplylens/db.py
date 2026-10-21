@@ -17,7 +17,9 @@ from .config import settings
 
 @lru_cache(maxsize=4)
 def engine_for(url: str) -> Engine:
-    return create_engine(url, pool_pre_ping=True, pool_size=10, max_overflow=10)
+    # All timestamps are handled in UTC; business dates are derived explicitly, never from session TZ.
+    return create_engine(url, pool_pre_ping=True, pool_size=10, max_overflow=10,
+                         connect_args={"options": "-c timezone=UTC"})
 
 
 def app_engine() -> Engine:

@@ -37,7 +37,7 @@ ASSUMPTIONS = {
     "on_hand_days_of_cover": [1, 35],
     "allocated_share": [0.0, 0.15],
     "capacity_days_of_cover": [45, 90],
-    "weekly_budget_minor": 600000,
+    "weekly_budget_minor": 2000000,
     "currency": "GBP",
     "safety_days": 5,
     "coverage_days": 21,
