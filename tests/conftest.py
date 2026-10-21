@@ -19,7 +19,7 @@ from supplylens.db import admin_engine  # noqa: E402
 from supplylens.seed import seed, tenant_id  # noqa: E402
 
 TENANT_TABLES_CLEAR_ORDER = [
-    "public_awards", "tenant_settings", "warehouse_slots",
+    "clause_labels", "public_awards", "tenant_settings", "warehouse_slots",
     "audit_events", "approvals", "outbox", "actions", "agent_events", "agent_runs",
     "idempotency_keys", "jobs", "plan_runs", "forecast_points", "forecast_runs",
     "model_versions", "supplier_terms", "chunks", "document_versions", "documents",

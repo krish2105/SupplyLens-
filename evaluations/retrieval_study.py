@@ -180,10 +180,59 @@ def r2():
             "cross_tenant_probes": {"queries": 60, "leaked_chunks": leaks}}
 
 
+C1_CATEGORIES = ["Minimum Commitment", "Volume Restriction", "Price Restrictions", "Exclusivity", "Termination For Convenience",
+                 "Renewal Term", "Notice Period To Terminate Renewal", "Cap On Liability", "Liquidated Damages",
+                 "Warranty Duration", "Audit Rights", "Insurance", "Governing Law", "Anti-Assignment", "Most Favored Nation"]
+
+
+def c1():
+    """Clause localisation in CUAD supply/distribution agreements: does a top-k chunk overlap the expert span?"""
+    import csv
+    t = tenant_id("contract-research")
+    desc = {}
+    with (REPO_ROOT / "data/raw/core/cuad/repository/category_descriptions.csv").open(encoding="utf-8-sig") as f:
+        for row in csv.DictReader(f):
+            cat = row["Category (incl. context and answer)"].replace("Category:", "").strip()
+            desc[cat] = row["Description"].replace("Description:", "").strip()
+    with tenant_session(t) as s:
+        gold = s.execute(text("""SELECT dv.document_id, cl.version_id, cl.category, cl.char_start, cl.char_end FROM clause_labels cl
+            JOIN document_versions dv ON dv.id = cl.version_id WHERE cl.category = ANY(:c)"""), {"c": C1_CATEGORIES}).all()
+        chunk_span = {str(r.id): (r.char_start, r.char_end) for r in s.execute(text(
+            "SELECT c.id, c.char_start, c.char_end FROM chunks c JOIN document_versions dv ON dv.id=c.version_id "
+            "WHERE dv.parser_version LIKE '%cuad%'"))}
+    items = defaultdict(list)
+    for g in gold:
+        items[(str(g.document_id), g.category)].append((g.char_start, g.char_end))
+    out = {}
+    for cond, channels in (("lexical", ("lexical",)), ("vector", ("vector",)), ("hybrid_rrf", ("lexical", "vector"))):
+        hits = {1: 0, 3: 0, 5: 0}
+        by_cat = defaultdict(lambda: [0, 0])
+        for (doc, cat), spans in items.items():
+            res = search(t, f"{cat}: {desc.get(cat, cat)}", as_of=FAR, role="viewer", mode="known", channels=channels,
+                         rerank=False, k=5, document_id=doc, n_candidates=30)
+            ranks = [chunk_span[e.chunk_id] for e in res["results"]]
+            first = next((i for i, (a, z) in enumerate(ranks) if any(a < ge and z > gs for gs, ge in spans)), None)
+            for k in hits:
+                hits[k] += int(first is not None and first < k)
+            by_cat[cat][0] += int(first is not None and first < 3)
+            by_cat[cat][1] += 1
+        n = len(items)
+        out[cond] = {"items": n, **{f"hit@{k}": v / n for k, v in hits.items()},
+                     "hit@3_by_category": {c: round(a / b, 3) for c, (a, b) in sorted(by_cat.items())}}
+        log(f"C1 {cond}: hit@1={out[cond]['hit@1']:.3f} hit@3={out[cond]['hit@3']:.3f} hit@5={out[cond]['hit@5']:.3f} (n={n})")
+    return {"study": "C1", "corpus": "CUAD v1 supply/distribution/manufacturing agreements (73 contracts)",
+            "task": "locate expert-labelled clause category within one contract; query = CUAD category description",
+            "chunking": "paragraph-packed windows of about 1,400 characters", "conditions": out}
+
+
 def main():
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=REPO_ROOT).stdout.strip()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    for name, fn in (("R1", r1), ("R2", r2)):
+    import sys
+    wanted = sys.argv[1:] or ["R1", "R2", "C1"]
+    for name, fn in (("R1", r1), ("R2", r2), ("C1", c1)):
+        if name not in wanted:
+            continue
         res = fn()
         d = REPO_ROOT / "artifacts" / "experiments" / f"{name}-{stamp}"
         d.mkdir(parents=True, exist_ok=True)

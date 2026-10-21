@@ -23,6 +23,7 @@ BASE_FILTER = """
   AND :role = ANY(d.allowed_roles)
   AND (:mode = 'known' OR (dv.valid_from <= :eff AND (dv.valid_to IS NULL OR dv.valid_to >= :eff)))
   AND (CAST(:supplier AS text) IS NULL OR d.supplier_id = :supplier)
+  AND (CAST(:doc AS uuid) IS NULL OR d.id = CAST(:doc AS uuid))
 """
 
 SELECT_COLS = """c.id, c.version_id, c.section, c.body, c.char_start, c.char_end, d.id AS document_id,
@@ -62,11 +63,12 @@ def _row_to_evidence(r, score, signals) -> Evidence:
 def search(tenant_id, query: str, *, as_of: datetime, role: str, effective_date: date | None = None,
            mode: Literal["effective", "known"] = "effective", supplier_id: str | None = None,
            entities: list[str] | None = None, k: int = 8, use_vectors: bool = True,
-           channels: tuple[str, ...] = ("lexical", "vector"), rerank: bool = True, n_candidates: int = 30) -> dict:
+           channels: tuple[str, ...] = ("lexical", "vector"), rerank: bool = True, n_candidates: int = 30,
+           document_id: str | None = None) -> dict:
     """`channels` and `rerank` exist for controlled ablations (R1/R2); the product uses the defaults."""
     eff = effective_date or as_of.date()
     use_vectors = use_vectors and "vector" in channels
-    params = {"as_of": as_of, "eff": eff, "mode": mode, "role": role, "supplier": supplier_id, "q": query,
+    params = {"as_of": as_of, "eff": eff, "mode": mode, "role": role, "supplier": supplier_id, "q": query, "doc": document_id,
               "n": n_candidates}
     vectors = embed([query]) if use_vectors else None
     with tenant_session(tenant_id) as s:
