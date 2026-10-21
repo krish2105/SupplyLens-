@@ -6,8 +6,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import clsx from "clsx";
 import {
-  Boxes, ClipboardCheck, Database, FileText, FlaskConical, Gauge, LineChart, LogOut, Monitor, Moon, Settings2, Sparkles, Sun, Workflow,
+  BadgePoundSterling, Boxes, ClipboardCheck, Database, FileText, FlaskConical, Gauge, Globe2, LineChart, LogOut, Microscope, Monitor, Moon,
+  Settings2, ShieldCheck, Siren, Sparkles, Sun, Workflow,
 } from "lucide-react";
+import { CommandPalette } from "@/components/command-palette";
 import { ClockRail } from "@/components/clock-rail";
 import { Loading } from "@/components/ui";
 import { ApiError, post, setTenant } from "@/lib/api";
@@ -15,16 +17,22 @@ import { useMe } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 
 const NAV = [
-  { href: "/", label: "Overview", icon: Gauge },
-  { href: "/data", label: "Data admission", icon: Database },
-  { href: "/inventory", label: "Inventory", icon: Boxes },
-  { href: "/forecast", label: "Forecast lab", icon: LineChart },
-  { href: "/scenarios", label: "Scenario studio", icon: FlaskConical },
-  { href: "/policies", label: "Policies & evidence", icon: FileText },
-  { href: "/runs", label: "Investigations", icon: Workflow },
-  { href: "/approvals", label: "Approvals", icon: ClipboardCheck },
-  { href: "/settings", label: "Settings", icon: Settings2 },
+  { href: "/", label: "Overview", icon: Gauge, group: "Plan" },
+  { href: "/exceptions", label: "Exceptions", icon: Siren, group: "Plan" },
+  { href: "/inventory", label: "Inventory", icon: Boxes, group: "Plan" },
+  { href: "/forecast", label: "Forecast lab", icon: LineChart, group: "Plan" },
+  { href: "/scenarios", label: "Scenario studio", icon: FlaskConical, group: "Plan" },
+  { href: "/runs", label: "Investigations", icon: Workflow, group: "Decide" },
+  { href: "/approvals", label: "Approvals", icon: ClipboardCheck, group: "Decide" },
+  { href: "/policies", label: "Policies & evidence", icon: FileText, group: "Know" },
+  { href: "/market", label: "Supplier market", icon: Globe2, group: "Know" },
+  { href: "/research", label: "Research", icon: Microscope, group: "Prove" },
+  { href: "/value", label: "Value", icon: BadgePoundSterling, group: "Prove" },
+  { href: "/data", label: "Data admission", icon: Database, group: "Govern" },
+  { href: "/admin", label: "Administration", icon: ShieldCheck, group: "Govern" },
+  { href: "/settings", label: "Settings", icon: Settings2, group: "Govern" },
 ];
+const GROUPS = ["Plan", "Decide", "Know", "Prove", "Govern"];
 
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
@@ -72,25 +80,32 @@ function AppShell({ children }: { children: ReactNode }) {
       <a href="#main" className="skip-link">Skip to content</a>
       <div className="flex">
         <nav aria-label="Primary" className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-surface px-3 py-4 lg:flex">
-          <Link href={{ pathname: "/", query: { ws: ctx.ws } }} className="mb-6 flex items-center gap-2 px-2">
+          <Link href={{ pathname: "/", query: { ws: ctx.ws } }} className="mb-5 flex items-center gap-2 px-2">
             <span className="flex size-8 items-center justify-center rounded-lg bg-ink text-bg"><Sparkles className="size-4" aria-hidden /></span>
             <span className="display text-xl font-semibold">SupplyLens</span>
           </Link>
-          <ul className="space-y-0.5">
-            {NAV.map(({ href, label, icon: Icon }) => {
-              const active = href === "/" ? path === "/" : path.startsWith(href);
-              return (
-                <li key={href}>
-                  <Link href={{ pathname: href, query: { ws: ctx.ws } }} aria-current={active ? "page" : undefined}
-                    className={clsx("flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
-                      active ? "bg-accent-soft font-semibold text-accent" : "text-muted hover:bg-surface-2 hover:text-ink")}>
-                    <Icon className="size-4" aria-hidden /> {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-          <div className="mt-auto space-y-3 px-2 text-xs text-muted">
+          <div className="-mr-1 space-y-4 overflow-y-auto pr-1">
+            {GROUPS.map((g) => (
+              <div key={g}>
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">{g}</p>
+                <ul className="space-y-0.5">
+                  {NAV.filter((n) => n.group === g).map(({ href, label, icon: Icon }) => {
+                    const active = href === "/" ? path === "/" : path.startsWith(href);
+                    return (
+                      <li key={href}>
+                        <Link href={{ pathname: href, query: { ws: ctx.ws } }} aria-current={active ? "page" : undefined}
+                          className={clsx("flex items-center gap-3 rounded-lg px-3 py-1.5 text-sm",
+                            active ? "bg-accent-soft font-semibold text-accent" : "text-muted hover:bg-surface-2 hover:text-ink")}>
+                          <Icon className="size-4" aria-hidden /> {label}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <div className="mt-auto space-y-3 px-2 pt-4 text-xs text-muted">
             <p>Signed in as <span className="text-ink">{me.data.user.display_name}</span>{me.data.user.is_dev_account && <> · <span className="text-risk">dev account</span></>}</p>
             <p>Role in workspace: <span className="font-semibold text-ink">{role?.replace("_", " ")}</span></p>
           </div>
@@ -113,7 +128,7 @@ function AppShell({ children }: { children: ReactNode }) {
               {membership && (
                 <span className={clsx("rounded-md px-2 py-1 text-[11px] font-semibold",
                   membership.kind === "demo" ? "bg-sim-soft text-sim" : "bg-accent-soft text-accent")}>
-                  {membership.kind === "demo" ? "Fictional demo data" : "Real sales · simulated operations"}
+                  {membership.kind === "demo" ? "Fictional demo data" : membership.slug === "contract-research" ? "Real public contracts & awards" : "Real sales · simulated operations"}
                 </span>
               )}
               <nav aria-label="Sections" className="flex gap-1 overflow-x-auto lg:hidden">
@@ -122,6 +137,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 ))}
               </nav>
               <div className="ml-auto flex items-center gap-2">
+                <CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} />
                 <ThemeSwitch />
                 <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
                   aria-label="Sign out" title="Sign out"

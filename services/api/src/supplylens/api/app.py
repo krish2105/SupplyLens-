@@ -14,7 +14,7 @@ from ..actions.service import ActionError
 from ..authz import Forbidden
 from ..db import app_engine
 from ..forecasting.service import ForecastError
-from . import routes_core, routes_decisions, routes_market, routes_research
+from . import routes_core, routes_decisions, routes_market, routes_ops, routes_research
 
 log = logging.getLogger("supplylens.api")
 
@@ -24,6 +24,7 @@ app.include_router(routes_core.router)
 app.include_router(routes_decisions.router)
 app.include_router(routes_research.router)
 app.include_router(routes_market.router)
+app.include_router(routes_ops.router)
 
 
 @app.middleware("http")

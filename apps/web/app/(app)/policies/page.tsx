@@ -112,7 +112,7 @@ export default function PoliciesPage() {
         <Card className="p-5">
           <Eyebrow>Documents and versions</Eyebrow>
           {docs.isLoading ? <Loading /> : docs.error ? <ErrorState error={docs.error} /> : (
-            <ul className="mt-3 space-y-3">
+            <ul className="mt-3 max-h-[640px] space-y-3 overflow-auto pr-1" tabIndex={0} aria-label="Documents, scrollable">
               {bySupplier.map((versions) => (
                 <li key={versions[0]!.document_id} className="rounded-xl border border-line p-3">
                   <div className="flex items-center justify-between gap-2">
@@ -154,12 +154,18 @@ function useVersion(id: string, ws: string) {
   return useTenantQuery<Version>(["version", id], `/api/v1/documents/versions/${id}`);
 }
 
+type Label = { category: string; char_start: number; char_end: number; text: string; source: string };
+
 function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: string }) {
   const v = useVersion(id, ws);
+  const labels = useTenantQuery<Label[]>(["labels", id], `/api/v1/documents/versions/${id}/labels`);
+  const [label, setLabel] = useState<Label | null>(null);
   if (v.isLoading) return <Card className="p-5"><Loading /></Card>;
   if (v.error || !v.data) return <Card className="p-5"><ErrorState error={v.error} /></Card>;
-  const h = v.data.chunks.find((c) => c.id === highlight);
+  const hc = v.data.chunks.find((c) => c.id === highlight);
+  const h = label ? { char_start: label.char_start, char_end: label.char_end } : hc;
   const t = v.data.text;
+  const cats = Array.from(new Set((labels.data ?? []).map((l) => l.category))).filter((c) => !["Document Name", "Parties"].includes(c));
   return (
     <Card className="p-5">
       <Eyebrow>{v.data.title} — {v.data.version_label}</Eyebrow>
@@ -170,7 +176,7 @@ function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: str
         ["Embeddings", v.data.embed_model ?? "none (lexical only)"],
       ]} /></div>
       <pre tabIndex={0} aria-label="Document text, scrollable" className="mt-4 max-h-[460px] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-[13px] leading-relaxed">
-        {h ? <>{t.slice(0, h.char_start)}<mark className="rounded bg-risk-soft px-0.5 text-ink">{t.slice(h.char_start, h.char_end)}</mark>{t.slice(h.char_end)}</> : t}
+        {h ? <>{t.slice(0, h.char_start)}<mark ref={(el) => { const pre = el?.closest("pre"); if (el && pre) pre.scrollTop = el.offsetTop - pre.offsetTop - 80; }} className="rounded bg-risk-soft px-0.5 text-ink">{t.slice(h.char_start, h.char_end)}</mark>{t.slice(h.char_end)}</> : t}
       </pre>
     </Card>
   );

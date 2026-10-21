@@ -31,6 +31,7 @@ export default function OverviewPage() {
   useEffect(() => setGl(webglAvailable() && window.innerWidth >= 768), []);
 
   if (ov.error) return <ErrorState error={ov.error} retry={() => ov.refetch()} />;
+  if (ov.data && !ov.data.settings) return <ResearchHome o={ov.data} ws={ws} docs={docs.data?.length ?? 0} />;
   const items = inv.data?.items ?? [];
   const risk = items.filter((i) => i.health === "shortage_risk");
   const excess = items.filter((i) => i.health === "excess");
@@ -171,6 +172,45 @@ export default function OverviewPage() {
             Simulated inputs come from assumption set <span className="num">{o.assumption_set.name} v{o.assumption_set.version}</span>. Budget {money(Number(o.settings?.planning?.weekly_budget_minor ?? 0), currency)} per run <Provenance kind="assumed" />.
           </p>
         )}
+      </Card>
+    </div>
+  );
+}
+
+
+function ResearchHome({ o, ws, docs }: { o: Overview; ws: string; docs: number }) {
+  const links = [
+    { href: "/policies", title: "Search real contracts", body: "73 CUAD supply and distribution agreements with 2,176 expert clause labels, plus the 3,931-clause ACORD corpus." },
+    { href: "/market", title: "Explore the supplier market", body: "World Bank investment-project awards: who wins, where, and how concentrated each category is." },
+    { href: "/research", title: "Read the measured results", body: "Forecasting, simulation, retrieval, InventoryBench and agent studies, read straight from their artifacts." },
+  ];
+  return (
+    <div className="space-y-8">
+      <section aria-labelledby="rh" className="py-2">
+        <Eyebrow>Contract research workspace · public data only</Eyebrow>
+        <h1 id="rh" className="display mt-2 max-w-4xl text-[clamp(2.1rem,4.2vw,3.4rem)] font-semibold leading-[1.04]">
+          {docs} contract documents and {o.dataset ? int(o.dataset.totals?.rows ?? 0) : "—"} public awards, kept apart from any company&apos;s stock.
+        </h1>
+        <p className="mt-4 max-w-2xl text-[15px] text-muted">
+          This workspace holds openly licensed corpora (CC BY 4.0) for retrieval research and market context. Nothing here is joined to the UCI retailer or to fictional suppliers.
+        </p>
+      </section>
+      <div className="grid gap-4 md:grid-cols-3">
+        {links.map((l) => (
+          <Link key={l.href} href={{ pathname: l.href, query: { ws } }} className="card group p-5 transition-colors hover:border-accent">
+            <p className="display text-xl font-semibold">{l.title} <ArrowRight className="inline size-4 transition-transform group-hover:translate-x-0.5" aria-hidden /></p>
+            <p className="mt-2 text-sm text-muted">{l.body}</p>
+          </Link>
+        ))}
+      </div>
+      <Card className="p-5">
+        <Eyebrow>What this data can answer</Eyebrow>
+        <ul className="mt-3 grid gap-2 md:grid-cols-2">
+          <li className="text-sm">Clause retrieval and citation research <Status value="available" /></li>
+          <li className="text-sm">Public procurement award patterns <Status value="available" /></li>
+          <li className="text-sm">Stock, forecasts or purchase orders <Status value="unavailable" /></li>
+          <li className="text-sm">Supplier performance or lead times <Status value="unavailable" /></li>
+        </ul>
       </Card>
     </div>
   );

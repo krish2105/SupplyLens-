@@ -3,7 +3,7 @@
 // days of cover (capped at 60), colour encodes the same health status as the table.
 // frameloop="demand" means nothing renders while idle; no auto-rotation.
 import { Canvas, invalidate, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Html, OrbitControls } from "@react-three/drei";
+import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
@@ -27,10 +27,10 @@ export function webglAvailable() {
   } catch { return false; }
 }
 
-function Rack({ item, selected, onSelect, colors }: { item: InventoryItem; selected: boolean; onSelect: (s: string) => void; colors: Record<string, string> }) {
+function Rack({ item, selected, hover, onSelect, onHover, colors }: { item: InventoryItem; selected: boolean; hover: boolean;
+  onSelect: (s: string) => void; onHover: (s: string | null) => void; colors: Record<string, string> }) {
   const cover = item.days_of_cover == null ? 0 : Math.min(item.days_of_cover, MAX_COVER);
   const h = Math.max(0.12, (cover / MAX_COVER) * MAX_H);
-  const [hover, setHover] = useState(false);
   const color = colors[item.health] ?? colors.default;
   return (
     <group position={[item.x ?? 0, 0, item.z ?? 0]}>
@@ -42,21 +42,12 @@ function Rack({ item, selected, onSelect, colors }: { item: InventoryItem; selec
       {/* stock column */}
       <mesh position={[0, h / 2, 0]} castShadow
         onClick={(e: ThreeEvent<MouseEvent>) => { e.stopPropagation(); onSelect(item.sku_id); }}
-        onPointerOver={(e) => { e.stopPropagation(); setHover(true); document.body.style.cursor = "pointer"; invalidate(); }}
-        onPointerOut={() => { setHover(false); document.body.style.cursor = ""; invalidate(); }}>
+        onPointerOver={(e) => { e.stopPropagation(); onHover(item.sku_id); document.body.style.cursor = "pointer"; invalidate(); }}
+        onPointerOut={() => { onHover(null); document.body.style.cursor = ""; invalidate(); }}>
         <boxGeometry args={[1.4, h, 0.85]} />
-        <meshStandardMaterial color={color} emissive={selected ? color : "#000000"} emissiveIntensity={selected ? 0.45 : 0}
+        <meshStandardMaterial color={color} emissive={selected || hover ? color : "#000000"} emissiveIntensity={selected ? 0.45 : hover ? 0.2 : 0}
           roughness={0.55} metalness={0.05} />
       </mesh>
-      {(selected || hover) && (
-        <Html position={[0, MAX_H + 0.5, 0]} center distanceFactor={14} zIndexRange={[20, 0]}>
-          <div className="pointer-events-none whitespace-nowrap rounded-lg border border-line bg-surface px-2.5 py-1.5 text-xs shadow-lg">
-            <div className="num font-semibold">{item.sku_id} · slot {item.slot_id}</div>
-            <div className="text-muted">{item.description.slice(0, 32)}</div>
-            <div className="num">{int(item.available)} {item.unit} available · {item.days_of_cover == null ? "no sales data" : `${num(item.days_of_cover)} d cover`}</div>
-          </div>
-        </Html>
-      )}
     </group>
   );
 }
@@ -78,6 +69,7 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460 }:
 }) {
   const { resolvedTheme } = useTheme();
   const controls = useRef<OrbitControlsImpl | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
   const placed = items.filter((i) => i.x != null && i.z != null);
   const center = useMemo(() => {
     if (!placed.length) return [0, 0, 0] as [number, number, number];
@@ -123,7 +115,8 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460 }:
         </mesh>
         <gridHelper args={[80, 40, colors.grid, colors.grid]} position={[center[0], 0, center[2]]} />
         {placed.map((it) => (
-          <Rack key={it.sku_id} item={it} selected={it.sku_id === selected} onSelect={onSelect} colors={colors} />
+          <Rack key={it.sku_id} item={it} selected={it.sku_id === selected} hover={it.sku_id === hovered} onSelect={onSelect}
+            onHover={setHovered} colors={colors} />
         ))}
         <OrbitControls ref={controls as never} target={center} makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.15}
           minDistance={6} maxDistance={80} onChange={() => invalidate()} />
@@ -133,6 +126,17 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460 }:
         <Button size="sm" variant="outline" onClick={focus} disabled={!selected}><Crosshair className="size-3.5" aria-hidden /> Focus selected</Button>
         <Button size="sm" variant="outline" onClick={() => onSelect(null)} disabled={!selected}><X className="size-3.5" aria-hidden /> Clear selection</Button>
       </div>
+      {(() => {
+        // Plain DOM overlay (outside the WebGL tree) for the hovered or selected rack.
+        const it = placed.find((i) => i.sku_id === (hovered ?? selected));
+        return it ? (
+          <div className="pointer-events-none absolute right-3 top-3 max-w-[260px] rounded-lg border border-line bg-surface/95 px-3 py-2 text-xs shadow-lg" aria-live="polite">
+            <div className="num font-semibold">{it.sku_id} · slot {it.slot_id}</div>
+            <div className="truncate text-muted">{it.description}</div>
+            <div className="num mt-0.5">{int(it.available)} {it.unit} available · {it.days_of_cover == null ? "no sales data" : `${num(it.days_of_cover)} d cover`}</div>
+          </div>
+        ) : null;
+      })()}
       <div className="absolute bottom-3 left-3 rounded-lg border border-line bg-surface/90 px-3 py-2 text-[11px] text-muted">
         <span className="font-semibold text-ink">Schematic</span> — generated layout, not measured geometry. Column height = days of cover (max {MAX_COVER}).
         <div className="mt-1 flex flex-wrap gap-3">

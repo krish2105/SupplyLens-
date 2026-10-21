@@ -42,4 +42,6 @@ def generic_study(study: str, a: Actor = Depends(actor)):
     d = _latest(study.upper())
     if d is None:
         return {"available": False, "message": f"No completed {study} study yet."}
-    return {"available": True, **json.loads((d / "metrics.json").read_text())}
+    m = json.loads((d / "metrics.json").read_text())
+    m.pop("results", None) if study.upper() == "AGT" else None  # per-trial detail stays in the artifact
+    return {"available": True, **m}
