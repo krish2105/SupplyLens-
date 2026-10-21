@@ -1,0 +1,45 @@
+# Local container stack: postgres (pgvector), one-shot migrate+seed, api, worker, web.
+# Embeddings need Ollama on the host (OLLAMA_URL); without it retrieval runs lexical-only and says so.
+name: supplylens
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_PASSWORD: postgres_dev_only
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d supplylens"]
+      interval: 5s
+      retries: 20
+  migrate:
+    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
+    environment: &env
+      SUPPLYLENS_DATABASE_URL: postgresql+psycopg://supplylens_app:supplylens_app_dev@db:5432/supplylens
+      SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@db:5432/supplylens
+      SUPPLYLENS_OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      SUPPLYLENS_STORAGE_DIR: /app/storage
+      SUPPLYLENS_SESSION_SECRET: ${SUPPLYLENS_SESSION_SECRET:-dev-only-change-me}
+    command: ["sh", "-c", "alembic -c services/api/alembic.ini upgrade head && python -m supplylens.bootstrap"]
+    volumes: [storage:/app/storage, ./data/raw:/app/data/raw:ro, ./artifacts:/app/artifacts]
+    depends_on: { db: { condition: service_healthy } }
+  api:
+    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
+    environment: *env
+    volumes: [storage:/app/storage, ./artifacts:/app/artifacts:ro]
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    ports: ["8000:8000"]
+  worker:
+    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
+    environment: *env
+    command: ["python", "-m", "supplylens_worker.main"]
+    volumes: [storage:/app/storage, ./artifacts:/app/artifacts:ro]
+    depends_on: { migrate: { condition: service_completed_successfully } }
+  web:
+    build: { context: ., dockerfile: infra/docker/web.Dockerfile, args: { SUPPLYLENS_API_URL: "http://api:8000" } }
+    ports: ["3100:3100"]
+    depends_on: { api: { condition: service_healthy } }
+volumes:
+  pgdata: {}
+  storage: {}

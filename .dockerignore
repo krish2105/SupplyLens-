@@ -1,0 +1,13 @@
+.venv
+**/node_modules
+apps/web/.next
+apps/web/.next-build
+apps/web/test-results
+storage
+storage_test
+data/raw
+data/bronze
+SupplyLens_Starter_Pack
+SupplyLens_Starter_Updated_Datasets
+*.zip
+.git

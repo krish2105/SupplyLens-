@@ -117,3 +117,14 @@ def test_document_and_evidence_endpoints(client):
     labels = {(r["supplier_id"], r["version_label"]) for r in ev["results"]}
     assert ("DEMO-REF-A", "amendment v2") not in labels   # known but not yet effective
     assert ev["answer"]["claims"][0]["citation"]["version_id"]
+
+
+def test_costly_endpoints_are_rate_limited(client):
+    from supplylens.api import ratelimit
+    ratelimit._BUCKETS.clear()
+    login(client, "planner")
+    codes = [client.post("/api/v1/forecasts", json={"sku_ids": ["X"]}, headers={**H, "Idempotency-Key": f"rl{i}"}).status_code
+             for i in range(40)]
+    # The limit is checked before the handler: the first 30 reach it (422: no sales in demo), then 429.
+    assert codes[:30] == [422] * 30 and set(codes[30:]) == {429}
+    ratelimit._BUCKETS.clear()

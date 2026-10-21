@@ -1,0 +1,34 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 20
+    env: { PGHOST: localhost, PGUSER: postgres, PGPASSWORD: postgres }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: databases and roles
+        run: |
+          psql -c "CREATE ROLE supplylens_owner LOGIN PASSWORD 'supplylens_owner_dev'" -c "CREATE ROLE supplylens_app LOGIN PASSWORD 'supplylens_app_dev' NOBYPASSRLS"
+          psql -c "CREATE DATABASE supplylens_test OWNER supplylens_owner"
+          psql -d supplylens_test -c "CREATE EXTENSION vector" -c "GRANT CONNECT ON DATABASE supplylens_test TO supplylens_app"
+          SUPPLYLENS_MIGRATION_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens_test uv run alembic -c services/api/alembic.ini upgrade head
+      - run: uv run pytest -q
+  contracts-and-web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: uv sync --frozen && npm --prefix apps/web ci
+      - run: ./scripts/check_contracts.sh
+      - run: npm --prefix apps/web run typecheck
+      - run: cd apps/web && NEXT_DIST_DIR=.next-build npx next build

@@ -23,6 +23,7 @@ from ..knowledge.retrieve import search
 from ..planning.scenario import ScenarioInput, run_scenario
 from ..planning.terms_service import applicable_terms
 from .deps import actor, csrf_guard, idempotent
+from .ratelimit import limit
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
@@ -46,7 +47,7 @@ class ForecastIn(BaseModel):
 
 
 @router.post("/forecasts")
-def create_forecast(body: ForecastIn, a: Actor = Depends(actor)):
+def create_forecast(body: ForecastIn, a: Actor = Depends(limit("forecast", 30))):
     a.require("forecast.run")
     with tenant_session(a.tenant_id) as s:
         st = _settings(s)
@@ -130,7 +131,7 @@ def document_version(version_id: str, a: Actor = Depends(actor)):
 
 @router.get("/evidence/search")
 def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: date | None = None,
-             mode: str = "effective", supplier_id: str | None = None, k: int = 8, a: Actor = Depends(actor)):
+             mode: str = "effective", supplier_id: str | None = None, k: int = 8, a: Actor = Depends(limit("search", 120))):
     a.require("read")
     if mode not in ("effective", "known") or not q.strip() or len(q) > 500:
         raise HTTPException(422, {"code": "invalid_query", "message": "query 1-500 chars; mode effective|known"})
@@ -156,7 +157,7 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
 
 
 @router.post("/scenarios")
-def scenarios(body: ScenarioInput, a: Actor = Depends(actor)):
+def scenarios(body: ScenarioInput, a: Actor = Depends(limit("scenario", 20))):
     try:
         return run_scenario(a, body)
     except ValueError as e:
@@ -183,7 +184,7 @@ class AgentRunIn(BaseModel):
 
 
 @router.post("/agent-runs", status_code=202)
-def start_run(body: AgentRunIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
+def start_run(body: AgentRunIn, a: Actor = Depends(limit("agent_run", 30)), idempotency_key: str | None = Header(None)):
     def do():
         run_id = create_run(a, mode=body.mode, inp=body.model_dump(mode="json", exclude_none=True))
         return 202, {"run_id": str(run_id), "status": "QUEUED", "status_url": f"/api/v1/agent-runs/{run_id}",
