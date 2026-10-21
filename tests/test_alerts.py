@@ -4,7 +4,7 @@ import hashlib
 import hmac
 import json
 import threading
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 import pytest
@@ -109,13 +109,13 @@ def test_stale_data_alert_follows_the_workspace_rule_and_clears_when_fresh(world
     assert alerts.evaluate(t, check_models=False)["raised"] == []          # no freshness rule configured: silent
     with tenant_session(t) as s:
         s.execute(text("UPDATE tenant_settings SET planning = planning || '{\"alerts\": {\"stale_data_days\": 2}}'::jsonb"))
-    now = datetime(2027, 2, 20, tzinfo=timezone.utc)     # 5 days after the Demo as-of (2027-02-15 18:00)
+    now = datetime(2027, 2, 20, tzinfo=UTC)     # 5 days after the Demo as-of (2027-02-15 18:00)
     out = alerts.evaluate(t, now=now, check_models=False)
     assert out["raised"] == ["stale_data:operational"]
     assert open_alerts("stale_data")[0]["detail"]["age_days"] > 4
     alerts.evaluate(t, now=now, check_models=False)                         # still stale: same alert, bumped
     assert open_alerts("stale_data")[0]["occurrences"] == 2
-    fresh = alerts.evaluate(t, now=datetime(2027, 2, 16, tzinfo=timezone.utc), check_models=False)
+    fresh = alerts.evaluate(t, now=datetime(2027, 2, 16, tzinfo=UTC), check_models=False)
     assert fresh["resolved"] == 1 and open_alerts("stale_data") == []
 
 

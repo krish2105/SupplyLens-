@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from decimal import Decimal
 
 from sqlalchemy import text
@@ -16,8 +16,8 @@ from ..knowledge.ingest import ingest_document
 OPS = REPO_ROOT / "data" / "synthetic" / "operations"
 CONTRACTS = REPO_ROOT / "knowledge" / "synthetic_contracts"
 REF = REPO_ROOT / "fixtures" / "reference_case"
-DEMO_AS_OF = datetime(2027, 2, 15, 18, 0, tzinfo=timezone.utc)
-REF_KNOWN = datetime(2026, 1, 1, tzinfo=timezone.utc)
+DEMO_AS_OF = datetime(2027, 2, 15, 18, 0, tzinfo=UTC)
+REF_KNOWN = datetime(2026, 1, 1, tzinfo=UTC)
 
 
 def _csv(name):
@@ -49,7 +49,7 @@ def load(tenant_id) -> dict:
     for key, title, label, eff, known, sup, prior_key in [
         ("A1", "Reference Supplier A agreement", "v1", date(2026, 1, 1), REF_KNOWN, "DEMO-REF-A", None),
         ("A2", "Reference Supplier A agreement", "amendment v2", date(2026, 10, 20),
-         datetime(2026, 10, 15, 9, tzinfo=timezone.utc), "DEMO-REF-A", "A1"),
+         datetime(2026, 10, 15, 9, tzinfo=UTC), "DEMO-REF-A", "A1"),
         ("B1", "Reference Supplier B agreement", "v1", date(2026, 1, 1), REF_KNOWN, "DEMO-REF-B", None),
     ]:
         fname = {"A1": "supplier-A-v1.txt", "A2": "supplier-A-amendment-v2.txt", "B1": "supplier-B-v1.txt"}[key]
@@ -92,7 +92,7 @@ def load(tenant_id) -> dict:
                  "c": _minor(r["unit_cost_gbp"]), "cur": r["currency"], "m": int(r["minimum_order_quantity"]),
                  "mu": int(r["order_multiple"]), "lt": int(r["lead_time_days"]),
                  "vf": r["effective_from"], "vt": r["effective_to"] or None,
-                 "ka": doc[2] if doc else datetime(2026, 12, 1, 9, tzinfo=timezone.utc),
+                 "ka": doc[2] if doc else datetime(2026, 12, 1, 9, tzinfo=UTC),
                  "v": doc[0] if doc else None, "sec": "Preamble" if doc else None, "sup": supersedes})
         for tid, sup, moq, mult, cost, vf, key, supersedes in [
             ("REF-A-v1", "DEMO-REF-A", 20, 10, 500, "2026-01-01", "A1", None),

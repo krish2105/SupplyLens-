@@ -7,26 +7,26 @@ import { ArrowRight, CalendarClock, FileWarning } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
 import { Card, Empty, ErrorState, Eyebrow, Provenance, Skeleton, Stat, Status } from "@/components/ui";
-import { webglAvailable } from "@/components/warehouse3d";
-import { useTenantQuery, useWs, type InventoryItem, type Overview } from "@/lib/queries";
+import { GLBoundary, GLNotice } from "@/components/gl-boundary";
+import { webglAvailable } from "@/lib/webgl";
+import { useApi, useWs, type Overview } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
-import { day, int, money, short } from "@/lib/format";
+import { atOrBefore, day, int, money, short } from "@/lib/format";
 
 const Warehouse3D = dynamic(() => import("@/components/warehouse3d"), { ssr: false, loading: () => <Skeleton className="h-[460px]" /> });
-
-type Doc = { version_id: string; title: string; version_label: string; known_at: string; valid_from: string; supplier_id: string | null; doc_type: string };
-type Run = { id: string; status: string; mode: string; created_at: string; created_by: string; actions: number };
 
 export default function OverviewPage() {
   const ws = useWs();
   const [ctx, setCtx] = usePlanningContext();
   const { known, eff } = useDecisionClock();
   const reduce = useReducedMotion();
-  const ov = useTenantQuery<Overview>(["overview"], "/api/v1/overview");
-  const inv = useTenantQuery<{ effective_date: string; items: InventoryItem[] }>(["inventory", eff], eff ? `/api/v1/inventory?effective_date=${eff}` : null);
-  const docs = useTenantQuery<Doc[]>(["documents"], "/api/v1/documents");
-  const runs = useTenantQuery<Run[]>(["runs"], "/api/v1/agent-runs");
+  const ov = useApi(["overview"], "/api/v1/overview");
+  // No dependency on the overview response: the API defaults to the workspace as-of unless the user replays another date.
+  const inv = useApi(["inventory", ctx.eff ?? "workspace"], "/api/v1/inventory", { query: { effective_date: ctx.eff } });
+  const docs = useApi(["documents"], "/api/v1/documents");
+  const runs = useApi(["runs"], "/api/v1/agent-runs");
   const [gl, setGl] = useState<boolean | null>(null);
+  const [glFailed, setGlFailed] = useState(false);
   // Constrained devices default to the 2D floor plan (UX-005); WebGL failure always does.
   useEffect(() => setGl(webglAvailable() && window.innerWidth >= 768), []);
 
@@ -37,7 +37,7 @@ export default function OverviewPage() {
   const excess = items.filter((i) => i.health === "excess");
   const o = ov.data;
   const currency = o?.settings?.currency ?? "GBP";
-  const upcoming = (docs.data ?? []).filter((d) => known && eff && d.known_at <= known && d.valid_from > eff);
+  const upcoming = (docs.data ?? []).filter((d) => known && eff && atOrBefore(d.known_at, known) && d.valid_from > eff);
   const pending = o?.actions_by_status?.PENDING_APPROVAL ?? 0;
 
   return (
@@ -50,10 +50,10 @@ export default function OverviewPage() {
               <motion.h1 id="hero" className="display mt-2 text-[clamp(2.1rem,4.2vw,3.6rem)] font-semibold leading-[1.02]"
                 initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}>
                 {risk.length > 0 ? (
-                  <><span className="text-danger">{risk.length}</span> of {items.length} stocked products have under a week of cover on {day(eff)}.</>
+                  <><span className="text-danger">{risk.length}</span> of {items.length} stocked products have under a week of cover on {day(inv.data?.effective_date ?? eff)}.</>
                 ) : items.length ? (
-                  <>No stocked product is under a week of cover on {day(eff)}.</>
-                ) : <>No stock positions are recorded at {day(eff)}.</>}
+                  <>No stocked product is under a week of cover on {day(inv.data?.effective_date ?? eff)}.</>
+                ) : <>No stock positions are recorded at {day(inv.data?.effective_date ?? eff)}.</>}
               </motion.h1>
             )}
             <p className="mt-4 max-w-xl text-[15px] text-muted">
@@ -78,13 +78,16 @@ export default function OverviewPage() {
         </div>
         <Card className="overflow-hidden p-0">
           {inv.error ? <div className="p-4"><ErrorState error={inv.error} /></div> :
-            gl === false ? (
+            gl === false || glFailed ? (
               <div className="p-4">
+                {glFailed && <GLNotice />}
                 <p className="mb-3 text-sm text-muted">Showing the 2D floor plan (small screen or WebGL unavailable). It shows the same records as the 3D view.</p>
                 <FloorPlan items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} />
               </div>
             ) : gl === null || inv.isLoading ? <Skeleton className="h-[460px]" /> : items.length ? (
-              <Warehouse3D items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} />
+              <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
+                <Warehouse3D items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} onFail={() => setGlFailed(true)} />
+              </GLBoundary>
             ) : <div className="p-6"><Empty title="No stock positions at this date">Move “In force on” to a date with a recorded snapshot.</Empty></div>}
           {ctx.sku && (() => {
             const it = items.find((i) => i.sku_id === ctx.sku);
@@ -108,15 +111,15 @@ export default function OverviewPage() {
             <div className="mt-3 space-y-3">
               <p className="font-semibold">{o.dataset.name} <span className="text-muted">· {o.dataset.license}</span></p>
               <dl className="divide-y divide-line rounded-xl border border-line">
-                {([["Accepted sales", o.dataset.totals.accepted, "observed"], ["Returns & cancellations", o.dataset.totals.returned, null],
-                   ["Quarantined", o.dataset.totals.quarantined, null]] as const).map(([label, v, kind]) => (
+                {([["Accepted sales", o.dataset.totals?.accepted, "observed"], ["Returns & cancellations", o.dataset.totals?.returned, null],
+                   ["Quarantined", o.dataset.totals?.quarantined, null]] as const).map(([label, v, kind]) => (
                   <div key={label} className="flex items-center justify-between gap-3 px-3 py-2">
                     <dt className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted">{label}{kind && <Provenance kind={kind} />}</dt>
                     <dd className="num shrink-0 text-lg font-semibold">{int(v)}</dd>
                   </div>
                 ))}
               </dl>
-              <p className="text-xs text-muted">{int(o.dataset.totals.input_rows)} source rows, {day(o.dataset.date_span[0])} to {day(o.dataset.date_span[1])}. SHA-256 <span className="num">{short(o.dataset.sha256, 12)}</span>.</p>
+              <p className="text-xs text-muted">{int(o.dataset.totals?.input_rows)} source rows, {day(o.dataset.date_span?.[0])} to {day(o.dataset.date_span?.[1])}. SHA-256 <span className="num">{short(o.dataset.sha256, 12)}</span>.</p>
               <Link href={{ pathname: "/data", query: { ws } }} className="text-sm text-accent underline-offset-2 hover:underline">See reconciliation</Link>
             </div>
           ) : <p className="mt-3 text-sm text-muted">No sales dataset in this workspace. It uses the execution pack&apos;s fictional fixtures, so forecasting is unavailable here.</p>}
@@ -148,7 +151,7 @@ export default function OverviewPage() {
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-3 text-sm text-muted">No document known by the cutoff takes effect after {day(eff)}.</p>}
+          ) : <p className="mt-3 text-sm text-muted">No document known by the cutoff takes effect after {day(inv.data?.effective_date ?? eff)}.</p>}
           <Link href={{ pathname: "/policies", query: { ws } }} className="mt-4 inline-block text-sm text-accent underline-offset-2 hover:underline">Open policies</Link>
         </Card>
       </div>

@@ -19,3 +19,14 @@ export function dateTime(d: string | null | undefined) {
   return new Date(d).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
 }
 export const short = (id: string | null | undefined, n = 8) => (id ? id.slice(0, n) : "—");
+
+export function bytes(n: number | null | undefined) {
+  if (n == null) return "—";
+  const u = ["B", "KB", "MB", "GB"];
+  let i = 0, v = n;
+  while (v >= 1024 && i < u.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(i ? 1 : 0)} ${u[i]}`;
+}
+
+/** a <= b for ISO timestamps. Never compare timestamp strings directly: "…Z" and "…+00:00" sort differently. */
+export const atOrBefore = (a: string, b: string) => Date.parse(a) <= Date.parse(b);

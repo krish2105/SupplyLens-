@@ -1,16 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Stat, Status } from "@/components/ui";
-import { useTenantQuery } from "@/lib/queries";
+import { useApi } from "@/lib/queries";
 import { dateTime, day, int, money } from "@/lib/format";
 
-type Dataset = {
-  id: string; name: string; source_kind: string; license: string; source_url: string | null; file_name: string; sha256: string;
-  bytes: number; schema_version: string; status: string; created_at: string;
-  report: { totals: Record<string, number>; sheets: Record<string, { input_rows: number; accepted: number; returned: number; quarantined: number; quarantine_reasons: Record<string, number> }>;
-    date_span: [string, string]; distinct_skus_accepted: number; distinct_customers: number; missing_customer_id_rows: number; notes: string[]; doi?: string };
-};
-type Quarantine = { summary: { reason: string; n: number }[]; rows: { id: number; source_sheet: string; source_row: number; reason: string; raw: Record<string, unknown> }[]; next_cursor: number | null };
 
 const REASON_COPY: Record<string, string> = {
   cross_sheet_overlap: "Invoice already present in the earlier sheet (1–9 Dec 2010 appears in both); counted once.",
@@ -23,10 +16,10 @@ const REASON_COPY: Record<string, string> = {
 };
 
 export default function DataPage() {
-  const ds = useTenantQuery<Dataset[]>(["datasets"], "/api/v1/datasets");
+  const ds = useApi(["datasets"], "/api/v1/datasets");
   const d = ds.data?.[0];
   const [reason, setReason] = useState<string | null>(null);
-  const q = useTenantQuery<Quarantine>(["quarantine", d?.id, reason], d ? `/api/v1/datasets/${d.id}/quarantine?limit=25${reason ? `&reason=${reason}` : ""}` : null);
+  const q = useApi(["quarantine", d?.id, reason], d ? "/api/v1/datasets/{dataset_id}/quarantine" : null, { path: { dataset_id: d?.id ?? "" }, query: { limit: 25, reason } });
 
   if (ds.isLoading) return <Loading label="Loading datasets" />;
   if (ds.error) return <ErrorState error={ds.error} retry={() => ds.refetch()} />;
@@ -71,7 +64,7 @@ export default function DataPage() {
           <Eyebrow>Provenance and rights</Eyebrow>
           <div className="mt-3">
             <KV items={[
-              ["Source", d.source_url ? <a className="text-accent underline-offset-2 hover:underline" href={d.source_url} target="_blank" rel="noreferrer">UCI Machine Learning Repository</a> : "—"],
+              ["Source", d.source_url ? <a className="text-accent underline-offset-2 hover:underline" href={/^https?:\/\//.test(d.source_url) ? d.source_url : undefined} target="_blank" rel="noreferrer noopener">UCI Machine Learning Repository</a> : "—"],
               ["DOI", d.report.doi ?? "—"],
               ["Licence", <span key="l">{d.license} <span className="text-muted">— attribution required; redistribution allowed with credit</span></span>],
               ["File", <Mono key="f">{d.file_name}</Mono>],

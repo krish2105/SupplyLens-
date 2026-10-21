@@ -4,7 +4,7 @@ Data lives in the Demo workspace; probes come from the UCI Research workspace or
 without the permission. Expected: zero rows, chunks, actions or metadata disclosed.
 """
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from fastapi.testclient import TestClient
@@ -29,6 +29,7 @@ def login(c, role):
 @pytest.fixture(scope="module")
 def world():
     from conftest import TENANT_TABLES_CLEAR_ORDER  # noqa: F401  (ensures conftest env applied)
+
     from supplylens.db import admin_engine
     from supplylens.seed import seed, tenant_id
     seed()
@@ -212,6 +213,6 @@ def test_no_tenant_context_sees_no_rows(world):
 
 
 def test_vector_retrieval_never_crosses_tenants(world):
-    res = search(world["uci"], "minimum order quantity reference component", as_of=datetime(2100, 1, 1, tzinfo=timezone.utc),
+    res = search(world["uci"], "minimum order quantity reference component", as_of=datetime(2100, 1, 1, tzinfo=UTC),
                  role="planner", mode="known", effective_date=date(2026, 10, 20), k=20)
     assert all("Reference" not in r.title for r in res["results"])

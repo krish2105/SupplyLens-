@@ -5,6 +5,7 @@ Run: uv run python -m supplylens_worker.main [--once]
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import socket
 import threading
@@ -37,7 +38,7 @@ def refresh_runs(tenant_id) -> None:
                 s.execute(text("INSERT INTO agent_events (tenant_id, run_id, node, kind, summary, data) VALUES "
                                "(:t,:r,'VERIFY','run_finished',:m,CAST(:d AS jsonb))"),
                           {"t": tenant_id, "r": r.id, "m": f"Actions settled: {', '.join(sorted(st))}",
-                           "d": '{"statuses": %s}' % str(sorted(st)).replace("'", '"')})
+                           "d": json.dumps({"statuses": sorted(st)})})
 
 
 def run_job(tenant_id, job: dict) -> None:
@@ -66,7 +67,7 @@ def _run_job(tenant_id, job: dict) -> None:
                                                       "rows_deleted": sum(cert["rows_deleted"].values())})
         else:
             jobs.finish(tenant_id, job, "FAILED", error=f"unknown job kind {job['kind']}")
-    except Exception as e:  # noqa: BLE001 - recorded on the job
+    except Exception as e:
         log.exception("job failed")
         jobs.finish(tenant_id, job, "FAILED", error=f"{type(e).__name__}: {e}")
     finally:
@@ -85,7 +86,7 @@ def alert_tick(tenant_id) -> None:
         _last_alert_eval[tenant_id] = now
         try:
             alerts.evaluate(tenant_id)
-        except Exception:  # noqa: BLE001 - monitoring must not stop the worker
+        except Exception:
             log.exception("alert evaluation failed")
 
 

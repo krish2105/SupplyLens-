@@ -5,17 +5,13 @@ import { AlertTriangle } from "lucide-react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { post } from "@/lib/api";
-import { useMe, useTenantQuery, useWs, type Overview } from "@/lib/queries";
+import { apiPost } from "@/lib/api";
+import type { Schemas } from "@/lib/contract";
+import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, int, money, num } from "@/lib/format";
 
 type Inputs = { demand_multiplier: number; supplier_delay_days: number; budget_minor: number; safety_days: number; coverage_days: number };
-type Result = {
-  scenario_id: string; name: string; inputs: Record<string, any>; forecast_run_id: string;
-  plan: { status: string; lines: any[]; explanation?: string[]; total_minor?: number; shortfall?: Record<string, number> };
-  metrics: { skus_assessed: number; skus_needing_order: number; units_ordered: number; spend_minor: number; shortfall_units: number; projected_q50_coverage: number | null; metric_note: string };
-  terms: { applicable: number; ignored: unknown[]; conflicts: string[][] };
-};
+type Result = Schemas["ScenarioResult"];
 
 const CONTROLS: { k: keyof Inputs; label: string; unit: string; min: number; max: number; step: number; scale?: number }[] = [
   { k: "demand_multiplier", label: "Demand multiplier", unit: "× forecast median", min: 0.5, max: 2, step: 0.05 },
@@ -31,8 +27,8 @@ export default function ScenariosPage() {
   const me = useMe();
   const role = me.data?.memberships.find((m) => m.slug === ws)?.role;
   const { known, eff } = useDecisionClock();
-  const ov = useTenantQuery<Overview>(["overview"], "/api/v1/overview");
-  const saved = useTenantQuery<any[]>(["scenarios"], "/api/v1/scenarios");
+  const ov = useApi(["overview"], "/api/v1/overview");
+  const saved = useApi(["scenarios"], "/api/v1/scenarios");
   const planning = (ov.data?.settings?.planning ?? {}) as Record<string, number>;
   const currency = ov.data?.settings?.currency ?? "GBP";
   const baseline: Inputs = { demand_multiplier: 1, supplier_delay_days: 0, budget_minor: planning.weekly_budget_minor ?? 0,
@@ -44,7 +40,7 @@ export default function ScenariosPage() {
   const compute = useMutation({
     mutationFn: async (which: "base" | "draft") => {
       const inp = which === "base" ? baseline : d;
-      const r = await post<Result>("/api/v1/scenarios", { name: which === "base" ? "Baseline" : "Draft", knowledge_cutoff: known, effective_date: eff, ...inp });
+      const r = await apiPost("/api/v1/scenarios", { body: { name: which === "base" ? "Baseline" : "Draft", knowledge_cutoff: known, effective_date: eff, ...inp } });
       return { which, r, inp };
     },
     onSuccess: ({ which, r, inp }) => {

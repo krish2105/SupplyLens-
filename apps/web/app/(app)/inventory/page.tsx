@@ -8,24 +8,25 @@ import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
 import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
-import { webglAvailable } from "@/components/warehouse3d";
-import { useTenantQuery, useWs, type InventoryItem } from "@/lib/queries";
+import { GLBoundary, GLNotice } from "@/components/gl-boundary";
+import { webglAvailable } from "@/lib/webgl";
+import { useApi, useWs, type InventoryItem } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 import { day, int, money, num } from "@/lib/format";
 
 const Warehouse3D = dynamic(() => import("@/components/warehouse3d"), { ssr: false, loading: () => <Skeleton className="h-[420px]" /> });
 
 type SortKey = "sku_id" | "available" | "days_of_cover" | "avg_daily" | "health";
-type Terms = { applicable: any[]; ignored: { term_id: string; reason: string; supplier_id: string }[]; conflicts: string[][] };
-type Sales = { daily: { day: string; units: number }[]; product: { first_sale: string | null; last_sale: string | null } };
 
 export default function InventoryPage() {
   const ws = useWs();
   const [ctx, setCtx] = usePlanningContext();
   const { known, eff } = useDecisionClock();
-  const inv = useTenantQuery<{ items: InventoryItem[] }>(["inventory", eff], eff ? `/api/v1/inventory?effective_date=${eff}` : null);
-  const [view, setView] = useState<"3d" | "2d">("3d");
+  // Not gated on the overview: the API defaults to the workspace as-of unless the user replays another date.
+  const inv = useApi(["inventory", ctx.eff ?? "workspace"], "/api/v1/inventory", { query: { effective_date: ctx.eff } });
+  const [view, setView] = useState<"3d" | "2d" | null>(null);   // decided on mount; the plot area holds its height meanwhile
   const [gl, setGl] = useState(true);
+  const [glFailed, setGlFailed] = useState(false);
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: "days_of_cover", dir: 1 });
@@ -56,8 +57,8 @@ export default function InventoryPage() {
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">
             <div role="tablist" aria-label="Layout view" className="inline-flex rounded-lg border border-line p-0.5">
               {(["3d", "2d"] as const).map((v) => (
-                <button key={v} role="tab" aria-selected={view === v} disabled={v === "3d" && !gl}
-                  title={v === "3d" && !gl ? "WebGL is unavailable in this browser" : undefined}
+                <button key={v} role="tab" aria-selected={view === v} disabled={v === "3d" && (!gl || glFailed)}
+                  title={v === "3d" && (!gl || glFailed) ? "WebGL is unavailable in this browser" : undefined}
                   onClick={() => setView(v)}
                   className={clsx("rounded-md px-3 py-1 text-sm disabled:opacity-40", view === v ? "bg-accent text-accent-ink" : "text-muted")}>
                   {v === "3d" ? "3D schematic" : "2D floor plan"}
@@ -66,9 +67,11 @@ export default function InventoryPage() {
             </div>
             <span className="text-xs text-muted">Snapshot {day(items[0]?.as_of)} · <Provenance kind={items[0]?.value_kind} /></span>
           </div>
-          {inv.isLoading ? <Skeleton className="h-[420px]" /> : view === "3d" && gl ? (
-            <Warehouse3D items={items} selected={ctx.sku} onSelect={select} height={420} />
-          ) : <div className="p-4"><FloorPlan items={items} selected={ctx.sku} onSelect={select} /></div>}
+          {inv.isLoading || view === null ? <Skeleton className="h-[420px]" /> : view === "3d" && gl && !glFailed ? (
+            <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
+              <Warehouse3D items={items} selected={ctx.sku} onSelect={select} height={420} onFail={() => setGlFailed(true)} />
+            </GLBoundary>
+          ) : <>{glFailed && <GLNotice />}<div className="p-4"><FloorPlan items={items} selected={ctx.sku} onSelect={select} /></div></>}
         </Card>
         <Detail item={sel} known={known} eff={eff} ws={ws} />
       </div>
@@ -128,9 +131,9 @@ export default function InventoryPage() {
 }
 
 function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: string | null; eff: string | null; ws: string }) {
-  const terms = useTenantQuery<Terms>(["terms", item?.sku_id, known, eff], item && known && eff
-    ? `/api/v1/terms?sku_id=${encodeURIComponent(item.sku_id)}&knowledge_cutoff=${encodeURIComponent(known)}&effective_date=${eff}` : null);
-  const sales = useTenantQuery<Sales>(["sales", item?.sku_id], item ? `/api/v1/products/${encodeURIComponent(item.sku_id)}/sales` : null);
+  const terms = useApi(["terms", item?.sku_id, known, eff], item && known && eff ? "/api/v1/terms" : null,
+    { query: { sku_id: item?.sku_id ?? "", knowledge_cutoff: known, effective_date: eff } });
+  const sales = useApi(["sales", item?.sku_id], item ? "/api/v1/products/{sku_id}/sales" : null, { path: { sku_id: item?.sku_id ?? "" } });
   const option = useMemo(() => {
     const pts = (sales.data?.daily ?? []).filter((d) => !eff || d.day <= eff).slice(-120);
     const b = baseOption();

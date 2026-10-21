@@ -12,11 +12,11 @@ os.environ.setdefault(
 )
 os.environ.setdefault("SUPPLYLENS_STORAGE_DIR", "storage_test")
 
-import pytest  # noqa: E402
-from sqlalchemy import text  # noqa: E402
+import pytest
+from sqlalchemy import text
 
-from supplylens.db import admin_engine  # noqa: E402
-from supplylens.seed import seed, tenant_id  # noqa: E402
+from supplylens.db import admin_engine
+from supplylens.seed import seed, tenant_id
 
 TENANT_TABLES_CLEAR_ORDER = [
     "web_vitals", "tenant_exports", "alerts", "rate_limit_buckets", "clause_labels", "public_awards", "tenant_settings", "warehouse_slots",

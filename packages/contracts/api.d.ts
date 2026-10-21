@@ -106,6 +106,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actions/{action_id}/retry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Retry
+         * @description Re-queue a FAILED dispatch (e.g. after a connector outage) under the same idempotency key.
+         */
+        post: operations["retry_api_v1_actions__action_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/audit.csv": {
         parameters: {
             query?: never;
@@ -115,6 +135,41 @@ export interface paths {
         };
         /** Audit Csv */
         get: operations["audit_csv_api_v1_admin_audit_csv_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/exports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Exports */
+        get: operations["list_exports_api_v1_admin_exports_get"];
+        put?: never;
+        /** Request Export */
+        post: operations["request_export_api_v1_admin_exports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/exports/{export_id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download Export */
+        get: operations["download_export_api_v1_admin_exports__export_id__download_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -149,6 +204,46 @@ export interface paths {
         };
         /** Members */
         get: operations["members_api_v1_admin_members_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/tenant-deletion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Deletion
+         * @description Irreversible. Needs the typed workspace slug, a verified export that has been downloaded, and a reason.
+         */
+        post: operations["request_deletion_api_v1_admin_tenant_deletion_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/vitals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Vitals
+         * @description Field p75 per metric and route against the UX-011 targets (LCP 2.5 s, INP 200 ms, CLS 0.1).
+         */
+        get: operations["vitals_api_v1_admin_vitals_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -223,6 +318,63 @@ export interface paths {
         get: operations["run_stream_api_v1_agent_runs__run_id__stream_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Alerts
+         * @description The operational queue: open and acknowledged alerts first, newest activity first.
+         */
+        get: operations["list_alerts_api_v1_alerts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/evaluate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evaluate Now
+         * @description Re-check stale data, reconciliation, budgets and models now (the worker also does this on a schedule).
+         */
+        post: operations["evaluate_now_api_v1_alerts_evaluate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/alerts/{alert_id}/acknowledge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Acknowledge */
+        post: operations["acknowledge_api_v1_alerts__alert_id__acknowledge_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -323,6 +475,26 @@ export interface paths {
         };
         /** Quarantine */
         get: operations["quarantine_api_v1_datasets__dataset_id__quarantine_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deletions/{deletion_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Deletion Certificate
+         * @description Readable by whoever requested it, after the workspace itself is gone (no tenant header needed).
+         */
+        get: operations["deletion_certificate_api_v1_deletions__deletion_id__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -718,6 +890,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/telemetry/vitals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report Vital */
+        post: operations["report_vital_api_v1_telemetry_vitals_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/terms": {
         parameters: {
             query?: never;
@@ -793,13 +982,136 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AckIn */
+        AckIn: {
+            /** Note */
+            note?: string | null;
+        };
+        /** ActionDetail */
+        ActionDetail: {
+            /** Agent Run Id */
+            agent_run_id: string | null;
+            /** Approvals */
+            approvals: components["schemas"]["Approval"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Currency */
+            currency: string;
+            /** Environment */
+            environment: string;
+            evidence: components["schemas"]["EvidencePacket"];
+            /** External Ref */
+            external_ref: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            outbox: components["schemas"]["OutboxInfo"] | null;
+            payload: components["schemas"]["PurchaseOrderPayload"];
+            /** Payload Hash */
+            payload_hash: string;
+            /**
+             * Prepared By
+             * Format: uuid
+             */
+            prepared_by: string;
+            /** Row Version */
+            row_version: number;
+            /** Status */
+            status: string;
+            /** Status Reason */
+            status_reason: string | null;
+            /**
+             * Tenant Id
+             * Format: uuid
+             */
+            tenant_id: string;
+            /** Total Minor */
+            total_minor: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+            /** Versions */
+            versions: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ActionResult
+         * @description Outcome of approve / reject / reconcile / retry; unused fields are absent.
+         */
+        ActionResult: {
+            /** Mismatches */
+            mismatches: string[] | null;
+            /** Operation Id */
+            operation_id: string | null;
+            /** Po Number */
+            po_number: string | null;
+            /** Problems */
+            problems: string[] | null;
+            /** Result */
+            result: string | null;
+            /** Status */
+            status: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ActionRow */
+        ActionRow: {
+            /** Agent Run Id */
+            agent_run_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Currency */
+            currency: string;
+            /** External Ref */
+            external_ref: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            payload: components["schemas"]["PurchaseOrderPayload"];
+            /** Payload Hash */
+            payload_hash: string;
+            /** Prepared By */
+            prepared_by: string;
+            /** Row Version */
+            row_version: number;
+            /** Status */
+            status: string;
+            /** Status Reason */
+            status_reason: string | null;
+            /** Total Minor */
+            total_minor: number;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** AgentRunIn */
         AgentRunIn: {
             /**
              * Allow Shortfall
              * @default true
              */
-            allow_shortfall: boolean;
+            allow_shortfall?: boolean;
             /** Budget Minor */
             budget_minor?: number | null;
             /** Currency */
@@ -812,9 +1124,135 @@ export interface components {
              * Mode
              * @default draft
              */
-            mode: string;
+            mode?: string;
             /** Sku Ids */
             sku_ids?: string[] | null;
+        };
+        /** AlertAck */
+        AlertAck: {
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AlertEvaluation */
+        AlertEvaluation: {
+            /** Delivery */
+            delivery: {
+                [key: string]: number;
+            };
+            /** Raised */
+            raised: string[];
+            /** Resolved */
+            resolved: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AlertRow */
+        AlertRow: {
+            /** Dedupe Key */
+            dedupe_key: string;
+            /** Delivered At */
+            delivered_at: string | null;
+            /** Delivery Attempts */
+            delivery_attempts: number;
+            /** Delivery Error */
+            delivery_error: string | null;
+            /** Delivery Status */
+            delivery_status: string;
+            /**
+             * Detail
+             * @default {}
+             */
+            detail: {
+                [key: string]: unknown;
+            };
+            /**
+             * First Seen
+             * Format: date-time
+             */
+            first_seen: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /**
+             * Last Seen
+             * Format: date-time
+             */
+            last_seen: string;
+            /** Occurrences */
+            occurrences: number;
+            /** Resolved At */
+            resolved_at: string | null;
+            /** Severity */
+            severity: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Alerts */
+        Alerts: {
+            /** Alerts */
+            alerts: components["schemas"]["AlertRow"][];
+            /** Open */
+            open: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Answer */
+        Answer: {
+            /** Abstained */
+            abstained: boolean;
+            /** Claims */
+            claims: components["schemas"]["Claim"][];
+            /** Message */
+            message: string | null;
+            /** Type */
+            type: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Approval */
+        Approval: {
+            /**
+             * Approver Id
+             * Format: uuid
+             */
+            approver_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Decision */
+            decision: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Max Spend Minor */
+            max_spend_minor: number;
+            /** Payload Hash */
+            payload_hash: string;
+            /** Reason */
+            reason: string | null;
+        } & {
+            [key: string]: unknown;
         };
         /** ApproveIn */
         ApproveIn: {
@@ -825,10 +1263,428 @@ export interface components {
             /** Payload Hash */
             payload_hash: string;
         };
+        /** AssumptionSetInfo */
+        AssumptionSetInfo: {
+            /** Name */
+            name: string;
+            /** Rationale */
+            rationale: string;
+            /** Version */
+            version: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AuditRow */
+        AuditRow: {
+            /** Action */
+            action: string;
+            /** Actor */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Detail */
+            detail: {
+                [key: string]: unknown;
+            };
+            /** Entity */
+            entity: string;
+            /** Entity Id */
+            entity_id: string;
+            /** Id */
+            id: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Capability */
+        Capability: {
+            /** Basis */
+            basis: string | null;
+            /** Capability */
+            capability: string;
+            /** Note */
+            note: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChecksRef */
+        ChecksRef: {
+            /** Independent Validator */
+            independent_validator: string | null;
+            /**
+             * Issues
+             * @default []
+             */
+            issues: {
+                [key: string]: unknown;
+            }[];
+            /** Lines Checked */
+            lines_checked: number | null;
+            /** Passed */
+            passed: boolean;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ChunkInfo */
+        ChunkInfo: {
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Ordinal */
+            ordinal: number;
+            /** Section */
+            section: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Citation */
+        Citation: {
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Document Id */
+            document_id: string;
+            /** Section */
+            section: string;
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** CitedClause */
+        CitedClause: {
+            /** Body */
+            body: string;
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Document Version Id */
+            document_version_id: string;
+            /** Id */
+            id: string;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Section */
+            section: string;
+            /** Sha256 */
+            sha256: string;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Claim */
+        Claim: {
+            citation: components["schemas"]["Citation"];
+            /** Text */
+            text: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ClauseLabel */
+        ClauseLabel: {
+            /** Category */
+            category: string;
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Source */
+            source: string;
+            /** Text */
+            text: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Comparison */
+        Comparison: {
+            /** Ci95 */
+            ci95: number[];
+            /** Mean Diff */
+            mean_diff: number;
+            /** N Series */
+            n_series: number;
+            /** Share A Better */
+            share_a_better: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Concentration */
+        Concentration: {
+            /** Hhi */
+            hhi: number | null;
+            /** Procurement Category */
+            procurement_category: string | null;
+            /** Suppliers */
+            suppliers: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Dataset */
+        Dataset: {
+            /** Bytes */
+            bytes: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** File Name */
+            file_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** License */
+            license: string;
+            /** Name */
+            name: string;
+            report: components["schemas"]["DatasetReport"];
+            /** Schema Version */
+            schema_version: string;
+            /** Sha256 */
+            sha256: string;
+            /** Source Kind */
+            source_kind: string;
+            /** Source Url */
+            source_url: string | null;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** DatasetReport */
+        DatasetReport: {
+            /**
+             * Date Span
+             * @default []
+             */
+            date_span: string[];
+            /** Distinct Customers */
+            distinct_customers: number | null;
+            /** Distinct Skus Accepted */
+            distinct_skus_accepted: number | null;
+            /** Doi */
+            doi: string | null;
+            /** Missing Customer Id Rows */
+            missing_customer_id_rows: number | null;
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Sheets
+             * @default {}
+             */
+            sheets: {
+                [key: string]: components["schemas"]["SheetReport"];
+            };
+            /**
+             * Totals
+             * @default {}
+             */
+            totals: {
+                [key: string]: number;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** DeletionCertificate */
+        DeletionCertificate: {
+            /** Certificate */
+            certificate: {
+                [key: string]: unknown;
+            };
+            /**
+             * Completed At
+             * Format: date-time
+             */
+            completed_at: string;
+            /** Tenant Slug */
+            tenant_slug: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** DeletionIn */
+        DeletionIn: {
+            /** Confirm Slug */
+            confirm_slug: string;
+            /**
+             * Export Id
+             * Format: uuid
+             */
+            export_id: string;
+            /** Reason */
+            reason: string;
+        };
+        /** DeletionQueued */
+        DeletionQueued: {
+            /** Certificate Url */
+            certificate_url: string;
+            /** Deletion Id */
+            deletion_id: string;
+            /** Job Id */
+            job_id: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** DevLogin */
         DevLogin: {
             /** Email */
             email: string;
+        };
+        /** DevUser */
+        DevUser: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Roles */
+            roles: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** DevUsers */
+        DevUsers: {
+            /** Dev Only */
+            dev_only: boolean;
+            /** Notice */
+            notice: string;
+            /** Users */
+            users: components["schemas"]["DevUser"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** DocumentRow */
+        DocumentRow: {
+            /** Chunks */
+            chunks: number;
+            /** Doc Type */
+            doc_type: string;
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Embed Model */
+            embed_model: string | null;
+            /** File Name */
+            file_name: string;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Sha256 */
+            sha256: string;
+            /** Source Kind */
+            source_kind: string;
+            /** Supersedes Version Id */
+            supersedes_version_id: string | null;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** DocumentVersion */
+        DocumentVersion: {
+            /** Chunks */
+            chunks: components["schemas"]["ChunkInfo"][];
+            /**
+             * Document Id
+             * Format: uuid
+             */
+            document_id: string;
+            /** Embed Model */
+            embed_model: string | null;
+            /** File Name */
+            file_name: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Ingested At
+             * Format: date-time
+             */
+            ingested_at: string;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Parser Version */
+            parser_version: string;
+            /** Sha256 */
+            sha256: string;
+            /** Source Kind */
+            source_kind: string;
+            /** Supersedes Version Id */
+            supersedes_version_id: string | null;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Text */
+            text: string;
+            /** Title */
+            title: string;
+            /** Untrusted Content */
+            untrusted_content: boolean;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
         };
         /** EditIn */
         EditIn: {
@@ -838,6 +1694,318 @@ export interface components {
             quantities: {
                 [key: string]: number;
             };
+        };
+        /**
+         * EvidencePacket
+         * @description Everything an approver needs to decide: data cutoff, forecast, cited terms, plan, checks, provenance.
+         */
+        EvidencePacket: {
+            checks: components["schemas"]["ChecksRef"];
+            /** Data Cutoff */
+            data_cutoff: string;
+            /** Effective Date */
+            effective_date: string;
+            forecast: components["schemas"]["ForecastRef"];
+            /**
+             * Ignored Terms
+             * @default []
+             */
+            ignored_terms: components["schemas"]["IgnoredTerm"][];
+            /**
+             * Needs
+             * @default {}
+             */
+            needs: {
+                [key: string]: {
+                    [key: string]: unknown;
+                } | null;
+            };
+            plan: components["schemas"]["PlanRef"];
+            provenance: components["schemas"]["ProvenanceRef"];
+            /** Terms */
+            terms: components["schemas"]["EvidenceTerm"][];
+            /**
+             * Upcoming Changes
+             * @default []
+             */
+            upcoming_changes: components["schemas"]["Term"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** EvidenceResult */
+        EvidenceResult: {
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Chunk Id */
+            chunk_id: string;
+            /** Document Id */
+            document_id: string;
+            /** Excerpt */
+            excerpt: string;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Score */
+            score: number;
+            /** Section */
+            section: string;
+            /** Sha256 */
+            sha256: string;
+            /**
+             * Signals
+             * @default {}
+             */
+            signals: {
+                [key: string]: unknown;
+            };
+            /** Source Kind */
+            source_kind: string;
+            /** Supersedes Version Id */
+            supersedes_version_id: string | null;
+            /** Supplier Id */
+            supplier_id: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** EvidenceSearch */
+        EvidenceSearch: {
+            /** Abstain */
+            abstain: boolean;
+            answer: components["schemas"]["Answer"];
+            /** Degraded */
+            degraded: string | null;
+            /** Filters */
+            filters: {
+                [key: string]: string | null;
+            };
+            /** Mode */
+            mode: string;
+            /** Reranker */
+            reranker: string;
+            /** Results */
+            results: components["schemas"]["EvidenceResult"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** EvidenceTerm */
+        EvidenceTerm: {
+            citation: components["schemas"]["CitedClause"] | null;
+            /** Currency */
+            currency: string;
+            /** Document Version Id */
+            document_version_id: string | null;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Lead Time Days */
+            lead_time_days: number;
+            /** Moq */
+            moq: number;
+            /** Order Multiple */
+            order_multiple: number;
+            /** Section */
+            section: string | null;
+            /** Sku Id */
+            sku_id: string;
+            /** Supersedes */
+            supersedes: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Term Id */
+            term_id: string;
+            /** Unit Cost Minor */
+            unit_cost_minor: number;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Value Kind */
+            value_kind: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExceptionItem */
+        ExceptionItem: {
+            /** Action Id */
+            action_id: string | null;
+            /** Basis */
+            basis: string;
+            /** Deadline */
+            deadline: string | null;
+            /** Detail */
+            detail: string;
+            /** Kind */
+            kind: string;
+            /** Materiality Basis */
+            materiality_basis: string | null;
+            /** Materiality Minor */
+            materiality_minor: number | null;
+            /** Severity */
+            severity: string;
+            /** Sku Id */
+            sku_id: string | null;
+            /** Title */
+            title: string;
+            /** Value Kind */
+            value_kind: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Exceptions */
+        Exceptions: {
+            /**
+             * Counts
+             * @default {}
+             */
+            counts: {
+                [key: string]: number;
+            };
+            /** Currency */
+            currency: string | null;
+            /** Effective Date */
+            effective_date: string | null;
+            /** Items */
+            items: components["schemas"]["ExceptionItem"][];
+            /** Message */
+            message: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExportIn */
+        ExportIn: {
+            /**
+             * Include Vectors
+             * @default false
+             */
+            include_vectors?: boolean;
+        };
+        /** ExportManifest */
+        ExportManifest: {
+            /** Caches */
+            caches: {
+                [key: string]: unknown;
+            };
+            /** Documents */
+            documents: {
+                [key: string]: unknown;
+            };
+            /** Tables */
+            tables: {
+                [key: string]: number;
+            };
+            /** Vectors */
+            vectors: {
+                [key: string]: unknown;
+            };
+            /** Verified */
+            verified: boolean | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExportQueued */
+        ExportQueued: {
+            /** Export Id */
+            export_id: string;
+            /** Job Id */
+            job_id: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExportRow */
+        ExportRow: {
+            /** Bytes */
+            bytes: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Downloaded At */
+            downloaded_at: string | null;
+            /** Error */
+            error: string | null;
+            /** Finished At */
+            finished_at: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Include Vectors */
+            include_vectors: boolean;
+            manifest: components["schemas"]["ExportManifest"] | null;
+            /** Sha256 */
+            sha256: string | null;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** FamilySelection */
+        FamilySelection: {
+            /**
+             * Config
+             * @default {}
+             */
+            config: {
+                [key: string]: unknown;
+            };
+            /** Config Index */
+            config_index: number;
+            /** Validation Pinball */
+            validation_pinball: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** FamilySummary */
+        FamilySummary: {
+            /** Coverage 80 */
+            coverage_80: number;
+            /** Crossing Rate Raw */
+            crossing_rate_raw: number;
+            /** Mae */
+            mae: number;
+            /** Mase */
+            mase: number | null;
+            /**
+             * Mase Undefined Series
+             * @default 0
+             */
+            mase_undefined_series: number;
+            /** Pinball */
+            pinball: {
+                [key: string]: number;
+            };
+            /** Pinball Mean */
+            pinball_mean: number;
+            /** Width 80 */
+            width_80: number;
+        } & {
+            [key: string]: unknown;
         };
         /** FaultIn */
         FaultIn: {
@@ -849,13 +2017,24 @@ export interface components {
             /** Mode */
             mode: string;
         };
+        /** FaultInjected */
+        FaultInjected: {
+            /** Mode */
+            mode: string;
+            /** Ok */
+            ok: boolean;
+            /** Operation Id */
+            operation_id: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** ForecastIn */
         ForecastIn: {
             /**
              * Horizon
              * @default 28
              */
-            horizon: number;
+            horizon?: number;
             /** Model Family */
             model_family?: string | null;
             /** Origin */
@@ -863,10 +2042,910 @@ export interface components {
             /** Sku Ids */
             sku_ids: string[];
         };
+        /** ForecastPoint */
+        ForecastPoint: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Q10 */
+            q10: number;
+            /** Q50 */
+            q50: number;
+            /** Q90 */
+            q90: number;
+            /** Sku Id */
+            sku_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastRef */
+        ForecastRef: {
+            /** Available */
+            available: boolean;
+            /** Model Version Id */
+            model_version_id: string | null;
+            /** Origin */
+            origin: string | null;
+            /** Run Id */
+            run_id: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ForecastRun */
+        ForecastRun: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string | null;
+            /**
+             * Dataset Id
+             * Format: uuid
+             */
+            dataset_id: string;
+            /** Family */
+            family: string;
+            /** Horizon */
+            horizon: number;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Interval */
+            interval: string;
+            /** Label */
+            label: string;
+            /**
+             * Model Version Id
+             * Format: uuid
+             */
+            model_version_id: string;
+            /**
+             * Origin
+             * Format: date
+             */
+            origin: string;
+            /** Points */
+            points: components["schemas"]["ForecastPoint"][];
+            /**
+             * Quality Flags
+             * @default {}
+             */
+            quality_flags: {
+                [key: string]: string;
+            };
+            /** Sku Ids */
+            sku_ids: string[];
+            /** Status */
+            status: string;
+            /** Version */
+            version: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ForecastStudyReport
+         * @description The frozen forecasting study (F1), read from its experiment artifact.
+         */
+        ForecastStudyReport: {
+            /**
+             * Available
+             * @constant
+             */
+            available: true;
+            /** Cohort Size */
+            cohort_size: number;
+            /** Comparisons */
+            comparisons: {
+                [key: string]: components["schemas"]["Comparison"];
+            };
+            config: components["schemas"]["StudyConfig"];
+            /** Dataset Sha256 */
+            dataset_sha256: string;
+            environment: components["schemas"]["StudyEnvironment"];
+            /** Experiment Id */
+            experiment_id: string;
+            /** Pinball By Horizon */
+            pinball_by_horizon: {
+                [key: string]: {
+                    [key: string]: number[];
+                };
+            };
+            selection: components["schemas"]["StudySelection"];
+            /** Summary */
+            summary: {
+                [key: string]: components["schemas"]["FamilySummary"];
+            };
+            /** Tcn Seed Mean */
+            tcn_seed_mean: {
+                [key: string]: number;
+            };
+            /** Tcn Seed Sd */
+            tcn_seed_sd: {
+                [key: string]: number;
+            };
+            /** Test Window */
+            test_window: string[];
+        } & {
+            [key: string]: unknown;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** Health */
+        Health: {
+            /** Database */
+            database: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** IgnoredTerm */
+        IgnoredTerm: {
+            /** Reason */
+            reason: string;
+            /** Sku Id */
+            sku_id: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Term Id */
+            term_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Integration */
+        Integration: {
+            /** Adapter */
+            adapter: string | null;
+            /** Error */
+            error: string | null;
+            /** Idempotency */
+            idempotency: string | null;
+            /** Name */
+            name: string;
+            /** Note */
+            note: string | null;
+            /** Operations */
+            operations: string[] | null;
+            /** Status */
+            status: string;
+            /** Version */
+            version: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Inventory */
+        Inventory: {
+            /** Effective Date */
+            effective_date: string | null;
+            /** Items */
+            items: components["schemas"]["InventoryItem"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** InventoryItem */
+        InventoryItem: {
+            /** Aisle */
+            aisle: number | null;
+            /** Allocated */
+            allocated: number;
+            /**
+             * As Of
+             * Format: date
+             */
+            as_of: string;
+            /** Available */
+            available: number;
+            /** Avg Daily */
+            avg_daily: number | null;
+            /** Capacity */
+            capacity: number | null;
+            /** Days Of Cover */
+            days_of_cover: number | null;
+            /** Description */
+            description: string;
+            /** Health */
+            health: string;
+            /** Health Basis */
+            health_basis: string | null;
+            /** Is Schematic */
+            is_schematic: boolean | null;
+            /** Location Id */
+            location_id: string;
+            /** On Hand */
+            on_hand: number;
+            /** On Order */
+            on_order: number;
+            /** Rack */
+            rack: number | null;
+            /** Sku Id */
+            sku_id: string;
+            /** Slot Id */
+            slot_id: string | null;
+            /** Term Count */
+            term_count: number;
+            /** Unit */
+            unit: string;
+            /** Value Kind */
+            value_kind: string;
+            /** X */
+            x: number | null;
+            /** Z */
+            z: number | null;
+            /** Zone Id */
+            zone_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** JobRow */
+        JobRow: {
+            /** Attempts */
+            attempts: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Error */
+            error: string | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Kind */
+            kind: string;
+            /** Lease Expires At */
+            lease_expires_at: string | null;
+            /** Lease Owner */
+            lease_owner: string | null;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Result Status */
+            result_status: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Jobs */
+        Jobs: {
+            /** Jobs */
+            jobs: components["schemas"]["JobRow"][];
+            /** Outbox */
+            outbox: components["schemas"]["OutboxRow"][];
+            /** Usage */
+            usage: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** LedgerAssumptions */
+        LedgerAssumptions: {
+            /** Currency */
+            currency: string;
+            /** Holding Rate Annual */
+            holding_rate_annual: number;
+            /** Lead Time Days */
+            lead_time_days: number;
+            /** Notes */
+            notes: string;
+            /** Review Days */
+            review_days: number;
+            /** Unit Cost Share Of Price */
+            unit_cost_share_of_price: number;
+            /** Z */
+            z: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** LedgerLine */
+        LedgerLine: {
+            assumptions: components["schemas"]["LedgerAssumptions"];
+            /** Baseline Minor */
+            baseline_minor: number;
+            /** Evidence Class */
+            evidence_class: string;
+            /** Intervention Minor */
+            intervention_minor: number;
+            /** Item */
+            item: string;
+            /** Period */
+            period: string;
+            /** Source */
+            source: string;
+            /** Unit */
+            unit: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketCategory */
+        MarketCategory: {
+            /** N */
+            n: number;
+            /** Procurement Category */
+            procurement_category: string | null;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketCountry */
+        MarketCountry: {
+            /** N */
+            n: number;
+            /** Supplier Country */
+            supplier_country: string | null;
+            /** Suppliers */
+            suppliers: number;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketMethod */
+        MarketMethod: {
+            /** N */
+            n: number;
+            /** Procurement Method */
+            procurement_method: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketRegion */
+        MarketRegion: {
+            /** N */
+            n: number;
+            /** Region */
+            region: string | null;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketSummary */
+        MarketSummary: {
+            /** Available */
+            available: boolean;
+            /**
+             * By Category
+             * @default []
+             */
+            by_category: components["schemas"]["MarketCategory"][];
+            /**
+             * By Region
+             * @default []
+             */
+            by_region: components["schemas"]["MarketRegion"][];
+            /**
+             * By Year
+             * @default []
+             */
+            by_year: components["schemas"]["MarketYear"][];
+            /**
+             * Concentration Hhi
+             * @default []
+             */
+            concentration_hhi: components["schemas"]["Concentration"][];
+            /** Currency */
+            currency: string | null;
+            /** Dataset */
+            dataset: {
+                [key: string]: unknown;
+            } | null;
+            /** Filters */
+            filters: {
+                [key: string]: string | null;
+            } | null;
+            /** Message */
+            message: string | null;
+            /**
+             * Methods
+             * @default []
+             */
+            methods: components["schemas"]["MarketMethod"][];
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Top Supplier Countries
+             * @default []
+             */
+            top_supplier_countries: components["schemas"]["MarketCountry"][];
+            /**
+             * Top Suppliers
+             * @default []
+             */
+            top_suppliers: components["schemas"]["MarketSupplier"][];
+            /** Value Kind */
+            value_kind: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketSupplier */
+        MarketSupplier: {
+            /** Borrower Countries */
+            borrower_countries: number;
+            /** Country */
+            country: string | null;
+            /** N */
+            n: number;
+            /** Supplier */
+            supplier: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** MarketYear */
+        MarketYear: {
+            /** Fiscal Year */
+            fiscal_year: number | null;
+            /** N */
+            n: number;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Me */
+        Me: {
+            /** Memberships */
+            memberships: components["schemas"]["Membership"][];
+            user: components["schemas"]["UserInfo"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** Member */
+        Member: {
+            /** Active */
+            active: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /** Is Dev Account */
+            is_dev_account: boolean;
+            /** Role */
+            role: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Members */
+        Members: {
+            /** Members */
+            members: components["schemas"]["Member"][];
+            /** Note */
+            note: string;
+            /** Role Matrix */
+            role_matrix: {
+                [key: string]: string[];
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** Membership */
+        Membership: {
+            /** Description */
+            description: string;
+            /** Kind */
+            kind: string;
+            /** Name */
+            name: string;
+            /** Role */
+            role: string;
+            /** Slug */
+            slug: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ModelStatusChanged */
+        ModelStatusChanged: {
+            /** Model Id */
+            model_id: string;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ModelVersion */
+        ModelVersion: {
+            /** Artifact Sha256 */
+            artifact_sha256: string | null;
+            /** Code Version */
+            code_version: string | null;
+            /**
+             * Config
+             * @default {}
+             */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Family */
+            family: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Metrics
+             * @default {}
+             */
+            metrics: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string;
+            /** Training Cutoff */
+            training_cutoff: string | null;
+            /** Version */
+            version: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Ok */
+        Ok: {
+            /** Ok */
+            ok: boolean;
+        } & {
+            [key: string]: unknown;
+        };
+        /** OutboxInfo */
+        OutboxInfo: {
+            /** Attempts */
+            attempts: number;
+            /** External Ref */
+            external_ref: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /** Operation Id */
+            operation_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** OutboxRow */
+        OutboxRow: {
+            /** Attempts */
+            attempts: number;
+            /** External Ref */
+            external_ref: string | null;
+            /** Last Error */
+            last_error: string | null;
+            /**
+             * Next Attempt At
+             * Format: date-time
+             */
+            next_attempt_at: string;
+            /** Operation Id */
+            operation_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Overview */
+        Overview: {
+            /** Actions By Status */
+            actions_by_status: {
+                [key: string]: number;
+            };
+            assumption_set: components["schemas"]["AssumptionSetInfo"] | null;
+            /** Capabilities */
+            capabilities: components["schemas"]["Capability"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            dataset: components["schemas"]["OverviewDataset"] | null;
+            settings: components["schemas"]["OverviewSettings"] | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** OverviewDataset */
+        OverviewDataset: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Date Span */
+            date_span: string[] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** License */
+            license: string;
+            /** Name */
+            name: string;
+            /** Sha256 */
+            sha256: string;
+            /** Source Url */
+            source_url: string | null;
+            /** Totals */
+            totals: {
+                [key: string]: number;
+            } | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** OverviewSettings */
+        OverviewSettings: {
+            /** Assumption Set Id */
+            assumption_set_id: string | null;
+            /** Currency */
+            currency: string;
+            /** Dataset Id */
+            dataset_id: string | null;
+            /**
+             * Operational As Of
+             * Format: date-time
+             */
+            operational_as_of: string;
+            /**
+             * Planning
+             * @default {}
+             */
+            planning: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** PayloadDecision */
+        PayloadDecision: {
+            /** Agent Run Id */
+            agent_run_id: string;
+            /** Effective Date */
+            effective_date: string;
+            /** Knowledge Cutoff */
+            knowledge_cutoff: string;
+            /** Plan Input Hash */
+            plan_input_hash: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** PayloadLine */
+        PayloadLine: {
+            /** Line Minor */
+            line_minor: number;
+            /** Quantity */
+            quantity: number;
+            /** Sku Id */
+            sku_id: string;
+            /** Term Id */
+            term_id: string;
+            /** Unit */
+            unit: string;
+            /** Unit Cost Minor */
+            unit_cost_minor: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** PlanLine */
+        PlanLine: {
+            /**
+             * Arrival Date
+             * Format: date
+             */
+            arrival_date: string;
+            /** Currency */
+            currency: string;
+            /** Document Version Id */
+            document_version_id: string | null;
+            /** Line Minor */
+            line_minor: number;
+            /** Quantity */
+            quantity: number;
+            /** Section */
+            section: string | null;
+            /** Sku Id */
+            sku_id: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Term Id */
+            term_id: string;
+            /** Unit Cost Minor */
+            unit_cost_minor: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * PlanOutput
+         * @description Planner result (OR-Tools CP-SAT) as returned for scenarios; `status` is OPTIMAL, FEASIBLE, INFEASIBLE, ...
+         */
+        PlanOutput: {
+            /**
+             * Arrival Warnings
+             * @default []
+             */
+            arrival_warnings: {
+                [key: string]: unknown;
+            }[];
+            /** Currency */
+            currency: string | null;
+            /**
+             * Excluded Offers
+             * @default []
+             */
+            excluded_offers: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Explanation
+             * @default []
+             */
+            explanation: string[];
+            /** Input Hash */
+            input_hash: string | null;
+            /**
+             * Lines
+             * @default []
+             */
+            lines: components["schemas"]["PlanLine"][];
+            /**
+             * Objective
+             * @default {}
+             */
+            objective: {
+                [key: string]: unknown;
+            };
+            request: components["schemas"]["PlanRequestInfo"] | null;
+            /**
+             * Shortfall
+             * @default {}
+             */
+            shortfall: {
+                [key: string]: number;
+            };
+            solver: components["schemas"]["SolverInfo"] | null;
+            /** Status */
+            status: string;
+            /**
+             * Total Minor
+             * @default 0
+             */
+            total_minor: number;
+            /**
+             * Violations
+             * @default []
+             */
+            violations: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** PlanRef */
+        PlanRef: {
+            /** Explanation */
+            explanation: string[] | null;
+            /** Input Hash */
+            input_hash: string | null;
+            /** Objective */
+            objective: {
+                [key: string]: unknown;
+            } | null;
+            /** Solver */
+            solver: {
+                [key: string]: unknown;
+            } | null;
+            /** Status */
+            status: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** PlanRequestInfo */
+        PlanRequestInfo: {
+            /** Allow Shortfall */
+            allow_shortfall: boolean;
+            /** Budget Minor */
+            budget_minor: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Needs
+             * @default []
+             */
+            needs: {
+                [key: string]: unknown;
+            }[];
+            /** Shortage Penalty Minor */
+            shortage_penalty_minor: number;
+            /** Shortage Penalty Value Kind */
+            shortage_penalty_value_kind: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** PolicyOutcome */
+        PolicyOutcome: {
+            /** Avg Inventory Units */
+            avg_inventory_units: number | null;
+            /** Fill Rate */
+            fill_rate: number | null;
+            /** Holding Cost */
+            holding_cost: number | null;
+            /** Lost Margin */
+            lost_margin: number | null;
+            /** Orders Placed */
+            orders_placed: number | null;
+            /** Stockout Product Days */
+            stockout_product_days: number | null;
+            /** Total Cost */
+            total_cost: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ProductInfo */
+        ProductInfo: {
+            /** Description */
+            description: string;
+            /** First Sale */
+            first_sale: string | null;
+            /** Last Sale */
+            last_sale: string | null;
+            /** Sku Id */
+            sku_id: string;
+            /** Source Kind */
+            source_kind: string;
+            /** Unit */
+            unit: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ProductSales */
+        ProductSales: {
+            /** Daily */
+            daily: components["schemas"]["SalesPoint"][];
+            product: components["schemas"]["ProductInfo"];
+            /** Returns */
+            returns: components["schemas"]["SalesPoint"][];
+            /** Semantics */
+            semantics: string;
+            /** Value Kind */
+            value_kind: string;
+        } & {
+            [key: string]: unknown;
         };
         /** PromoteIn */
         PromoteIn: {
@@ -875,6 +2954,79 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ProvenanceRef */
+        ProvenanceRef: {
+            /** Budget */
+            budget: string | null;
+            /** Stock */
+            stock: string | null;
+            /** Terms */
+            terms: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * PurchaseOrderPayload
+         * @description The exact payload an approver approves and the outbox sends (its hash is bound to the approval).
+         */
+        PurchaseOrderPayload: {
+            /** Currency */
+            currency: string;
+            decision: components["schemas"]["PayloadDecision"];
+            /** Destination */
+            destination: string;
+            /** Environment */
+            environment: string;
+            /** Lines */
+            lines: components["schemas"]["PayloadLine"][];
+            /** Need By */
+            need_by: string;
+            /** Operation */
+            operation: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Total Minor */
+            total_minor: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Quarantine */
+        Quarantine: {
+            /** Next Cursor */
+            next_cursor: number | null;
+            /** Rows */
+            rows: components["schemas"]["QuarantineRow"][];
+            /** Summary */
+            summary: components["schemas"]["QuarantineSummary"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** QuarantineRow */
+        QuarantineRow: {
+            /** Id */
+            id: number;
+            /** Raw */
+            raw: {
+                [key: string]: unknown;
+            };
+            /** Reason */
+            reason: string;
+            /** Source Row */
+            source_row: number;
+            /** Source Sheet */
+            source_sheet: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** QuarantineSummary */
+        QuarantineSummary: {
+            /** N */
+            n: number;
+            /** Reason */
+            reason: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** RejectIn */
         RejectIn: {
             /** Expected Row Version */
@@ -882,13 +3034,251 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** RunActionRef */
+        RunActionRef: {
+            /** Currency */
+            currency: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Status */
+            status: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Total Minor */
+            total_minor: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunBudget */
+        RunBudget: {
+            /** Max Check Loops */
+            max_check_loops: number;
+            /** Max Seconds */
+            max_seconds: number;
+            /** Max Tool Calls */
+            max_tool_calls: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunCreated */
+        RunCreated: {
+            /** Events Url */
+            events_url: string;
+            /** Run Id */
+            run_id: string;
+            /** Status */
+            status: string;
+            /** Status Url */
+            status_url: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunDetail */
+        RunDetail: {
+            /** Actions */
+            actions: components["schemas"]["RunActionRef"][];
+            budget: components["schemas"]["RunBudget"];
+            checks: components["schemas"]["ChecksRef"] | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            forecast: components["schemas"]["RunForecast"] | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input */
+            input: {
+                [key: string]: unknown;
+            };
+            /** Mode */
+            mode: string;
+            /** Needs */
+            needs: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            } | null;
+            plan: components["schemas"]["PlanOutput"] | null;
+            settings: components["schemas"]["RunSettings"] | null;
+            /** Status */
+            status: string;
+            terms: components["schemas"]["RunTerms"] | null;
+            /** Tool Calls */
+            tool_calls: number | null;
+            /** Upcoming Changes */
+            upcoming_changes: components["schemas"]["Term"][] | null;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunEvent */
+        RunEvent: {
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Data
+             * @default {}
+             */
+            data: {
+                [key: string]: unknown;
+            };
+            /** Kind */
+            kind: string;
+            /** Node */
+            node: string;
+            /** Seq */
+            seq: number;
+            /** Summary */
+            summary: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunForecast */
+        RunForecast: {
+            /** Available */
+            available: boolean;
+            /** Model Version Id */
+            model_version_id: string | null;
+            /** Origin */
+            origin: string | null;
+            /**
+             * Quality Flags
+             * @default {}
+             */
+            quality_flags: {
+                [key: string]: string;
+            };
+            /** Run Id */
+            run_id: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunRow */
+        RunRow: {
+            /** Actions */
+            actions: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Created By */
+            created_by: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Input */
+            input: {
+                [key: string]: unknown;
+            };
+            /** Mode */
+            mode: string;
+            /** Status */
+            status: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunSettings */
+        RunSettings: {
+            /** Budget Minor */
+            budget_minor: number;
+            /** Currency */
+            currency: string;
+            /** Dataset Id */
+            dataset_id: string | null;
+            /** Effective Date */
+            effective_date: string;
+            /** Knowledge Cutoff */
+            knowledge_cutoff: string;
+            /**
+             * Planning
+             * @default {}
+             */
+            planning: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** RunTerms */
+        RunTerms: {
+            /** Applicable */
+            applicable: components["schemas"]["Term"][];
+            /** Conflicts */
+            conflicts: string[][];
+            /** Ignored */
+            ignored: components["schemas"]["IgnoredTerm"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** SalesPoint */
+        SalesPoint: {
+            /**
+             * Day
+             * Format: date
+             */
+            day: string;
+            /** Units */
+            units: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SandboxOrder */
+        SandboxOrder: {
+            /** Caller Ref */
+            caller_ref: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Currency */
+            currency: string;
+            /** Idempotency Key */
+            idempotency_key: string;
+            /** Lines */
+            lines: {
+                [key: string]: unknown;
+            }[];
+            /** Po Number */
+            po_number: string;
+            /** Status */
+            status: string;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Total Minor */
+            total_minor: number;
+        } & {
+            [key: string]: unknown;
+        };
         /** ScenarioInput */
         ScenarioInput: {
             /**
              * Allow Shortfall
              * @default true
              */
-            allow_shortfall: boolean;
+            allow_shortfall?: boolean;
             /** Budget Minor */
             budget_minor?: number | null;
             /** Coverage Days */
@@ -899,7 +3289,7 @@ export interface components {
              * Demand Multiplier
              * @default 1
              */
-            demand_multiplier: number;
+            demand_multiplier?: number;
             /** Effective Date */
             effective_date?: string | null;
             /** Knowledge Cutoff */
@@ -908,21 +3298,417 @@ export interface components {
              * Name
              * @default Scenario
              */
-            name: string;
+            name?: string;
             /** Safety Days */
             safety_days?: number | null;
             /**
              * Shortage Penalty Minor
              * @default 500
              */
-            shortage_penalty_minor: number;
+            shortage_penalty_minor?: number;
             /** Sku Ids */
             sku_ids?: string[] | null;
             /**
              * Supplier Delay Days
              * @default 0
              */
+            supplier_delay_days?: number;
+        };
+        /** ScenarioInputs */
+        ScenarioInputs: {
+            /** Allow Shortfall */
+            allow_shortfall: boolean;
+            /** Budget Minor */
+            budget_minor: number;
+            /** Coverage Days */
+            coverage_days: number;
+            /** Currency */
+            currency: string;
+            /** Demand Multiplier */
+            demand_multiplier: number;
+            /** Effective Date */
+            effective_date: string;
+            /** Knowledge Cutoff */
+            knowledge_cutoff: string;
+            /** Name */
+            name: string;
+            /** Safety Days */
+            safety_days: number;
+            /** Shortage Penalty Minor */
+            shortage_penalty_minor: number;
+            /** Sku Ids */
+            sku_ids: string[] | null;
+            /** Supplier Delay Days */
             supplier_delay_days: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ScenarioMetrics */
+        ScenarioMetrics: {
+            /** Metric Note */
+            metric_note: string;
+            /** Projected Q50 Coverage */
+            projected_q50_coverage: number | null;
+            /** Shortfall Units */
+            shortfall_units: number;
+            /** Skus Assessed */
+            skus_assessed: number;
+            /** Skus Needing Order */
+            skus_needing_order: number;
+            /** Spend Minor */
+            spend_minor: number;
+            /** Units Ordered */
+            units_ordered: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ScenarioResult */
+        ScenarioResult: {
+            /** Forecast Run Id */
+            forecast_run_id: string;
+            inputs: components["schemas"]["ScenarioInputs"];
+            metrics: components["schemas"]["ScenarioMetrics"];
+            /** Name */
+            name: string;
+            /**
+             * Needs
+             * @default {}
+             */
+            needs: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            plan: components["schemas"]["PlanOutput"];
+            /** Scenario Id */
+            scenario_id: string;
+            terms: components["schemas"]["ScenarioTerms"];
+            /**
+             * Value Kinds
+             * @default {}
+             */
+            value_kinds: {
+                [key: string]: string;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** ScenarioRow */
+        ScenarioRow: {
+            /**
+             * As Of
+             * Format: date-time
+             */
+            as_of: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            metrics: components["schemas"]["ScenarioMetrics"] | null;
+            /** Name */
+            name: string | null;
+            /** Request */
+            request: {
+                [key: string]: unknown;
+            };
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ScenarioTerms */
+        ScenarioTerms: {
+            /** Applicable */
+            applicable: number;
+            /** Conflicts */
+            conflicts: string[][];
+            /** Ignored */
+            ignored: components["schemas"]["IgnoredTerm"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** SheetReport */
+        SheetReport: {
+            /** Accepted */
+            accepted: number;
+            /** Input Rows */
+            input_rows: number;
+            /**
+             * Quarantine Reasons
+             * @default {}
+             */
+            quarantine_reasons: {
+                [key: string]: number;
+            };
+            /** Quarantined */
+            quarantined: number;
+            /** Returned */
+            returned: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Slot */
+        Slot: {
+            /** Aisle */
+            aisle: number;
+            /** Rack */
+            rack: number;
+            /** Sku Id */
+            sku_id: string | null;
+            /** Slot Id */
+            slot_id: string;
+            /** X */
+            x: number;
+            /** Z */
+            z: number;
+            /** Zone Id */
+            zone_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SolverInfo */
+        SolverInfo: {
+            /** Max Time S */
+            max_time_s: number;
+            /** Name */
+            name: string;
+            /** Num Workers */
+            num_workers: number;
+            /** Random Seed */
+            random_seed: number;
+            /** Version */
+            version: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * Study
+         * @description Any other study: an open-ended metrics document from its experiment artifact (or a not-available notice).
+         */
+        Study: {
+            /** Available */
+            available: boolean;
+            /** Message */
+            message: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** StudyConfig */
+        StudyConfig: {
+            /** Frozen At */
+            frozen_at: string;
+            /** Question */
+            question: string;
+            seeds: components["schemas"]["StudySeeds"];
+            /** Study Id */
+            study_id: string;
+            /** Test Origin */
+            test_origin: string;
+            /** Validation Origins */
+            validation_origins: string[];
+            /** Version */
+            version: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** StudyEnvironment */
+        StudyEnvironment: {
+            /** Commit */
+            commit: string;
+            /** Hardware */
+            hardware: string;
+            /** Lightgbm */
+            lightgbm: string;
+            /** Platform */
+            platform: string;
+            /** Python */
+            python: string;
+            /** Tcn Device */
+            tcn_device: string;
+            /** Torch */
+            torch: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** StudyMissing */
+        StudyMissing: {
+            /**
+             * Available
+             * @constant
+             */
+            available: false;
+            /** Message */
+            message: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** StudySeeds */
+        StudySeeds: {
+            /** Tcn */
+            tcn: number[];
+        } & {
+            [key: string]: unknown;
+        };
+        /** StudySelection */
+        StudySelection: {
+            /** Champion By Validation */
+            champion_by_validation: string;
+            lightgbm: components["schemas"]["FamilySelection"];
+            seasonal_naive: components["schemas"]["FamilySelection"];
+            tcn: components["schemas"]["FamilySelection"];
+        } & {
+            [key: string]: unknown;
+        };
+        /** SupplierAward */
+        SupplierAward: {
+            /** Amount Usd */
+            amount_usd: number | null;
+            /** Borrower Country */
+            borrower_country: string | null;
+            /** Contract Description */
+            contract_description: string | null;
+            /** Fiscal Year */
+            fiscal_year: number | null;
+            /** Procurement Category */
+            procurement_category: string | null;
+            /** Procurement Method */
+            procurement_method: string | null;
+            /** Project Id */
+            project_id: string | null;
+            /** Project Name */
+            project_name: string | null;
+            /** Region */
+            region: string | null;
+            /** Signing Date */
+            signing_date: string | null;
+            /** Supplier */
+            supplier: string | null;
+            /** Supplier Country */
+            supplier_country: string | null;
+            /** Wb Contract Number */
+            wb_contract_number: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SupplierDetail */
+        SupplierDetail: {
+            /** Awards */
+            awards: components["schemas"]["SupplierAward"][];
+            /** Supplier Id */
+            supplier_id: string;
+            /** Value Kind */
+            value_kind: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SupplierHit */
+        SupplierHit: {
+            /** Categories */
+            categories: (string | null)[];
+            /** Country */
+            country: string | null;
+            /** First Award */
+            first_award: string | null;
+            /** Last Award */
+            last_award: string | null;
+            /** N */
+            n: number;
+            /** Supplier */
+            supplier: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Usd */
+            usd: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Term */
+        Term: {
+            /** Currency */
+            currency: string;
+            /** Document Version Id */
+            document_version_id: string | null;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Lead Time Days */
+            lead_time_days: number;
+            /** Moq */
+            moq: number;
+            /** Order Multiple */
+            order_multiple: number;
+            /** Section */
+            section: string | null;
+            /** Sku Id */
+            sku_id: string;
+            /** Supersedes */
+            supersedes: string | null;
+            /** Supplier Id */
+            supplier_id: string;
+            /** Term Id */
+            term_id: string;
+            /** Unit Cost Minor */
+            unit_cost_minor: number;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Value Kind */
+            value_kind: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Terms */
+        Terms: {
+            /** Applicable */
+            applicable: components["schemas"]["Term"][];
+            /** Conflicts */
+            conflicts: string[][];
+            /**
+             * Effective Date
+             * Format: date
+             */
+            effective_date: string;
+            /** History */
+            history: {
+                [key: string]: unknown;
+            }[];
+            /** Ignored */
+            ignored: components["schemas"]["IgnoredTerm"][];
+            /**
+             * Knowledge Cutoff
+             * Format: date-time
+             */
+            knowledge_cutoff: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** UserInfo */
+        UserInfo: {
+            /** Display Name */
+            display_name: string;
+            /** Email */
+            email: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Is Dev Account */
+            is_dev_account: boolean;
+        } & {
+            [key: string]: unknown;
         };
         /** ValidationError */
         ValidationError: {
@@ -936,6 +3722,85 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** Value */
+        Value: {
+            /** Disclaimer */
+            disclaimer: string;
+            /** Formulas */
+            formulas: string[];
+            /** Inventorybench */
+            inventorybench: unknown | null;
+            /** Ledger */
+            ledger: components["schemas"]["LedgerLine"][];
+            /** Sensitivity */
+            sensitivity: {
+                [key: string]: {
+                    [key: string]: components["schemas"]["PolicyOutcome"];
+                };
+            } | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** VitalIn */
+        VitalIn: {
+            /** Metric */
+            metric: string;
+            /** Nav Type */
+            nav_type?: string | null;
+            /** Rating */
+            rating: string;
+            /** Route */
+            route: string;
+            /** Value */
+            value: number;
+        };
+        /** VitalMetric */
+        VitalMetric: {
+            /** Meets Target */
+            meets_target: boolean | null;
+            /** Metric */
+            metric: string;
+            /** N */
+            n: number;
+            /** P75 */
+            p75: number;
+            /** Route */
+            route: string;
+            /** Target */
+            target: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Vitals */
+        Vitals: {
+            /** Metrics */
+            metrics: components["schemas"]["VitalMetric"][];
+            /** Note */
+            note: string;
+            /** Targets */
+            targets: {
+                [key: string]: number;
+            };
+            /** Window Days */
+            window_days: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Warehouse */
+        Warehouse: {
+            /** Location */
+            location: {
+                [key: string]: unknown;
+            } | null;
+            /** Note */
+            note: string;
+            /** Schematic */
+            schematic: boolean;
+            /** Slots */
+            slots: components["schemas"]["Slot"][];
+        } & {
+            [key: string]: unknown;
         };
     };
     responses: never;
@@ -966,7 +3831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionRow"][];
                 };
             };
             /** @description Validation Error */
@@ -1001,7 +3866,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1041,7 +3906,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionResult"];
                 };
             };
             /** @description Validation Error */
@@ -1081,7 +3946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1116,7 +3981,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionResult"];
                 };
             };
             /** @description Validation Error */
@@ -1156,7 +4021,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ActionResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    retry_api_v1_actions__action_id__retry_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionResult"];
                 };
             };
             /** @description Validation Error */
@@ -1203,6 +4103,112 @@ export interface operations {
             };
         };
     };
+    list_exports_api_v1_admin_exports_get: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_export_api_v1_admin_exports_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "idempotency-key"?: string | null;
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ExportIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExportQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    download_export_api_v1_admin_exports__export_id__download_get: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                export_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     jobs_api_v1_admin_jobs_get: {
         parameters: {
             query?: {
@@ -1222,7 +4228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Jobs"];
                 };
             };
             /** @description Validation Error */
@@ -1255,7 +4261,79 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Members"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_deletion_api_v1_admin_tenant_deletion_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "idempotency-key"?: string | null;
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeletionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionQueued"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    vitals_api_v1_admin_vitals_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Vitals"];
                 };
             };
             /** @description Validation Error */
@@ -1288,7 +4366,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RunRow"][];
                 };
             };
             /** @description Validation Error */
@@ -1326,7 +4404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RunCreated"];
                 };
             };
             /** @description Validation Error */
@@ -1361,7 +4439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RunDetail"];
                 };
             };
             /** @description Validation Error */
@@ -1397,7 +4475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["RunEvent"][];
                 };
             };
             /** @description Validation Error */
@@ -1447,6 +4525,113 @@ export interface operations {
             };
         };
     };
+    list_alerts_api_v1_alerts_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Alerts"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evaluate_now_api_v1_alerts_evaluate_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertEvaluation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    acknowledge_api_v1_alerts__alert_id__acknowledge_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "idempotency-key"?: string | null;
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                alert_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AckIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AlertAck"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     audit_api_v1_audit_get: {
         parameters: {
             query?: {
@@ -1467,7 +4652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["AuditRow"][];
                 };
             };
             /** @description Validation Error */
@@ -1500,7 +4685,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Ok"];
                 };
             };
             /** @description Validation Error */
@@ -1529,7 +4714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DevUsers"];
                 };
             };
         };
@@ -1549,7 +4734,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Ok"];
                 };
             };
         };
@@ -1573,7 +4758,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Dataset"][];
                 };
             };
             /** @description Validation Error */
@@ -1611,7 +4796,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Quarantine"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deletion_certificate_api_v1_deletions__deletion_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deletion_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DeletionCertificate"];
                 };
             };
             /** @description Validation Error */
@@ -1644,7 +4860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentRow"][];
                 };
             };
             /** @description Validation Error */
@@ -1679,7 +4895,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["DocumentVersion"];
                 };
             };
             /** @description Validation Error */
@@ -1714,7 +4930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ClauseLabel"][];
                 };
             };
             /** @description Validation Error */
@@ -1753,7 +4969,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["EvidenceSearch"];
                 };
             };
             /** @description Validation Error */
@@ -1787,7 +5003,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Exceptions"];
                 };
             };
             /** @description Validation Error */
@@ -1824,7 +5040,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ForecastRun"];
                 };
             };
             /** @description Validation Error */
@@ -1859,7 +5075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ForecastRun"];
                 };
             };
             /** @description Validation Error */
@@ -1892,7 +5108,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Integration"][];
                 };
             };
             /** @description Validation Error */
@@ -1926,7 +5142,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Inventory"];
                 };
             };
             /** @description Validation Error */
@@ -1961,7 +5177,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["MarketSummary"];
                 };
             };
             /** @description Validation Error */
@@ -1995,7 +5211,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SupplierHit"][];
                 };
             };
             /** @description Validation Error */
@@ -2030,7 +5246,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SupplierDetail"];
                 };
             };
             /** @description Validation Error */
@@ -2059,7 +5275,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Me"];
                 };
             };
         };
@@ -2083,7 +5299,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ModelVersion"][];
                 };
             };
             /** @description Validation Error */
@@ -2123,7 +5339,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ModelStatusChanged"];
                 };
             };
             /** @description Validation Error */
@@ -2156,7 +5372,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Overview"];
                 };
             };
             /** @description Validation Error */
@@ -2193,7 +5409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ProductSales"];
                 };
             };
             /** @description Validation Error */
@@ -2226,7 +5442,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ForecastStudyReport"] | components["schemas"]["StudyMissing"];
                 };
             };
             /** @description Validation Error */
@@ -2261,7 +5477,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Study"];
                 };
             };
             /** @description Validation Error */
@@ -2298,7 +5514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["FaultInjected"];
                 };
             };
             /** @description Validation Error */
@@ -2331,7 +5547,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["SandboxOrder"][];
                 };
             };
             /** @description Validation Error */
@@ -2364,7 +5580,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ScenarioRow"][];
                 };
             };
             /** @description Validation Error */
@@ -2401,8 +5617,43 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ScenarioResult"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    report_vital_api_v1_telemetry_vitals_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VitalIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
@@ -2437,7 +5688,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Terms"];
                 };
             };
             /** @description Validation Error */
@@ -2470,7 +5721,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Value"];
                 };
             };
             /** @description Validation Error */
@@ -2503,7 +5754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Warehouse"];
                 };
             };
             /** @description Validation Error */
@@ -2532,7 +5783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["Health"];
                 };
             };
         };

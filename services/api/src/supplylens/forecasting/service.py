@@ -7,9 +7,9 @@ import subprocess
 import sys
 import tempfile
 import uuid
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -104,6 +104,7 @@ def _trained_points(model: dict, daily: pd.DataFrame, sku_ids: list[str], origin
     i = len(panel.dates) - 1
     if model["family"] == "lightgbm_quantile":
         import lightgbm as lgb
+
         from supplylens_ml.models import predict_lgbm
         files = sorted(_artifact(model, lambda a: a["file"].startswith("lightgbm")), key=lambda x: x[0].name)
         key = ",".join(h for _, h in files)

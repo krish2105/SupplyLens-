@@ -51,6 +51,19 @@ timeout = 300
 [tool.ruff]
 line-length = 100
 
+[tool.ruff.lint]
+# Correctness (E4/E7/E9/F), import order, modern syntax, likely bugs, unused noqa. Style-only rules stay off:
+# E501 (long lines) is not enforced. B008 is ignored because FastAPI declares dependencies as call defaults.
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "RUF100"]
+ignore = ["B008", "E741", "E702"]   # E741/E702: existing cosmetic style (single-letter loop names, one-line pairs)
+
+[tool.ruff.lint.isort]
+known-first-party = ["supplylens", "supplylens_ml", "supplylens_opt", "supplylens_worker"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B017", "E402"]
+"evaluations/*" = ["E402"]
+
 # Containers run on Linux CPU: use PyTorch's CPU wheels there (no CUDA libraries); macOS keeps the default wheel (MPS).
 [tool.uv.sources]
 torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]

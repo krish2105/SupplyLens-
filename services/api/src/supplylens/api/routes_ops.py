@@ -5,7 +5,7 @@ import csv
 import io
 import json
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.responses import StreamingResponse
@@ -17,11 +17,12 @@ from ..config import REPO_ROOT
 from ..db import control_session, tenant_session
 from .deps import actor, csrf_guard, idempotent
 from .routes_core import INVENTORY_SQL
+from .schemas import ClauseLabel, Exceptions, Jobs, Members, ModelStatusChanged, Value
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
 
-@router.get("/exceptions")
+@router.get("/exceptions", response_model=Exceptions)
 def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
     """Observed vs predicted exceptions with materiality, basis and a decision deadline."""
     a.require("read")
@@ -55,7 +56,7 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
             prev.moq AS prev_moq, prev.lead_time_days AS prev_lead FROM supplier_terms st
             LEFT JOIN supplier_terms prev ON prev.term_id = st.supersedes_term_id
             WHERE st.supersedes_term_id IS NOT NULL AND st.known_at <= :cut AND st.valid_from > :e"""),
-            {"cut": st.operational_as_of if not effective_date else datetime.combine(eff, datetime.max.time(), timezone.utc), "e": eff}).mappings().all()
+            {"cut": st.operational_as_of if not effective_date else datetime.combine(eff, datetime.max.time(), UTC), "e": eff}).mappings().all()
         for u in upcoming:
             items.append({"kind": "policy_change", "basis": "observed document", "sku_id": u["sku_id"],
                           "title": f"{u['supplier_id']} changes terms for {u['sku_id']} on {u['valid_from']}",
@@ -65,7 +66,7 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
         acts = s.execute(text("""SELECT id, status, total_minor, currency, payload->>'supplier_id' supplier, created_at, status_reason
             FROM actions WHERE status IN ('UNKNOWN_OUTCOME','STALE','PENDING_APPROVAL','FAILED')""")).mappings().all()
         for x in acts:
-            age_h = (datetime.now(timezone.utc) - x["created_at"]).total_seconds() / 3600
+            age_h = (datetime.now(UTC) - x["created_at"]).total_seconds() / 3600
             items.append({"kind": "action_" + x["status"].lower(), "basis": "system state", "sku_id": None, "action_id": str(x["id"]),
                           "title": {"UNKNOWN_OUTCOME": "Order outcome unknown — reconcile", "STALE": "Draft is stale — recompute",
                                     "PENDING_APPROVAL": "Draft awaiting approval", "FAILED": "Dispatch failed"}[x["status"]] + f" ({x['supplier']})",
@@ -77,7 +78,7 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
             "counts": {k: sum(i["kind"] == k for i in items) for k in sorted({i["kind"] for i in items})}}
 
 
-@router.get("/admin/members")
+@router.get("/admin/members", response_model=Members)
 def members(a: Actor = Depends(actor)):
     a.require("admin.read")
     with control_session() as s:
@@ -87,7 +88,7 @@ def members(a: Actor = Depends(actor)):
             "note": "Membership changes are made by the identity integration (not configured) or owner tooling; read-only here."}
 
 
-@router.get("/admin/jobs")
+@router.get("/admin/jobs", response_model=Jobs)
 def jobs(a: Actor = Depends(actor)):
     a.require("admin.read")
     with tenant_session(a.tenant_id) as s:
@@ -107,7 +108,7 @@ class PromoteIn(BaseModel):
     reason: str = Field(min_length=5, max_length=500)
 
 
-@router.post("/models/{model_id}/status")
+@router.post("/models/{model_id}/status", response_model=ModelStatusChanged)
 def set_model_status(model_id: uuid.UUID, body: PromoteIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
     """Promotion is an audited administrative decision; one CHAMPION per tenant."""
     a.require("admin.write")
@@ -131,6 +132,12 @@ def set_model_status(model_id: uuid.UUID, body: PromoteIn, a: Actor = Depends(ac
     return resp
 
 
+def csv_safe(value) -> str:
+    """Neutralise spreadsheet formula injection: a cell that starts with = + - @ tab or CR is prefixed with a quote."""
+    s = str(value)
+    return "'" + s if s[:1] in ("=", "+", "-", "@", "\t", "\r") else s
+
+
 @router.get("/admin/audit.csv")
 def audit_csv(a: Actor = Depends(actor)):
     a.require("admin.read")
@@ -141,12 +148,13 @@ def audit_csv(a: Actor = Depends(actor)):
     w = csv.writer(buf)
     w.writerow(["id", "at_utc", "actor", "action", "entity", "entity_id", "detail_json"])
     for r in rows:
-        w.writerow([r["id"], r["at"].isoformat(), r["actor"] or "system", r["action"], r["entity"], r["entity_id"], json.dumps(r["detail"])])
+        w.writerow([r["id"], r["at"].isoformat(), csv_safe(r["actor"] or "system"), csv_safe(r["action"]), csv_safe(r["entity"]),
+                    csv_safe(r["entity_id"]), csv_safe(json.dumps(r["detail"]))])
     return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv",
                              headers={"Content-Disposition": f'attachment; filename="supplylens-audit-{date.today()}.csv"'})
 
 
-@router.get("/documents/versions/{version_id}/labels")
+@router.get("/documents/versions/{version_id}/labels", response_model=list[ClauseLabel])
 def labels(version_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -161,7 +169,7 @@ def _latest_metrics(prefix: str):
     return json.loads((runs[-1] / "metrics.json").read_text()) if runs else None
 
 
-@router.get("/value")
+@router.get("/value", response_model=Value)
 def value(a: Actor = Depends(actor)):
     """Value ledger built only from simulated study outputs; every line names its evidence class."""
     a.require("read")

@@ -3,23 +3,24 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import clsx from "clsx";
-import { Bug, Check, Pencil, RefreshCw, X } from "lucide-react";
+import { Bug, Check, Pencil, RefreshCw, RotateCw, X } from "lucide-react";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { post } from "@/lib/api";
-import { useMe, useTenantQuery, useWs, type Action } from "@/lib/queries";
+import { ApiError, apiPost, newKey } from "@/lib/api";
+import { useDraft } from "@/lib/draft";
+import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, int, money, short } from "@/lib/format";
 
 const TABS = [
   { k: "PENDING_APPROVAL", l: "Awaiting approval" }, { k: "QUEUED", l: "Queued" }, { k: "UNKNOWN_OUTCOME", l: "Unknown outcome" },
-  { k: "RECONCILED", l: "Reconciled" }, { k: "STALE", l: "Stale" }, { k: "REJECTED", l: "Rejected" }, { k: "", l: "All" },
+  { k: "FAILED", l: "Failed" }, { k: "RECONCILED", l: "Reconciled" }, { k: "STALE", l: "Stale" }, { k: "REJECTED", l: "Rejected" }, { k: "", l: "All" },
 ];
 
 export default function ApprovalsPage() {
   const ws = useWs();
   const [tab, setTab] = useState("PENDING_APPROVAL");
   const [actionId, setActionId] = useQueryState("action", parseAsString);
-  const list = useTenantQuery<Action[]>(["actions", tab], `/api/v1/actions${tab ? `?status=${tab}` : ""}`, { refetchInterval: 4000 });
-  const orders = useTenantQuery<any[]>(["sandbox-orders"], "/api/v1/sandbox/orders", { refetchInterval: 5000 });
+  const list = useApi(["actions", tab], "/api/v1/actions", { query: { status: tab || undefined }, refetchInterval: 4000 });
+  const orders = useApi(["sandbox-orders"], "/api/v1/sandbox/orders", { refetchInterval: 5000 });
 
   return (
     <div className="space-y-6">
@@ -76,27 +77,40 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
   const me = useMe();
   const role = me.data?.memberships.find((m) => m.slug === ws)?.role;
   const isDev = me.data?.user.is_dev_account;
-  const a = useTenantQuery<Action>(["action", id], `/api/v1/actions/${id}`, { refetchInterval: 3000 });
-  const [reason, setReason] = useState("");
-  const [editing, setEditing] = useState<Record<string, number> | null>(null);
+  const a = useApi(["action", id], "/api/v1/actions/{action_id}", { path: { action_id: id }, refetchInterval: 3000 });
+  // Unsent input survives a reload or a dropped connection.
+  const [reason, setReason, clearReason] = useDraft(`reject-reason:${id}`, "");
+  const [editing, setEditing, clearEditing] = useDraft<Record<string, number> | null>(`edit-quantities:${id}`, null);
   const refresh = () => { qc.invalidateQueries({ queryKey: [ws] }); };
+  // One idempotency key per user intent, captured when the user clicks. If the response is lost and the user
+  // retries, the very same request (same key, payload hash and row version) is sent again and the server replays the
+  // original outcome instead of executing twice.
+  type Op = "approve" | "reject" | "edit" | "reconcile" | "retry" | "fault";
+  type Intent = { op: Op; key: string; hash: string; version: number; reason: string; quantities: Record<string, number> };
   const m = useMutation({
-    mutationFn: async (op: "approve" | "reject" | "edit" | "reconcile" | "fault") => {
-      const x = a.data!;
-      if (op === "approve") return post(`/api/v1/actions/${id}/approve`, { payload_hash: x.payload_hash, expected_row_version: x.row_version });
-      if (op === "reject") return post(`/api/v1/actions/${id}/reject`, { reason, expected_row_version: x.row_version });
-      if (op === "edit") return post(`/api/v1/actions/${id}/edit`, { quantities: editing, expected_row_version: x.row_version });
-      if (op === "fault") return post(`/api/v1/sandbox/faults`, { action_id: id, mode: "timeout_after_commit" });
-      return post(`/api/v1/actions/${id}/reconcile`, {});
+    mutationFn: async (i: Intent) => {
+      const path = { action_id: id };
+      const idempotencyKey = i.key;
+      if (i.op === "approve") return apiPost("/api/v1/actions/{action_id}/approve", { path, idempotencyKey, body: { payload_hash: i.hash, expected_row_version: i.version } });
+      if (i.op === "reject") return apiPost("/api/v1/actions/{action_id}/reject", { path, idempotencyKey, body: { reason: i.reason, expected_row_version: i.version } });
+      if (i.op === "edit") return apiPost("/api/v1/actions/{action_id}/edit", { path, idempotencyKey, body: { quantities: i.quantities, expected_row_version: i.version } });
+      if (i.op === "fault") return apiPost("/api/v1/sandbox/faults", { body: { action_id: id, mode: "timeout_after_commit" } });
+      if (i.op === "retry") return apiPost("/api/v1/actions/{action_id}/retry", { path });
+      return apiPost("/api/v1/actions/{action_id}/reconcile", { path });
     },
-    onSuccess: (_, op) => { if (op === "edit") setEditing(null); if (op === "reject") setReason(""); refresh(); },
+    onSuccess: (_, i) => { if (i.op === "edit") clearEditing(); if (i.op === "reject") clearReason(); refresh(); },
   });
+  const act = (op: Op) => {
+    const x = a.data!;
+    m.mutate({ op, key: newKey(), hash: x.payload_hash, version: x.row_version, reason, quantities: editing ?? {} });
+  };
+  const busy = (op: Op) => m.isPending && m.variables?.op === op;
 
   if (a.isLoading) return <Card className="p-5"><Loading /></Card>;
   if (a.error || !a.data) return <Card className="p-5"><ErrorState error={a.error} /></Card>;
-  const x = a.data, p = x.payload, ev = x.evidence ?? {};
-  const self = me.data?.user.id === (x as any).prepared_by;
-  const lastApproval = x.approvals?.filter((ap: any) => ap.decision === "APPROVED").at(-1);
+  const x = a.data, p = x.payload, ev = x.evidence;
+  const self = me.data?.user.id === x.prepared_by;
+  const lastApproval = x.approvals.filter((ap) => ap.decision === "APPROVED").at(-1);
 
   return (
     <div className="space-y-6">
@@ -115,7 +129,7 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
           <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Product</th><th className="font-medium">Quantity</th>
             <th className="font-medium">Unit cost</th><th className="font-medium">Line</th><th className="font-medium">Term</th></tr></thead>
           <tbody>
-            {p.lines.map((l: any) => (
+            {p.lines.map((l) => (
               <tr key={l.sku_id} className="border-b border-line/60">
                 <td className="py-2"><Mono>{l.sku_id}</Mono></td>
                 <td className="num">{editing ? (
@@ -133,33 +147,41 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           {x.status === "PENDING_APPROVAL" && role === "approver" && (
             <>
-              <Button onClick={() => m.mutate("approve")} busy={m.isPending && m.variables === "approve"} disabled={self}
+              <Button onClick={() => act("approve")} busy={busy("approve")} disabled={self}
                 title={self ? "You prepared this draft; another approver must approve it" : undefined}>
                 <Check className="size-4" aria-hidden /> Approve {money(x.total_minor, x.currency)}
               </Button>
               <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reason for rejection" aria-label="Reason for rejection"
                 className="min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
-              <Button variant="danger" onClick={() => m.mutate("reject")} disabled={!reason.trim()} busy={m.isPending && m.variables === "reject"}><X className="size-4" aria-hidden /> Reject</Button>
+              <Button variant="danger" onClick={() => act("reject")} disabled={!reason.trim()} busy={busy("reject")}><X className="size-4" aria-hidden /> Reject</Button>
             </>
           )}
           {["PENDING_APPROVAL", "STALE"].includes(x.status) && role === "planner" && (
             editing ? (
-              <><Button onClick={() => m.mutate("edit")} busy={m.isPending && m.variables === "edit"}>Revalidate and save</Button>
+              <><Button onClick={() => act("edit")} busy={busy("edit")}>Revalidate and save</Button>
                 <Button variant="ghost" onClick={() => setEditing(null)}>Cancel edit</Button></>
             ) : <Button variant="outline" onClick={() => setEditing({})}><Pencil className="size-4" aria-hidden /> Edit quantities</Button>
           )}
           {x.status === "UNKNOWN_OUTCOME" && ["planner", "approver", "tenant_admin"].includes(role ?? "") && (
-            <Button onClick={() => m.mutate("reconcile")} busy={m.isPending}><RefreshCw className="size-4" aria-hidden /> Reconcile with sandbox</Button>
+            <Button onClick={() => act("reconcile")} busy={busy("reconcile")}><RefreshCw className="size-4" aria-hidden /> Reconcile with sandbox</Button>
+          )}
+          {x.status === "FAILED" && ["planner", "approver", "tenant_admin"].includes(role ?? "") && (
+            <Button onClick={() => act("retry")} busy={busy("retry")}
+              title="Re-queue under the same idempotency key. Refused if the target already holds the order.">
+              <RotateCw className="size-4" aria-hidden /> Retry dispatch
+            </Button>
           )}
           {isDev && x.status === "PENDING_APPROVAL" && (
-            <Button variant="ghost" size="sm" onClick={() => m.mutate("fault")} title="Development only: the sandbox will commit the order and then not reply">
+            <Button variant="ghost" size="sm" onClick={() => act("fault")} title="Development only: the sandbox will commit the order and then not reply">
               <Bug className="size-4" aria-hidden /> Simulate timeout on submit
             </Button>
           )}
           {x.status === "PENDING_APPROVAL" && role === "viewer" && <p className="text-sm text-muted">Viewers cannot approve.</p>}
           {x.status === "PENDING_APPROVAL" && role === "tenant_admin" && <p className="text-sm text-muted">Tenant administrators do not hold spend authority.</p>}
         </div>
-        {m.error && <div className="mt-3"><ErrorState error={m.error} /></div>}
+        {m.isPaused && <p role="status" className="mt-3 rounded-lg bg-risk-soft px-3 py-2 text-sm text-risk">Waiting for connection. This request is held and will be sent automatically, once, when you are back online.</p>}
+        {m.error && <div className="mt-3"><ErrorState error={m.error}
+          retry={m.error instanceof ApiError && m.error.status === 0 && m.variables ? () => m.mutate(m.variables!) : undefined} /></div>}
       </Card>
 
       <Card className="p-5">
@@ -169,11 +191,11 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
           ["Forecast run", ev.forecast?.available ? <Mono key="f">{short(ev.forecast.run_id)} (origin {ev.forecast.origin})</Mono> : "none — reorder rule on fictional fixture"],
           ["Plan", <span key="p"><Status value={ev.plan?.status} /> <Mono>{short(ev.plan?.input_hash, 16)}</Mono></span>],
           ["Checks", ev.checks?.passed ? "passed; independent validator re-checked every line" : "issues raised"],
-          ["Provenance", <span key="v" className="flex flex-wrap gap-1">stock <Provenance kind={ev.provenance?.stock} /> terms <Provenance kind={ev.provenance?.terms} /> budget <Provenance kind="assumed" /></span>],
+          ["Provenance", <span key="v" className="flex flex-wrap gap-1">stock <Provenance kind={ev.provenance.stock} /> terms <Provenance kind={ev.provenance.terms} /> budget <Provenance kind="assumed" /></span>],
           ["Approval", lastApproval ? `bound to ${short(lastApproval.payload_hash, 12)}…, expires ${dateTime(lastApproval.expires_at)}` : "none yet"],
         ]} /></div>
         <ul className="mt-4 space-y-3">
-          {(ev.terms ?? []).map((t: any) => (
+          {ev.terms.map((t) => (
             <li key={t.term_id} className="rounded-xl border border-line p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2"><Mono className="font-semibold">{t.term_id}</Mono>
                 <span className="num text-xs text-muted">MOQ {t.moq} · ×{t.order_multiple} · {money(t.unit_cost_minor, t.currency)} · {t.lead_time_days} d · from {day(t.valid_from)}</span></div>
@@ -186,15 +208,15 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
             </li>
           ))}
         </ul>
-        {ev.ignored_terms?.length ? <div className="mt-3 text-xs text-muted"><p className="font-medium text-ink">Not applied at this decision time</p>
-          <ul>{ev.ignored_terms.map((i: any) => <li key={i.term_id}><Mono>{i.term_id}</Mono> — {i.reason}</li>)}</ul></div> : null}
-        {ev.upcoming_changes?.length ? <p className="mt-3 rounded-lg bg-risk-soft p-2 text-sm text-risk">Policy change ahead: {ev.upcoming_changes.map((u: any) => `${u.sku_id} MOQ ${u.moq} from ${day(u.valid_from)}`).join("; ")}.</p> : null}
+        {ev.ignored_terms.length ? <div className="mt-3 text-xs text-muted"><p className="font-medium text-ink">Not applied at this decision time</p>
+          <ul>{ev.ignored_terms.map((i) => <li key={i.term_id}><Mono>{i.term_id}</Mono> — {i.reason}</li>)}</ul></div> : null}
+        {ev.upcoming_changes.length ? <p className="mt-3 rounded-lg bg-risk-soft p-2 text-sm text-risk">Policy change ahead: {ev.upcoming_changes.map((u) => `${u.sku_id} MOQ ${u.moq} from ${day(u.valid_from)}`).join("; ")}.</p> : null}
       </Card>
 
       <Card className="p-5">
         <Eyebrow>Lifecycle</Eyebrow>
         <ul className="mt-3 space-y-1 text-sm">
-          {(x.approvals ?? []).map((ap: any) => <li key={ap.id}><Status value={ap.decision} /> {dateTime(ap.created_at)} {ap.reason ? `— ${ap.reason}` : ""} <Mono className="text-muted">hash {short(ap.payload_hash, 10)}</Mono></li>)}
+          {x.approvals.map((ap) => <li key={ap.id}><Status value={ap.decision} /> {dateTime(ap.created_at)} {ap.reason ? `— ${ap.reason}` : ""} <Mono className="text-muted">hash {short(ap.payload_hash, 10)}</Mono></li>)}
           {x.outbox && <li>Outbox <Mono>{x.outbox.operation_id}</Mono>: <Status value={x.outbox.status} /> attempts {x.outbox.attempts}{x.outbox.last_error ? ` · ${x.outbox.last_error}` : ""}</li>}
         </ul>
       </Card>

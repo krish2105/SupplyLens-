@@ -16,7 +16,15 @@ from ..authz import Forbidden
 from ..db import app_engine
 from ..forecasting.service import ForecastError
 from ..lifecycle import LifecycleError
-from . import routes_core, routes_decisions, routes_lifecycle, routes_market, routes_ops, routes_research
+from . import (
+    routes_core,
+    routes_decisions,
+    routes_lifecycle,
+    routes_market,
+    routes_ops,
+    routes_research,
+)
+from .schemas import Health
 
 log = logging.getLogger("supplylens.api")
 
@@ -37,6 +45,10 @@ async def trace(request: Request, call_next):
     start = time.perf_counter()
     response = await call_next(request)
     response.headers["x-trace-id"] = trace_id
+    # API responses carry tenant data: never cache them, never let a browser sniff their type.
+    response.headers.setdefault("Cache-Control", "no-store")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
     log.info("%s %s %s %.1fms trace=%s", request.method, request.url.path, response.status_code,
              (time.perf_counter() - start) * 1000, trace_id)
     return response
@@ -74,7 +86,7 @@ async def validation_error(_: Request, e: RequestValidationError):
                          "errors": [{"loc": list(x["loc"]), "msg": x["msg"]} for x in e.errors()]}, status_code=422)
 
 
-@app.get("/health")
+@app.get("/health", response_model=Health)
 def health():
     with app_engine().connect() as c:
         c.execute(text("SELECT 1"))

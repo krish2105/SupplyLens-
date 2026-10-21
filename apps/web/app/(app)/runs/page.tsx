@@ -7,15 +7,13 @@ import clsx from "clsx";
 import { Play } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { post } from "@/lib/api";
-import { useMe, useTenantQuery, useWs, type Overview } from "@/lib/queries";
+import { apiPost } from "@/lib/api";
+import type { Schemas } from "@/lib/contract";
+import { useApi, useMe, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 import { dateTime, day, int, money, short } from "@/lib/format";
 
-type RunRow = { id: string; status: string; mode: string; created_at: string; created_by: string; actions: number; input: any };
-type Event = { seq: number; node: string; kind: string; summary: string; data: any; created_at: string };
-type RunDetail = { id: string; status: string; mode: string; input: any; budget: any; settings: any; forecast: any; plan: any; checks: any;
-  terms: any; upcoming_changes: any[]; needs: Record<string, any> | null; tool_calls: number; actions: { id: string; status: string; total_minor: number; currency: string; supplier_id: string }[] };
+type Event = Schemas["RunEvent"];
 
 const STAGES = ["ACCEPT", "PLAN", "GATHER_EVIDENCE", "COMPUTE", "CHECK", "PREPARE_ACTION"];
 const STAGE_LABEL: Record<string, string> = { ACCEPT: "Accept", PLAN: "Plan", GATHER_EVIDENCE: "Gather evidence", COMPUTE: "Compute", CHECK: "Check", PREPARE_ACTION: "Prepare drafts" };
@@ -27,19 +25,20 @@ export default function RunsPage() {
   const role = me.data?.memberships.find((m) => m.slug === ws)?.role;
   const [ctx] = usePlanningContext();
   const { known, eff } = useDecisionClock();
-  const ov = useTenantQuery<Overview>(["overview"], "/api/v1/overview");
-  const runs = useTenantQuery<RunRow[]>(["runs"], "/api/v1/agent-runs", { refetchInterval: 5000 });
+  const ov = useApi(["overview"], "/api/v1/overview");
+  const runs = useApi(["runs"], "/api/v1/agent-runs", { refetchInterval: 5000 });
   const [runId, setRunId] = useQueryState("run", parseAsString);
   const [mode, setMode] = useState("draft");
   const [scope, setScope] = useState<"all" | "selected">("all");
-  const isDemo = !ov.data?.dataset;
+  const loaded = !!ov.data;
+  const isDemo = loaded && !ov.data!.dataset;
 
   const start = useMutation({
-    mutationFn: () => post<{ run_id: string }>("/api/v1/agent-runs", {
+    mutationFn: () => apiPost("/api/v1/agent-runs", { body: {
       mode, knowledge_cutoff: known, effective_date: eff,
       ...(scope === "selected" && ctx.sku ? { sku_ids: [ctx.sku] } : {}),
       ...(isDemo ? { sku_ids: ["DEMO-REF-SKU"], currency: "USD", budget_minor: 18000, allow_shortfall: false } : {}),
-    }),
+    } }),
     onSuccess: (r) => { setRunId(r.run_id); qc.invalidateQueries({ queryKey: [ws, "runs"] }); },
   });
 
@@ -56,13 +55,13 @@ export default function RunsPage() {
               <option value="draft">Draft — prepare purchase-order drafts for approval</option>
             </select></label>
           {!isDemo && (
-            <label className="text-sm"><span className="mb-1 block font-medium">Scope</span>
+            <label className={clsx("text-sm", !loaded && "invisible")}><span className="mb-1 block font-medium">Scope</span>
               <select value={scope} onChange={(e) => setScope(e.target.value as "all" | "selected")} className="rounded-lg border border-line bg-surface px-3 py-2">
                 <option value="all">All stocked products</option><option value="selected" disabled={!ctx.sku}>Selected product {ctx.sku ? `(${ctx.sku})` : "(none selected)"}</option>
               </select></label>
           )}
           <div className="text-xs text-muted">Known by <span className="num">{dateTime(known)}</span><br />In force on <span className="num">{day(eff)}</span></div>
-          <Button onClick={() => start.mutate()} busy={start.isPending} disabled={role !== "planner" || !known}
+          <Button onClick={() => start.mutate()} busy={start.isPending} disabled={role !== "planner" || !known || !loaded}
             title={role !== "planner" ? "Only planners can start investigations" : undefined}>
             <Play className="size-4" aria-hidden /> Start investigation
           </Button>
@@ -99,7 +98,7 @@ function RunView({ id, ws }: { id: string; ws: string }) {
   const qc = useQueryClient();
   const [events, setEvents] = useState<Event[]>([]);
   const [live, setLive] = useState(false);
-  const detail = useTenantQuery<RunDetail>(["run", id], `/api/v1/agent-runs/${id}`);
+  const detail = useApi(["run", id], "/api/v1/agent-runs/{run_id}", { path: { run_id: id } });
   const last = useRef(0);
 
   useEffect(() => {
@@ -151,14 +150,14 @@ function RunView({ id, ws }: { id: string; ws: string }) {
             <div><Eyebrow>Lines</Eyebrow><p className="num text-xl font-semibold">{int(d.plan.lines?.length)}</p></div>
             <div><Eyebrow>Total</Eyebrow><p className="num text-xl font-semibold">{money(d.plan.total_minor, cur)}</p></div>
             <div><Eyebrow>Budget</Eyebrow><p className="num text-xl font-semibold">{money(d.plan.request?.budget_minor, cur)}</p><Provenance kind="assumed" /></div>
-            <div><Eyebrow>Shortfall</Eyebrow><p className="num text-xl font-semibold">{int(Object.values(d.plan.shortfall ?? {}).reduce((a: number, b: any) => a + b, 0))} units</p></div>
+            <div><Eyebrow>Shortfall</Eyebrow><p className="num text-xl font-semibold">{int(Object.values(d.plan.shortfall).reduce((a, b) => a + b, 0))} units</p></div>
           </div>
-          {d.plan.explanation?.length ? <ul className="mt-3 list-disc pl-5 text-sm text-risk">{d.plan.explanation.map((x: string) => <li key={x}>{x}</li>)}</ul> : null}
+          {d.plan.explanation?.length ? <ul className="mt-3 list-disc pl-5 text-sm text-risk">{d.plan.explanation.map((x) => <li key={x}>{x}</li>)}</ul> : null}
           {d.plan.arrival_warnings?.length ? <p className="mt-3 text-sm text-risk">{d.plan.arrival_warnings.length} line(s) arrive after their projected stockout date.</p> : null}
           <div className="mt-3"><KV items={[
             ["Solver", <Mono key="s">{d.plan.solver?.name} {d.plan.solver?.version} · workers {d.plan.solver?.num_workers} · seed {d.plan.solver?.random_seed}</Mono>],
             ["Input hash", <Mono key="h">{short(d.plan.input_hash, 16)}</Mono>],
-            ["Checks", d.checks?.passed ? "All passed (independent validator re-checked every line)" : (d.checks?.issues ?? []).map((i: any) => i.kind).join(", ")],
+            ["Checks", d.checks?.passed ? "All passed (independent validator re-checked every line)" : (d.checks?.issues ?? []).map((i) => String(i.kind)).join(", ")],
             ["Forecast", d.forecast?.available ? <Mono key="f">{short(d.forecast.run_id)} · origin {d.forecast.origin}</Mono> : "none (no sales history)"],
           ]} /></div>
         </Card>
@@ -167,8 +166,8 @@ function RunView({ id, ws }: { id: string; ws: string }) {
         <Card className="p-5">
           <Eyebrow>Policy evidence used</Eyebrow>
           <p className="mt-2 text-sm">{d.terms.applicable.length} applicable terms · {d.terms.ignored.length} excluded · {d.terms.conflicts.length} conflicts</p>
-          {d.terms.conflicts.length > 0 && <p className="mt-2 rounded-lg bg-risk-soft p-2 text-sm text-risk">Review required: conflicting active terms {d.terms.conflicts.map((c: string[]) => c.join(" vs ")).join("; ")}. No draft was prepared.</p>}
-          <ul className="mt-2 space-y-1 text-xs text-muted">{d.terms.ignored.slice(0, 8).map((i: any) => <li key={i.term_id}><Mono>{i.term_id}</Mono> — {i.reason}</li>)}</ul>
+          {d.terms.conflicts.length > 0 && <p className="mt-2 rounded-lg bg-risk-soft p-2 text-sm text-risk">Review required: conflicting active terms {d.terms.conflicts.map((c) => c.join(" vs ")).join("; ")}. No draft was prepared.</p>}
+          <ul className="mt-2 space-y-1 text-xs text-muted">{d.terms.ignored.slice(0, 8).map((i) => <li key={i.term_id}><Mono>{i.term_id}</Mono> — {i.reason}</li>)}</ul>
           {d.upcoming_changes?.length ? <p className="mt-3 text-sm">Upcoming (known, not yet in force): {d.upcoming_changes.map((u) => `${u.supplier_id} ${u.sku_id} MOQ ${u.moq} from ${u.valid_from}`).slice(0, 4).join("; ")}</p> : null}
         </Card>
       )}

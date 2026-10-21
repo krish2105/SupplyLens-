@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { signIn } from "./helpers";
+import { getJson, signIn } from "./helpers";
 
 // P0 journey on the spec's reference case: investigate -> prepare draft -> approve -> sandbox order reconciled.
 test("reference case: planner drafts, approver approves, sandbox order reconciles", async ({ page }) => {
@@ -62,12 +62,13 @@ test("selecting a table row selects the same product in the floor plan and detai
 
 test("command palette jumps to a product", async ({ page }) => {
   await signIn(page, "viewer");
+  const sku = (await getJson<{ items: { sku_id: string }[] }>(page, "/api/v1/inventory")).items[0]!.sku_id;
   await page.goto("/?ws=uci-research");
   await page.getByRole("button", { name: "Open command palette" }).click();
-  await page.getByRole("combobox", { name: "Search pages, products and commands" }).fill("85123A");
+  await page.getByRole("combobox", { name: "Search pages, products and commands" }).fill(sku);
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/inventory.*sku=85123A/);
-  await expect(page.locator("#detail-title")).toContainText("85123A");
+  await expect(page).toHaveURL(new RegExp(`inventory.*sku=${sku}`));
+  await expect(page.locator("#detail-title")).toContainText(sku);
 });
 
 test("tenant admin can export the audit trail; viewer cannot open administration", async ({ page }) => {
@@ -82,6 +83,9 @@ test("tenant admin can export the audit trail; viewer cannot open administration
 
 test("forecast lab refuses a replay the champion has already seen", async ({ page }) => {
   await signIn(page, "planner");
+  const models = await getJson<{ family: string; status: string; training_cutoff: string | null }[]>(page, "/api/v1/models");
+  const champion = models.find((m) => m.status === "CHAMPION" && m.family !== "seasonal_naive");
+  test.skip(champion?.training_cutoff !== "2011-11-10", "needs the trained champion from the real UCI study (training cutoff 2011-11-10)");
   await page.goto("/forecast?ws=uci-research&sku=85123A&known=2011-10-01T23:59:00.000Z");
   await page.getByRole("button", { name: /Run forecast/ }).click();
   await expect(page.getByText(/trained on data up to 2011-11-10/)).toBeVisible();

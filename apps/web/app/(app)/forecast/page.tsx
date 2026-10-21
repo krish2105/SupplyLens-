@@ -1,19 +1,15 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
-import { getTenant, post } from "@/lib/api";
-import { useMe, useTenantQuery, useWs, type InventoryItem } from "@/lib/queries";
+import { apiPost, getTenant } from "@/lib/api";
+import { useApi, useMe, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 import { dateTime, day, num, short } from "@/lib/format";
 
-type Run = { id: string; origin: string; horizon: number; status: string; family: string; version: string; quality_flags: Record<string, string>;
-  label: string; interval: string; created_at: string; points: { sku_id: string; day: string; q10: number; q50: number; q90: number }[] };
-type Model = { id: string; family: string; version: string; status: string; config: Record<string, unknown>; metrics: Record<string, unknown>; created_at: string; training_cutoff: string | null };
-type Sales = { daily: { day: string; units: number }[] };
 
 const PLANNED = [
   { family: "lightgbm_quantile", note: "Global quantile model (q0.1/0.5/0.9), lagged features shifted before origin." },
@@ -29,24 +25,35 @@ export default function ForecastPage() {
   const { known } = useDecisionClock();
   const role = me.data?.memberships.find((m) => m.slug === ws)?.role;
   // The product list comes from the workspace snapshot so replaying an earlier origin keeps it populated.
-  const inv = useTenantQuery<{ items: InventoryItem[] }>(["inventory", "workspace"], "/api/v1/inventory");
+  const inv = useApi(["inventory", "workspace"], "/api/v1/inventory");
   const sku = ctx.sku ?? inv.data?.items[0]?.sku_id ?? null;
-  const sales = useTenantQuery<Sales>(["sales", sku], sku ? `/api/v1/products/${encodeURIComponent(sku)}/sales` : null);
-  const models = useTenantQuery<Model[]>(["models"], "/api/v1/models");
+  const sales = useApi(["sales", sku], sku ? "/api/v1/products/{sku_id}/sales" : null, { path: { sku_id: sku ?? "" } });
+  const models = useApi(["models"], "/api/v1/models");
   const [runId, setRunId] = useState<string | null>(null);
-  const run = useTenantQuery<Run>(["forecast", runId], runId ? `/api/v1/forecasts/${runId}` : null);
+  const run = useApi(["forecast", runId], runId ? "/api/v1/forecasts/{run_id}" : null, { path: { run_id: runId ?? "" } });
   const [zoom, setZoom] = useState<[number, number] | null>(null);
   const [family, setFamily] = useState<string>("");
 
+  // A run belongs to the product and origin it was made for. If the user has moved on by the time it returns, the
+  // result is cached but not shown: the chart, run card and score must never mix versions (EXE-006).
+  const skuRef = useRef(sku);
+  skuRef.current = sku;
   const create = useMutation({
-    mutationFn: () => post<Run>("/api/v1/forecasts", { sku_ids: [sku], origin: known!.slice(0, 10), horizon: 28, ...(family ? { model_family: family } : {}) }),
-    onSuccess: (r) => { setRunId(r.id); qc.setQueryData([getTenant(), "forecast", r.id], r); qc.invalidateQueries({ queryKey: [ws, "models"] }); },
+    mutationFn: (forSku: string) => apiPost("/api/v1/forecasts", { body: { sku_ids: [forSku], origin: known!.slice(0, 10), horizon: 28, ...(family ? { model_family: family } : {}) } }),
+    onSuccess: (r, forSku) => {
+      qc.setQueryData([getTenant(), "forecast", r.id], r);
+      if (forSku === skuRef.current) setRunId(r.id);
+      qc.invalidateQueries({ queryKey: [ws, "models"] });
+    },
   });
 
   const origin = known?.slice(0, 10) ?? null;
   const history = useMemo(() => (sales.data?.daily ?? []).filter((d) => !origin || d.day <= origin).slice(-140), [sales.data, origin]);
   const actualsAfter = useMemo(() => (sales.data?.daily ?? []).filter((d) => origin && d.day > origin), [sales.data, origin]);
-  const pts = (run.data?.points ?? []).filter((p) => p.sku_id === sku);
+  const sameSku = !!run.data && !!sku && run.data.sku_ids.includes(sku);
+  const staleOrigin = sameSku && run.data!.origin !== origin;
+  const current = sameSku && !staleOrigin ? run.data! : null;       // only a run for this product AND this origin is overlaid
+  const pts = (current?.points ?? []).filter((p) => p.sku_id === sku);
 
   const backtest = useMemo(() => {
     if (!pts.length || !actualsAfter.length) return null;
@@ -90,7 +97,7 @@ export default function ForecastPage() {
           <select value={family} onChange={(e) => setFamily(e.target.value)} className="rounded-lg border border-line bg-surface px-2 py-2 text-sm">
             <option value="">Champion ({FAMILY_LABEL[models.data?.find((m) => m.status === "CHAMPION")?.family ?? "seasonal_naive"]})</option>
             {models.data?.map((m) => <option key={m.id} value={m.family}>{FAMILY_LABEL[m.family] ?? m.family} · {m.status.toLowerCase()}</option>)}
-          </select></label><Button onClick={() => create.mutate()} busy={create.isPending} disabled={!sku || !known || role === "viewer" || role === "approver" || role === "tenant_admin"}
+          </select></label><Button onClick={() => create.mutate(sku!)} busy={create.isPending} disabled={!sku || !known || role === "viewer" || role === "approver" || role === "tenant_admin"}
           title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button></>}>
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
@@ -125,13 +132,18 @@ export default function ForecastPage() {
             {zoom && <p className="mt-1 text-xs text-muted">Zoomed to {num(zoom[0], 0)}–{num(zoom[1], 0)}% of the visible range. Zoom changes the view only, never the data or exports.</p>}
             {!pts.length && history.length > 0 && <p className="mt-2 text-sm text-muted">Run a forecast to overlay the median and interval.</p>}
           </Card>
-          {run.data && (
-            <div className="grid gap-6 lg:grid-cols-2">
+          {staleOrigin && (
+            <p role="status" className="rounded-lg bg-risk-soft px-3 py-2 text-sm text-risk">
+              This run was made from {day(run.data!.origin)}, but the decision clock now reads {day(origin)}. It is not drawn on the chart or scored; run the forecast again.
+            </p>
+          )}
+          {run.data && sameSku && (
+            <div className="grid gap-6 lg:grid-cols-2" data-run-id={run.data.id}>
               <Card className="p-5">
                 <Eyebrow>Forecast run</Eyebrow>
                 <div className="mt-3"><KV items={[
                   ["Run", <Mono key="r">{short(run.data.id)}</Mono>],
-                  ["Model", <span key="m"><Mono>{run.data.family} {run.data.version}</Mono> <Status value="CHAMPION" /></span>],
+                  ["Model", <span key="m"><Mono>{run.data.family} {run.data.version}</Mono> <Status value={models.data?.find((m) => m.id === run.data!.model_version_id)?.status} /></span>],
                   ["Origin", day(run.data.origin)], ["Horizon", `${run.data.horizon} days`],
                   ["Output", run.data.label], ["Interval", run.data.interval],
                   ["Quality flags", Object.keys(run.data.quality_flags).length ? Object.entries(run.data.quality_flags).map(([k, v]) => `${k}: ${v}`).join(", ") : "none"],
@@ -140,7 +152,7 @@ export default function ForecastPage() {
               </Card>
               <Card className="p-5">
                 <Eyebrow>This run against what happened</Eyebrow>
-                {backtest ? (
+                {backtest && current ? (
                   <div className="mt-3 space-y-2 text-sm">
                     <p><span className="num text-2xl font-semibold">{num(backtest.mae, 2)}</span> units/day mean absolute error over <span className="num">{backtest.n}</span> days.</p>
                     <p><span className="num text-2xl font-semibold">{num(backtest.coverage * 100, 0)}%</span> of actual days fell inside the 10–90% interval (nominal 80%).</p>
@@ -158,7 +170,7 @@ export default function ForecastPage() {
               <tbody>
                 {models.data?.map((m) => (
                   <tr key={m.id} className="border-b border-line/60"><td className="py-2"><Mono>{m.family} {m.version}</Mono></td><td><Status value={m.status} /></td>
-                    <td className="num text-xs text-muted">{m.metrics && (m.metrics as any).mae != null ? `test MAE ${num((m.metrics as any).mae, 2)} · pinball ${num((m.metrics as any).pinball_mean, 3)} · cov80 ${num(((m.metrics as any).coverage_80 ?? 0) * 100, 1)}% · val pinball ${num((m.metrics as any).validation_pinball, 3)}` : "Baseline; frozen evaluation not yet run"}</td></tr>
+                    <td className="num text-xs text-muted">{modelEvidence(m.metrics)}</td></tr>
                 ))}
                 {PLANNED.filter((p) => !models.data?.some((m) => m.family === p.family)).map((p) => (
                   <tr key={p.family} className="border-b border-line/60"><td className="py-2"><Mono>{p.family}</Mono></td><td><Status value="NOT_IMPLEMENTED" /></td>
@@ -174,28 +186,32 @@ export default function ForecastPage() {
   );
 }
 
-type Study = { available: boolean; message?: string; experiment_id: string; cohort_size: number; test_window: [string, string];
-  selection: Record<string, any>; summary: Record<string, any>; tcn_seed_mean: Record<string, number>; tcn_seed_sd: Record<string, number>;
-  comparisons: Record<string, { mean_diff: number; ci95: [number, number]; n_series: number; share_a_better: number }>;
-  pinball_by_horizon: Record<string, Record<string, number[]>>; environment: Record<string, string>; config: any; dataset_sha256: string };
+
+type ModelMetrics = { mae?: number; pinball_mean?: number; coverage_80?: number; validation_pinball?: number };
+function modelEvidence(raw: Record<string, unknown>) {
+  const m = raw as ModelMetrics;
+  if (m.mae == null) return "Baseline; frozen evaluation not yet run";
+  return `test MAE ${num(m.mae, 2)} · pinball ${num(m.pinball_mean, 3)} · cov80 ${num((m.coverage_80 ?? 0) * 100, 1)}% · val pinball ${num(m.validation_pinball, 3)}`;
+}
 
 const STUDY_NAME: Record<string, string> = { seasonal_naive: "Seasonal naive", lightgbm: "LightGBM quantile", tcn: "Quantile TCN (seed 0)" };
 
 function StudyPanel() {
-  const st = useTenantQuery<Study>(["study-f1"], "/api/v1/research/forecast-study");
+  const st = useApi(["study-f1"], "/api/v1/research/forecast-study");
   const option = useMemo(() => {
-    if (!st.data?.available) return null;
+    const d = st.data;
+    if (!d?.available) return null;
     const b = baseOption();
     const colors: Record<string, string> = { seasonal_naive: token("--muted"), lightgbm: token("--accent"), tcn: token("--forecast") };
-    const fams = Object.keys(st.data.pinball_by_horizon);
+    const fams = Object.keys(d.pinball_by_horizon);
     return { ...b, xAxis: { ...(b.xAxis as object), type: "category", name: "horizon (days)", data: Array.from({ length: 28 }, (_, i) => i + 1) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "median pinball" },
-      series: fams.map((f) => ({ type: "line", name: STUDY_NAME[f], data: st.data!.pinball_by_horizon[f]!.q50, symbol: "none", lineStyle: { color: colors[f], width: 2 }, itemStyle: { color: colors[f] } })) };
+      series: fams.map((f) => ({ type: "line", name: STUDY_NAME[f], data: d.pinball_by_horizon[f]!.q50, symbol: "none", lineStyle: { color: colors[f], width: 2 }, itemStyle: { color: colors[f] } })) };
   }, [st.data]);
   if (st.isLoading) return <Card className="p-5"><Skeleton className="h-40" /></Card>;
   if (!st.data?.available) return <Card className="p-5"><Eyebrow>Model comparison study</Eyebrow><p className="mt-2 text-sm text-muted">{st.data?.message}</p></Card>;
   const d = st.data;
-  const fams = ["seasonal_naive", "lightgbm", "tcn"].filter((f) => d.summary[f]);
+  const fams = (["seasonal_naive", "lightgbm", "tcn"] as const).filter((f) => d.summary[f]);
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -209,10 +225,10 @@ function StudyPanel() {
             <th className="py-2 font-medium">Model</th><th className="font-medium">Val. pinball</th><th className="font-medium">MAE</th><th className="font-medium">MASE</th>
             <th className="font-medium">Pinball q10 / q50 / q90</th><th className="font-medium">80% coverage</th><th className="font-medium">Width</th><th className="font-medium">Raw crossing</th></tr></thead>
           <tbody>
-            {fams.map((f) => { const m = d.summary[f]; return (
+            {fams.map((f) => { const m = d.summary[f]!; return (
               <tr key={f} className="border-b border-line/60">
                 <td className="py-2 font-medium">{STUDY_NAME[f]}{d.selection.champion_by_validation === f && <span className="ml-2"><Status value="CHAMPION" /></span>}</td>
-                <td className="num">{num(d.selection[f]?.validation_pinball, 3)}</td><td className="num">{num(m.mae, 2)}</td>
+                <td className="num">{num(d.selection[f].validation_pinball, 3)}</td><td className="num">{num(m.mae, 2)}</td>
                 <td className="num">{m.mase == null ? "undefined" : num(m.mase, 3)}{m.mase_undefined_series ? <span className="text-muted"> ({m.mase_undefined_series} undef.)</span> : null}</td>
                 <td className="num">{num(m.pinball.q10, 2)} / {num(m.pinball.q50, 2)} / {num(m.pinball.q90, 2)}</td>
                 <td className="num">{num(m.coverage_80 * 100, 1)}%</td><td className="num">{num(m.width_80, 1)}</td><td className="num">{num(m.crossing_rate_raw * 100, 2)}%</td>

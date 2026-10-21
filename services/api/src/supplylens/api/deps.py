@@ -4,7 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
-from typing import Any, Callable
+from collections.abc import Callable
+from typing import Any
 
 from fastapi import Depends, Header, HTTPException, Query, Request
 from itsdangerous import BadSignature, URLSafeTimedSerializer
@@ -26,7 +27,7 @@ def current_user_id(request: Request) -> uuid.UUID:
     try:
         data = serializer.loads(raw, max_age=SESSION_MAX_AGE)
     except BadSignature:
-        raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"})
+        raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"}) from None
     return uuid.UUID(data["uid"])
 
 

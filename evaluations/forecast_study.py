@@ -12,7 +12,7 @@ import subprocess
 import sys
 import time
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -23,13 +23,12 @@ from supplylens.config import REPO_ROOT
 from supplylens.db import tenant_session
 from supplylens.seed import tenant_id
 from supplylens_ml import models as M
-from supplylens_ml.panel import save_panel
 from supplylens_ml.evaluate import paired_bootstrap, score
-from supplylens_ml.panel import WINDOW, actuals, build_panel, mase_scale, select_cohort
+from supplylens_ml.panel import WINDOW, actuals, build_panel, mase_scale, save_panel, select_cohort
 
 
 def log(msg):
-    print(f"[{datetime.now(timezone.utc):%H:%M:%S}] {msg}", flush=True)
+    print(f"[{datetime.now(UTC):%H:%M:%S}] {msg}", flush=True)
 
 
 def sha(path: Path) -> str:
@@ -62,7 +61,7 @@ def fit_predict(family, cfg, panel, cutoff_i, seed, conf, out_dir=None, tag=""):
         files = None
         if out_dir:
             files = []
-            for q, b in zip((10, 50, 90), boosters):
+            for q, b in zip((10, 50, 90), boosters, strict=True):
                 p = out_dir / f"lightgbm{tag}_q{q}.txt"
                 b.save_model(str(p))
                 files.append(p)
@@ -106,7 +105,7 @@ def main():
         conf["search"]["lightgbm"] = conf["search"]["lightgbm"][:1]
         conf["search"]["tcn"] = conf["search"]["tcn"][:1]
         conf["seeds"]["tcn"] = [0]
-    exp_id = f"{conf['study_id']}-{'smoke-' if ns.quick else ''}{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    exp_id = f"{conf['study_id']}-{'smoke-' if ns.quick else ''}{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
     out = REPO_ROOT / "artifacts" / "experiments" / exp_id
     out.mkdir(parents=True, exist_ok=True)
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=REPO_ROOT).stdout.strip()

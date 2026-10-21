@@ -25,7 +25,7 @@ class Panel:
     def idx(self, day) -> int:
         return int(self.dates.get_loc(pd.Timestamp(day)))
 
-    def subset(self, skus: list[str]) -> "Panel":
+    def subset(self, skus: list[str]) -> Panel:
         cols = [self.skus.index(s) for s in skus]
         return Panel(self.dates, list(skus), self.y[:, cols])
 
@@ -52,8 +52,8 @@ def select_cohort(panel: Panel, selection_end, lookback_days: int = 365, min_sel
     w = panel.y[max(0, i - lookback_days + 1): i + 1]
     selling = np.nansum(w > 0, axis=0)
     has_window = ~np.isnan(panel.y[max(0, i - WINDOW + 1)])
-    order = sorted(((-int(selling[j]), panel.skus[j]) for j in range(len(panel.skus))
-                    if selling[j] >= min_selling_days and has_window[j]))
+    order = sorted((-int(selling[j]), panel.skus[j]) for j in range(len(panel.skus))
+                    if selling[j] >= min_selling_days and has_window[j])
     skus = [s for _, s in order]
     return skus[:max_n] if max_n else skus
 

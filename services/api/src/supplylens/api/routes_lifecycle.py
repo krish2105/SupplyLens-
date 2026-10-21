@@ -15,12 +15,22 @@ from ..authz import Actor
 from ..db import control_session, tenant_session
 from .deps import actor, csrf_guard, current_user_id, idempotent
 from .ratelimit import limit
+from .schemas import (
+    AlertAck,
+    AlertEvaluation,
+    Alerts,
+    DeletionCertificate,
+    DeletionQueued,
+    ExportQueued,
+    ExportRow,
+    Vitals,
+)
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
 
 # ------------------------------------------------------------------------------------------ alerts
-@router.get("/alerts")
+@router.get("/alerts", response_model=Alerts)
 def list_alerts(status: str | None = None, a: Actor = Depends(actor)):
     """The operational queue: open and acknowledged alerts first, newest activity first."""
     a.require("read")
@@ -38,7 +48,7 @@ class AckIn(BaseModel):
     note: str | None = Field(default=None, max_length=500)
 
 
-@router.post("/alerts/{alert_id}/acknowledge")
+@router.post("/alerts/{alert_id}/acknowledge", response_model=AlertAck)
 def acknowledge(alert_id: uuid.UUID, body: AckIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
     a.require("alert.ack")
 
@@ -55,7 +65,7 @@ def acknowledge(alert_id: uuid.UUID, body: AckIn, a: Actor = Depends(actor), ide
     return idempotent(a, idempotency_key, f"alert-ack:{alert_id}", body.model_dump(), do)[1]
 
 
-@router.post("/alerts/evaluate")
+@router.post("/alerts/evaluate", response_model=AlertEvaluation)
 def evaluate_now(a: Actor = Depends(actor)):
     """Re-check stale data, reconciliation, budgets and models now (the worker also does this on a schedule)."""
     a.require("alert.evaluate")
@@ -77,7 +87,7 @@ def _enqueue(s, a: Actor, kind: str, payload: dict) -> uuid.UUID:
     return job_id
 
 
-@router.post("/admin/exports", status_code=202)
+@router.post("/admin/exports", response_model=ExportQueued, status_code=202)
 def request_export(body: ExportIn, a: Actor = Depends(limit("export", 6)), idempotency_key: str | None = Header(None)):
     a.require("tenant.export")
 
@@ -98,7 +108,7 @@ def request_export(body: ExportIn, a: Actor = Depends(limit("export", 6)), idemp
     return JSONResponse(resp, status_code=code)
 
 
-@router.get("/admin/exports")
+@router.get("/admin/exports", response_model=list[ExportRow])
 def list_exports(a: Actor = Depends(actor)):
     a.require("admin.read")
     with tenant_session(a.tenant_id) as s:
@@ -123,8 +133,7 @@ def download_export(export_id: uuid.UUID, a: Actor = Depends(actor)):
         s.execute(text("""INSERT INTO audit_events (tenant_id, actor_id, action, entity, entity_id, detail)
             VALUES (:t,:u,'tenant.export_downloaded','export',:e,CAST(:d AS jsonb))"""),
                   {"t": a.tenant_id, "u": a.user_id, "e": str(export_id), "d": json.dumps({"sha256": ex.sha256})})
-    from ..config import settings
-    path = settings.storage_path / ex.file_path
+    path = lifecycle._storage_file(ex.file_path)
     return FileResponse(path, media_type="application/zip", filename=f"supplylens-export-{export_id}.zip",
                         headers={"X-Export-SHA256": ex.sha256})
 
@@ -136,7 +145,7 @@ class DeletionIn(BaseModel):
     reason: str = Field(min_length=5, max_length=500)
 
 
-@router.post("/admin/tenant-deletion", status_code=202)
+@router.post("/admin/tenant-deletion", response_model=DeletionQueued, status_code=202)
 def request_deletion(body: DeletionIn, a: Actor = Depends(limit("deletion", 3)), idempotency_key: str | None = Header(None)):
     """Irreversible. Needs the typed workspace slug, a verified export that has been downloaded, and a reason."""
     a.require("tenant.delete")
@@ -147,7 +156,7 @@ def request_deletion(body: DeletionIn, a: Actor = Depends(limit("deletion", 3)),
     try:
         lifecycle.check_deletable(a.tenant_id, body.export_id)
     except lifecycle.LifecycleError as e:
-        raise HTTPException(e.http, {"code": e.code, "message": str(e)})
+        raise HTTPException(e.http, {"code": e.code, "message": str(e)}) from e
 
     def do():
         deletion_id = uuid.uuid4()
@@ -166,7 +175,7 @@ def request_deletion(body: DeletionIn, a: Actor = Depends(limit("deletion", 3)),
     return JSONResponse(resp, status_code=code)
 
 
-@router.get("/deletions/{deletion_id}")
+@router.get("/deletions/{deletion_id}", response_model=DeletionCertificate)
 def deletion_certificate(deletion_id: uuid.UUID, request: Request):
     """Readable by whoever requested it, after the workspace itself is gone (no tenant header needed)."""
     uid = current_user_id(request)
@@ -200,7 +209,7 @@ def report_vital(body: VitalIn, a: Actor = Depends(limit("vitals", 240, 60))):
 TARGETS = {"LCP": 2500.0, "INP": 200.0, "CLS": 0.1}
 
 
-@router.get("/admin/vitals")
+@router.get("/admin/vitals", response_model=Vitals)
 def vitals(days: int = 7, a: Actor = Depends(actor)):
     """Field p75 per metric and route against the UX-011 targets (LCP 2.5 s, INP 200 ms, CLS 0.1)."""
     a.require("admin.read")

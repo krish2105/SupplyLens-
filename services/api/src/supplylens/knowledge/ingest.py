@@ -86,7 +86,7 @@ def ingest_document(tenant_id, *, title: str, doc_type: str, supplier_id: str | 
             {"i": vid, "t": tenant_id, "d": document_id, "v": version_label, "f": file_name, "h": digest,
              "k": key, "ka": known_at, "vf": valid_from, "vt": valid_to, "sv": supersedes_version_id,
              "p": PARSER_VERSION, "em": settings.embed_model if vectors else None})
-        for c, v in zip(chunks, vectors or [None] * len(chunks)):
+        for c, v in zip(chunks, vectors or [None] * len(chunks), strict=True):
             s.execute(text(
                 "INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body, "
                 "embedding) VALUES (:i,:t,:v,:o,:s,:a,:b,:body, CAST(:e AS vector))"),

@@ -160,6 +160,13 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # Deletion certificates are legal evidence and live only in this table: never drop them silently.
+    op.execute("""
+    DO $$ BEGIN
+      IF EXISTS (SELECT 1 FROM tenant_deletions) THEN
+        RAISE EXCEPTION 'refusing to roll back 0005: tenant_deletions holds deletion certificates; export them first';
+      END IF;
+    END $$""")
     op.execute("REVOKE DELETE ON tenant_settings FROM supplylens_app")
     op.execute("REVOKE DELETE ON sandbox_erp.purchase_orders FROM supplylens_app")
     op.execute("DROP FUNCTION sl_finalize_tenant_deletion(uuid, uuid, uuid, uuid, jsonb)")

@@ -76,6 +76,7 @@ const STATUS_TONE: Record<string, string> = {
   UNKNOWN_OUTCOME: "danger", FAILED: "danger", STALE: "danger", INFEASIBLE: "danger", REJECTED: "danger", shortage_risk: "danger",
   REVIEW_REQUIRED: "warn", PARTIAL: "warn", excess: "warn", DEGRADED: "warn", NOT_CONFIGURED: "muted", NOT_IMPLEMENTED: "muted",
   DISABLED: "muted", unavailable: "muted", no_sales_data: "muted", CLOSED_WITHOUT_ORDER: "muted", NO_ACTION: "muted",
+  OPEN: "danger", ACKNOWLEDGED: "warn", RESOLVED: "ok", DELIVERED: "ok", PENDING: "info", NONE: "muted",
 };
 const TONE_CLASS: Record<string, string> = {
   ok: "bg-accent-soft text-accent", warn: "bg-risk-soft text-risk", danger: "bg-danger-soft text-danger",

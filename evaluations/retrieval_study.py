@@ -17,8 +17,7 @@ import statistics
 import subprocess
 import time
 from collections import defaultdict
-from datetime import date, datetime, timezone
-from pathlib import Path
+from datetime import UTC, date, datetime
 
 from sqlalchemy import text
 
@@ -29,11 +28,11 @@ from supplylens.knowledge.retrieve import search
 from supplylens.seed import tenant_id
 
 TASKS = REPO_ROOT / "evaluations" / "tasksets"
-FAR = datetime(2100, 1, 1, tzinfo=timezone.utc)
+FAR = datetime(2100, 1, 1, tzinfo=UTC)
 
 
 def log(m):
-    print(f"[{datetime.now(timezone.utc):%H:%M:%S}] {m}", flush=True)
+    print(f"[{datetime.now(UTC):%H:%M:%S}] {m}", flush=True)
 
 
 def ndcg(ranked: list[str], gains: dict[str, int], k: int = 10) -> float:
@@ -90,7 +89,6 @@ def build_r2_tasks():
         terms = s.execute(text("""SELECT st.term_id, st.supplier_id, st.sku_id, st.valid_from, st.known_at, st.document_version_id,
             st.section, st.supersedes_term_id, sp.name FROM supplier_terms st JOIN suppliers sp ON sp.supplier_id = st.supplier_id
             WHERE st.document_version_id IS NOT NULL ORDER BY st.term_id""")).mappings().all()
-    by_id = {r["term_id"]: r for r in terms}
     amended = {r["supersedes_term_id"]: r for r in terms if r["supersedes_term_id"]}
     tasks = []
 
@@ -227,7 +225,7 @@ def c1():
 
 def main():
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=REPO_ROOT).stdout.strip()
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     import sys
     wanted = sys.argv[1:] or ["R1", "R2", "C1"]
     for name, fn in (("R1", r1), ("R2", r2), ("C1", c1)):

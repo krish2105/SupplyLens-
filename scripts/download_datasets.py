@@ -32,7 +32,7 @@ USER_AGENT = "SupplyLens-Academic-Data-Acquisition/1.0 (+respect publisher licen
 
 
 def timestamp():
-    return dt.datetime.now(dt.timezone.utc).isoformat()
+    return dt.datetime.now(dt.UTC).isoformat()
 
 
 def load_catalog():

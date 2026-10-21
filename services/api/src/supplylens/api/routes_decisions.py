@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -24,6 +24,25 @@ from ..planning.scenario import ScenarioInput, run_scenario
 from ..planning.terms_service import applicable_terms
 from .deps import actor, csrf_guard, idempotent
 from .ratelimit import limit
+from .schemas import (
+    ActionDetail,
+    ActionResult,
+    ActionRow,
+    DocumentRow,
+    DocumentVersion,
+    EvidenceSearch,
+    FaultInjected,
+    ForecastRun,
+    ModelVersion,
+    RunCreated,
+    RunDetail,
+    RunEvent,
+    RunRow,
+    SandboxOrder,
+    ScenarioResult,
+    ScenarioRow,
+    Terms,
+)
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
@@ -36,7 +55,7 @@ def _cutoff(st, override: datetime | None) -> datetime:
     """Explicit cutoff, else the workspace as-of, else now (workspaces without operational settings)."""
     if override:
         return override
-    return st.operational_as_of if st else datetime.now(timezone.utc)
+    return st.operational_as_of if st else datetime.now(UTC)
 
 
 class ForecastIn(BaseModel):
@@ -46,7 +65,7 @@ class ForecastIn(BaseModel):
     model_family: str | None = Field(default=None, pattern="^(seasonal_naive|lightgbm_quantile|tcn_quantile)$")
 
 
-@router.post("/forecasts")
+@router.post("/forecasts", response_model=ForecastRun)
 def create_forecast(body: ForecastIn, a: Actor = Depends(limit("forecast", 30))):
     a.require("forecast.run")
     with tenant_session(a.tenant_id) as s:
@@ -58,8 +77,8 @@ def create_forecast(body: ForecastIn, a: Actor = Depends(limit("forecast", 30)))
     return get_forecast(str(run.run_id), a)
 
 
-@router.get("/forecasts/{run_id}")
-def get_forecast(run_id: str, a: Actor = Depends(actor)):
+@router.get("/forecasts/{run_id}", response_model=ForecastRun)
+def get_forecast(run_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
         r = s.execute(text("""SELECT fr.*, mv.family, mv.version FROM forecast_runs fr
@@ -72,7 +91,7 @@ def get_forecast(run_id: str, a: Actor = Depends(actor)):
             "interval": "10-90% from training-period seasonal errors", "points": [dict(p) for p in pts]}
 
 
-@router.get("/models")
+@router.get("/models", response_model=list[ModelVersion])
 def models(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -81,7 +100,7 @@ def models(a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/terms")
+@router.get("/terms", response_model=Terms)
 def terms(sku_id: str, knowledge_cutoff: datetime | None = None, effective_date: date | None = None,
           a: Actor = Depends(actor)):
     a.require("read")
@@ -101,7 +120,7 @@ def terms(sku_id: str, knowledge_cutoff: datetime | None = None, effective_date:
             "history": [dict(t) for t in all_terms]}
 
 
-@router.get("/documents")
+@router.get("/documents", response_model=list[DocumentRow])
 def documents(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -114,8 +133,8 @@ def documents(a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/documents/versions/{version_id}")
-def document_version(version_id: str, a: Actor = Depends(actor)):
+@router.get("/documents/versions/{version_id}", response_model=DocumentVersion)
+def document_version(version_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
         v = s.execute(text("""SELECT dv.*, d.title, d.supplier_id, d.source_kind, d.allowed_roles FROM document_versions dv
@@ -129,7 +148,7 @@ def document_version(version_id: str, a: Actor = Depends(actor)):
             "untrusted_content": True}
 
 
-@router.get("/evidence/search")
+@router.get("/evidence/search", response_model=EvidenceSearch)
 def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: date | None = None,
              mode: str = "effective", supplier_id: str | None = None, k: int = 8, a: Actor = Depends(limit("search", 120))):
     a.require("read")
@@ -156,15 +175,15 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
     return {**res, "results": results, "answer": answer}
 
 
-@router.post("/scenarios")
+@router.post("/scenarios", response_model=ScenarioResult)
 def scenarios(body: ScenarioInput, a: Actor = Depends(limit("scenario", 20))):
     try:
         return run_scenario(a, body)
     except ValueError as e:
-        raise HTTPException(422, {"code": "scenario_invalid", "message": str(e)})
+        raise HTTPException(422, {"code": "scenario_invalid", "message": str(e)}) from e
 
 
-@router.get("/scenarios")
+@router.get("/scenarios", response_model=list[ScenarioRow])
 def list_scenarios(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -183,7 +202,7 @@ class AgentRunIn(BaseModel):
     allow_shortfall: bool = True
 
 
-@router.post("/agent-runs", status_code=202)
+@router.post("/agent-runs", response_model=RunCreated, status_code=202)
 def start_run(body: AgentRunIn, a: Actor = Depends(limit("agent_run", 30)), idempotency_key: str | None = Header(None)):
     def do():
         run_id = create_run(a, mode=body.mode, inp=body.model_dump(mode="json", exclude_none=True))
@@ -192,11 +211,11 @@ def start_run(body: AgentRunIn, a: Actor = Depends(limit("agent_run", 30)), idem
     try:
         code, resp = idempotent(a, idempotency_key, "agent-runs", body.model_dump(mode="json"), do)
     except ValueError as e:
-        raise HTTPException(422, {"code": "invalid_run", "message": str(e)})
+        raise HTTPException(422, {"code": "invalid_run", "message": str(e)}) from e
     return JSONResponse(resp, status_code=code)
 
 
-@router.get("/agent-runs")
+@router.get("/agent-runs", response_model=list[RunRow])
 def runs(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -206,8 +225,8 @@ def runs(a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/agent-runs/{run_id}")
-def run_detail(run_id: str, a: Actor = Depends(actor)):
+@router.get("/agent-runs/{run_id}", response_model=RunDetail)
+def run_detail(run_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
         r = s.execute(text("SELECT * FROM agent_runs WHERE id=:i"), {"i": run_id}).mappings().first()
@@ -219,7 +238,7 @@ def run_detail(run_id: str, a: Actor = Depends(actor)):
     forecast = {k: v for k, v in (state.get("forecast") or {}).items() if k != "points"}
     return {"id": r["id"], "status": r["status"], "mode": r["mode"], "input": r["input"], "budget": r["budget"],
             "created_at": r["created_at"], "updated_at": r["updated_at"], "settings": state.get("settings"),
-            "forecast": forecast, "plan": state.get("plan"), "checks": state.get("checks"),
+            "forecast": forecast or None, "plan": state.get("plan"), "checks": state.get("checks"),
             "terms": state.get("terms"), "upcoming_changes": state.get("upcoming_changes"),
             "needs": (state.get("needs") or {}).get("assessments"), "tool_calls": state.get("tool_calls"),
             "actions": [dict(x) for x in acts]}
@@ -231,8 +250,8 @@ def _events(tenant_id, run_id, after: int):
             WHERE run_id=:r AND seq > :a ORDER BY seq"""), {"r": run_id, "a": after}).mappings()]
 
 
-@router.get("/agent-runs/{run_id}/events")
-def run_events(run_id: str, after: int = 0, a: Actor = Depends(actor)):
+@router.get("/agent-runs/{run_id}/events", response_model=list[RunEvent])
+def run_events(run_id: uuid.UUID, after: int = 0, a: Actor = Depends(actor)):
     a.require("read")
     return _events(a.tenant_id, run_id, after)
 
@@ -242,7 +261,7 @@ TERMINAL = {"SUCCEEDED", "FAILED", "CANCELLED", "REVIEW_REQUIRED", "WAITING_FOR_
 
 
 @router.get("/agent-runs/{run_id}/stream")
-async def run_stream(run_id: str, request: Request, a: Actor = Depends(actor),
+async def run_stream(run_id: uuid.UUID, request: Request, a: Actor = Depends(actor),
                      last_event_id: str | None = Header(None)):
     """Server-sent events of persisted run events; reconnect with Last-Event-ID (monotonic seq)."""
     a.require("read")
@@ -275,7 +294,7 @@ async def run_stream(run_id: str, request: Request, a: Actor = Depends(actor),
     return StreamingResponse(gen(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
 
-@router.get("/actions")
+@router.get("/actions", response_model=list[ActionRow])
 def list_actions(status: str | None = None, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -286,7 +305,7 @@ def list_actions(status: str | None = None, a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/actions/{action_id}")
+@router.get("/actions/{action_id}", response_model=ActionDetail)
 def action_detail(action_id: uuid.UUID, a: Actor = Depends(actor)):
     return actions.get(a, action_id)
 
@@ -311,10 +330,10 @@ def _guard(fn):
     try:
         return fn()
     except actions.ActionError as e:
-        raise HTTPException(e.http, {"code": e.code, "message": str(e)})
+        raise HTTPException(e.http, {"code": e.code, "message": str(e)}) from e
 
 
-@router.post("/actions/{action_id}/approve")
+@router.post("/actions/{action_id}/approve", response_model=ActionResult)
 def approve(action_id: uuid.UUID, body: ApproveIn, a: Actor = Depends(actor),
             idempotency_key: str | None = Header(None)):
     code, resp = idempotent(a, idempotency_key, f"approve:{action_id}", body.model_dump(),
@@ -325,7 +344,7 @@ def approve(action_id: uuid.UUID, body: ApproveIn, a: Actor = Depends(actor),
     return JSONResponse(json.loads(json.dumps(resp, default=str)), status_code=code)
 
 
-@router.post("/actions/{action_id}/reject")
+@router.post("/actions/{action_id}/reject", response_model=ActionResult)
 def reject(action_id: uuid.UUID, body: RejectIn, a: Actor = Depends(actor),
            idempotency_key: str | None = Header(None)):
     code, resp = idempotent(a, idempotency_key, f"reject:{action_id}", body.model_dump(),
@@ -334,7 +353,7 @@ def reject(action_id: uuid.UUID, body: RejectIn, a: Actor = Depends(actor),
     return JSONResponse(resp, status_code=code)
 
 
-@router.post("/actions/{action_id}/edit")
+@router.post("/actions/{action_id}/edit", response_model=ActionDetail)
 def edit(action_id: uuid.UUID, body: EditIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
     with tenant_session(a.tenant_id) as s:
         st = _settings(s)
@@ -346,12 +365,18 @@ def edit(action_id: uuid.UUID, body: EditIn, a: Actor = Depends(actor), idempote
     return JSONResponse(json.loads(json.dumps(resp, default=str)), status_code=code)
 
 
-@router.post("/actions/{action_id}/reconcile")
+@router.post("/actions/{action_id}/reconcile", response_model=ActionResult)
 def reconcile(action_id: uuid.UUID, a: Actor = Depends(actor)):
     return _guard(lambda: actions.reconcile(a, action_id))
 
 
-@router.get("/sandbox/orders")
+@router.post("/actions/{action_id}/retry", response_model=ActionResult)
+def retry(action_id: uuid.UUID, a: Actor = Depends(actor)):
+    """Re-queue a FAILED dispatch (e.g. after a connector outage) under the same idempotency key."""
+    return _guard(lambda: actions.retry_failed(a, action_id))
+
+
+@router.get("/sandbox/orders", response_model=list[SandboxOrder])
 def sandbox_orders(a: Actor = Depends(actor)):
     """The sandbox ERP's own view (simulated external system), filtered to this tenant's actions."""
     a.require("read")
@@ -370,7 +395,7 @@ class FaultIn(BaseModel):
     mode: str
 
 
-@router.post("/sandbox/faults")
+@router.post("/sandbox/faults", response_model=FaultInjected)
 def sandbox_fault(body: FaultIn, a: Actor = Depends(actor)):
     """Development-only fault injection to demonstrate unknown-outcome reconciliation."""
     if not settings.dev_auth:

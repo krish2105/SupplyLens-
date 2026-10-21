@@ -1,6 +1,6 @@
 """Reference policy-change scenario (EXE-003/004/005) and planner invariants (ARC-05)."""
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from supplylens_opt.planner import Need, PlanLine, PlanRequest, PlanResult, plan
@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def dt(s):
-    return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+    return datetime.fromisoformat(s).replace(tzinfo=UTC)
 
 
 def solve(terms, cutoff, eff, need_by, budget, units=30, sku="SKU-1"):

@@ -9,7 +9,7 @@ import { useTheme } from "next-themes";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Crosshair, RotateCcw, X } from "lucide-react";
 import type { InventoryItem } from "@/lib/queries";
-import { token } from "./chart";
+import { token } from "./chart-theme";
 import { Button } from "./ui";
 import { int, num } from "@/lib/format";
 
@@ -18,13 +18,6 @@ const MAX_H = 4.2;
 
 function healthColor(h: string) {
   return h === "shortage_risk" ? token("--danger") : h === "excess" ? token("--risk") : h === "healthy" ? token("--accent") : token("--muted");
-}
-
-export function webglAvailable() {
-  try {
-    const c = document.createElement("canvas");
-    return !!(window.WebGLRenderingContext && (c.getContext("webgl2") || c.getContext("webgl")));
-  } catch { return false; }
 }
 
 function Rack({ item, selected, hover, onSelect, onHover, colors }: { item: InventoryItem; selected: boolean; hover: boolean;
@@ -64,8 +57,8 @@ function Invalidator({ deps }: { deps: unknown[] }) {
   return null;
 }
 
-export default function Warehouse3D({ items, selected, onSelect, height = 460 }: {
-  items: InventoryItem[]; selected: string | null; onSelect: (sku: string | null) => void; height?: number;
+export default function Warehouse3D({ items, selected, onSelect, height = 460, onFail }: {
+  items: InventoryItem[]; selected: string | null; onSelect: (sku: string | null) => void; height?: number; onFail?: () => void;
 }) {
   const { resolvedTheme } = useTheme();
   const controls = useRef<OrbitControlsImpl | null>(null);
@@ -104,7 +97,11 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460 }:
       <Canvas frameloop="demand" shadows dpr={[1, 1.75]} camera={{ position: home, fov: 40 }}
         onPointerMissed={() => onSelect(null)} role="img" aria-label="3D schematic warehouse. The table and floor plan show the same records."
         // Demand rendering can miss the first frame after a theme remount; request one explicitly.
-        onCreated={(s) => { requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150); }}>
+        onCreated={(s) => {
+          requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150);
+          // A lost context (GPU reset, tab discarded) cannot be recovered mid-session: hand over to the 2D floor plan.
+          s.gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); onFail?.(); });
+        }}>
         <Invalidator deps={[colors, items, selected]} />
         <color attach="background" args={[colors.floor]} />
         <ambientLight intensity={0.7} />

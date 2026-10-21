@@ -1,8 +1,0 @@
-FICTIONAL DOCUMENT - GENERATED FOR SOFTWARE TESTING - NOT A REAL CONTRACT
-Buyer: SupplyLens Demo Company (FICTIONAL)
-Supplier: Demo Northstar Supplies Ltd (FICTIONAL)
-Agreement: DEMO-CTR-001, version v1, effective 2027-01-01
-For DEMO-SKU-001 minimum order quantity is 40 units, in multiples of 10.
-The contractual standard lead time is 7 calendar days.
-Amendments override incompatible terms only from the amendment's effective date.
-data_origin=synthetic; generation_seed=271828

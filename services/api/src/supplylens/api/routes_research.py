@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from ..authz import Actor
 from ..config import REPO_ROOT
 from .deps import actor, csrf_guard
+from .schemas import ForecastStudyReport, Study, StudyMissing
 
 router = APIRouter(prefix="/api/v1/research", dependencies=[Depends(csrf_guard)])
 EXP = REPO_ROOT / "artifacts" / "experiments"
@@ -21,7 +22,7 @@ def _latest(prefix: str):
     return runs[-1] if runs else None
 
 
-@router.get("/forecast-study")
+@router.get("/forecast-study", response_model=ForecastStudyReport | StudyMissing)
 def forecast_study(a: Actor = Depends(actor)):
     a.require("read")
     if a.tenant_id is None:
@@ -34,7 +35,7 @@ def forecast_study(a: Actor = Depends(actor)):
     return {"available": True, "experiment_id": m["experiment_id"], "config": conf, **m}
 
 
-@router.get("/{study}")
+@router.get("/{study}", response_model=Study)
 def generic_study(study: str, a: Actor = Depends(actor)):
     a.require("read")
     if not study.replace("_", "").isalnum() or len(study) > 20:

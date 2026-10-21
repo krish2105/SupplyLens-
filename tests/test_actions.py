@@ -1,5 +1,5 @@
 """Approval binding, idempotent dispatch, unknown outcomes and reconciliation (BUS-005..007, EXE-007..009)."""
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 import pytest
 from sqlalchemy import text
@@ -8,12 +8,12 @@ from supplylens.actions import service as act
 from supplylens.authz import Forbidden, resolve_actor
 from supplylens.db import tenant_session
 from supplylens.integrations import sandbox_erp
+from supplylens.planning.terms_service import applicable_terms
 from supplylens.seed import dev_email, user_id
 from supplylens.simulation import demo
-from supplylens.planning.terms_service import applicable_terms
 from supplylens_opt.planner import Need, PlanRequest, plan
 
-CUTOFF = datetime(2026, 10, 20, 9, tzinfo=timezone.utc)
+CUTOFF = datetime(2026, 10, 20, 9, tzinfo=UTC)
 
 
 @pytest.fixture()

@@ -8,7 +8,7 @@ import clsx from "clsx";
 import { Search } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { setTenant } from "@/lib/api";
-import { useMe, useTenantQuery, type InventoryItem } from "@/lib/queries";
+import { useApi, useMe } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 
 export type NavItem = { href: string; label: string; group: string };
@@ -23,7 +23,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
   const { setTheme } = useTheme();
   const me = useMe();
   const [ctx, setCtx] = usePlanningContext();
-  const inv = useTenantQuery<{ items: InventoryItem[] }>(["inventory", "workspace"], open ? "/api/v1/inventory" : null);
+  const inv = useApi(["inventory", "workspace"], open ? "/api/v1/inventory" : null);
   const list = useRef<HTMLUListElement>(null);
 
   useEffect(() => {

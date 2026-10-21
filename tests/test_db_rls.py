@@ -2,7 +2,7 @@ import uuid
 
 import pytest
 from sqlalchemy import text
-from sqlalchemy.exc import ProgrammingError, DBAPIError
+from sqlalchemy.exc import DBAPIError, ProgrammingError
 
 from supplylens.db import app_engine, control_session, tenant_session
 

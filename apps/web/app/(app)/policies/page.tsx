@@ -3,25 +3,20 @@ import { useMemo, useState } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { api } from "@/lib/api";
-import { useTenantQuery, useWs } from "@/lib/queries";
+import { apiGet } from "@/lib/api";
+import type { Schemas } from "@/lib/contract";
+import { useApi, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
-import { dateTime, day, short } from "@/lib/format";
+import { atOrBefore, dateTime, day, short } from "@/lib/format";
 
-type Doc = { document_id: string; title: string; doc_type: string; supplier_id: string | null; source_kind: string; version_id: string;
-  version_label: string; file_name: string; sha256: string; known_at: string; valid_from: string; valid_to: string | null;
-  supersedes_version_id: string | null; embed_model: string | null; chunks: number };
-type Version = Doc & { text: string; chunks: { id: string; ordinal: number; section: string; char_start: number; char_end: number }[] };
-type Evidence = { chunk_id: string; document_id: string; version_id: string; title: string; version_label: string; section: string; excerpt: string;
-  valid_from: string; valid_to: string | null; known_at: string; supplier_id: string | null; source_kind: string; score: number; signals: Record<string, unknown> };
-type SearchRes = { results: Evidence[]; mode: string; degraded: string | null; reranker: string; filters: Record<string, string>;
-  answer: { abstained: boolean; message?: string; claims: { text: string; citation: { version_id: string; section: string; version_label: string } }[] } };
+type Doc = Schemas["DocumentRow"];
+type SearchRes = Schemas["EvidenceSearch"];
 
 export default function PoliciesPage() {
   const ws = useWs();
   const [ctx] = usePlanningContext();
   const { known, eff } = useDecisionClock();
-  const docs = useTenantQuery<Doc[]>(["documents"], "/api/v1/documents");
+  const docs = useApi(["documents"], "/api/v1/documents");
   const [q, setQ] = useState(ctx.sku ? `minimum order quantity ${ctx.sku}` : "minimum order quantity lead time");
   const [mode, setMode] = useState<"effective" | "known">("effective");
   const [res, setRes] = useState<SearchRes | null>(null);
@@ -34,10 +29,7 @@ export default function PoliciesPage() {
     e?.preventDefault();
     setBusy(true); setErr(null);
     try {
-      const p = new URLSearchParams({ q, mode, k: "8" });
-      if (known) p.set("knowledge_cutoff", known);
-      if (eff) p.set("effective_date", eff);
-      setRes(await api<SearchRes>(`/api/v1/evidence/search?${p}`, { tenant: ws }));
+      setRes(await apiGet("/api/v1/evidence/search", { query: { q, mode, k: 8, knowledge_cutoff: known, effective_date: eff }, tenant: ws }));
     } catch (x) { setErr(x); } finally { setBusy(false); }
   }
 
@@ -123,7 +115,7 @@ export default function PoliciesPage() {
                   </div>
                   <ul className="mt-2 space-y-1">
                     {versions.map((v) => {
-                      const knownYet = known ? v.known_at <= known : true;
+                      const knownYet = known ? atOrBefore(v.known_at, known) : true;
                       const inForce = eff ? v.valid_from <= eff && (!v.valid_to || v.valid_to >= eff) : false;
                       return (
                         <li key={v.version_id} className="flex flex-wrap items-center gap-2 text-sm">
@@ -150,15 +142,15 @@ export default function PoliciesPage() {
   );
 }
 
-function useVersion(id: string, ws: string) {
-  return useTenantQuery<Version>(["version", id], `/api/v1/documents/versions/${id}`);
+function useVersion(id: string, _ws: string) {
+  return useApi(["version", id], "/api/v1/documents/versions/{version_id}", { path: { version_id: id } });
 }
 
-type Label = { category: string; char_start: number; char_end: number; text: string; source: string };
+type Label = Schemas["ClauseLabel"];
 
 function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: string }) {
   const v = useVersion(id, ws);
-  const labels = useTenantQuery<Label[]>(["labels", id], `/api/v1/documents/versions/${id}/labels`);
+  const labels = useApi(["labels", id], "/api/v1/documents/versions/{version_id}/labels", { path: { version_id: id } });
   const [label, setLabel] = useState<Label | null>(null);
   if (v.isLoading) return <Card className="p-5"><Loading /></Card>;
   if (v.error || !v.data) return <Card className="p-5"><ErrorState error={v.error} /></Card>;

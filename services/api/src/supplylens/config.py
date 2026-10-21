@@ -1,6 +1,7 @@
 """Runtime settings loaded from environment variables (prefix SUPPLYLENS_) or .env."""
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -28,6 +29,15 @@ class Settings(BaseSettings):
     # OpenTelemetry: set an OTLP/HTTP endpoint (e.g. http://collector:4318) to export traces.
     otel_endpoint: str | None = None
     otel_service_name: str = "supplylens"
+
+    @model_validator(mode="after")
+    def _no_default_secrets_outside_dev(self):
+        """Development accounts are the only sign-in in this build; when they are switched off the deployment is
+        expected to supply real secrets. Refuse to start with the published defaults."""
+        if not self.dev_auth and "dev-only-change-me" in (self.session_secret, self.alert_webhook_secret):
+            raise ValueError("SUPPLYLENS_DEV_AUTH=false requires SUPPLYLENS_SESSION_SECRET and "
+                             "SUPPLYLENS_ALERT_WEBHOOK_SECRET to be set to non-default values")
+        return self
 
     @property
     def storage_path(self) -> Path:

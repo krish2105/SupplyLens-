@@ -2,19 +2,17 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Card, ErrorState, Eyebrow, Loading, Mono, PageHeader, Status } from "@/components/ui";
-import { useMe, useTenantQuery } from "@/lib/queries";
+import { useApi, useMe } from "@/lib/queries";
 import { dateTime } from "@/lib/format";
 
-type Integration = { name: string; status: string; note?: string; adapter?: string; operations?: string[] };
-type Audit = { id: number; action: string; entity: string; entity_id: string; detail: Record<string, unknown>; at: string; actor: string | null };
 
 export default function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const me = useMe();
-  const integ = useTenantQuery<Integration[]>(["integrations"], "/api/v1/integrations");
-  const audit = useTenantQuery<Audit[]>(["audit"], "/api/v1/audit?limit=60");
+  const integ = useApi(["integrations"], "/api/v1/integrations");
+  const audit = useApi(["audit"], "/api/v1/audit", { query: { limit: 60 } });
 
   return (
     <div className="space-y-6">

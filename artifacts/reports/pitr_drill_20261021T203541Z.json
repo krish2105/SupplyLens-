@@ -1,0 +1,39 @@
+{
+  "drill": "point-in-time recovery",
+  "ok": true,
+  "target_time_utc": "2026-10-21 20:35:28.309719+00",
+  "counts_at_target": {
+    "actions": 3,
+    "approvals": 3,
+    "outbox": 3,
+    "audit_events": 12,
+    "agent_runs": 3,
+    "agent_events": 27,
+    "sandbox_orders": 3
+  },
+  "counts_after_operator_error": {
+    "actions": 0,
+    "approvals": 0,
+    "outbox": 0,
+    "audit_events": 12,
+    "agent_runs": 3,
+    "agent_events": 27,
+    "sandbox_orders": 0
+  },
+  "counts_after_restore": {
+    "actions": 3,
+    "approvals": 3,
+    "outbox": 3,
+    "audit_events": 12,
+    "agent_runs": 3,
+    "agent_events": 27,
+    "sandbox_orders": 3
+  },
+  "orders_accounted": true,
+  "wal_segments_archived": 4,
+  "archive_timeout_s": 30,
+  "backup_seconds": 0.8,
+  "restore_seconds_rto": 0.8,
+  "postgres": "vm",
+  "notes": "scratch cluster; data are Demo-workspace fictional orders"
+}

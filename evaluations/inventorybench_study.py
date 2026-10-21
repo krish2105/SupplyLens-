@@ -20,7 +20,7 @@ import statistics
 import subprocess
 import sys
 from collections import deque
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -163,7 +163,7 @@ def main():
     commit = subprocess.run(["git", "-C", str(IB), "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
     if commit != PINNED:
         sys.exit(f"InventoryBench commit {commit} differs from pinned {PINNED}")
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     root = REPO / "artifacts" / "experiments" / f"IB-{stamp}"
     instances = sorted(p for p in (IB / "benchmark").glob("*/*/*") if (p / "test.csv").exists())
     summary = {}

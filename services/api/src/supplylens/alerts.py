@@ -15,7 +15,7 @@ import hmac
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 from sqlalchemy import text
@@ -48,7 +48,7 @@ def raise_alert(tenant_id, kind: str, dedupe_key: str, title: str, detail: dict 
                  "de": json.dumps(detail or {}, default=str),
                  "ds": "PENDING" if settings.alert_webhook_url else "NONE"}).mappings().first()
         return dict(row)
-    except Exception:  # noqa: BLE001 - alerting must never break the operation being reported
+    except Exception:
         log.exception("could not record alert %s", dedupe_key)
         return {}
 
@@ -72,7 +72,7 @@ def _resolve_missing(s, prefix: str, still_failing: set[str]) -> int:
 
 def evaluate(tenant_id, *, now: datetime | None = None, check_models: bool = True) -> dict:
     """Re-check every state-based condition for a tenant; raise new alerts, resolve cleared ones."""
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
     raised: list[str] = []
     resolved = 0
     with tenant_session(tenant_id) as s:

@@ -1,12 +1,8 @@
 """One-shot local bootstrap: seed control plane, ingest UCI (if downloaded), build the
 simulated UCI operations layer, and load the fictional Demo workspace. Idempotent."""
 import json
-from pathlib import Path
-
-from sqlalchemy import text
 
 from .config import REPO_ROOT
-from .db import tenant_session
 from .ingest.uci import ingest
 from .seed import seed, tenant_id
 from .simulation import demo, uci_ops

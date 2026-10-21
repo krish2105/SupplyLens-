@@ -62,3 +62,8 @@ artifacts/reports/e2e-results.json
 
 # Local proxy CA for image builds (infra/docker/ca/README.md)
 infra/docker/ca/*.crt
+
+# Runtime document storage and test storage (generated, may contain customer documents)
+/storage*/
+apps/web/test-results/
+apps/web/.next-build/

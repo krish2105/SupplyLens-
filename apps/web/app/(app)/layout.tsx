@@ -11,8 +11,10 @@ import {
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { ClockRail } from "@/components/clock-rail";
+import { ConnectionBanner } from "@/components/connection-banner";
+import { VitalsReporter } from "@/components/vitals-reporter";
 import { Loading } from "@/components/ui";
-import { ApiError, post, setTenant } from "@/lib/api";
+import { ApiError, apiPost, setTenant } from "@/lib/api";
 import { useMe } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 
@@ -141,13 +143,15 @@ function AppShell({ children }: { children: ReactNode }) {
                 <ThemeSwitch />
                 <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
                   aria-label="Sign out" title="Sign out"
-                  onClick={async () => { await post("/api/v1/auth/logout", {}); qc.clear(); router.replace("/login"); }}>
+                  onClick={async () => { await apiPost("/api/v1/auth/logout", {}); qc.clear(); router.replace("/login"); }}>
                   <LogOut className="size-4" aria-hidden />
                 </button>
               </div>
             </div>
+            <ConnectionBanner />
             <ClockRail />
           </div>
+          <VitalsReporter />
           <main id="main" className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-8">{children}</main>
         </div>
       </div>

@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 
@@ -68,9 +68,9 @@ def ingest(tenant_id, log=print) -> dict:
             s.execute(text("""INSERT INTO document_versions (id, tenant_id, document_id, version_label, file_name, sha256,
                 storage_key, known_at, valid_from, parser_version, embed_model) VALUES (:i,:t,:d,'as filed',:f,:h,:k,:ka,
                 '1900-01-01',:p,:em)"""), {"i": vid, "t": tenant_id, "d": doc_id, "f": title[:200] + ".txt", "h": digest,
-                                          "k": key, "ka": datetime.now(timezone.utc), "p": PARSER_VERSION + "+cuad-windows",
+                                          "k": key, "ka": datetime.now(UTC), "p": PARSER_VERSION + "+cuad-windows",
                                           "em": "bge-m3:567m"})
-            for n, ((a, z), v) in enumerate(zip(spans, vecs)):
+            for n, ((a, z), v) in enumerate(zip(spans, vecs, strict=True)):
                 s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body,
                     embedding) VALUES (:i,:t,:v,:o,:s,:a,:z,:b,CAST(:e AS vector))"""),
                     {"i": uuid.uuid4(), "t": tenant_id, "v": vid, "o": n, "s": f"Part {n + 1}", "a": a, "z": z,

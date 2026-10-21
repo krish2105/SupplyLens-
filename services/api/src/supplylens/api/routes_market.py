@@ -7,6 +7,7 @@ from sqlalchemy import text
 from ..authz import Actor
 from ..db import tenant_session
 from .deps import actor, csrf_guard
+from .schemas import MarketSummary, SupplierDetail, SupplierHit
 
 router = APIRouter(prefix="/api/v1/market", dependencies=[Depends(csrf_guard)])
 
@@ -15,7 +16,7 @@ def _has(s) -> bool:
     return bool(s.execute(text("SELECT 1 FROM public_awards LIMIT 1")).first())
 
 
-@router.get("/summary")
+@router.get("/summary", response_model=MarketSummary)
 def summary(category: str | None = None, region: str | None = None, a: Actor = Depends(actor)):
     a.require("read")
     f = "WHERE (CAST(:c AS text) IS NULL OR procurement_category = :c) AND (CAST(:r AS text) IS NULL OR region = :r)"
@@ -50,7 +51,7 @@ def summary(category: str | None = None, region: str | None = None, a: Actor = D
                       "HHI uses award value shares per category (0-10,000); it describes these awards, not a whole market."]}
 
 
-@router.get("/suppliers")
+@router.get("/suppliers", response_model=list[SupplierHit])
 def suppliers(q: str, a: Actor = Depends(actor)):
     a.require("read")
     if not 2 <= len(q.strip()) <= 100:
@@ -63,7 +64,7 @@ def suppliers(q: str, a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/suppliers/{supplier_id}")
+@router.get("/suppliers/{supplier_id}", response_model=SupplierDetail)
 def supplier(supplier_id: str, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:

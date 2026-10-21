@@ -1,6 +1,7 @@
 """Auth, workspace overview, datasets, inventory, warehouse and sales endpoints."""
 from __future__ import annotations
 
+import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
@@ -12,6 +13,19 @@ from ..config import settings
 from ..db import control_session, tenant_session
 from ..integrations import sandbox_erp
 from .deps import COOKIE, SESSION_MAX_AGE, actor, csrf_guard, current_user_id, serializer
+from .schemas import (
+    AuditRow,
+    Dataset,
+    DevUsers,
+    Integration,
+    Inventory,
+    Me,
+    Ok,
+    Overview,
+    ProductSales,
+    Quarantine,
+    Warehouse,
+)
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
@@ -20,7 +34,7 @@ class DevLogin(BaseModel):
     email: str
 
 
-@router.get("/auth/dev-users")
+@router.get("/auth/dev-users", response_model=DevUsers)
 def dev_users():
     if not settings.dev_auth:
         raise HTTPException(404, {"code": "disabled", "message": "dev sign-in disabled"})
@@ -32,7 +46,7 @@ def dev_users():
             "notice": "Development accounts. Enterprise sign-in (OIDC) is NOT_CONFIGURED in this build."}
 
 
-@router.post("/auth/dev-login")
+@router.post("/auth/dev-login", response_model=Ok)
 def dev_login(body: DevLogin, response: Response):
     if not settings.dev_auth:
         raise HTTPException(404, {"code": "disabled", "message": "dev sign-in disabled"})
@@ -42,17 +56,17 @@ def dev_login(body: DevLogin, response: Response):
     if uid is None:
         raise HTTPException(401, {"code": "unknown_user", "message": "unknown development account"})
     response.set_cookie(COOKIE, serializer.dumps({"uid": str(uid)}), max_age=SESSION_MAX_AGE, httponly=True,
-                        samesite="lax", secure=False, path="/")
+                        samesite="lax", secure=not settings.dev_auth, path="/")
     return {"ok": True}
 
 
-@router.post("/auth/logout")
+@router.post("/auth/logout", response_model=Ok)
 def logout(response: Response):
     response.delete_cookie(COOKIE, path="/")
     return {"ok": True}
 
 
-@router.get("/me")
+@router.get("/me", response_model=Me)
 def me(request: Request):
     uid = current_user_id(request)
     with control_session() as s:
@@ -65,7 +79,7 @@ def me(request: Request):
     return {"user": dict(u), "memberships": [dict(m) for m in ms]}
 
 
-@router.get("/overview")
+@router.get("/overview", response_model=Overview)
 def overview(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -116,7 +130,7 @@ def capability_matrix(has_sales: bool, has_sim: bool, counts) -> list[dict]:
     ]
 
 
-@router.get("/datasets")
+@router.get("/datasets", response_model=list[Dataset])
 def datasets(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -125,8 +139,8 @@ def datasets(a: Actor = Depends(actor)):
     return [dict(r) for r in rows]
 
 
-@router.get("/datasets/{dataset_id}/quarantine")
-def quarantine(dataset_id: str, reason: str | None = None, after: int = 0, limit: int = 50,
+@router.get("/datasets/{dataset_id}/quarantine", response_model=Quarantine)
+def quarantine(dataset_id: uuid.UUID, reason: str | None = None, after: int = 0, limit: int = 50,
                a: Actor = Depends(actor)):
     a.require("read")
     limit = max(1, min(limit, 200))
@@ -158,7 +172,7 @@ ORDER BY ws.slot_id NULLS LAST, p.sku_id
 """
 
 
-@router.get("/inventory")
+@router.get("/inventory", response_model=Inventory)
 def inventory(effective_date: date | None = None, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -184,7 +198,7 @@ def inventory(effective_date: date | None = None, a: Actor = Depends(actor)):
     return {"effective_date": eff, "items": items}
 
 
-@router.get("/products/{sku_id}/sales")
+@router.get("/products/{sku_id}/sales", response_model=ProductSales)
 def product_sales(sku_id: str, start: date | None = None, end: date | None = None, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -203,7 +217,7 @@ def product_sales(sku_id: str, start: date | None = None, end: date | None = Non
             "returns": [{"day": r.day, "units": int(r.units)} for r in returns]}
 
 
-@router.get("/warehouse")
+@router.get("/warehouse", response_model=Warehouse)
 def warehouse(a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
@@ -215,12 +229,12 @@ def warehouse(a: Actor = Depends(actor)):
             "slots": [dict(r) for r in slots]}
 
 
-@router.get("/integrations")
+@router.get("/integrations", response_model=list[Integration])
 def integrations(a: Actor = Depends(actor)):
     a.require("read")
     try:
         sbx = sandbox_erp.health()
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         sbx = {"status": "DEGRADED", "error": str(e)}
     from ..knowledge.embed import embed
     emb = embed(["health check"], timeout=5)
@@ -236,7 +250,7 @@ def integrations(a: Actor = Depends(actor)):
     ]
 
 
-@router.get("/audit")
+@router.get("/audit", response_model=list[AuditRow])
 def audit(limit: int = 100, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:

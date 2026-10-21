@@ -3,10 +3,8 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { ShieldAlert } from "lucide-react";
-import { api, post } from "@/lib/api";
+import { apiGet, apiPost } from "@/lib/api";
 import { Button, ErrorState, Loading } from "@/components/ui";
-
-type DevUsers = { users: { email: string; display_name: string; roles: string[] }[]; notice: string };
 
 const ROLE_COPY: Record<string, string> = {
   viewer: "Read dashboards, forecasts and evidence.",
@@ -17,13 +15,13 @@ const ROLE_COPY: Record<string, string> = {
 
 export default function Login() {
   const router = useRouter();
-  const users = useQuery({ queryKey: ["dev-users"], queryFn: () => api<DevUsers>("/api/v1/auth/dev-users") });
+  const users = useQuery({ queryKey: ["dev-users"], queryFn: () => apiGet("/api/v1/auth/dev-users") });
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<unknown>(null);
 
   async function signIn(email: string) {
     setBusy(email); setErr(null);
-    try { await post("/api/v1/auth/dev-login", { email }); router.replace("/"); }
+    try { await apiPost("/api/v1/auth/dev-login", { body: { email } }); router.replace("/"); }
     catch (e) { setErr(e); setBusy(null); }
   }
 

@@ -15,11 +15,10 @@ uv run python evaluations/simulation_study.py
 from __future__ import annotations
 
 import json
-import statistics
 import subprocess
 import sys
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import lightgbm as lgb
@@ -81,7 +80,7 @@ def simulate(panel, start_i, end_i, fc: dict[int, np.ndarray] | None, price, cos
     h_day = cost * a["holding_rate_annual"] / 365
     stock = init.copy()
     pipeline: dict[int, np.ndarray] = {}
-    sold = lost = hold = 0.0
+    lost = hold = 0.0
     sold_v = np.zeros(S_count); dem_v = np.zeros(S_count); stockout_days = 0; inv_units = []
     orders = 0
     for i in range(start_i, end_i + 1):
@@ -150,7 +149,7 @@ def main():
         rng = np.random.default_rng(0)
         boots = rng.choice(d, size=(2000, len(d))).mean(1)
         paired[f"{m}_minus_seasonal_naive_fill"] = {"mean": float(d.mean()), "ci95": [float(np.quantile(boots, .025)), float(np.quantile(boots, .975))]}
-    out = REPO / "artifacts" / "experiments" / f"S1-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    out = REPO / "artifacts" / "experiments" / f"S1-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
     out.mkdir(parents=True)
     (out / "metrics.json").write_text(json.dumps({
         "experiment_id": out.name, "study": "S1", "forecast_study": f1.name, "products": len(cohort),

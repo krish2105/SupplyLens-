@@ -1,16 +1,20 @@
 "use client";
+import type { UseQueryResult } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { Card, Empty, Eyebrow, Mono, PageHeader, Provenance, Skeleton } from "@/components/ui";
-import { useTenantQuery, useWs } from "@/lib/queries";
+import { useApi, useWs } from "@/lib/queries";
 import { num } from "@/lib/format";
 
 type Any = Record<string, any>;
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "—" : `${num(v * 100, d)}%`);
 
 function useStudy(id: string) {
-  return useTenantQuery<Any>(["study", id], `/api/v1/research/${id === "F1" ? "forecast-study" : id.toLowerCase()}`);
+  const f1 = useApi(["study", id], id === "F1" ? "/api/v1/research/forecast-study" : null);
+  const other = useApi(["study", id], id !== "F1" ? "/api/v1/research/{study}" : null, { path: { study: id.toLowerCase() } });
+  // Study metrics are open-ended documents produced by the evaluation scripts; the page reads them as such.
+  return (id === "F1" ? f1 : other) as unknown as UseQueryResult<Any>;
 }
 
 function bars(categories: string[], series: { name: string; data: number[]; color: string }[], yName: string) {

@@ -7,8 +7,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import date, datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 from sqlalchemy import text
 
@@ -44,14 +43,14 @@ def ingest(tenant_id, batch: int = 48, log=print) -> dict:
         s.execute(text("""INSERT INTO document_versions (id, tenant_id, document_id, version_label, file_name, sha256,
             storage_key, known_at, valid_from, parser_version, embed_model) VALUES (:i,:t,:d,'v1','corpus.jsonl',:h,:k,
             :ka,'1900-01-01',:p,:em)"""), {"i": vid, "t": tenant_id, "d": doc_id, "h": digest, "k": key,
-                                           "ka": datetime.now(timezone.utc), "p": PARSER_VERSION + "+acord", "em": "bge-m3:567m"})
+                                           "ka": datetime.now(UTC), "p": PARSER_VERSION + "+acord", "em": "bge-m3:567m"})
     embedded = 0
     for b in range(0, len(offsets), batch):
         chunk = offsets[b: b + batch]
         vecs = embed([c[3] for c in chunk], timeout=120) or [None] * len(chunk)
         embedded += sum(v is not None for v in vecs)
         with tenant_session(tenant_id) as s:
-            for (cid, a, z, body), v in zip(chunk, vecs):
+            for (cid, a, z, body), v in zip(chunk, vecs, strict=True):
                 s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body,
                     embedding) VALUES (:i,:t,:v,:o,:s,:a,:z,:b,CAST(:e AS vector))"""),
                     {"i": uuid.uuid4(), "t": tenant_id, "v": vid, "o": b, "s": cid, "a": a, "z": z, "b": body,

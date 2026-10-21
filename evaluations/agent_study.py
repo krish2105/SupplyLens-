@@ -14,22 +14,22 @@ os.environ["SUPPLYLENS_DATABASE_URL"] = "postgresql+psycopg://supplylens_app:sup
 os.environ["SUPPLYLENS_ADMIN_DATABASE_URL"] = "postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens_test"
 os.environ["SUPPLYLENS_STORAGE_DIR"] = "storage_test"
 
-import json  # noqa: E402
-import statistics  # noqa: E402
-import subprocess  # noqa: E402
-import time  # noqa: E402
-from datetime import date, datetime, timedelta, timezone  # noqa: E402
-from pathlib import Path  # noqa: E402
+import json
+import statistics
+import subprocess
+import time
+from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
-from sqlalchemy import text  # noqa: E402
+from sqlalchemy import text
 
-from supplylens.actions import service as act  # noqa: E402
-from supplylens.agent.graph import create_run, execute_run  # noqa: E402
-from supplylens.authz import Forbidden, resolve_actor  # noqa: E402
-from supplylens.db import admin_engine, tenant_session  # noqa: E402
-from supplylens.integrations import sandbox_erp  # noqa: E402
-from supplylens.seed import dev_email, seed, tenant_id, user_id  # noqa: E402
-from supplylens.simulation import demo  # noqa: E402
+from supplylens.actions import service as act
+from supplylens.agent.graph import create_run, execute_run
+from supplylens.authz import Forbidden, resolve_actor
+from supplylens.db import admin_engine, tenant_session
+from supplylens.integrations import sandbox_erp
+from supplylens.seed import dev_email, seed, tenant_id, user_id
+from supplylens.simulation import demo
 
 REPO = Path(__file__).resolve().parents[1]
 T = tenant_id("demo")
@@ -112,10 +112,10 @@ def scenarios():
         for d in range(14, 25):
             eff = date(2026, 10, d)
             out.append({"id": f"ref-b{budget}-d{d}", "kind": "reference", "eff": eff,
-                        "cutoff": datetime(2026, 10, d, 9, tzinfo=timezone.utc), "budget": budget})
+                        "cutoff": datetime(2026, 10, d, 9, tzinfo=UTC), "budget": budget})
     for d in (20, 21):  # delayed knowledge: amendment not yet known at the cutoff
         out.append({"id": f"delayed-knowledge-d{d}", "kind": "reference", "eff": date(2026, 10, 20),
-                    "cutoff": datetime(2026, 10, 14, 9, tzinfo=timezone.utc), "budget": 18000})
+                    "cutoff": datetime(2026, 10, 14, 9, tzinfo=UTC), "budget": 18000})
     out += [{"id": "missing-stock-record", "kind": "missing_stock"}, {"id": "conflicting-terms", "kind": "conflict"},
             {"id": "viewer-denied", "kind": "denied", "role": "viewer"}, {"id": "approver-cannot-start", "kind": "denied", "role": "approver"},
             {"id": "admin-cannot-approve", "kind": "admin_approve"}, {"id": "self-approval-blocked", "kind": "self_approve"},
@@ -133,14 +133,14 @@ def check(sc) -> tuple[bool, dict]:
         ok = (got == exp) and (status == "WAITING_FOR_APPROVAL" if exp else status in ("REVIEW_REQUIRED", "SUCCEEDED"))
         return ok, {"expected": exp, "got": got, "status": status, "ms": ms, "tool_calls": tools}
     if k == "missing_stock":
-        status, got, ms, tools, _ = run_reference(date(2026, 9, 15), datetime(2026, 9, 15, 9, tzinfo=timezone.utc), 18000)
+        status, got, ms, tools, _ = run_reference(date(2026, 9, 15), datetime(2026, 9, 15, 9, tzinfo=UTC), 18000)
         return got is None and status in ("SUCCEEDED", "REVIEW_REQUIRED"), {"status": status, "ms": ms, "tool_calls": tools}
     if k == "conflict":
         with tenant_session(T) as s:
             s.execute(text("""INSERT INTO supplier_terms (term_id, tenant_id, supplier_id, sku_id, unit_cost_minor, currency, moq,
                 order_multiple, lead_time_days, valid_from, known_at, value_kind, source_kind) VALUES ('REF-A-side', :t, 'DEMO-REF-A',
                 'DEMO-REF-SKU', 450, 'USD', 50, 10, 2, '2026-06-01', '2026-06-01', 'synthetic', 'generated')"""), {"t": T})
-        status, got, ms, tools, _ = run_reference(date(2026, 10, 19), datetime(2026, 10, 19, 9, tzinfo=timezone.utc), 18000)
+        status, got, ms, tools, _ = run_reference(date(2026, 10, 19), datetime(2026, 10, 19, 9, tzinfo=UTC), 18000)
         return status == "REVIEW_REQUIRED" and got is None, {"status": status, "ms": ms, "tool_calls": tools}
     if k == "denied":
         try:
@@ -148,7 +148,7 @@ def check(sc) -> tuple[bool, dict]:
             return False, {"error": "allowed"}
         except Forbidden:
             return True, {"denied": True}
-    _, _, _, _, ids = run_reference(date(2026, 10, 20), datetime(2026, 10, 20, 9, tzinfo=timezone.utc), 18000)
+    _, _, _, _, ids = run_reference(date(2026, 10, 20), datetime(2026, 10, 20, 9, tzinfo=UTC), 18000)
     a = act.get(actor("viewer"), ids[0])
     approve = lambda who: act.approve(actor(who), a["id"], payload_hash=a["payload_hash"], expected_row_version=a["row_version"])  # noqa: E731
     key = f"po-{a['id']}"
@@ -228,7 +228,7 @@ def main():
                "tool_calls_mean": statistics.mean(tools) if tools else None, "llm_tokens": 0,
                "variation": "identical outcomes across trials" if all(r["passes"] in (0, 3) for r in results) else "outcomes varied"}
     commit = subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, cwd=REPO).stdout.strip()
-    d = REPO / "artifacts" / "experiments" / f"AGT-{datetime.now(timezone.utc):%Y%m%dT%H%M%SZ}"
+    d = REPO / "artifacts" / "experiments" / f"AGT-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
     d.mkdir(parents=True, exist_ok=True)
     (d / "metrics.json").write_text(json.dumps({"experiment_id": d.name, "study": "AGT", "commit": commit, "summary": summary,
                                                 "oracle": "brute-force enumeration over hand-written ground truth", "results": results},

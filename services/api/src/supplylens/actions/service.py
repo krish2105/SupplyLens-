@@ -11,7 +11,7 @@ import hashlib
 import json
 import socket
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import text
 
@@ -99,7 +99,7 @@ def _recheck_terms(tenant_id, payload: dict) -> list[str]:
     """Re-resolve terms with current knowledge at the original decision date; report drift."""
     d = payload["decision"]
     res = applicable_terms(tenant_id, [l["sku_id"] for l in payload["lines"]],
-                           datetime.now(timezone.utc), date.fromisoformat(d["effective_date"]))
+                           datetime.now(UTC), date.fromisoformat(d["effective_date"]))
     current = {(t.supplier_id, t.sku_id): t for t in res.applicable}
     problems = []
     for l in payload["lines"]:
@@ -137,7 +137,7 @@ def approve(actor: Actor, action_id, *, payload_hash: str, expected_row_version:
                            "updated_at=now() WHERE id=:i"), {"i": action_id, "r": "; ".join(problems)})
             _audit(s, actor.tenant_id, actor.user_id, "action.stale", action_id, {"problems": problems})
             return {"status": "STALE", "problems": problems}
-        expires = datetime.now(timezone.utc) + timedelta(minutes=settings.approval_ttl_minutes)
+        expires = datetime.now(UTC) + timedelta(minutes=settings.approval_ttl_minutes)
         s.execute(text("""INSERT INTO approvals (id, tenant_id, action_id, decision, payload_hash, versions,
             max_spend_minor, approver_id, expires_at) VALUES (:i,:t,:a,'APPROVED',:h,CAST(:v AS jsonb),:m,:u,:x)"""),
             {"i": uuid.uuid4(), "t": actor.tenant_id, "a": action_id, "h": a["payload_hash"],
@@ -281,7 +281,7 @@ def _approval_valid(tenant_id, item) -> str | None:
         return "payload changed after approval"
     if ap is None:
         return "no approval bound to this payload"
-    if ap.expires_at < datetime.now(timezone.utc):
+    if ap.expires_at < datetime.now(UTC):
         return "approval expired"
     return None
 
@@ -354,6 +354,32 @@ def _confirm(tenant_id, item, order: dict | None) -> dict:
     _finish(tenant_id, item, "DELIVERED", "RECONCILED", external_ref=order["po_number"],
             reason="sandbox order read back and matched payload")
     return {"operation_id": item["operation_id"], "result": "RECONCILED", "po_number": order["po_number"]}
+
+
+def retry_failed(actor: Actor, action_id) -> dict:
+    """Re-queue a dispatch that failed after exhausting its retries (for example during a connector outage).
+
+    Safe only while the approval is still valid and the target holds no order for the operation key; if the remote
+    order exists the caller must reconcile instead. The idempotency key is unchanged, so the target deduplicates."""
+    actor.require("action.reconcile")
+    with tenant_session(actor.tenant_id) as s:
+        a = _load(s, action_id, lock=True)
+        item = s.execute(text("SELECT id, operation_id, payload_hash, status FROM outbox WHERE action_id=:i FOR UPDATE"),
+                         {"i": action_id}).mappings().first()
+        if a["status"] != "FAILED" or not item or item["status"] != "FAILED":
+            raise ActionError("invalid_state", "only a FAILED dispatch can be retried")
+        problem = _approval_valid(actor.tenant_id, {"action_id": action_id, "payload_hash": item["payload_hash"]})
+        if problem:
+            raise ActionError("approval_invalid", f"cannot retry: {problem}; prepare and approve a new draft")
+        if sandbox_erp.lookup(item["operation_id"]):
+            raise ActionError("remote_order_exists", "the target already holds this order: reconcile it instead")
+        s.execute(text("""UPDATE outbox SET status='PENDING', attempts=0, next_attempt_at=now(), last_error=NULL,
+            lease_owner=NULL, lease_expires_at=NULL, updated_at=now() WHERE id=:i"""), {"i": item["id"]})
+        s.execute(text("UPDATE actions SET status='QUEUED', status_reason='retry requested after failure', "
+                       "row_version=row_version+1, updated_at=now() WHERE id=:i"), {"i": action_id})
+        _audit(s, actor.tenant_id, actor.user_id, "action.retry_requested", action_id,
+               {"operation_id": item["operation_id"]})
+    return {"status": "QUEUED", "operation_id": item["operation_id"]}
 
 
 def reconcile(actor: Actor, action_id) -> dict:

@@ -2,16 +2,14 @@
 import { useMemo, useState } from "react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance } from "@/components/ui";
-import { useTenantQuery } from "@/lib/queries";
+import { useApi } from "@/lib/queries";
 import { money, num } from "@/lib/format";
 
-type V = { ledger: { item: string; evidence_class: string; period: string; baseline_minor: number; intervention_minor: number; unit: string; source: string; assumptions: Record<string, any> }[];
-  sensitivity: Record<string, Record<string, any>> | null; formulas: string[]; disclaimer: string };
 
 const CASES: Record<string, string> = { L3_h25: "Base: 3-day lead, 25% holding", L1_h25: "1-day lead", L7_h25: "7-day lead", L3_h15: "15% holding", L3_h40: "40% holding" };
 
 export default function ValuePage() {
-  const v = useTenantQuery<V>(["value"], "/api/v1/value");
+  const v = useApi(["value"], "/api/v1/value");
   const [model, setModel] = useState("tcn");
   const opt = useMemo(() => {
     if (!v.data?.sensitivity) return null;
@@ -20,9 +18,9 @@ export default function ValuePage() {
     return { ...b, xAxis: { ...(b.xAxis as object), type: "category", data: cases.map((c) => CASES[c] ?? c) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "simulated £ (28 days)" },
       series: [
-        { type: "bar", name: "Median + safety policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![model].total_cost)), itemStyle: { color: token("--muted") } },
-        { type: "bar", name: "q90 order-up-to policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![`${model}__sum_q90`].total_cost)), itemStyle: { color: token("--accent") } },
-        { type: "line", name: "Perfect-foresight reference", data: cases.map((c) => Math.round(v.data!.sensitivity![c]!.perfect_foresight_reference.total_cost)), lineStyle: { color: token("--risk"), type: "dashed" }, itemStyle: { color: token("--risk") } },
+        { type: "bar", name: "Median + safety policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![model]!.total_cost)), itemStyle: { color: token("--muted") } },
+        { type: "bar", name: "q90 order-up-to policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![`${model}__sum_q90`]!.total_cost)), itemStyle: { color: token("--accent") } },
+        { type: "line", name: "Perfect-foresight reference", data: cases.map((c) => Math.round(v.data!.sensitivity![c]!.perfect_foresight_reference!.total_cost)), lineStyle: { color: token("--risk"), type: "dashed" }, itemStyle: { color: token("--risk") } },
       ] };
   }, [v.data, model]);
   if (v.isLoading) return <Loading />;

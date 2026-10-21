@@ -11,6 +11,8 @@ FROM base AS build
 WORKDIR /web
 COPY --from=deps /web/node_modules ./node_modules
 COPY apps/web ./
+# the API contract the client is typed from (tsconfig path @contracts -> ../../packages/contracts)
+COPY packages/contracts /packages/contracts
 ARG SUPPLYLENS_API_URL=http://api:8000
 ENV SUPPLYLENS_API_URL=$SUPPLYLENS_API_URL NEXT_TELEMETRY_DISABLED=1
 RUN npm run build

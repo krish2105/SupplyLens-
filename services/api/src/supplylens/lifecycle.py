@@ -18,7 +18,7 @@ import re
 import shutil
 import uuid
 import zipfile
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import text
@@ -134,7 +134,7 @@ def _sha256_file(path: Path) -> str:
 
 def _write_archive(tenant_id, export_id, include_vectors: bool, part: Path) -> dict:
     manifest: dict = {"format": EXPORT_FORMAT, "export_id": str(export_id), "tenant_id": str(tenant_id),
-                      "created_at": datetime.now(timezone.utc).isoformat(), "snapshot": "REPEATABLE READ",
+                      "created_at": datetime.now(UTC).isoformat(), "snapshot": "REPEATABLE READ",
                       "include_vectors": include_vectors, "tables": {}, "documents": {}, "vectors": {}, "caches": {}}
     with app_engine().connect().execution_options(isolation_level="REPEATABLE READ") as conn:
         conn.execute(text("SET TRANSACTION READ ONLY"))
@@ -287,7 +287,7 @@ def check_deletable(tenant_id, export_id) -> dict:
         raise LifecycleError("export_required", "a verified, completed export is required before deletion", 422)
     if ex.downloaded_at is None:
         raise LifecycleError("export_not_downloaded", "download the export before deleting the workspace", 422)
-    if datetime.now(timezone.utc) - ex.finished_at > EXPORT_MAX_AGE:
+    if datetime.now(UTC) - ex.finished_at > EXPORT_MAX_AGE:
         raise LifecycleError("export_too_old", "the export is older than 7 days; create a fresh one", 422)
     return {"kind": kind}
 
@@ -304,7 +304,7 @@ def run_deletion(tenant_id, deletion_id, requested_by, export_id, job_id=None) -
     remaining = _remaining(tenant_id, keep_job_id=job_id)
     if remaining:
         raise LifecycleError("residual_rows", f"rows remain after deletion: {remaining}")
-    cert = {"deletion_id": str(deletion_id), "tenant_slug": slug, "completed_at": datetime.now(timezone.utc).isoformat(),
+    cert = {"deletion_id": str(deletion_id), "tenant_slug": slug, "completed_at": datetime.now(UTC).isoformat(),
             "rows_deleted": {**deleted, "audit_events": audit}, "rows_remaining": remaining, "vectors_deleted": vectors,
             "caches_cleared": caches, "files_removed": files, "export_id": str(export_id),
             "retained": ["this certificate", "one job record as a completion receipt"],
