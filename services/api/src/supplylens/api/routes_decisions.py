@@ -4,7 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -29,6 +29,13 @@ router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
 def _settings(s):
     return s.execute(text("SELECT operational_as_of, currency, dataset_id, planning FROM tenant_settings")).first()
+
+
+def _cutoff(st, override: datetime | None) -> datetime:
+    """Explicit cutoff, else the workspace as-of, else now (workspaces without operational settings)."""
+    if override:
+        return override
+    return st.operational_as_of if st else datetime.now(timezone.utc)
 
 
 class ForecastIn(BaseModel):
@@ -79,7 +86,7 @@ def terms(sku_id: str, knowledge_cutoff: datetime | None = None, effective_date:
     a.require("read")
     with tenant_session(a.tenant_id) as s:
         st = _settings(s)
-    cutoff = knowledge_cutoff or st.operational_as_of
+    cutoff = _cutoff(st, knowledge_cutoff)
     eff = effective_date or cutoff.date()
     res = applicable_terms(a.tenant_id, [sku_id], cutoff, eff)
     with tenant_session(a.tenant_id) as s:
@@ -129,7 +136,7 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
         raise HTTPException(422, {"code": "invalid_query", "message": "query 1-500 chars; mode effective|known"})
     with tenant_session(a.tenant_id) as s:
         st = _settings(s)
-    cutoff = knowledge_cutoff or st.operational_as_of
+    cutoff = _cutoff(st, knowledge_cutoff)
     ents = [w for w in q.replace(",", " ").split() if any(ch.isdigit() for ch in w)]
     res = search(a.tenant_id, q, as_of=cutoff, role=a.role, effective_date=effective_date, mode=mode,
                  supplier_id=supplier_id, entities=ents, k=max(1, min(k, 20)))
@@ -239,6 +246,9 @@ async def run_stream(run_id: str, request: Request, a: Actor = Depends(actor),
     """Server-sent events of persisted run events; reconnect with Last-Event-ID (monotonic seq)."""
     a.require("read")
     tenant = a.tenant_id
+    with tenant_session(tenant) as s:
+        if not s.execute(text("SELECT 1 FROM agent_runs WHERE id=:i"), {"i": run_id}).first():
+            raise HTTPException(404, {"code": "not_found", "message": "run not found"})
 
     async def gen():
         cursor = int(last_event_id or 0)
@@ -257,7 +267,7 @@ async def run_stream(run_id: str, request: Request, a: Actor = Depends(actor),
                 yield f"event: status\ndata: {json.dumps({'status': status})}\n\n"
                 break
             idle = idle + 1 if not evs else 0
-            if idle > 600:
+            if idle > 600 or status is None:
                 break
             await asyncio.sleep(0.5)
 

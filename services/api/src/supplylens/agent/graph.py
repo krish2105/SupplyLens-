@@ -242,7 +242,11 @@ def compute(state):
     # Offers must arrive within the coverage window; arrivals after a SKU's projected stockout
     # are allowed (late stock still serves later demand) but flagged as warnings below.
     window_end = eff + timedelta(days=planning.get("coverage_days", 21))
-    need_by = max([window_end] + [date.fromisoformat(v["need_by"]) for v in to_buy.values()])
+    if state["forecast"]["available"]:
+        need_by = max([window_end] + [date.fromisoformat(v["need_by"]) for v in to_buy.values()])
+    else:
+        # Explicit fixture deadlines (reorder rule / reference case) are hard: late offers are infeasible.
+        need_by = min(date.fromisoformat(v["need_by"]) for v in to_buy.values())
     req = PlanRequest(decision_date=eff, need_by=need_by, currency=st["currency"],
                       budget_minor=st["budget_minor"],
                       needs=[Need(sku_id=k, required_units=v["required_units"]) for k, v in to_buy.items()],
