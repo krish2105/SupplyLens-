@@ -2,7 +2,7 @@
 // Schematic 3D warehouse (UX-005). Each rack is a real SKU-location row: height encodes
 // days of cover (capped at 60), colour encodes the same health status as the table.
 // frameloop="demand" means nothing renders while idle; no auto-rotation.
-import { Canvas, invalidate, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, invalidate, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html, OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
@@ -61,6 +61,18 @@ function Rack({ item, selected, onSelect, colors }: { item: InventoryItem; selec
   );
 }
 
+/** Requests a frame whenever the canvas size, theme colours or data change (demand rendering). */
+function Invalidator({ deps }: { deps: unknown[] }) {
+  const size = useThree((s) => s.size);
+  const inv = useThree((s) => s.invalidate);
+  useEffect(() => {
+    inv();
+    const t = setTimeout(() => inv(), 120);
+    return () => clearTimeout(t);
+  }, [size.width, size.height, inv, ...deps]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
 export default function Warehouse3D({ items, selected, onSelect, height = 460 }: {
   items: InventoryItem[]; selected: string | null; onSelect: (sku: string | null) => void; height?: number;
 }) {
@@ -98,7 +110,10 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460 }:
   return (
     <div className="relative" style={{ height }}>
       <Canvas frameloop="demand" shadows dpr={[1, 1.75]} camera={{ position: home, fov: 40 }}
-        onPointerMissed={() => onSelect(null)} aria-label="3D schematic warehouse">
+        onPointerMissed={() => onSelect(null)} role="img" aria-label="3D schematic warehouse. The table and floor plan show the same records."
+        // Demand rendering can miss the first frame after a theme remount; request one explicitly.
+        onCreated={(s) => { requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150); }}>
+        <Invalidator deps={[colors, items, selected]} />
         <color attach="background" args={[colors.floor]} />
         <ambientLight intensity={0.7} />
         <directionalLight position={[20, 30, 10]} intensity={1.1} castShadow />

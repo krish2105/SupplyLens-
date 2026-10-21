@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { Suspense, useEffect, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import clsx from "clsx";
@@ -46,7 +46,12 @@ function ThemeSwitch() {
   );
 }
 
+// URL-backed planning state needs a Suspense boundary for static prerendering.
 export default function AppLayout({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<Loading label="Loading workspace" className="min-h-screen justify-center" />}><AppShell>{children}</AppShell></Suspense>;
+}
+
+function AppShell({ children }: { children: ReactNode }) {
   const me = useMe();
   const router = useRouter();
   const path = usePathname();

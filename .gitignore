@@ -42,3 +42,4 @@ playwright-report/
 test-results/
 data/bronze/
 storage/
+apps/web/.next-build/

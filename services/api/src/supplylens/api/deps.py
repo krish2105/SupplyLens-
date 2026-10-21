@@ -6,7 +6,7 @@ import json
 import uuid
 from typing import Any, Callable
 
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Depends, Header, HTTPException, Query, Request
 from itsdangerous import BadSignature, URLSafeTimedSerializer
 from sqlalchemy import text
 
@@ -30,9 +30,14 @@ def current_user_id(request: Request) -> uuid.UUID:
     return uuid.UUID(data["uid"])
 
 
-def tenant_from_header(x_supplylens_tenant: str = Header(...)) -> uuid.UUID:
+def tenant_from_header(request: Request, x_supplylens_tenant: str | None = Header(None),
+                       ws: str | None = Query(None)) -> uuid.UUID:
+    # EventSource cannot send headers, so read-only GETs may name the workspace in ?ws=.
+    slug = x_supplylens_tenant or (ws if request.method == "GET" else None)
+    if not slug:
+        raise HTTPException(400, {"code": "tenant_required", "message": "X-SupplyLens-Tenant header required"})
     with control_session() as s:
-        tid = s.execute(text("SELECT id FROM tenants WHERE slug = :s"), {"s": x_supplylens_tenant}).scalar()
+        tid = s.execute(text("SELECT id FROM tenants WHERE slug = :s"), {"s": slug}).scalar()
     if tid is None:
         raise HTTPException(404, {"code": "tenant_not_found", "message": "unknown workspace"})
     return tid

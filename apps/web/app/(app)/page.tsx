@@ -27,7 +27,8 @@ export default function OverviewPage() {
   const docs = useTenantQuery<Doc[]>(["documents"], "/api/v1/documents");
   const runs = useTenantQuery<Run[]>(["runs"], "/api/v1/agent-runs");
   const [gl, setGl] = useState<boolean | null>(null);
-  useEffect(() => setGl(webglAvailable()), []);
+  // Constrained devices default to the 2D floor plan (UX-005); WebGL failure always does.
+  useEffect(() => setGl(webglAvailable() && window.innerWidth >= 768), []);
 
   if (ov.error) return <ErrorState error={ov.error} retry={() => ov.refetch()} />;
   const items = inv.data?.items ?? [];
@@ -78,7 +79,7 @@ export default function OverviewPage() {
           {inv.error ? <div className="p-4"><ErrorState error={inv.error} /></div> :
             gl === false ? (
               <div className="p-4">
-                <p className="mb-3 text-sm text-muted">3D view unavailable in this browser (WebGL disabled). The floor plan below shows the same records.</p>
+                <p className="mb-3 text-sm text-muted">Showing the 2D floor plan (small screen or WebGL unavailable). It shows the same records as the 3D view.</p>
                 <FloorPlan items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} />
               </div>
             ) : gl === null || inv.isLoading ? <Skeleton className="h-[460px]" /> : items.length ? (

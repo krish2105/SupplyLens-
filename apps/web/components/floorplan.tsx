@@ -26,7 +26,7 @@ export function FloorPlan({ items, selected, onSelect }: { items: InventoryItem[
                 className={clsx("rounded-md border px-1.5 py-1 text-left", TONE[i.health] ?? TONE.no_sales_data,
                   i.sku_id === selected && "ring-2 ring-accent ring-offset-2 ring-offset-surface")}>
                 <span className="num block truncate text-[11px] font-semibold">{i.sku_id}</span>
-                <span className="num block text-[10px] opacity-80">{i.days_of_cover == null ? "—" : `${num(i.days_of_cover, 0)}d`}</span>
+                <span className="num block text-[10px]">{i.days_of_cover == null ? "—" : `${num(i.days_of_cover, 0)}d`}</span>
               </button>
             ))}
           </div>
