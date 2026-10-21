@@ -1,0 +1,18 @@
+{
+  "pack_name": "SupplyLens Research-Ready Starter",
+  "created_utc": "2026-10-21",
+  "source_dataset_count": 13,
+  "actual_external_raw_datasets_included": 0,
+  "synthetic_fixtures_included": true,
+  "synthetic_fixture_rows": {
+    "suppliers": 6,
+    "products": 36,
+    "supplier_terms": 37,
+    "snapshots": 36,
+    "po_lines": 18
+  },
+  "original_master_prompt_unchanged": true,
+  "original_docx_unchanged": true,
+  "warning": "Publisher datasets must be downloaded separately in a network-enabled environment with the appropriate rights/terms.",
+  "core_setup": "See README_START_HERE.md, data/README_DATASETS.md and 05_SHORT_WORK_PROMPT_WITH_DATA.txt"
+}

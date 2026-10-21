@@ -1,0 +1,44 @@
+# Original and private datasets
+data/raw/**
+!data/raw/ADD_DATASETS_HERE.md
+knowledge/raw/**
+!knowledge/raw/ADD_DOCUMENTS_HERE.md
+# Model outputs and locally generated artifacts
+models/**
+!models/KEEP_EMPTY.md
+artifacts/**
+!artifacts/KEEP_EMPTY.md
+# Secrets and environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+.next/
+# Download receipts can include detailed query parameters and paths
+data/download_receipts.jsonl
+# Transformed datasets and derived embeddings
+data/silver/
+data/gold/
+# Manually downloaded 3D assets
+assets/third_party/
+# Original starter packs and ZIPs are kept untouched beside the repo
+/SupplyLens_Starter_Pack/
+/SupplyLens_Starter_Updated_Datasets/
+/*.zip
+.DS_Store
+# Build and tool caches
+.venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+apps/web/.next/
+apps/web/node_modules/
+playwright-report/
+test-results/
+data/bronze/
+storage/

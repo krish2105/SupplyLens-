@@ -1,0 +1,8 @@
+FICTIONAL DOCUMENT - GENERATED FOR SOFTWARE TESTING - NOT A REAL CONTRACT
+Amendment: DEMO-AMD-001, version v2, applies to DEMO-CTR-001.
+Effective date: 2027-04-01.
+From 2027-04-01, minimum order quantity of DEMO-SKU-001 is 60 units;
+orders remain in multiples of 10. Standard lead time becomes 10 days.
+Earlier terms are superseded only from the effective date.
+Supplier: Demo Northstar Supplies Ltd (FICTIONAL).
+data_origin=synthetic; generation_seed=271828

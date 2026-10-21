@@ -1,0 +1,21 @@
+{
+  "dataset": "SupplyLens FICTIONAL temporal supplier-policy fixture",
+  "data_origin": "synthetic",
+  "seed": 271828,
+  "as_of_2027_03_31": {
+    "supplier_id": "DEMO-SUP-001",
+    "sku_id": "DEMO-SKU-001",
+    "minimum_order_quantity": 40,
+    "lead_time_days": 7,
+    "applies_from": "2027-01-01",
+    "evidence": "DEMO-SUP-001-framework-v1.txt"
+  },
+  "as_of_2027_04_01": {
+    "supplier_id": "DEMO-SUP-001",
+    "sku_id": "DEMO-SKU-001",
+    "minimum_order_quantity": 60,
+    "lead_time_days": 10,
+    "applies_from": "2027-04-01",
+    "evidence": "DEMO-SUP-001-amendment-v2.txt"
+  }
+}

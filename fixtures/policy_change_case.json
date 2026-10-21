@@ -1,0 +1,45 @@
+{
+  "scenario_id": "synthetic-policy-change-001",
+  "synthetic_data": true,
+  "currency": "USD",
+  "purpose": "Verifiable demonstration of policy-version-aware supplier selection; not customer data",
+  "demand_units": 30,
+  "budget": 180,
+  "suppliers": [
+    {
+      "supplier_id": "supplier-A",
+      "unit_price": 5,
+      "minimum_order_before": 20,
+      "minimum_order_after": 40,
+      "policy_effective_date": "2026-10-01"
+    },
+    {
+      "supplier_id": "supplier-B",
+      "unit_price": 6,
+      "minimum_order_before": 1,
+      "minimum_order_after": 1,
+      "policy_effective_date": "2026-01-01"
+    }
+  ],
+  "assumptions": [
+    "Exact-fill quantity preferred",
+    "No shipping fees or taxes",
+    "One supplier per order",
+    "Supplier capacity and delivery timing assumed feasible",
+    "No inventory already on hand"
+  ],
+  "expected": {
+    "as_of_2026-09-30": {
+      "supplier": "supplier-A",
+      "units": 30,
+      "total_cost": 150,
+      "reason": "A is feasible and cheaper before its MOQ amendment"
+    },
+    "as_of_2026-10-02": {
+      "supplier": "supplier-B",
+      "units": 30,
+      "total_cost": 180,
+      "reason": "A requires 40 units costing 200, exceeding the budget of 180"
+    }
+  }
+}

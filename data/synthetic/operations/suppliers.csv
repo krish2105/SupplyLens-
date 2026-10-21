@@ -1,0 +1,7 @@
+supplier_id,supplier_name,country,data_origin,generation_seed,scenario_id
+DEMO-SUP-001,Demo Northstar Supplies Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
+DEMO-SUP-002,Demo Meridian Distribution Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
+DEMO-SUP-003,Demo Cedar Logistics Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
+DEMO-SUP-004,Demo Cobalt Wholesale Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
+DEMO-SUP-005,Demo Summit Components Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
+DEMO-SUP-006,Demo Harbor Procurement Ltd,FICTIONAL,synthetic,271828,DEMO-BASELINE
