@@ -46,3 +46,12 @@ timeout = 300
 
 [tool.ruff]
 line-length = 100
+
+# Containers run on Linux CPU: use PyTorch's CPU wheels there (no CUDA libraries); macOS keeps the default wheel (MPS).
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu", marker = "sys_platform == 'linux'" }]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
