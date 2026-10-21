@@ -22,6 +22,7 @@ from sqlalchemy import text
 from supplylens_opt.planner import Need, PlanRequest, plan
 from supplylens_opt.replenishment import Position, assess
 
+from .. import alerts, telemetry
 from ..actions import service as actions
 from ..authz import Actor, resolve_actor
 from ..db import tenant_session
@@ -97,7 +98,8 @@ def node(name: str, nxt):
     """Wrap a node: reauthorise, run, record an event, checkpoint, choose the next node."""
     def run(state: RunState) -> RunState:
         _actor(state).require("agent.start")
-        summary, data = FUNCS[name](state)
+        with telemetry.span(f"agent.{name.lower()}", **{"agent.run_id": state["run_id"], "tenant.id": state["tenant_id"]}):
+            summary, data = FUNCS[name](state)
         target = nxt(state) if callable(nxt) else nxt
         state["next_node"] = target
         _event(state["tenant_id"], state["run_id"], name, "node_completed", summary, data)
@@ -390,7 +392,8 @@ def create_run(actor: Actor, *, mode: str, inp: dict) -> uuid.UUID:
                    "u": actor.user_id})
         s.execute(text("INSERT INTO jobs (id, tenant_id, kind, payload, status, created_by) VALUES "
                        "(:i,:t,'agent_run',CAST(:p AS jsonb),'QUEUED',:u)"),
-                  {"i": job_id, "t": actor.tenant_id, "p": json.dumps({"run_id": str(run_id)}), "u": actor.user_id})
+                  {"i": job_id, "t": actor.tenant_id,
+                   "p": json.dumps({"run_id": str(run_id), "trace": telemetry.inject_context()}), "u": actor.user_id})
     return run_id
 
 
@@ -414,6 +417,9 @@ def execute_run(tenant_id, run_id) -> dict[str, Any]:
         state["status"] = "PARTIAL"
         _event(tenant_id, run_id, state.get("next_node", "?"), "budget_exceeded", str(e))
         _checkpoint(state)
+        alerts.raise_alert(tenant_id, "budget_exhausted", f"budget_exhausted:run:{run_id}",
+                           "Investigation stopped: run budget exhausted",
+                           {"run_id": str(run_id), "reason": str(e), "tool_calls": state.get("tool_calls")}, "medium")
         return {"status": "PARTIAL"}
     except Exception as e:  # recorded, not hidden
         state["status"] = "FAILED"

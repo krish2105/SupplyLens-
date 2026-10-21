@@ -18,6 +18,7 @@ from sqlalchemy import text
 from supplylens_ml.baselines import seasonal_naive
 from supplylens_ml.series import dense_series
 
+from .. import alerts, telemetry
 from ..config import REPO_ROOT
 from ..db import tenant_session
 
@@ -136,6 +137,14 @@ def run_forecast(tenant_id, dataset_id, sku_ids: list[str], origin: date, horizo
                  created_by=None, model_family: str | None = None, allow_baseline_fallback: bool = False) -> ForecastRun:
     """Forecast with the requested model or the champion. With `allow_baseline_fallback`, a champion that
     cannot serve this origin (trained later, or horizon too long) is replaced by seasonal naive and flagged."""
+    with telemetry.span("forecast.run", **{"tenant.id": str(tenant_id), "forecast.skus": len(sku_ids),
+                                           "forecast.horizon": horizon}):
+        return _run_with_fallback(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_family,
+                                  allow_baseline_fallback)
+
+
+def _run_with_fallback(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_family,
+                       allow_baseline_fallback) -> ForecastRun:
     try:
         return _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_family)
     except ForecastError as e:
@@ -177,7 +186,14 @@ def _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_fami
     model_id = model["id"]
     frames, flags = [], {}
     if trained:
-        pts, flags = _trained_points(model, daily, sku_ids, origin, horizon)
+        try:
+            pts, flags = _trained_points(model, daily, sku_ids, origin, horizon)
+        except ForecastError as e:
+            if e.code in ("artifact_untrusted", "artifact_missing", "model_failed"):
+                alerts.raise_alert(tenant_id, "model_unavailable", f"model_unavailable:artifact:{model_id}",
+                                   f"{model['family']} {model.get('version', '')} cannot serve forecasts ({e.code})",
+                                   {"model_id": str(model_id), "family": model["family"], "error": str(e)[:300]}, "high")
+            raise
         if not pts.empty:
             frames.append(pts)
     else:

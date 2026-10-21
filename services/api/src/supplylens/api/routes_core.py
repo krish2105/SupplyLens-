@@ -61,7 +61,7 @@ def me(request: Request):
         if not u:
             raise HTTPException(401, {"code": "unauthenticated", "message": "account inactive"})
         ms = s.execute(text("""SELECT t.slug, t.name, t.kind, t.description, m.role FROM memberships m
-            JOIN tenants t ON t.id = m.tenant_id WHERE m.user_id = :u ORDER BY t.slug"""), {"u": uid}).mappings().all()
+            JOIN tenants t ON t.id = m.tenant_id WHERE m.user_id = :u AND t.deleted_at IS NULL ORDER BY t.slug"""), {"u": uid}).mappings().all()
     return {"user": dict(u), "memberships": [dict(m) for m in ms]}
 
 

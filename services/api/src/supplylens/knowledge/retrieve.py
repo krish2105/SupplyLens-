@@ -13,6 +13,7 @@ from typing import Literal
 
 from sqlalchemy import text
 
+from .. import telemetry
 from ..db import tenant_session
 from .embed import embed, to_pgvector
 
@@ -66,6 +67,14 @@ def search(tenant_id, query: str, *, as_of: datetime, role: str, effective_date:
            channels: tuple[str, ...] = ("lexical", "vector"), rerank: bool = True, n_candidates: int = 30,
            document_id: str | None = None) -> dict:
     """`channels` and `rerank` exist for controlled ablations (R1/R2); the product uses the defaults."""
+    with telemetry.span("retrieval.search", **{"tenant.id": str(tenant_id), "retrieval.role": role, "retrieval.k": k}):
+        return _search(tenant_id, query, as_of=as_of, role=role, effective_date=effective_date, mode=mode,
+                       supplier_id=supplier_id, entities=entities, k=k, use_vectors=use_vectors, channels=channels,
+                       rerank=rerank, n_candidates=n_candidates, document_id=document_id)
+
+
+def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id, entities, k, use_vectors, channels,
+            rerank, n_candidates, document_id) -> dict:
     eff = effective_date or as_of.date()
     use_vectors = use_vectors and "vector" in channels
     params = {"as_of": as_of, "eff": eff, "mode": mode, "role": role, "supplier": supplier_id, "q": query, "doc": document_id,

@@ -10,11 +10,13 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 
+from .. import telemetry
 from ..actions.service import ActionError
 from ..authz import Forbidden
 from ..db import app_engine
 from ..forecasting.service import ForecastError
-from . import routes_core, routes_decisions, routes_market, routes_ops, routes_research
+from ..lifecycle import LifecycleError
+from . import routes_core, routes_decisions, routes_lifecycle, routes_market, routes_ops, routes_research
 
 log = logging.getLogger("supplylens.api")
 
@@ -25,11 +27,13 @@ app.include_router(routes_decisions.router)
 app.include_router(routes_research.router)
 app.include_router(routes_market.router)
 app.include_router(routes_ops.router)
+app.include_router(routes_lifecycle.router)
+telemetry.setup(app)
 
 
 @app.middleware("http")
 async def trace(request: Request, call_next):
-    trace_id = request.headers.get("x-trace-id") or uuid.uuid4().hex
+    trace_id = telemetry.current_trace_id() or request.headers.get("x-trace-id") or uuid.uuid4().hex
     start = time.perf_counter()
     response = await call_next(request)
     response.headers["x-trace-id"] = trace_id
@@ -45,6 +49,11 @@ async def forbidden(_: Request, e: Forbidden):
 
 @app.exception_handler(ActionError)
 async def action_error(_: Request, e: ActionError):
+    return JSONResponse({"code": e.code, "message": str(e)}, status_code=e.http)
+
+
+@app.exception_handler(LifecycleError)
+async def lifecycle_error(_: Request, e: LifecycleError):
     return JSONResponse({"code": e.code, "message": str(e)}, status_code=e.http)
 
 

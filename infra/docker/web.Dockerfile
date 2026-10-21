@@ -1,15 +1,20 @@
-FROM node:24-slim AS deps
+FROM node:24-slim AS base
+COPY infra/docker/ca/ /usr/local/share/ca-certificates/extra/
+RUN if ls /usr/local/share/ca-certificates/extra/*.crt >/dev/null 2>&1; then update-ca-certificates; fi
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
+FROM base AS deps
 WORKDIR /web
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci
-FROM node:24-slim AS build
+FROM base AS build
 WORKDIR /web
 COPY --from=deps /web/node_modules ./node_modules
 COPY apps/web ./
 ARG SUPPLYLENS_API_URL=http://api:8000
 ENV SUPPLYLENS_API_URL=$SUPPLYLENS_API_URL NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
-FROM node:24-slim
+FROM base
 WORKDIR /web
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 COPY --from=build /web ./

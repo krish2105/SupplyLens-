@@ -11,9 +11,10 @@ from .db import control_session
 MATRIX: dict[str, set[str]] = {
     "viewer": {"read"},
     "planner": {"read", "forecast.run", "plan.run", "agent.start", "action.prepare", "action.edit",
-                "action.reconcile"},
-    "approver": {"read", "action.approve", "action.reject", "action.reconcile"},
-    "tenant_admin": {"read", "admin.read", "admin.write", "action.reconcile"},
+                "action.reconcile", "alert.ack"},
+    "approver": {"read", "action.approve", "action.reject", "action.reconcile", "alert.ack"},
+    "tenant_admin": {"read", "admin.read", "admin.write", "action.reconcile", "alert.ack", "alert.evaluate",
+                     "tenant.export", "tenant.delete"},
 }
 
 

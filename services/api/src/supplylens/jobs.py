@@ -15,7 +15,7 @@ HEARTBEAT_SECONDS = 10
 
 def tenants() -> list[uuid.UUID]:
     with control_session() as s:
-        return [r.id for r in s.execute(text("SELECT id FROM tenants ORDER BY slug"))]
+        return [r.id for r in s.execute(text("SELECT id FROM tenants WHERE deleted_at IS NULL ORDER BY slug"))]
 
 
 def claim(tenant_id, worker: str) -> dict | None:

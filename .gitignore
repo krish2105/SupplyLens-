@@ -59,3 +59,6 @@ apps/web/.next-build/
 !artifacts/reports/*.txt
 artifacts/experiments/*smoke*/
 artifacts/reports/e2e-results.json
+
+# Local proxy CA for image builds (infra/docker/ca/README.md)
+infra/docker/ca/*.crt

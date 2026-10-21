@@ -18,6 +18,7 @@ from sqlalchemy import text
 from supplylens_opt.planner import Need, PlanLine, PlanRequest, PlanResult
 from supplylens_opt.validator import validate
 
+from .. import alerts, telemetry
 from ..authz import Actor
 from ..config import settings
 from ..db import tenant_session
@@ -255,6 +256,18 @@ def _finish(tenant_id, item, outbox_status, action_status, *, external_ref=None,
                   {"st": action_status, "x": external_ref, "r": reason, "i": item["action_id"]})
         _audit(s, tenant_id, None, f"dispatch.{action_status.lower()}", item["action_id"],
                {"operation_id": item["operation_id"], "external_ref": external_ref, "error": error})
+        supplier = s.execute(text("SELECT payload->>'supplier_id' FROM actions WHERE id=:i"),
+                             {"i": item["action_id"]}).scalar()
+    key = f"failed_reconciliation:{item['action_id']}"
+    mismatch = action_status == "CONFIRMED"
+    if action_status in ("UNKNOWN_OUTCOME", "FAILED") or mismatch:
+        what = {"UNKNOWN_OUTCOME": "Order outcome unknown", "FAILED": "Dispatch failed",
+                "CONFIRMED": "Read-back mismatch"}[action_status]
+        alerts.raise_alert(tenant_id, "failed_reconciliation", key, f"{what} for order to {supplier}",
+                           {"action_id": str(item["action_id"]), "status": action_status, "reason": reason or error,
+                            "operation_id": item["operation_id"]}, "high")
+    elif action_status == "RECONCILED":
+        alerts.resolve_alert(tenant_id, key)
     return True
 
 
@@ -292,6 +305,14 @@ def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
     item = _claim(tenant_id, worker)
     if item is None:
         return None
+    with telemetry.span("outbox.dispatch", **{"tenant.id": str(tenant_id), "outbox.operation_id": item["operation_id"],
+                                              "outbox.attempt": item["attempts"]}) as sp:
+        result = _dispatch(tenant_id, item)
+        sp.set_attribute("outbox.result", result["result"])
+    return result
+
+
+def _dispatch(tenant_id, item) -> dict:
     key = item["operation_id"]
     problem = _approval_valid(tenant_id, item)
     if problem:

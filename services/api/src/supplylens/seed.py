@@ -87,6 +87,21 @@ def seed(engine=None) -> None:
             )
 
 
+def create_tenant(slug: str, name: str, kind: str = "customer", description: str = "", engine=None) -> uuid.UUID:
+    """Control-plane tooling: create a workspace and give every dev account its role in it (dev/test only)."""
+    engine = engine or admin_engine()
+    tid = tenant_id(slug)
+    with engine.begin() as conn:
+        conn.execute(text("INSERT INTO tenants (id, slug, name, kind, description) VALUES (:i,:s,:n,:k,:d) "
+                          "ON CONFLICT (id) DO NOTHING"), {"i": tid, "s": slug, "n": name, "k": kind, "d": description})
+        for role in ROLES:
+            conn.execute(text("INSERT INTO memberships (tenant_id, user_id, role) VALUES (:t,:u,:r) ON CONFLICT DO NOTHING"),
+                         {"t": tid, "u": user_id(dev_email(role)), "r": role})
+        conn.execute(text("INSERT INTO memberships VALUES (:t,:u,'approver') ON CONFLICT DO NOTHING"),
+                     {"t": tid, "u": user_id("approver2@dev.supplylens.local")})
+    return tid
+
+
 if __name__ == "__main__":
     seed()
     print("seeded tenants and dev accounts")

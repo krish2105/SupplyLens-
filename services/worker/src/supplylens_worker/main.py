@@ -13,7 +13,7 @@ import uuid
 
 from sqlalchemy import text
 
-from supplylens import jobs
+from supplylens import alerts, jobs, lifecycle, telemetry
 from supplylens.actions import service as actions
 from supplylens.agent.graph import execute_run
 from supplylens.db import tenant_session
@@ -41,6 +41,12 @@ def refresh_runs(tenant_id) -> None:
 
 
 def run_job(tenant_id, job: dict) -> None:
+    with telemetry.continue_trace(job["payload"].get("trace"), f"job.{job['kind']}", **{
+            "tenant.id": str(tenant_id), "job.id": str(job["id"]), "job.attempt": job["attempts"]}):
+        _run_job(tenant_id, job)
+
+
+def _run_job(tenant_id, job: dict) -> None:
     stop = threading.Event()
     hb = threading.Thread(target=jobs.heartbeat, args=(tenant_id, job, stop), daemon=True)
     hb.start()
@@ -49,6 +55,15 @@ def run_job(tenant_id, job: dict) -> None:
             result = execute_run(tenant_id, uuid.UUID(job["payload"]["run_id"]))
             status = "FAILED" if result.get("status") == "FAILED" else "SUCCEEDED"
             jobs.finish(tenant_id, job, status, result, result.get("error"))
+        elif job["kind"] == "tenant_export":
+            result = lifecycle.run_export(tenant_id, uuid.UUID(job["payload"]["export_id"]))
+            jobs.finish(tenant_id, job, "SUCCEEDED", result)
+        elif job["kind"] == "tenant_deletion":
+            p = job["payload"]
+            cert = lifecycle.run_deletion(tenant_id, uuid.UUID(p["deletion_id"]), uuid.UUID(p["requested_by"]),
+                                          uuid.UUID(p["export_id"]), job_id=job["id"])
+            jobs.finish(tenant_id, job, "SUCCEEDED", {"deletion_id": p["deletion_id"],
+                                                      "rows_deleted": sum(cert["rows_deleted"].values())})
         else:
             jobs.finish(tenant_id, job, "FAILED", error=f"unknown job kind {job['kind']}")
     except Exception as e:  # noqa: BLE001 - recorded on the job
@@ -56,6 +71,22 @@ def run_job(tenant_id, job: dict) -> None:
         jobs.finish(tenant_id, job, "FAILED", error=f"{type(e).__name__}: {e}")
     finally:
         stop.set()
+
+
+ALERT_EVERY_S = 30
+_last_alert_eval: dict = {}
+
+
+def alert_tick(tenant_id) -> None:
+    """Deliver pending alerts every tick; re-evaluate state-based conditions every ALERT_EVERY_S."""
+    alerts.deliver_pending(tenant_id)
+    now = time.monotonic()
+    if now - _last_alert_eval.get(tenant_id, -1e9) >= ALERT_EVERY_S:
+        _last_alert_eval[tenant_id] = now
+        try:
+            alerts.evaluate(tenant_id)
+        except Exception:  # noqa: BLE001 - monitoring must not stop the worker
+            log.exception("alert evaluation failed")
 
 
 def tick() -> int:
@@ -69,6 +100,7 @@ def tick() -> int:
             log.info("dispatch %s", r)
             worked += 1
         refresh_runs(t)
+        alert_tick(t)
     return worked
 
 
@@ -78,6 +110,7 @@ def main() -> None:
     ap.add_argument("--interval", type=float, default=1.0)
     ns = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    telemetry.setup(service_name="supplylens-worker")
     log.info("worker %s started", WORKER_ID)
     while True:
         n = tick()
@@ -85,6 +118,7 @@ def main() -> None:
             break
         if not n:
             time.sleep(ns.interval)
+    telemetry.shutdown()
 
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 """HTTP contract: auth, tenancy, CSRF, idempotency, role checks and validation."""
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from supplylens.api.app import app
 from supplylens.simulation import demo
@@ -119,12 +120,17 @@ def test_document_and_evidence_endpoints(client):
     assert ev["answer"]["claims"][0]["citation"]["version_id"]
 
 
+def _clear_buckets():
+    from supplylens.db import admin_engine
+    with admin_engine().begin() as c:
+        c.execute(text("TRUNCATE rate_limit_buckets"))
+
+
 def test_costly_endpoints_are_rate_limited(client):
-    from supplylens.api import ratelimit
-    ratelimit._BUCKETS.clear()
+    _clear_buckets()
     login(client, "planner")
     codes = [client.post("/api/v1/forecasts", json={"sku_ids": ["X"]}, headers={**H, "Idempotency-Key": f"rl{i}"}).status_code
              for i in range(40)]
     # The limit is checked before the handler: the first 30 reach it (422: no sales in demo), then 429.
     assert codes[:30] == [422] * 30 and set(codes[30:]) == {429}
-    ratelimit._BUCKETS.clear()
+    _clear_buckets()

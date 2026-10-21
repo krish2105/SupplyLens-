@@ -22,6 +22,12 @@ class Settings(BaseSettings):
     session_secret: str = "dev-only-change-me"
     dev_auth: bool = True
     approval_ttl_minutes: int = 60 * 24
+    # Operational alert queue: the alerts table is the queue; a webhook is an optional second route.
+    alert_webhook_url: str | None = None
+    alert_webhook_secret: str = "dev-only-change-me"
+    # OpenTelemetry: set an OTLP/HTTP endpoint (e.g. http://collector:4318) to export traces.
+    otel_endpoint: str | None = None
+    otel_service_name: str = "supplylens"
 
     @property
     def storage_path(self) -> Path:
