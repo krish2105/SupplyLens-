@@ -59,3 +59,30 @@ test("selecting a table row selects the same product in the floor plan and detai
   await expect(page.getByRole("button", { name: new RegExp(`^${sku},`) })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("#detail-title")).toContainText(sku);
 });
+
+test("command palette jumps to a product", async ({ page }) => {
+  await signIn(page, "viewer");
+  await page.goto("/?ws=uci-research");
+  await page.getByRole("button", { name: "Open command palette" }).click();
+  await page.getByRole("combobox", { name: "Search pages, products and commands" }).fill("85123A");
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/inventory.*sku=85123A/);
+  await expect(page.locator("#detail-title")).toContainText("85123A");
+});
+
+test("tenant admin can export the audit trail; viewer cannot open administration", async ({ page }) => {
+  await signIn(page, "tenant_admin");
+  const r = await page.request.get("/api/v1/admin/audit.csv?ws=uci-research");
+  expect(r.status()).toBe(200);
+  expect((await r.text()).split("\n")[0]).toContain("action");
+  await signIn(page, "viewer");
+  await page.goto("/admin?ws=uci-research");
+  await expect(page.getByText("Administrators only")).toBeVisible();
+});
+
+test("forecast lab refuses a replay the champion has already seen", async ({ page }) => {
+  await signIn(page, "planner");
+  await page.goto("/forecast?ws=uci-research&sku=85123A&known=2011-10-01T23:59:00.000Z");
+  await page.getByRole("button", { name: /Run forecast/ }).click();
+  await expect(page.getByText(/trained on data up to 2011-11-10/)).toBeVisible();
+});

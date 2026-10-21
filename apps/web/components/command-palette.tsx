@@ -72,7 +72,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
           <div className="flex items-center gap-2 border-b border-line px-4">
             <Search className="size-4 text-muted" aria-hidden />
             <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Type a page, product code or command"
-              role="combobox" aria-expanded aria-controls="cmd-list" aria-activedescendant={cmds[idx] ? `cmd-${idx}` : undefined}
+              role="combobox" aria-label="Search pages, products and commands" aria-expanded aria-controls="cmd-list" aria-activedescendant={cmds[idx] ? `cmd-${idx}` : undefined}
               className="h-12 flex-1 bg-transparent text-sm outline-none" />
           </div>
           <ul id="cmd-list" role="listbox" ref={list} className="max-h-[50vh] overflow-auto p-2">
