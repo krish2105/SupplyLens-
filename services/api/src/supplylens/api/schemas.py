@@ -443,6 +443,7 @@ class PlanLine(Out):
 class ChecksRef(Out):
     passed: bool
     issues: list[Json] = []
+    warnings: list[Json] = []          # non-blocking findings the approver must see (e.g. a forced shortfall)
     lines_checked: int | None = None
     independent_validator: str | None = None
 
@@ -503,6 +504,7 @@ class ScenarioTerms(Out):
     applicable: int
     ignored: list[IgnoredTerm]
     conflicts: list[list[str]]
+    excluded_for_conflict: list[str] = []     # conflicting terms the scenario did not plan with (P2-PLAN-05)
 
 
 class ScenarioResult(Out):

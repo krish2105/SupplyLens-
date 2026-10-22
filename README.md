@@ -9,7 +9,7 @@ approval-bound purchase orders that are reconciled before they count as done.
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![FastAPI](https://img.shields.io/badge/FastAPI-0.158-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-336791)
-![Tests](https://img.shields.io/badge/tests-296%20backend%20%C2%B7%20102%20browser-0F6B55)
+![Tests](https://img.shields.io/badge/tests-374%20backend%20%C2%B7%20116%20browser-0F6B55)
 
 <img src="docs/images/overview-dark.png" alt="SupplyLens overview with linked 3D warehouse" width="900" />
 
@@ -37,7 +37,7 @@ target system before it is marked complete.
   with day-to-day dependence measured from the SKU's own sales (simulation-checked, not yet validated on real history).
 - **Controlled execution** — stateful LangGraph investigator, approvals bound to payload hash and expiry,
   separation of duties, transactional outbox, idempotent sandbox ERP, unknown-outcome reconciliation.
-- **Multi-tenant by construction** — forced row-level security on 34 tables, non-owner database role,
+- **Multi-tenant by construction** — forced row-level security on 38 tables, non-owner database role,
   CSRF protection, atomic idempotency keys, database-shared rate limits, append-only audit trail, verified tenant
   export and certified deletion.
 - **Operable** — alert queue with signed webhook, OpenTelemetry tracing, WAL archiving with a rehearsed point-in-time
@@ -113,8 +113,8 @@ Full setup, backup/restore and operating procedures: [`docs/operations/runbook.m
 ## Testing
 
 ```bash
-uv run pytest -q                       # 296 tests against real PostgreSQL (incl. failed-migration / rollback / outage rehearsals)
-(cd apps/web && npx playwright test)   # 102 browser tests: journeys, resilience, accessibility, Web Vitals, layout
+uv run pytest -q                       # 374 passed, 6 skipped (Keycloak) against real PostgreSQL, incl. migration/rollback/outage rehearsals
+(cd apps/web && npx playwright test)   # 116 browser tests (114 pass, 2 skip): journeys, resilience, accessibility, Web Vitals, layout
 uv run ruff check .                    # correctness, imports, bugbear and security rules
 ./scripts/check_contracts.sh           # API contract drift (the web client is typed from it)
 ./scripts/backup_restore_drill.sh      # logical restore rehearsal with hash verification
@@ -124,8 +124,10 @@ uv run python scripts/loadtest/seed_reference.py && scripts/loadtest/run_referen
 
 ## Project status
 
-A complete controlled product, verified locally. Not production-ready: enterprise sign-in (OIDC), a real ERP
-connector and pilot validation are outstanding. See [`PROJECT_STATUS.md`](PROJECT_STATUS.md) and the
+A complete controlled product, verified locally and in CI. Not production-ready: OIDC works against a local Keycloak but
+is not qualified against a corporate identity provider, there is no real ERP connector, no production environment and
+no pilot. The production-readiness program's audit, issue register and evidence are in
+[`docs/agent-handoff/`](docs/agent-handoff/STATUS.md). See [`PROJECT_STATUS.md`](PROJECT_STATUS.md) and the
 [acceptance register](docs/acceptance/acceptance_register.csv).
 
 ## Acknowledgements

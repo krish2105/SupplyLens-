@@ -26,7 +26,7 @@ from .db import tenant_session
 
 log = logging.getLogger("supplylens.alerts")
 
-KINDS = ("stale_data", "failed_reconciliation", "budget_exhausted", "model_unavailable")
+KINDS = ("stale_data", "failed_reconciliation", "budget_exhausted", "model_unavailable", "job_failed")
 DEFAULT_RULES = {"max_runs_per_day": 200}
 MAX_DELIVERY_ATTEMPTS = 6
 

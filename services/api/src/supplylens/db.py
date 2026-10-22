@@ -34,7 +34,7 @@ def app_engine() -> Engine:
 
 
 def admin_engine() -> Engine:
-    return engine_for(settings.admin_database_url)
+    return engine_for(settings.owner_database_url)
 
 
 @contextmanager

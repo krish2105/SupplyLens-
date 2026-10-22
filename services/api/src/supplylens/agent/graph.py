@@ -18,6 +18,7 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, StateGraph
 from sqlalchemy import text
+from sqlalchemy.exc import IntegrityError
 
 from supplylens_opt.planner import Need, Offer, PlanRequest, plan
 from supplylens_opt.replenishment import Position, assess
@@ -158,9 +159,10 @@ def gather(state):
     eff = date.fromisoformat(st["effective_date"])
     skus = state["skus"]
     _tool(state)
+    known = min(cutoff.date(), eff)      # operational data as known at the cutoff (P2-PLAN-03)
     with tenant_session(state["tenant_id"]) as s:
-        positions, not_assessed = load_positions(s, skus, eff)
-        shares = demand_shares(s, st["dataset_id"], positions, eff)
+        positions, not_assessed = load_positions(s, skus, known)
+        shares = demand_shares(s, st["dataset_id"], positions, known)
     forecast = {"available": False}
     if st["dataset_id"]:
         _tool(state)
@@ -173,7 +175,7 @@ def gather(state):
                                      for r in g.itertuples()] for sku, g in fr.points.groupby("sku_id")}}
         _tool(state)
         forecast["dependence"] = {k: list(v) for k, v in
-                                  dependence_by_sku(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, eff).items()}
+                                  dependence_by_sku(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, known).items()}
     _tool(state)
     res = applicable_terms(uuid.UUID(state["tenant_id"]), skus, cutoff, eff)
     # Upcoming policy changes: known now, effective later. Surfaced, not applied.
@@ -231,19 +233,22 @@ def compute(state):
                     "q90": x["q90"] * share} for x in state["forecast"]["points"].get(sku, [])]
             if not pts:
                 continue
-            lead = min([t["lead_time_days"] for t in state["terms"]["applicable"]
-                        if t["sku_id"] == sku and t["currency"] == st["currency"]], default=0)
+            # each supplier's lead time sets its own protection interval (P1-PLAN-02)
+            leads = sorted({t["lead_time_days"] for t in state["terms"]["applicable"]
+                            if t["sku_id"] == sku and t["currency"] == st["currency"]} or {0})
             acf, basis = state["forecast"].get("dependence", {}).get(sku, (None, "assumed default"))
+            position = Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=key)
             try:
-                a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=key),
-                           pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
-                           lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
-                           dependence_basis=basis)
+                by_lead = {lead: assess(position, pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
+                                        lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
+                                        dependence_basis=basis) for lead in leads}
             except ValueError as e:
                 state["needs"].setdefault("not_assessed", {})[key] = str(e)
                 continue
+            a = by_lead[leads[0]]
             assessments[key] = {**a.model_dump(mode="json"), "location_id": p.get("location_id"),
-                                "demand_share": share, "demand_share_basis": p.get("demand_share_basis")}
+                                "demand_share": share, "demand_share_basis": p.get("demand_share_basis"),
+                                "required_units_by_lead_time": {str(d): x.required_units for d, x in by_lead.items()}}
         else:
             # No sales history (demo): reorder-point rule from the fixture; required units only if below it.
             ref = planning.get("reference_case", {})
@@ -253,8 +258,9 @@ def compute(state):
                 need_by = ref["need_by"]
             else:
                 with tenant_session(state["tenant_id"]) as s:
-                    rp = s.execute(text("SELECT capacity FROM inventory_positions WHERE sku_id=:k ORDER BY as_of DESC "
-                                        "LIMIT 1"), {"k": sku}).scalar() or 0
+                    rp = s.execute(text("SELECT capacity FROM inventory_positions WHERE sku_id=:k AND as_of <= :d "
+                                        "ORDER BY as_of DESC LIMIT 1"),
+                                   {"k": sku, "d": min(datetime.fromisoformat(st["knowledge_cutoff"]).date(), eff)}).scalar() or 0
                 reorder_point = rp // 4
                 avail = p["on_hand"] - p["allocated"] + p["on_order"]
                 req = max(0, reorder_point - avail)
@@ -280,7 +286,10 @@ def compute(state):
     req = PlanRequest(decision_date=eff, need_by=need_by, currency=st["currency"],
                       budget_minor=st["budget_minor"],
                       needs=[Need(sku_id=k, required_units=v["required_units"],
-                                  capacity_units=v.get("capacity_headroom_units")) for k, v in to_buy.items()],
+                                  capacity_units=v.get("capacity_headroom_units"),
+                                  required_units_by_lead_time={int(d): u for d, u in
+                                                               v.get("required_units_by_lead_time", {}).items()})
+                             for k, v in to_buy.items()],
                       offers=offers, allow_shortfall=bool(state["input"].get("allow_shortfall", True)),
                       shortage_penalty_minor=int(state["input"].get("shortage_penalty_minor", 500)))
     _tool(state)
@@ -321,7 +330,16 @@ def check(state):
                and l["term_id"] not in state["citations"]]
     if missing:
         issues.append({"kind": "missing_citation", "detail": missing})
-    state["checks"] = {"passed": not issues, "issues": issues,
+    # A shortfall is never silent (P0-PLAN-01). With some lines it is a partial order the constraints forced: the draft
+    # carries the warning to the approver. With no line at all the need is unmet and the run needs a person.
+    warnings = []
+    if p.get("shortfall"):
+        detail = {"uncovered_units": p["shortfall"], "explanation": p.get("explanation") or []}
+        if p.get("lines"):
+            warnings.append({"kind": "shortfall", "detail": detail})
+        else:
+            issues.append({"kind": "shortfall_unmet", "detail": detail})
+    state["checks"] = {"passed": not issues, "issues": issues, "warnings": warnings,
                        "lines_checked": len(p.get("lines", [])),
                        "independent_validator": "passed" if not p.get("violations") else "failed"}
     max_loops = state["input"].get("budget", DEFAULT_BUDGET)["max_check_loops"]
@@ -370,11 +388,18 @@ def prepare_action(state):
         decision = {"knowledge_cutoff": st["knowledge_cutoff"], "effective_date": st["effective_date"],
                     "plan_input_hash": p["input_hash"], "agent_run_id": state["run_id"],
                     "budget_minor": st["budget_minor"]}
-        a = actions.prepare(actor, supplier_id=supplier, lines=lines, locations=locations[supplier], currency=st["currency"],
-                            need_by=max(l.arrival_date for l in lines), decision=decision, evidence=evidence,
-                            versions={"forecast_run": state["forecast"].get("run_id"),
-                                      "terms": [l.term_id for l in lines], "plan_input_hash": p["input_hash"]},
-                            agent_run_id=uuid.UUID(state["run_id"]))
+        try:
+            a = actions.prepare(actor, supplier_id=supplier, lines=lines, locations=locations[supplier],
+                                currency=st["currency"], need_by=max(l.arrival_date for l in lines), decision=decision,
+                                evidence=evidence, versions={"forecast_run": state["forecast"].get("run_id"),
+                                                             "terms": [l.term_id for l in lines],
+                                                             "plan_input_hash": p["input_hash"]},
+                                agent_run_id=uuid.UUID(state["run_id"]))
+        except IntegrityError:
+            # another execution of this run prepared it first (unique per run and supplier, migration 0009)
+            with tenant_session(state["tenant_id"]) as s:
+                a = {"id": s.execute(text("SELECT id FROM actions WHERE agent_run_id=:r AND payload->>'supplier_id'=:s"),
+                                     {"r": state["run_id"], "s": supplier}).scalar_one()}
         created.append(str(a["id"]))
     state["actions"] = created
     state["status"] = "WAITING_FOR_APPROVAL"

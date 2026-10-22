@@ -7,6 +7,7 @@ from uuid import UUID
 from sqlalchemy import text
 
 from .db import control_session
+from .demo import operation_locked
 
 MATRIX: dict[str, set[str]] = {
     "viewer": {"read"},
@@ -19,8 +20,8 @@ MATRIX: dict[str, set[str]] = {
 
 
 class Forbidden(Exception):
-    def __init__(self, operation: str, role: str | None):
-        super().__init__(f"role {role!r} may not perform {operation!r}")
+    def __init__(self, operation: str, role: str | None, message: str | None = None):
+        super().__init__(message or f"role {role!r} may not perform {operation!r}")
         self.operation, self.role = operation, role
 
 
@@ -34,6 +35,9 @@ class Actor:
     def require(self, operation: str) -> None:
         if operation not in MATRIX.get(self.role, set()):
             raise Forbidden(operation, self.role)
+        if operation_locked(operation):
+            raise Forbidden(operation, self.role, f"{operation!r} is disabled in the public demo: its accounts are shared "
+                                                  "by every visitor (administration, exports and deletion stay closed)")
 
 
 def resolve_actor(user_id: UUID, tenant_id: UUID) -> Actor | None:

@@ -25,7 +25,7 @@ DATA = REPO_ROOT / "hosted_data"
 
 
 def _owner_dsn() -> str:
-    return settings.admin_database_url.replace("postgresql+psycopg://", "postgresql://", 1)
+    return settings.owner_database_url.replace("postgresql+psycopg://", "postgresql://", 1)
 
 
 def schema() -> dict:
@@ -44,7 +44,7 @@ def schema() -> dict:
         c.execute(sql.SQL("GRANT CONNECT ON DATABASE {} TO supplylens_app").format(sql.Identifier(db)))
     from alembic import command
     from alembic.config import Config
-    os.environ["SUPPLYLENS_MIGRATION_URL"] = settings.admin_database_url
+    os.environ["SUPPLYLENS_MIGRATION_URL"] = settings.owner_database_url
     cfg = Config(str(REPO_ROOT / "services" / "api" / "alembic.ini"))
     cfg.set_main_option("script_location", str(REPO_ROOT / "services" / "api" / "migrations"))
     command.upgrade(cfg, "head")

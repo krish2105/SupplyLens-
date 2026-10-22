@@ -16,6 +16,18 @@ Postgres is Neon (Vercel Marketplace), pgvector enabled. The API connects as `su
 or row-level-security bypass; the Neon owner credentials are used only by the one-time setup below. Neon's variables are
 marked sensitive by Vercel and cannot be downloaded, so setup runs inside the deployment.
 
+## Demo safeguards (D-051, D-052)
+- **Shared accounts, closed administration.** The role accounts are public and passwordless, so the `demo` profile refuses
+  workspace administration (memberships, new workspaces, imports, model promotion), tenant export and tenant deletion for
+  every role (HTTP 403). Reading, investigating, approving, reconciling and booking receipts stay open.
+- **Self-cleaning orders.** Each demo sign-in releases order lines nobody has touched for an hour (an audited system
+  cancellation), so the next visitor still sees the reference case to order.
+- **No owner credentials while serving.** The generated entrypoint keeps the Neon owner URL only while
+  `SUPPLYLENS_SETUP_TOKEN` is set, and otherwise deletes the integration's owner variables (`DATABASE_URL*`, `POSTGRES_*`,
+  `PG*`, `NEON_*`) from the process before the app loads; the app refuses to start in `demo` if an owner URL remains.
+  Residual: Vercel still injects those variables into the function at start; scoping or removing them is an owner
+  action in the Vercel/Neon integration settings.
+
 ## What differs from a full deployment (honest limits)
 - **No worker process.** `SUPPLYLENS_INLINE_JOBS` (set by the bundle) runs a workspace's queued agent runs and order
   dispatches inside the request that queued them, with the worker's own leases and fencing.
@@ -39,7 +51,9 @@ vercel deploy --prod
 ```
 First install on an empty database: add a 32+ character `SUPPLYLENS_SETUP_TOKEN` (sensitive) and
 `SUPPLYLENS_APP_DB_PASSWORD`, deploy, then `POST /api/v1/internal/setup/schema` and `/setup/data` with header
-`X-Setup-Token`; remove the token and redeploy (the endpoint then does not exist: 404). Setup copies each workspace's rows
+`X-Setup-Token`; remove the token and redeploy (the endpoint then does not exist: 404). **Schema upgrades** (a new
+migration, e.g. 0009) use the same steps with only `/setup/schema`: it is idempotent and migrates to head. Without the token
+the serving function holds no owner credentials, so it cannot migrate. Setup copies each workspace's rows
 through a staging table and inserts them under that workspace's row-level-security context; it refuses a role that can
 bypass row-level security.
 

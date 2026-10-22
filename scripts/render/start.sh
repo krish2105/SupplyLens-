@@ -2,7 +2,7 @@
 # Render start: API and worker in one container (one paid service for the demo). If either process exits, the container
 # exits so Render restarts both; the worker's jobs are leased, so a restart never loses or duplicates work.
 set -eu
-eval "$(python scripts/render/env.py)"
+eval "$(python scripts/render/env.py --serve)"   # app role only; no owner credentials while serving
 python -m supplylens_worker.main &
 WORKER=$!
 uvicorn supplylens.api.app:app --host 0.0.0.0 --port "${PORT:-8000}" --proxy-headers --forwarded-allow-ips='*' &

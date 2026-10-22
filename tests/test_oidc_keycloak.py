@@ -146,6 +146,5 @@ def test_production_profile_refuses_development_sign_in():
     with pytest.raises(ValueError, match="production profile refused"):
         Settings(environment="production", dev_auth=True)
     ok = Settings(environment="production", dev_auth=False, session_secret="x" * 40, alert_webhook_secret="y" * 40,
-                  database_url="postgresql+psycopg://app:s3cret@db/sl", admin_database_url="postgresql+psycopg://own:s3c@db/sl",
-                  cookie_secure=True, oidc_issuer=ISSUER, oidc_client_id="c", oidc_client_secret="s")
+                  database_url="postgresql+psycopg://app:s3cret@db/sl", admin_database_url=None, cookie_secure=True, oidc_issuer=ISSUER, oidc_client_id="c", oidc_client_secret="s")
     assert not ok.dev_login_available

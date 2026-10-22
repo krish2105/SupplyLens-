@@ -509,8 +509,9 @@ def test_DEF10_requests_past_capacity_are_refused_at_once_and_recovery_is_immedi
 # =========================================================================================== S09 profiles (no IdP needed)
 def test_S09_production_and_demo_profiles_fail_closed():
     from supplylens.config import Settings
+    owner = "postgresql+psycopg://own:s3c@db/sl"
     safe = dict(session_secret="x" * 40, alert_webhook_secret="y" * 40, cookie_secure=True,
-                database_url="postgresql+psycopg://supplylens_app:s3cret@db/sl", admin_database_url="postgresql+psycopg://own:s3c@db/sl")
+                database_url="postgresql+psycopg://supplylens_app:s3cret@db/sl", admin_database_url=None)
     with pytest.raises(ValueError, match="production profile refused"):
         Settings(environment="production", dev_auth=True, **safe)
     with pytest.raises(ValueError, match="OIDC provider"):
@@ -519,9 +520,14 @@ def test_S09_production_and_demo_profiles_fail_closed():
     assert demo_ok.dev_login_available
     for bad in ({"cookie_secure": False}, {"session_secret": "dev-only-change-me"},
                 {"database_url": "postgresql+psycopg://supplylens_app:supplylens_app_dev@db/sl"},
-                {"database_url": safe["admin_database_url"]}):
+                {"database_url": owner, "admin_database_url": owner},
+                {"admin_database_url": owner}):            # P1-SEC-02: a serving process never holds the owner URL
         with pytest.raises(ValueError, match="demo profile refused"):
             Settings(environment="demo", dev_auth=True, **{**safe, **bad})
+    # migrations and maintenance commands may hold the owner URL; the serving process may not
+    assert Settings(environment="demo", dev_auth=True, maintenance=True, **{**safe, "admin_database_url": owner})
+    with pytest.raises(RuntimeError, match="only for migrations and maintenance"):
+        _ = demo_ok.owner_database_url
 
 
 def test_inline_jobs_complete_a_run_and_a_dispatch_without_a_worker(demo_tenant, monkeypatch):

@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 
 from supplylens.config import settings
 
-url = os.environ.get("SUPPLYLENS_MIGRATION_URL", settings.admin_database_url)
+url = os.environ.get("SUPPLYLENS_MIGRATION_URL") or settings.owner_database_url
 
 
 def run() -> None:

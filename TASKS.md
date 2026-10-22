@@ -100,3 +100,16 @@ tests), S19 (automatic CI-artifact links). DEF-09 is superseded by the declared 
 | Acceptance evidence per CI run | S19 | `acceptance-evidence` CI job |
 | Hosted demo on Vercel | D-050 | https://supplylens-self.vercel.app: Next.js + FastAPI services, Neon Postgres |
 
+## Done in production-readiness Phase 1 (2026-10-22; docs/agent-handoff/phases/PHASE-01.md)
+| Task | Issue IDs | Result |
+|---|---|---|
+| Public demo lockdown and self-cleaning orders | P0-SEC-01 | admin/export/deletion refused in `demo`; visitor orders released after an hour (D-051) |
+| Coverage-first planner objective; shortfall surfaced | P0-PLAN-01 | two-pass lexicographic solve; warning or review required (D-053) |
+| Per-supplier lead-time requirement | P1-PLAN-02 | planner + validator (D-054) |
+| Committed-but-unreconciled orders as supply; mismatch acceptance | P1-ACT-02 | D-056; `POST /actions/{id}/accept-remote` |
+| Re-approval after STALE | P1-ACT-01 | same operation key (D-057) |
+| No owner credentials in the serving process | P1-SEC-02 | profile refuses; Vercel entrypoint scrubs (D-052) |
+| Receipts per SKU and location in the UI | P1-FE-02 | approvals page |
+| Exhausted jobs, one draft per run and supplier | P2-REL-01, P2-REL-02 | migration 0009 (D-058) |
+| Replay data bounded by the cutoff; calendar lags; conflicts in scenarios | P2-PLAN-03/04/05 | D-055, D-059, D-060 |
+

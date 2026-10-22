@@ -9,6 +9,15 @@ fictional and public data; `docs/operations/hosted-demo.md`). Still open: field 
 throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
 profile, a corporate identity provider and an ERP sandbox.
 
+## Current state (production-readiness Phase 1, 2026-10-22)
+The live register of open issues, evidence and decisions is `docs/agent-handoff/` (STATUS.md first). Phase 0 audited
+commit 9fcbedb (2 P0, 10 P1, 18 P2, 8 P3). Phase 1 fixed both P0s (public demo administration, default shortfall),
+five P1s (lead-time sizing, STALE re-approval, unreconciled orders as supply and the CONFIRMED dead end, owner
+credentials in the serving process, receipts per location in the UI) and six P2s; see
+`docs/agent-handoff/phases/PHASE-01.md`. Measured at the end of Phase 1: pytest 374 passed / 6 skipped (Keycloak), 38
+tables with forced RLS, Playwright 116 tests (114 passed, 2 skipped) on an isolated database, CI has 8 jobs.
+Sections below are the historical session log; their test counts are as of each session.
+
 ## CI on GitHub
 `.github/workflows/ci.yml` runs on every push, pull request and weekly. **Run 39700028666 (commit 5809b70): all 7 jobs
 passed** — lint (ruff incl. security rules, lockfile), secrets and dependencies (gitleaks over history, pip-audit,
@@ -33,7 +42,7 @@ failing steps now publish their output tail as annotations (`scripts/ci_annotate
   questions); hybrid wins inside real contracts (hit@3 76.7%) but loses to vector-only on ACORD (negative result kept).
 - **InventoryBench (official evaluator):** SupplyLens policy 0.482 vs base-stock 0.433 vs last-value 0.453.
 - **Agent (AGT):** 57 scenarios × 3, 100% oracle-verified, 0 unapproved external writes.
-- **Security:** forced RLS on 30 tenant tables; 64-case cross-tenant/role matrix + RLS tests pass.
+- **Security:** forced RLS on 30 tenant tables at session 3 (38 since migration 0007/0008); 64-case cross-tenant/role matrix + RLS tests pass.
 - **Ops:** OpenAPI + generated TS types with drift check (the web client is typed from them); atomic idempotency and
   database-shared rate limits; alert queue with signed webhook; OpenTelemetry tracing; verified tenant export and
   certified deletion; logical restore drill (6.2 s / 6.6 s) and WAL-archived point-in-time recovery drill (orders reconcile);
@@ -46,8 +55,9 @@ failing steps now publish their output tail as annotations (`scripts/ci_annotate
   Settings, sign-in), ⌘K command palette, Light/Dark/System, 3 workspaces.
 - **Tests:** 296 pytest (real PostgreSQL; 69 golden boundary cases) · 102 Playwright (journeys, resilience, consistency, accessibility, Web Vitals, layout; desktop + mobile) · `next build` · ruff · tsc.
 
-## Current task
-Session 3 complete: closed the engineering gaps that needed no outside party (TASKS.md "Done in session 3").
+## Session 3 summary (historical)
+Session 3 closed the engineering gaps that needed no outside party (TASKS.md "Done in session 3"). Current state: see
+the top of this file and `docs/agent-handoff/STATUS.md`.
 
 ## Exact next steps (need a person or something this build lacks)
 1. Run the load test on the declared 8 vCPU / 32 GiB profile; decide on a tenant-wide search ceiling, admission control

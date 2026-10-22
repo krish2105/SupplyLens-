@@ -1,6 +1,6 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import clsx from "clsx";
 import { Bug, Check, PackageCheck, Pencil, RefreshCw, RotateCw, X } from "lucide-react";
@@ -93,7 +93,7 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
   // One idempotency key per user intent, captured when the user clicks. If the response is lost and the user
   // retries, the very same request (same key, payload hash and row version) is sent again and the server replays the
   // original outcome instead of executing twice.
-  type Op = "approve" | "reject" | "edit" | "reconcile" | "retry" | "fault";
+  type Op = "approve" | "reject" | "edit" | "reconcile" | "retry" | "fault" | "accept";
   type Intent = { op: Op; key: string; settle?: () => void; hash: string; version: number; reason: string; quantities: Record<string, number> };
   const m = useMutation({
     mutationFn: async (i: Intent) => {
@@ -103,10 +103,11 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
       if (i.op === "reject") return apiPost("/api/v1/actions/{action_id}/reject", { path, idempotencyKey, body: { reason: i.reason, expected_row_version: i.version } });
       if (i.op === "edit") return apiPost("/api/v1/actions/{action_id}/edit", { path, idempotencyKey, body: { quantities: i.quantities, expected_row_version: i.version } });
       if (i.op === "fault") return apiPost("/api/v1/sandbox/faults", { body: { action_id: id, mode: i.reason || "timeout_after_commit" } });
-      if (i.op === "retry") return apiPost("/api/v1/actions/{action_id}/retry", { path });
-      return apiPost("/api/v1/actions/{action_id}/reconcile", { path });
+      if (i.op === "retry") return apiPost("/api/v1/actions/{action_id}/retry", { path, idempotencyKey });
+      if (i.op === "accept") return apiPost("/api/v1/actions/{action_id}/accept-remote", { path, idempotencyKey, body: { reason: i.reason } });
+      return apiPost("/api/v1/actions/{action_id}/reconcile", { path, idempotencyKey });
     },
-    onSuccess: (_, i) => { i.settle?.(); if (i.op === "edit") clearEditing(); if (i.op === "reject") clearReason(); refresh(); },
+    onSuccess: (_, i) => { i.settle?.(); if (i.op === "edit") clearEditing(); if (i.op === "reject" || i.op === "accept") clearReason(); refresh(); },
   });
   const act = (op: Op, faultMode?: string) => {
     const x = a.data!;
@@ -182,6 +183,16 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
           {x.status === "UNKNOWN_OUTCOME" && ["planner", "approver", "tenant_admin"].includes(role ?? "") && (
             <Button onClick={() => act("reconcile")} busy={busy("reconcile")}><RefreshCw className="size-4" aria-hidden /> Reconcile with sandbox</Button>
           )}
+          {shown === "READBACK_MISMATCH" && role === "approver" && (
+            <>
+              <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Why the supplier's version is acceptable"
+                aria-label="Reason for accepting the supplier's version" className="min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 py-2 text-sm" />
+              <Button onClick={() => act("accept")} disabled={!reason.trim() || self} busy={busy("accept")}
+                title={self ? "You prepared this draft; another approver must accept the change" : "Record the order exactly as the supplier system holds it"}>
+                <Check className="size-4" aria-hidden /> Accept supplier&apos;s version
+              </Button>
+            </>
+          )}
           {x.status === "FAILED" && ["planner", "approver", "tenant_admin"].includes(role ?? "") && (
             <Button onClick={() => act("retry")} busy={busy("retry")}
               title="Re-queue under the same idempotency key. Refused if the target already holds the order.">
@@ -219,6 +230,9 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
           ["Forecast run", ev.forecast?.available ? <Mono key="f">{short(ev.forecast.run_id)} (origin {ev.forecast.origin})</Mono> : "none — reorder rule on fictional fixture"],
           ["Plan", <span key="p"><Status value={ev.plan?.status} /> <Mono>{short(ev.plan?.input_hash, 16)}</Mono></span>],
           ["Checks", ev.checks?.passed ? "passed; independent validator re-checked every line" : "issues raised"],
+          ...(ev.checks?.warnings?.length ? [["Warnings", <span key="w" className="text-risk">{ev.checks.warnings.map((w) => w.kind === "shortfall"
+            ? `partial order: ${Object.entries((w.detail as { uncovered_units?: Record<string, number> })?.uncovered_units ?? {}).map(([k, n]) => `${k} ${n} units uncovered`).join(", ")}`
+            : String(w.kind)).join("; ")}</span>] as [string, ReactNode]] : []),
           ["Provenance", <span key="v" className="flex flex-wrap gap-1">stock <Provenance kind={ev.provenance.stock} /> terms <Provenance kind={ev.provenance.terms} /> budget <Provenance kind="assumed" /></span>],
           ["Approval", lastApproval ? `bound to ${short(lastApproval.payload_hash, 12)}…, expires ${dateTime(lastApproval.expires_at)}` : "none yet"],
         ]} /></div>
@@ -257,6 +271,9 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
 }
 
 
+/** One order line per SKU and location: receipt quantities are kept per line, never per SKU (P1-FE-02). */
+const lineKey = (l: { sku_id: string; location_id?: string | null }) => `${l.sku_id}@${l.location_id ?? ""}`;
+
 /** Open-order ledger for a reconciled order (audit S12): receipts move units from on-order to on-hand once. */
 function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
   const qc = useQueryClient();
@@ -286,14 +303,15 @@ function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
         <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Product</th><th className="font-medium">Ordered</th>
           <th className="font-medium">Received</th><th className="font-medium">Open</th><th className="font-medium">Status</th>{canBook && <th className="font-medium">Book receipt</th>}</tr></thead>
         <tbody>{mine.map((l) => (
-          <tr key={`${l.sku_id}@${l.location_id ?? ""}`} className="border-b border-line/60">
+          <tr key={lineKey(l)} className="border-b border-line/60">
             <td className="py-2"><Mono>{l.sku_id}</Mono>{l.location_id && <span className="ml-2 text-xs text-muted">at {l.location_id}</span>}</td><td className="num">{int(l.ordered_units)}</td><td className="num">{int(l.received_units)}</td>
             <td className="num">{int(l.open_units)}</td><td><Status value={l.status} /></td>
             {canBook && <td>{l.open_units > 0 && (
               <span className="flex items-center gap-1">
-                <input type="number" min={1} max={l.open_units} aria-label={`Units received for ${l.sku_id}`} value={qty[l.sku_id] ?? l.open_units}
-                  onChange={(e) => setQty({ ...qty, [l.sku_id]: Number(e.target.value) })} className="num w-20 rounded border border-line bg-surface px-2 py-1" />
-                <Button size="sm" variant="outline" busy={book.isPending} onClick={() => book.mutate({ sku: l.sku_id, loc: l.location_id ?? null, n: qty[l.sku_id] ?? l.open_units })}>
+                <input type="number" min={1} max={l.open_units} aria-label={`Units received for ${l.sku_id}${l.location_id ? ` at ${l.location_id}` : ""}`}
+                  value={qty[lineKey(l)] ?? l.open_units}
+                  onChange={(e) => setQty({ ...qty, [lineKey(l)]: Number(e.target.value) })} className="num w-20 rounded border border-line bg-surface px-2 py-1" />
+                <Button size="sm" variant="outline" busy={book.isPending} onClick={() => book.mutate({ sku: l.sku_id, loc: l.location_id ?? null, n: qty[lineKey(l)] ?? l.open_units })}>
                   <PackageCheck className="size-4" aria-hidden /> Book</Button>
               </span>)}</td>}
           </tr>))}</tbody>

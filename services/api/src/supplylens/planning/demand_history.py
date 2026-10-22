@@ -22,12 +22,14 @@ def dependence_by_sku(tenant_id: uuid.UUID, dataset_id: uuid.UUID | str, skus: l
         rows = s.execute(text("""SELECT sku_id, day, sum(units)::float AS units, extract(isodow FROM day)::int - 1 AS dow
             FROM sales_daily WHERE dataset_id = :d AND sku_id = ANY(:k) AND day > CAST(:a AS date) - :n AND day <= :a
             GROUP BY sku_id, day ORDER BY sku_id, day"""), {"d": dataset_id, "k": skus, "a": as_of, "n": days}).all()
-    series: dict[str, tuple[list[float], list[int]]] = {}
+    series: dict[str, tuple[list[float], list[int], list[int]]] = {}
     for r in rows:
-        v, w = series.setdefault(r.sku_id, ([], []))
+        v, w, o = series.setdefault(r.sku_id, ([], [], []))
         v.append(r.units)
         w.append(r.dow)
-    own = {k: estimate_dependence(v, w) for k, (v, w) in series.items()}
+        o.append(r.day.toordinal())
+    # lags are calendar lags: a closed day or a day without sales does not shorten the gap (P2-PLAN-04)
+    own = {k: estimate_dependence(v, w, ordinals=o) for k, (v, w, o) in series.items()}
     pooled = pooled_dependence([e[0] for e in own.values() if e is not None])
     out: dict[str, tuple[list[float] | None, str]] = {}
     for k in skus:

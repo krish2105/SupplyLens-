@@ -9,6 +9,12 @@ For each SKU the position adds, from purchase_order_lines, the units still open 
 the snapshot date and on or before the decision date, and moves units received in that interval from on-order to
 on-hand. Business dates are used throughout (the research workspaces run on a simulated clock). Cancelled units release
 the open quantity. Orders dated before the snapshot are assumed to be inside it already.
+
+Committed orders not yet reconciled (audit P1-ACT-02). An approved order is committed money before the target system
+confirms it: QUEUED, SUBMITTED, UNKNOWN_OUTCOME (it may exist) and CONFIRMED (it exists but its read-back differs) are
+counted as open supply from their approved payload, so a second run cannot buy the same need while the first order is in
+flight. They enter the ledger, and leave this count, when reconciled. Drafts awaiting approval are not counted (they may be
+rejected); planning reports them instead.
 """
 from __future__ import annotations
 
@@ -19,6 +25,7 @@ from sqlalchemy import text
 from .grain import plan_key
 
 MAX_SKUS_PER_RUN = 60   # declared pilot limit for one agent run or scenario (see DECISIONS D-043)
+COMMITTED_UNRECONCILED = ("QUEUED", "SUBMITTED", "UNKNOWN_OUTCOME", "CONFIRMED")
 
 
 class ScopeTooLarge(ValueError):
@@ -75,7 +82,18 @@ def load_positions(s, skus: list[str], decision_date: date) -> tuple[dict[str, d
               ON p.sku_id = l.sku_id AND (l.location_id IS NULL OR l.location_id = p.location_id)
             WHERE l.sku_id = ANY(:k) GROUP BY l.sku_id, l.location_id"""),
             {"k": sorted({p["sku_id"] for p in positions.values()}), "e": decision_date}).mappings()
-        for r in supply:
+        committed = s.execute(text("""
+            SELECT l->>'sku_id' AS sku_id, l->>'location_id' AS location_id,
+                   sum((l->>'quantity')::int) AS open_units, 0 AS received_units
+            FROM actions a CROSS JOIN LATERAL jsonb_array_elements(a.payload->'lines') l
+            JOIN (SELECT sku_id, location_id, max(as_of) AS as_of FROM inventory_positions
+                  WHERE sku_id = ANY(:k) AND as_of <= :e GROUP BY sku_id, location_id) p
+              ON p.sku_id = l->>'sku_id' AND (l->>'location_id' IS NULL OR l->>'location_id' = p.location_id)
+            WHERE a.status = ANY(:st) AND l->>'sku_id' = ANY(:k)
+              AND CAST(a.payload->'decision'->>'effective_date' AS date) BETWEEN p.as_of AND :e
+            GROUP BY 1, 2"""), {"k": sorted({p["sku_id"] for p in positions.values()}), "e": decision_date,
+                                 "st": list(COMMITTED_UNRECONCILED)}).mappings().all()
+        for r in [*supply, *committed]:
             multi = len(by_sku[r["sku_id"]]) > 1
             if r["location_id"] is None and multi:
                 continue          # a location-less order line cannot be attributed to one of several sites

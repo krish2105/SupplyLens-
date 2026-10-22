@@ -2,8 +2,13 @@
 
 The planner receives offers that are already *applicable* at the decision time (the
 terms service resolves effective dates and amendments). It chooses at most one supplier
-per SKU, respects MOQ, order multiples, lead time, budget and capacity, and minimises
-purchase cost plus any explicitly assumed shortage penalty. Money is integer minor units.
+per SKU, respects MOQ, order multiples, lead time, budget and capacity. Money is integer minor units.
+
+Objective, lexicographic: (1) cover as many required units as the hard constraints allow, (2) lowest purchase cost,
+(3) fewer units, (4) stable supplier order. A shortfall (allow_shortfall) is therefore only ever the result of a binding
+budget, capacity, MOQ or lead-time constraint, never of a cost trade-off against an assumed penalty: the penalty used
+to make "order nothing" optimal whenever a unit cost at least as much as the penalty (audit P0-PLAN-01). The assumed
+shortage penalty is still reported as the cost of the remaining gap.
 
 The planner never invents a plan: an infeasible problem returns INFEASIBLE with the
 constraint families whose relaxation would make it feasible.
@@ -45,6 +50,16 @@ class Need(BaseModel):
     sku_id: str
     required_units: int = Field(ge=0)
     capacity_units: int | None = Field(default=None, ge=0)
+    # Units an offer must cover when its lead time is the key (P1-PLAN-02): a slower supplier protects a longer interval,
+    # so it must deliver more. Lead times not listed (or an empty map) fall back to required_units.
+    required_units_by_lead_time: dict[int, int] = {}
+
+    def required_for(self, lead_time_days: int) -> int:
+        return self.required_units_by_lead_time.get(lead_time_days, self.required_units)
+
+    @property
+    def max_required_units(self) -> int:
+        return max([self.required_units, *self.required_units_by_lead_time.values()])
 
 
 class PlanRequest(BaseModel):
@@ -121,23 +136,23 @@ def _eligible(req: PlanRequest, ignore: set[str] = frozenset()) -> tuple[list[Of
 def _upper_bounds(req: PlanRequest, offers: list[Offer]) -> list[int]:
     """Most units one offer can usefully carry: ordering more than max(MOQ, need), rounded up to the order multiple, only
     costs more (unit costs are positive), so no optimal plan exceeds it. Tight bounds keep the arithmetic exact."""
-    need = {n.sku_id: n.required_units for n in req.needs}
+    need = {n.sku_id: n for n in req.needs}
     out = []
     for o in offers:
-        useful = max(o.moq, need.get(o.sku_id, 0))
+        n = need.get(o.sku_id)
+        useful = max(o.moq, n.required_for(o.lead_time_days) if n else 0)
         out.append(min(req.max_units_per_line, -(-useful // o.order_multiple) * o.order_multiple))
     return out
 
 
 def _scale(req: PlanRequest, offers: list[Offer], ub: list[int]) -> int:
-    """Weight W of the primary objective so that cost differences always outrank the secondary terms (fewer units, then
+    """Weight W of the cost objective so that cost differences always outrank the secondary terms (fewer units, then
     supplier order). Raises ScaleError when the largest possible objective does not fit in 64-bit integers."""
     secondary = 100 * sum(ub) + len({o.supplier_id for o in offers}) ** 2 + 1
     w = 10 ** len(str(secondary))
     purchase_max = sum(o.unit_cost_minor * u for o, u in zip(offers, ub, strict=True))
-    penalty_max = req.shortage_penalty_minor * sum(n.required_units for n in req.needs)
-    if (purchase_max + penalty_max) * w + secondary > INT_LIMIT or max(purchase_max, req.budget_minor) > INT_LIMIT:
-        raise ScaleError(f"largest possible spend {purchase_max + penalty_max} (minor units) is too large for exact integer "
+    if purchase_max * w + secondary > INT_LIMIT or max(purchase_max, req.budget_minor) > INT_LIMIT:
+        raise ScaleError(f"largest possible spend {purchase_max} (minor units) is too large for exact integer "
                          "arithmetic; quote prices in larger units or plan fewer SKUs per run")
     return w
 
@@ -161,28 +176,46 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
         total = sum(qty[i] for i in idx) if idx else 0
         if n.capacity_units is not None and "capacity" not in relax:
             m.Add(total <= n.capacity_units)
+        # The chosen offer must cover the requirement for ITS lead time (at most one offer per SKU is used).
         if req.allow_shortfall or "coverage" in relax:
-            short = m.NewIntVar(0, n.required_units, f"short_{n.sku_id}")
+            short = m.NewIntVar(0, n.max_required_units, f"short_{n.sku_id}")
             m.Add(total + short >= n.required_units)
+            for i in idx:
+                m.Add(qty[i] + short >= n.required_for(offers[i].lead_time_days)).OnlyEnforceIf(use[i])
             shortage[n.sku_id] = short
         else:
             m.Add(total >= n.required_units)
+            for i in idx:
+                m.Add(qty[i] >= n.required_for(offers[i].lead_time_days)).OnlyEnforceIf(use[i])
     for i, o in enumerate(offers):
         cost_terms.append(o.unit_cost_minor * qty[i])
     purchase = sum(cost_terms) if cost_terms else 0
     if "budget" not in relax:
         m.Add(purchase <= req.budget_minor)
-    penalty = sum(req.shortage_penalty_minor * s for s in shortage.values()) if shortage else 0
-    # Lexicographic tie-break: cost first, then fewer units, then supplier order (stable).
+    # Lexicographic, solved in two passes so no weight has to dominate another inside one 64-bit objective:
+    # (1) fewest uncovered units, fixed; (2) lowest cost, then fewer units, then supplier order (stable).
     rank = {sid: r for r, sid in enumerate(sorted({o.supplier_id for o in offers}))}
     tiebreak = sum(rank[o.supplier_id] * use[i] for i, o in enumerate(offers)) if offers else 0
     units = sum(qty.values()) if qty else 0
-    m.Minimize((purchase + penalty) * _scale(req, offers, ub) + units * 100 + tiebreak)
+    w = _scale(req, offers, ub)
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = SOLVER_SETTINGS["num_workers"]
     solver.parameters.random_seed = SOLVER_SETTINGS["random_seed"]
     solver.parameters.max_time_in_seconds = SOLVER_SETTINGS["max_time_s"]
+    coverage_proven = True
+    if shortage:
+        uncovered = sum(shortage.values())
+        m.Minimize(uncovered)
+        status = solver.Solve(m)
+        if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+            return solver, status, qty, use, shortage
+        coverage_proven = status == cp_model.OPTIMAL
+        m.Add(uncovered <= round(solver.ObjectiveValue()))
+        m.ClearObjective()
+    m.Minimize(purchase * w + units * 100 + tiebreak)
     status = solver.Solve(m)
+    if status == cp_model.OPTIMAL and not coverage_proven:
+        status = cp_model.FEASIBLE          # optimal cost for a coverage level that was not proven best
     return solver, status, qty, use, shortage
 
 
@@ -220,6 +253,11 @@ def plan(req: PlanRequest) -> PlanResult:
                    "shortage_penalty_minor": sum(short.values()) * req.shortage_penalty_minor,
                    "proven_optimal": name == "OPTIMAL"},
         **base)
+    if short:
+        # Say which hard constraint forced the gap (coverage-first objective: nothing else can cause one).
+        why = [r for r in explain_infeasible(req.model_copy(update={"allow_shortfall": False}))
+               if "'coverage'" not in r]
+        result.explanation = [f"{sum(short.values())} required unit(s) cannot be covered within the constraints"] + why
     from .validator import validate
     result.violations = validate(req, result)
     if result.violations:

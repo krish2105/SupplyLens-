@@ -14,7 +14,16 @@ export default async function globalSetup(config: FullConfig) {
 
 export async function releaseOpenOrders(ctx: Awaited<ReturnType<typeof request.newContext>>) {
   const H = { "X-Requested-With": "supplylens", "X-SupplyLens-Tenant": "demo" };
+  // Orders committed but not reconciled also count as supply (P1-ACT-02): settle them first, through the same audited
+  // paths a person would use, so their units land in the ledger and can be released below.
+  await ctx.post("/api/v1/auth/dev-login", { headers: H, data: { email: "approver2@dev.supplylens.local" } });
+  const mismatched = await (await ctx.get("/api/v1/actions?status=CONFIRMED", { headers: H })).json() as { id: string }[];
+  for (const a of mismatched) {
+    await ctx.post(`/api/v1/actions/${a.id}/accept-remote`, { headers: H, data: { reason: "e2e suite: settle a test order" } });
+  }
   await ctx.post("/api/v1/auth/dev-login", { headers: H, data: { email: "planner@dev.supplylens.local" } });
+  const unknown = await (await ctx.get("/api/v1/actions?status=UNKNOWN_OUTCOME", { headers: H })).json() as { id: string }[];
+  for (const a of unknown) await ctx.post(`/api/v1/actions/${a.id}/reconcile`, { headers: H });
   const lines = await (await ctx.get("/api/v1/open-orders", { headers: H })).json() as { action_id: string; sku_id: string; open_units: number }[];
   for (const l of lines.filter((x) => x.open_units > 0)) {
     await ctx.post(`/api/v1/actions/${l.action_id}/cancel-open`, { headers: H, data: { sku_id: l.sku_id, reason: "e2e suite: release test order" } });

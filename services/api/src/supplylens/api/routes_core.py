@@ -9,6 +9,7 @@ from itsdangerous import BadSignature
 from pydantic import BaseModel
 from sqlalchemy import text
 
+from .. import demo
 from ..authz import Actor
 from ..config import settings
 from ..db import control_session, tenant_session
@@ -57,6 +58,8 @@ def dev_login(body: DevLogin, response: Response):
                         {"e": body.email}).scalar()
     if uid is None:
         raise HTTPException(401, {"code": "unknown_user", "message": "unknown development account"})
+    if settings.environment == "demo":
+        demo.release_stale_orders()          # P0-SEC-01: the next visitor starts from the reference state
     response.set_cookie(COOKIE, serializer.dumps({"uid": str(uid)}), max_age=SESSION_MAX_AGE, httponly=True,
                         samesite="lax", secure=settings.cookie_secure, path="/")
     return {"ok": True}

@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actions/{action_id}/accept-remote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Accept Remote
+         * @description Resolve a read-back mismatch by recording the order as the target holds it (approver, not the preparer).
+         */
+        post: operations["accept_remote_api_v1_actions__action_id__accept_remote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/actions/{action_id}/approve": {
         parameters: {
             query?: never;
@@ -1214,6 +1234,11 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AcceptRemoteIn */
+        AcceptRemoteIn: {
+            /** Reason */
+            reason: string;
+        };
         /** AckIn */
         AckIn: {
             /** Note */
@@ -1598,6 +1623,13 @@ export interface components {
             lines_checked: number | null;
             /** Passed */
             passed: boolean;
+            /**
+             * Warnings
+             * @default []
+             */
+            warnings: {
+                [key: string]: unknown;
+            }[];
         } & {
             [key: string]: unknown;
         };
@@ -3966,6 +3998,11 @@ export interface components {
             applicable: number;
             /** Conflicts */
             conflicts: string[][];
+            /**
+             * Excluded For Conflict
+             * @default []
+             */
+            excluded_for_conflict: string[];
             /** Ignored */
             ignored: components["schemas"]["IgnoredTerm"][];
         } & {
@@ -4448,6 +4485,45 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActionDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    accept_remote_api_v1_actions__action_id__accept_remote_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptRemoteIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

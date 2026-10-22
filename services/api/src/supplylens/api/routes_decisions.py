@@ -425,6 +425,18 @@ def cancel_open(action_id: uuid.UUID, body: CancelOpenIn, a: Actor = Depends(act
                                                     location_id=body.location_id))
 
 
+class AcceptRemoteIn(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+
+
+@router.post("/actions/{action_id}/accept-remote", response_model=ActionDetail)
+def accept_remote(action_id: uuid.UUID, body: AcceptRemoteIn, a: Actor = Depends(actor)):
+    """Resolve a read-back mismatch by recording the order as the target holds it (approver, not the preparer)."""
+    detail = _guard(lambda: actions.accept_remote_order(a, action_id, reason=body.reason))
+    with tenant_session(a.tenant_id) as s:
+        return acl.redact(s, a.role, json.loads(json.dumps(detail, default=str)))
+
+
 @router.get("/open-orders", response_model=list[OpenOrderLine])
 def list_open_orders(a: Actor = Depends(actor)):
     return actions.open_orders(a)

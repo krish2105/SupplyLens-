@@ -87,7 +87,7 @@ export default function ExceptionsPage() {
 }
 
 const ALERT_LABEL: Record<string, string> = {
-  stale_data: "Stale data", failed_reconciliation: "Failed reconciliation", budget_exhausted: "Budget exhausted", model_unavailable: "Model unavailable",
+  stale_data: "Stale data", failed_reconciliation: "Failed reconciliation", budget_exhausted: "Budget exhausted", model_unavailable: "Model unavailable", job_failed: "Background job failed",
 };
 
 /** The operational queue: stale data, failed reconciliation, exhausted budgets and unavailable models. */

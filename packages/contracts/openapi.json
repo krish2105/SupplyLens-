@@ -1,6 +1,21 @@
 {
   "components": {
     "schemas": {
+      "AcceptRemoteIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "AcceptRemoteIn",
+        "type": "object"
+      },
       "AckIn": {
         "properties": {
           "note": {
@@ -1000,11 +1015,21 @@
           "passed": {
             "title": "Passed",
             "type": "boolean"
+          },
+          "warnings": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Warnings",
+            "type": "array"
           }
         },
         "required": [
           "passed",
           "issues",
+          "warnings",
           "lines_checked",
           "independent_validator"
         ],
@@ -7190,6 +7215,14 @@
             "title": "Conflicts",
             "type": "array"
           },
+          "excluded_for_conflict": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Excluded For Conflict",
+            "type": "array"
+          },
           "ignored": {
             "items": {
               "$ref": "#/components/schemas/IgnoredTerm"
@@ -7201,7 +7234,8 @@
         "required": [
           "applicable",
           "ignored",
-          "conflicts"
+          "conflicts",
+          "excluded_for_conflict"
         ],
         "title": "ScenarioTerms",
         "type": "object"
@@ -8569,6 +8603,89 @@
           }
         },
         "summary": "Action Detail"
+      }
+    },
+    "/api/v1/actions/{action_id}/accept-remote": {
+      "post": {
+        "description": "Resolve a read-back mismatch by recording the order as the target holds it (approver, not the preparer).",
+        "operationId": "accept_remote_api_v1_actions__action_id__accept_remote_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Action Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AcceptRemoteIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ActionDetail"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept Remote"
       }
     },
     "/api/v1/actions/{action_id}/approve": {

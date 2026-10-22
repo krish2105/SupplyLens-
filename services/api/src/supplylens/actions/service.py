@@ -168,10 +168,22 @@ def approve(actor: Actor, action_id, *, payload_hash: str, expected_row_version:
              "v": json.dumps(a["versions"], default=str), "m": limit, "u": actor.user_id, "x": expires})
         op_id = f"po-{action_id}"
         # Outbox intent is written in the same transaction as the approval (no lost or phantom sends).
-        s.execute(text("""INSERT INTO outbox (id, tenant_id, action_id, operation_id, payload, payload_hash, status)
-            VALUES (:i,:t,:a,:o,CAST(:p AS jsonb),:h,'PENDING')"""),
-            {"i": uuid.uuid4(), "t": actor.tenant_id, "a": action_id, "o": op_id, "p": json.dumps(a["payload"]),
-             "h": a["payload_hash"]})
+        prior = s.execute(text("SELECT id, status FROM outbox WHERE action_id=:a FOR UPDATE"), {"a": action_id}).first()
+        if prior is None:
+            s.execute(text("""INSERT INTO outbox (id, tenant_id, action_id, operation_id, payload, payload_hash, status)
+                VALUES (:i,:t,:a,:o,CAST(:p AS jsonb),:h,'PENDING')"""),
+                {"i": uuid.uuid4(), "t": actor.tenant_id, "a": action_id, "o": op_id, "p": json.dumps(a["payload"]),
+                 "h": a["payload_hash"]})
+        elif prior.status == "FAILED":
+            # Re-approval after the action went STALE at dispatch (audit P1-ACT-01). The operation key is kept, never
+            # replaced, so the target can still deduplicate; attempts stays above 1 so the next dispatch looks the key
+            # up before sending anything.
+            s.execute(text("""UPDATE outbox SET status='PENDING', payload=CAST(:p AS jsonb), payload_hash=:h, attempts=1,
+                next_attempt_at=now(), last_error=NULL, lease_owner=NULL, lease_expires_at=NULL, updated_at=now()
+                WHERE id=:i"""), {"i": prior.id, "p": json.dumps(a["payload"]), "h": a["payload_hash"]})
+        else:
+            raise ActionError("invalid_state", f"a dispatch for this action is still {prior.status}; it cannot be "
+                                               "approved again")
         s.execute(text("UPDATE actions SET status='QUEUED', row_version=row_version+1, updated_at=now() "
                        "WHERE id=:i"), {"i": action_id})
         _audit(s, actor.tenant_id, actor.user_id, "action.approved", action_id,
@@ -494,6 +506,49 @@ def reconcile(actor: Actor, action_id) -> dict:
     # Not found: the sandbox deduplicates on the key, so re-queueing is safe for this adapter.
     _finish(actor.tenant_id, item, "PENDING", "QUEUED", reason="not found in sandbox; safe re-queue (idempotent key)")
     return {"operation_id": item["operation_id"], "result": "REQUEUED"}
+
+
+def accept_remote_order(actor: Actor, action_id, *, reason: str) -> dict:
+    """Resolve a read-back mismatch (CONFIRMED) by recording the order exactly as the target holds it (P1-ACT-02).
+
+    The order exists, so it is supply whether or not it matches what was approved. Because its content differs from the
+    approval, accepting it needs approval rights and a person other than the preparer; the ledger records the target's
+    lines (a cancelled target order releases its units at once), never the approved ones."""
+    actor.require("action.approve")
+    if not reason.strip():
+        raise ActionError("reason_required", "say why the target's version is accepted", 422)
+    with tenant_session(actor.tenant_id) as s:
+        a = _load(s, action_id, lock=True)
+        item = s.execute(text("SELECT id, action_id, operation_id, payload, payload_hash, status FROM outbox "
+                              "WHERE action_id=:i FOR UPDATE"), {"i": action_id}).mappings().first()
+        if a["status"] != "CONFIRMED" or not item or item["status"] != "DELIVERED":
+            raise ActionError("invalid_state", "only an order whose read-back differed (CONFIRMED) can be accepted")
+        if a["prepared_by"] == actor.user_id:
+            raise ActionError("separation_of_duties", "the preparer cannot accept a changed order", 403)
+        order = sandbox_erp.lookup(item["operation_id"])
+        if order is None:
+            raise ActionError("remote_order_missing", "the target no longer returns this order; reconcile instead", 409)
+        mismatches = verify(actor.tenant_id, dict(item), order)
+        cancelled = (order.get("status") or "OPEN") == "CANCELLED"
+        units: Counter = Counter()
+        for line in order["lines"]:
+            units[(line["sku_id"], line.get("location_id"))] += int(line["quantity"])
+        p = item["payload"]
+        for (sku, loc), qty in sorted(units.items(), key=str):
+            s.execute(text("""INSERT INTO purchase_order_lines (id, tenant_id, action_id, operation_id, external_ref,
+                supplier_id, location_id, sku_id, ordered_units, cancelled_units, status, ordered_on, expected_on)
+                VALUES (:i,:t,:a,:o,:x,:s,:l,:k,:q,:c,:st,:d,:e) ON CONFLICT DO NOTHING"""),
+                {"i": uuid.uuid4(), "t": actor.tenant_id, "a": action_id, "o": item["operation_id"],
+                 "x": order["po_number"], "s": order["supplier_id"], "l": loc, "k": sku, "q": qty,
+                 "c": qty if cancelled else 0, "st": "CANCELLED" if cancelled else "OPEN",
+                 "d": p["decision"]["effective_date"], "e": str(order.get("need_by") or p["need_by"])})
+        s.execute(text("UPDATE actions SET status='RECONCILED', status_reason=:r, row_version=row_version+1, "
+                       "updated_at=now() WHERE id=:i"),
+                  {"i": action_id, "r": f"target's order accepted as recorded ({reason}); differences: "
+                                        + "; ".join(mismatches)})
+        _audit(s, actor.tenant_id, actor.user_id, "action.mismatch_accepted", action_id,
+               {"reason": reason, "mismatches": mismatches, "po_number": order["po_number"], "cancelled": cancelled})
+    return get(actor, action_id)
 
 
 # ---------------------------------------------------------------- receipts and cancellations (open-order ledger)

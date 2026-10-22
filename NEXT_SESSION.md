@@ -1,13 +1,14 @@
 # Next session
 
-Start from `main` after the session-4 commits. Read `PROJECT_STATUS.md` (state and last verified commands),
-`docs/remediation/REGISTER.md` (22 audit findings, fixed / partially fixed / open) and `DECISIONS.md` D-037 … D-049.
+Start from `main`. Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
+`docs/agent-handoff/ISSUES.md` (open issues with acceptance criteria), `EVIDENCE.md` and `DECISIONS.md`. Root
+`PROJECT_STATUS.md`, `docs/remediation/REGISTER.md` and `DECISIONS.md` (D-001 … D-060) hold the history.
 
 ## Run it
 ```bash
 uv sync && (cd apps/web && npm ci)
 SUPPLYLENS_MIGRATION_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens \
-  uv run alembic -c services/api/alembic.ini upgrade head           # now at 0007
+  uv run alembic -c services/api/alembic.ini upgrade head           # now at 0009
 uv run uvicorn supplylens.api.app:app --port 8000                     # API
 uv run python -m supplylens_worker.main                              # worker
 (cd apps/web && npm run dev)                                         # web on :3100

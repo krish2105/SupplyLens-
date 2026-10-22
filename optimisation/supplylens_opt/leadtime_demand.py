@@ -140,14 +140,18 @@ def gamma_quantile(mean: float, var: float, p: float) -> float:
 # --- dependence from history -------------------------------------------------------------------------------------
 
 def estimate_dependence(values: Sequence[float], weekdays: Sequence[int], level_days: int = 56,
-                        max_lag: int = MAX_LAG) -> tuple[tuple[float, ...], int] | None:
+                        max_lag: int = MAX_LAG, ordinals: Sequence[int] | None = None) -> tuple[tuple[float, ...], int] | None:
     """Autocorrelations r_1..r_max_lag of day-of-week-adjusted residuals around a trailing level.
 
     `values` are recorded daily unit sales in date order and `weekdays` the matching 0-6 weekday numbers. Returns
     (acf, observations used) or None when there is too little history. `acf` is zero from the first lag pair whose sum is
-    not positive onward. Days with no record are not zeros (absence is not demand), so callers pass only recorded days."""
+    not positive onward. Days with no record are not zeros (absence is not demand), so callers pass only recorded days.
+
+    `ordinals` (date.toordinal() of each value) make lags calendar lags (P2-PLAN-04): lag k pairs only days exactly k
+    calendar days apart, rescaled by the number of such pairs. Without them, consecutive recorded days are assumed to
+    be consecutive calendar days, which understates dependence when trading days are missing."""
     n = len(values)
-    if n < MIN_OBS_FOR_ACF or n != len(weekdays):
+    if n < MIN_OBS_FOR_ACF or n != len(weekdays) or (ordinals is not None and len(ordinals) != n):
         return None
     mean_all = sum(values) / n
     if mean_all <= 0:
@@ -164,7 +168,15 @@ def estimate_dependence(values: Sequence[float], weekdays: Sequence[int], level_
     den = sum((r - m) ** 2 for r in resid)
     if den <= 0:
         return None
-    raw = [sum((resid[i] - m) * (resid[i - k] - m) for i in range(k, len(resid))) / den for k in range(1, max_lag + 1)]
+    if ordinals is None:
+        raw = [sum((resid[i] - m) * (resid[i - k] - m) for i in range(k, len(resid))) / den for k in range(1, max_lag + 1)]
+    else:
+        at = {ordinals[level_days + i]: r - m for i, r in enumerate(resid)}
+        raw = []
+        for k in range(1, max_lag + 1):
+            pairs = [(v, at[d - k]) for d, v in at.items() if d - k in at]
+            # same estimator as the gap-free branch (sum over pairs / total variance), scaled to len(resid) - k pairs
+            raw.append(sum(a * b for a, b in pairs) / den * (len(resid) - k) / len(pairs) if pairs else 0.0)
     acf = [0.0] * max_lag
     for i in range(0, max_lag - 1, 2):            # initial positive sequence: stop at the first lag pair that sums to <= 0
         if raw[i] + raw[i + 1] <= 0.0:

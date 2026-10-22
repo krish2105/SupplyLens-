@@ -8,7 +8,7 @@ import { Play } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
-import { apiPost } from "@/lib/api";
+import { apiPost, intentKey } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
@@ -35,11 +35,18 @@ export default function RunsPage() {
   const isDemo = loaded && !ov.data!.dataset;
 
   const start = useMutation({
-    mutationFn: () => apiPost("/api/v1/agent-runs", { body: {
-      mode, knowledge_cutoff: known, effective_date: eff,
-      ...(scope === "selected" && ctx.sku ? { sku_ids: [ctx.sku] } : {}),
-      ...(isDemo ? { sku_ids: ["DEMO-REF-SKU"], currency: "USD", budget_minor: 18000, allow_shortfall: false } : {}),
-    } }),
+    mutationFn: async () => {
+      const body = {
+        mode, knowledge_cutoff: known, effective_date: eff,
+        ...(scope === "selected" && ctx.sku ? { sku_ids: [ctx.sku] } : {}),
+        ...(isDemo ? { sku_ids: ["DEMO-REF-SKU"], currency: "USD", budget_minor: 18000, allow_shortfall: false } : {}),
+      };
+      // One key per intent: a repeated click or a retry after a lost response replays the same run (P2-FE-05).
+      const intent = intentKey(`agent-run:${ws}`, body);
+      const r = await apiPost("/api/v1/agent-runs", { body, idempotencyKey: intent.key });
+      intent.settle();
+      return r;
+    },
     onSuccess: (r) => { setRunId(r.run_id); qc.invalidateQueries({ queryKey: [ws, "runs"] }); },
   });
 
@@ -159,7 +166,8 @@ function RunView({ id, ws }: { id: string; ws: string }) {
           <div className="mt-3"><KV items={[
             ["Solver", <Mono key="s">{d.plan.solver?.name} {d.plan.solver?.version} · workers {d.plan.solver?.num_workers} · seed {d.plan.solver?.random_seed}</Mono>],
             ["Input hash", <Mono key="h">{short(d.plan.input_hash, 16)}</Mono>],
-            ["Checks", d.checks?.passed ? "All passed (independent validator re-checked every line)" : (d.checks?.issues ?? []).map((i) => String(i.kind)).join(", ")],
+            ["Checks", (d.checks?.passed ? "All passed (independent validator re-checked every line)" : (d.checks?.issues ?? []).map((i) => String(i.kind)).join(", "))
+              + ((d.checks?.warnings ?? []).length ? ` · warning: ${(d.checks?.warnings ?? []).map((w) => w.kind === "shortfall" ? "partial order, some need left uncovered" : String(w.kind)).join(", ")}` : "")],
             ["Forecast", d.forecast?.available ? <Mono key="f">{short(d.forecast.run_id)} · origin {d.forecast.origin}</Mono> : "none (no sales history)"],
           ]} /></div>
         </Card>

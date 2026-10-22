@@ -7,6 +7,7 @@ Production fails closed at start-up: development sign-in must be off, every secr
 from the published development defaults, session cookies must be Secure, and an OIDC identity provider must be
 configured. Development sign-in itself is only available in development and test.
 """
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -14,6 +15,7 @@ from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
+DEV_OWNER_URL = "postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens"
 
 
 class Settings(BaseSettings):
@@ -22,9 +24,13 @@ class Settings(BaseSettings):
     )
 
     database_url: str = "postgresql+psycopg://supplylens_app:supplylens_app_dev@localhost:5432/supplylens"
-    admin_database_url: str = (
-        "postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens"
-    )
+    # Owner credentials are for migrations, seeding and maintenance commands only. The serving API never needs them, and
+    # in the demo and production profiles it refuses to start holding them (audit P1-SEC-02); hosted one-time setup is
+    # the single exception (SUPPLYLENS_SETUP_TOKEN, hosting/setup.py). Development and test fall back to the published
+    # local default.
+    admin_database_url: str | None = None
+    # True only for migration, seeding and maintenance commands (e.g. scripts/render/predeploy.sh), never for the API.
+    maintenance: bool = False
     storage_dir: Path = Path("storage")
     ollama_url: str = "http://localhost:11434"
     embed_model: str = "bge-m3:567m"
@@ -77,10 +83,13 @@ class Settings(BaseSettings):
                 problems.append("session and webhook secrets must not be the development defaults")
             if len(self.session_secret) < 32:
                 problems.append("SUPPLYLENS_SESSION_SECRET must be at least 32 characters")
-            if "_dev@" in self.database_url or "_dev@" in self.admin_database_url:
+            if "_dev@" in self.database_url or "_dev@" in (self.admin_database_url or ""):
                 problems.append("database passwords must not be the development defaults")
             if self.database_url == self.admin_database_url:
                 problems.append("the API must not connect with the migration/owner credentials")
+            if self.admin_database_url and not (self.maintenance or os.environ.get("SUPPLYLENS_SETUP_TOKEN")):
+                problems.append("the serving process must not hold owner database credentials "
+                                "(SUPPLYLENS_ADMIN_DATABASE_URL); run migrations and maintenance separately")
             if not self.cookie_secure:
                 problems.append("SUPPLYLENS_COOKIE_SECURE must be true (cookies only over TLS)")
             if self.environment == "production" and not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret):
@@ -88,6 +97,15 @@ class Settings(BaseSettings):
             if problems:
                 raise ValueError(f"{self.environment} profile refused to start: " + "; ".join(problems))
         return self
+
+    @property
+    def owner_database_url(self) -> str:
+        """The owner connection for migrations, seeding and maintenance commands (never for serving requests)."""
+        if self.admin_database_url:
+            return self.admin_database_url
+        if self.environment in ("development", "test"):
+            return DEV_OWNER_URL
+        raise RuntimeError("SUPPLYLENS_ADMIN_DATABASE_URL is not set: owner access is only for migrations and maintenance")
 
     @property
     def oidc_enabled(self) -> bool:

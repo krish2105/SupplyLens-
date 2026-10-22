@@ -12,6 +12,7 @@ def validate(req: PlanRequest, result: PlanResult) -> list[str]:
     offers = {o.term_id: o for o in req.offers}
     per_sku = defaultdict(int)
     suppliers_per_sku = defaultdict(set)
+    lead_per_sku = {}
     total = 0
     for line in result.lines:
         o = offers.get(line.term_id)
@@ -31,6 +32,7 @@ def validate(req: PlanRequest, result: PlanResult) -> list[str]:
             errors.append(f"{line.sku_id}/{line.supplier_id}: arrives after need-by date")
         per_sku[line.sku_id] += line.quantity
         suppliers_per_sku[line.sku_id].add(line.supplier_id)
+        lead_per_sku[line.sku_id] = o.lead_time_days
         total += line.line_minor
     if total != result.total_minor:
         errors.append("plan total does not equal the sum of lines")
@@ -42,8 +44,11 @@ def validate(req: PlanRequest, result: PlanResult) -> list[str]:
         if n.capacity_units is not None and per_sku[n.sku_id] > n.capacity_units:
             errors.append(f"{n.sku_id}: exceeds capacity {n.capacity_units}")
         covered = per_sku[n.sku_id] + result.shortfall.get(n.sku_id, 0)
-        if covered < n.required_units:
-            errors.append(f"{n.sku_id}: need {n.required_units} not covered")
+        lead = lead_per_sku.get(n.sku_id)
+        required = n.required_units if lead is None else n.required_for(lead)
+        if covered < required:
+            errors.append(f"{n.sku_id}: need {required} not covered"
+                          + (f" (requirement for the chosen {lead}-day lead time)" if lead is not None else ""))
         if result.shortfall.get(n.sku_id) and not req.allow_shortfall:
             errors.append(f"{n.sku_id}: shortfall reported but not allowed")
     return errors
