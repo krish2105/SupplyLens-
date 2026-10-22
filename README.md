@@ -53,14 +53,14 @@ target system before it is marked complete.
 
 ## Measured results
 
-All figures come from experiment artifacts in `artifacts/experiments/`; details in
+All figures come from experiment artifacts in `artifacts/experiments/` (status of each run: `evaluations/study_registry.json`); details in
 [`docs/research/results.md`](docs/research/results.md).
 
 | Study | Result |
 |---|---|
-| Forecasting (506 products, held-out 28 days) | MAE: seasonal naive 21.41 → LightGBM 15.37 → quantile TCN 15.08; trained models beat the baseline (95% CI excludes 0); TCN vs LightGBM statistically tied |
-| Inventory simulation (simulated costs) | Lower forecast error did not lower simulated cost; changing the ordering policy cut it by ~£21k for every model |
-| Time-aware retrieval (118 questions) | Wrong-version citations 7.4% → 0% with effective-date logic |
+| Forecasting (protocol 2.0.0, 503 products, two rolling 28-day test origins) | Pooled MAE: seasonal naive 21.35 → LightGBM 14.52 → quantile TCN 14.26; trained models beat the corrected baseline (95% CI excludes 0); TCN ahead of LightGBM on average (−0.27, CI −0.52 to −0.06) but on only 44% of products. Protocol 1.0.0 is superseded: its baseline was wrong beyond day 7 |
+| Inventory simulation (simulated costs, exploratory) | Lower forecast error did not lower simulated cost under a median policy; a q90 order-up-to policy brought fill to ≈95% for every model (policy chosen after seeing results) |
+| Time-aware retrieval (118 synthetic questions, 2×2) | Top-1 citation accuracy 92.6% with neither mechanism → 100% with effective-date filtering and supersession reranking; each contributes (+3.2 and +4.2 points) |
 | Clause localisation (73 CUAD contracts) | Hybrid hit@3 76.7% vs vector 72.2% vs lexical 66.8% |
 | InventoryBench (official evaluator, 1,320 instances) | SupplyLens policy 0.482 vs base-stock 0.433 |
 | Investigator scenarios | 57 scenarios × 3 trials, 100% oracle-verified, 0 unapproved external writes |

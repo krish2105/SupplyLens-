@@ -42,7 +42,7 @@ function DatasetView() {
   if (!d) return (
     <>
       <PageHeader eyebrow="Data admission" title="No dataset admitted in this workspace" />
-      {/* A02 (import illustration) is not published; this state uses text only (DECISIONS D-041). */}
+      {/* A02 (import illustration) is not published; this state uses text only (DECISIONS D-040). */}
       <Empty title="Add your first dataset">
         Administrators import sales, stock and supplier terms below from CSV templates. Until a sales file is published, this workspace has no history to forecast from.
       </Empty>

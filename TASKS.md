@@ -63,5 +63,24 @@ passed locally. The per-requirement status lives in `docs/acceptance/acceptance_
 | DEF-06 | high | Retrieval slowed ten-fold on the 11th request of a process (generic plan) | fixed (D-033); found by the load test |
 | DEF-07 | medium | Planner returned a misleading MODEL_INVALID for unit prices above ~5e7 minor units | fixed; found by a golden boundary case |
 | DEF-08 | medium | Web image build failed behind a proxy CA; worker container reported unhealthy | fixed; found by running compose |
-| DEF-09 | low | Scenario/plan limited to 200 SKUs per run (422) while the default is "all SKUs" | open (documented; full catalogue = 10 runs) |
+| DEF-09 | low | Scenario/plan limited to 200 SKUs per run (422) while the default is "all SKUs" | superseded by D-043: declared 60-SKU limit, explicit rejection or reported truncation |
 | DEF-10 | medium | No back-pressure: past capacity requests queue and the service takes minutes to recover | open (load test finding 5) |
+
+## Done in session 4 (2026-10-22; see EVIDENCE_INDEX E-38 … E-45, docs/remediation/REGISTER.md)
+| Task | Findings / req IDs | Result |
+|---|---|---|
+| Revalidate the 22 CTO-audit findings at 1636381 | all | 17 confirmed, 5 partially corrected, 0 fully corrected before this session |
+| Planning correctness | F01–F04, F08, S21 | fixed with correct-behaviour tests |
+| Dispatch safety | F05–F07, S11 | fixed; read-back faults added to the sandbox |
+| Document ACL on indirect paths | S10 | fixed (D-044) |
+| Open-order ledger and receipts | S12 | fixed; replanning counts open supply (D-045) |
+| Model resolution by dataset/status | S14 | fixed; v1 models retired |
+| Fail-closed production profile; local Keycloak OIDC | S09, BUS-012, BUS-022 | verified locally; corporate IdP not qualified |
+| CSV onboarding + membership admin | S18, UX-004, UX-014 | verified |
+| Honest badges, research registry, error handling, theme radios | S16, S17 (part), S22 | verified |
+| Illustration pack (13 of 16) via EmptyState | UX-009 | integrated; A02/A13/A16 use HTML fallbacks (D-040) |
+| Research rerun: F1 2.0.0 rolling origins, S1, R2 2×2, AGT | F01, S13, S20 | done; old runs marked superseded |
+
+## Open after session 4
+See NEXT_SESSION.md. Partially fixed: S15 (fingerprint only in scenario studio), S17 (chart theme/zoom/context-loss
+tests), S19 (automatic CI-artifact links). DEF-09 is superseded by the declared 60-SKU limit (D-043).

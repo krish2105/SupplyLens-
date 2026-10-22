@@ -4,93 +4,125 @@ Generated from `register.json`. Audit snapshot: CTO audit of the session-2 snaps
 
 | ID | Title | At revalidation | Code | Verification | Tests / evidence | Requirements |
 |---|---|---|---|---|---|---|
-| F01 | Seasonal-naive point forecasts step backwards after the first week | confirmed | open | not run | — | — |
-| F02 | Forecast window admits days before the selected decision date | confirmed | open | not run | — | — |
-| F03 | The Safety buffer slider has no effect under the default policy | confirmed | open | not run | — | — |
-| F04 | Physical capacity is dropped before optimization and validation | confirmed | open | not run | — | — |
-| F05 | Idempotency receipt is written after the side effect | partially corrected | open | not run | — | — |
-| F06 | ERP read-back verification does not compare all approved line fields | confirmed | open | not run | — | — |
-| F07 | Expired approval prevents reconciliation of a possibly committed prior attempt | confirmed | open | not run | — | — |
-| F08 | Explicit zero purchasing budget is replaced by the workspace budget | confirmed | open | not run | — | — |
-| S09 | Development authentication and insecure deployment defaults must not be exposed | partially corrected | open | not run | — | — |
-| S10 | Document-level permissions are not consistently enforced on indirect access paths | confirmed | open | not run | — | — |
-| S11 | Approval freshness is not fully revalidated at dispatch | confirmed | open | not run | — | — |
-| S12 | Reconciled orders are not integrated into the next planning inventory position | confirmed | open | not run | — | — |
-| S13 | The temporal RAG ablation changes two factors simultaneously | confirmed | open | not run | — | — |
-| S14 | Model resolution ignores dataset_id and can select retired versions by family | confirmed | open | not run | — | — |
-| S15 | Navigation and local state can lose or misrepresent planning context | confirmed | open | not run | — | — |
-| S16 | UI badges and summaries overstate verification | confirmed | open | not run | — | — |
-| S17 | Chart theme refresh and keyboard/overlay behavior need targeted tests | partially corrected | open | not run | — | — |
-| S18 | Onboarding and operational administration remain developer-driven | confirmed | open | not run | — | — |
-| S19 | CI omits browser journeys and acceptance claims require requalification | partially corrected | open | not run | — | — |
-| S20 | Forecast and agent evidence is narrower than the intended product claim | confirmed | open | not run | — | — |
-| S21 | The current planning grain and fixed limits are a pilot slice, not multi-site enterprise planning | confirmed | open | not run | — | — |
-| S22 | Non-JSON API errors and failed session checks are not fully handled | confirmed | open | not run | — | — |
+| F01 | Seasonal-naive point forecasts step backwards after the first week | confirmed | fixed | unit + study rerun | tests/test_seasonal_naive.py (3 new) | — |
+| F02 | Forecast window admits days before the selected decision date | confirmed | fixed | unit | tests/test_remediation.py::test_F02_* (5) | — |
+| F03 | The Safety buffer slider has no effect under the default policy | confirmed | fixed | unit + e2e | tests/test_remediation.py::test_F03_*<br>apps/web/e2e/remediation.spec.ts F03 | — |
+| F04 | Physical capacity is dropped before optimization and validation | confirmed | fixed | PostgreSQL + CP-SAT | tests/test_remediation.py::test_F04_* (4) | — |
+| F05 | Idempotency receipt is written after the side effect | partially corrected | fixed | PostgreSQL + HTTP | tests/test_remediation.py::test_F05_* (2) | — |
+| F06 | ERP read-back verification does not compare all approved line fields | confirmed | fixed | PostgreSQL + sandbox | tests/test_remediation.py::test_F06_* (6) | — |
+| F07 | Expired approval prevents reconciliation of a possibly committed prior attempt | confirmed | fixed | PostgreSQL + sandbox | tests/test_remediation.py::test_F07_* | — |
+| F08 | Explicit zero purchasing budget is replaced by the workspace budget | confirmed | fixed | PostgreSQL + agent | tests/test_remediation.py::test_F08_* (2) | — |
+| S09 | Development authentication and insecure deployment defaults must not be exposed | partially corrected | fixed (local) | unit + local Keycloak | tests/test_oidc_keycloak.py::test_production_profile_* | — |
+| S10 | Document-level permissions are not consistently enforced on indirect access paths | confirmed | fixed | PostgreSQL + HTTP | tests/test_remediation.py::test_S10_* | — |
+| S11 | Approval freshness is not fully revalidated at dispatch | confirmed | fixed | PostgreSQL + sandbox | tests/test_remediation.py::test_S11_* (2) | — |
+| S12 | Reconciled orders are not integrated into the next planning inventory position | confirmed | fixed | PostgreSQL + agent | tests/test_remediation.py::test_S12_* | — |
+| S13 | The temporal RAG ablation changes two factors simultaneously | confirmed | fixed | study rerun | artifacts/experiments/R2-20261022T045503Z<br>artifacts/reports/r2_query_level.jsonl | — |
+| S14 | Model resolution ignores dataset_id and can select retired versions by family | confirmed | fixed | PostgreSQL | tests/test_remediation.py::test_S14_* | — |
+| S15 | Navigation and local state can lose or misrepresent planning context | confirmed | fixed (scenario studio) | e2e (manual browser check) | apps/web/app/(app)/scenarios/page.tsx | — |
+| S16 | UI badges and summaries overstate verification | confirmed | fixed | e2e + API | evaluations/study_registry.json<br>routes_research.py | — |
+| S17 | Chart theme refresh and keyboard/overlay behavior need targeted tests | partially corrected | partially fixed | e2e (a11y suite) | apps/web/app/(app)/layout.tsx | — |
+| S18 | Onboarding and operational administration remain developer-driven | confirmed | fixed | PostgreSQL + HTTP + e2e | tests/test_onboarding.py (2)<br>e2e/remediation.spec.ts S18 | — |
+| S19 | CI omits browser journeys and acceptance claims require requalification | partially corrected | partially fixed | CI config | docs/acceptance/acceptance_register.csv | — |
+| S20 | Forecast and agent evidence is narrower than the intended product claim | confirmed | fixed | study rerun | ml/configs/forecast_study_v2.json<br>artifacts/experiments/F1-* | — |
+| S21 | The current planning grain and fixed limits are a pilot slice, not multi-site enterprise planning | confirmed | fixed | PostgreSQL | tests/test_remediation.py::test_S21_* (2) | — |
+| S22 | Non-JSON API errors and failed session checks are not fully handled | confirmed | fixed | e2e | e2e/remediation.spec.ts S22 | — |
 
 ## Notes per finding
 
 ### F01 — Seasonal-naive point forecasts step backwards after the first week
 - **Found at HEAD:** baselines.py and models.seasonal_naive_panel index k seasons back: history 1..70 gives week 2 = 57..63 (probe run at 1636381).
+- **Resolution:** Both implementations index the last observed season; F1/S1 rerun under protocol 2.0.0; v1 artifacts marked superseded in evaluations/study_registry.json.
 
 ### F02 — Forecast window admits days before the selected decision date
 - **Found at HEAD:** replenishment.assess: leadtime basis takes the first N forecast rows regardless of decision_date; other bases and the stockout loop have no lower bound.
+- **Resolution:** Window is decision_date < day <= decision_date + window; gaps rejected; summed bases reject short forecasts; stockout walk bounded; callers forecast from min(cutoff, decision date).
 
 ### F03 — The Safety buffer slider has no effect under the default policy
 - **Found at HEAD:** safety_days only affects basis q50_plus_safety; the default is now leadtime_demand (session 3), so the Scenario slider still has no effect by default.
+- **Resolution:** ScenarioInput rejects controls that do not apply; result lists applied controls; UI disables non-applicable sliders with the reason.
 
 ### F04 — Physical capacity is dropped before optimization and validation
 - **Found at HEAD:** scenario.py and agent/graph.py build Need(...) without capacity_units; solver and validator never receive capacity.
+- **Resolution:** Residual capacity is passed as Need.capacity_units in scenario and agent; uncapped need and capacity-capped units are reported. Capacity 10/need 10/MOQ 12/pack 6 is INFEASIBLE or explicit shortfall.
+- **Blockers / remaining:** Capacity treatment of reserved stock and scheduled receipts beyond the ledger is not modelled.
 
 ### F05 — Idempotency receipt is written after the side effect
 - **Found at HEAD:** Session 3 added an atomic INSERT..ON CONFLICT claim before fn (DEF-02). Remaining: work committed before the DONE update re-runs after a crash once the claim lease lapses; agent-run/scenario/forecast retries in the web client use a new key per attempt.
+- **Resolution:** Services mark the idempotency key DONE inside the business transaction (supplylens/idempotency.py); web client reuses one key per user intent (lib/api.ts intentKey).
 
 ### F06 — ERP read-back verification does not compare all approved line fields
 - **Found at HEAD:** actions.service.verify compares supplier, total/currency and a SET of (sku, quantity): prices, units and duplicate lines are not compared.
+- **Resolution:** Read-back compares line multisets (SKU, qty, unit, price, value), supplier, currency, total, need-by and status; sandbox has five read-back faults.
 
 ### F07 — Expired approval prevents reconciliation of a possibly committed prior attempt
 - **Found at HEAD:** _dispatch checks approval expiry before the lookup-first retry, so a committed prior attempt can be marked STALE without reading the ERP.
+- **Resolution:** Retries look the operation up before any approval check; a committed order is reconciled without a second execute call.
 
 ### F08 — Explicit zero purchasing budget is replaced by the workspace budget
 - **Found at HEAD:** agent/graph.py accept(): int(inp.get('budget_minor') or default) turns an explicit 0 into the workspace budget.
+- **Resolution:** None inherits the workspace budget, 0 stays 0, negatives rejected; the decision stores its budget and edits revalidate against it.
 
 ### S09 — Development authentication and insecure deployment defaults must not be exposed
 - **Found at HEAD:** config refuses default secrets only when dev_auth is false; dev_auth defaults to true with no environment profile; compose publishes 8000/3100 on all interfaces.
+- **Resolution:** SUPPLYLENS_ENVIRONMENT=production refuses dev sign-in, default secrets, owner DB credentials, insecure cookies and missing OIDC; compose ports bind to 127.0.0.1.
+- **Blockers / remaining:** Not deployed; TLS termination and a corporate IdP are not qualified.
 
 ### S10 — Document-level permissions are not consistently enforced on indirect access paths
 - **Found at HEAD:** GET /documents/versions/{id}/labels has no allowed_roles check; agent citation lookup and evidence packets read chunks without a central document-ACL helper.
+- **Resolution:** knowledge/acl.py: require_version on direct reads, redact() on terms, runs, events and action evidence; agent citations filtered by role. Structured term values stay visible (D-044).
 
 ### S11 — Approval freshness is not fully revalidated at dispatch
 - **Found at HEAD:** _approval_valid checks payload hash and expiry only; terms, budget and approver permission are not rechecked before a fresh send.
+- **Resolution:** A fresh send rechecks hash, expiry, approver rights, action state, spend and terms; changes route to STALE (review).
 
 ### S12 — Reconciled orders are not integrated into the next planning inventory position
 - **Found at HEAD:** No purchase-order/receipt ledger; _confirm does not change on_order, so the next plan ignores confirmed open supply.
+- **Resolution:** purchase_order_lines + receipts; planning adds open units and receipts since the snapshot; receipts idempotent; cancellation releases.
+- **Blockers / remaining:** Partial ERP receipts are booked manually; no ERP receipt feed.
 
 ### S13 — The temporal RAG ablation changes two factors simultaneously
 - **Found at HEAD:** retrieval_study R2 temporal_off vs temporal_on changes mode AND rerank at once.
+- **Resolution:** R2 is a 2x2 factorial (effective-date filter x supersession rerank) with query-level outcomes; the old contrast is labelled combined-pipeline.
+- **Blockers / remaining:** Questions remain synthetic and not human-reviewed.
 
 ### S14 — Model resolution ignores dataset_id and can select retired versions by family
 - **Found at HEAD:** resolve_model(family) ignores dataset_id and status; it can return a RETIRED or other-dataset model.
+- **Resolution:** resolve_model scopes by dataset and usable status; retired only for explicit replay.
 
 ### S15 — Navigation and local state can lose or misrepresent planning context
 - **Found at HEAD:** No decision-context fingerprint in the web state; scenario baseline/draft compatibility is not checked.
+- **Resolution:** Scenario results carry a context fingerprint (workspace, clocks, dataset, basis); incompatible or late results are hidden and never compared.
+- **Blockers / remaining:** Fingerprint not yet applied to every screen (forecast lab already guards late responses).
 
 ### S16 — UI badges and summaries overstate verification
 - **Found at HEAD:** Policies maps mode=='hybrid' to a VERIFIED_LOCALLY badge; Admin maps outbox DELIVERED to RECONCILED; research headlines are hardcoded strings.
+- **Resolution:** Retrieval mode no longer shown as verification; outbox DELIVERED is not RECONCILED; read-back mismatch has its own label; research headlines come from the reviewed registry with superseded runs listed.
 
 ### S17 — Chart theme refresh and keyboard/overlay behavior need targeted tests
 - **Found at HEAD:** Session 3 added focus/a11y suites; theme radio group still lacks arrow-key navigation; chart theme refresh untested.
+- **Resolution:** Theme switch uses native radios (arrow keys).
+- **Blockers / remaining:** Chart theme refresh after zoom, 200% zoom and WebGL context-loss tests still to add.
 
 ### S18 — Onboarding and operational administration remain developer-driven
 - **Found at HEAD:** No upload/map/validate/publish API or UI; data admission is read-only; admin cannot change memberships.
+- **Resolution:** CSV templates (sales, stock, terms), upload/map/validate/quarantine/publish of immutable snapshots, workspace creation, membership admin via SECURITY DEFINER functions.
+- **Blockers / remaining:** One target ERP sandbox integration (BC/SAP) not built; no credentials supplied.
 
 ### S19 — CI omits browser journeys and acceptance claims require requalification
 - **Found at HEAD:** CI now has lint, secret/dependency scans, backend, contracts, e2e, PITR and compose jobs (session 3). Acceptance claims predating these findings need requalification.
+- **Resolution:** Acceptance rows touched by the findings were reopened and requalified against this session's tests.
+- **Blockers / remaining:** CI artifacts per acceptance claim are not yet linked automatically.
 
 ### S20 — Forecast and agent evidence is narrower than the intended product claim
 - **Found at HEAD:** F1 uses one test window and is built on the F01 baseline; S1 policy choices were informed by test results.
+- **Resolution:** Rolling test origins (2011-10-13, 2011-11-10) with refits; 'no clear difference detected' wording; S1 policy choice labelled exploratory.
+- **Blockers / remaining:** No untouched holdout remains on UCI; a fresh dataset is needed for a confirmatory test.
 
 ### S21 — The current planning grain and fixed limits are a pilot slice, not multi-site enterprise planning
 - **Found at HEAD:** agent/graph.py plan_steps: skus[:60] silently truncates; queries collapse location.
+- **Resolution:** Declared limit of 60 SKUs per run: explicit lists over it are rejected, implicit scope truncation is reported; multi-location SKUs are excluded with a reason instead of collapsed.
+- **Blockers / remaining:** SKU-location planning not implemented.
 
 ### S22 — Non-JSON API errors and failed session checks are not fully handled
 - **Found at HEAD:** apps/web/lib/api.ts JSON.parse on a non-JSON body (HTML 502) throws SyntaxError instead of ApiError; no request id surfaced.
+- **Resolution:** Client parses by content type, maps gateway HTML to a status message with the trace reference; server returns JSON 500 with a reference; ErrorState distinguishes offline, denied, expired session and server errors.

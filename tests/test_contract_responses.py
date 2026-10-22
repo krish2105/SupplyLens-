@@ -229,7 +229,7 @@ def test_value_and_research_from_committed_artifacts(world):
     v = get(world, "/api/v1/value")
     assert v["ledger"] and v["disclaimer"]
     f1 = get(world, "/api/v1/research/forecast-study")
-    assert f1["available"] and f1["cohort_size"] == 506 and f1["comparisons"] and f1["pinball_by_horizon"]
+    assert f1["available"] and f1["cohort_size"] == 503 and f1["comparisons"] and f1["pinball_by_horizon"]
     for study in ("s1", "r1", "r2", "c1", "ib", "agt"):
         assert get(world, f"/api/v1/research/{study}")["available"] in (True, False)
     assert get(world, "/api/v1/research/zzz")["available"] is False

@@ -1109,6 +1109,9 @@ class ForecastStudyReport(Out):
     experiment_id: str
     cohort_size: int
     test_window: list[str]
+    test_origins: list[str] | None = None
+    pooled_mae: dict[str, float] | None = None
+    study_version: str | None = None
     selection: StudySelection
     summary: dict[str, FamilySummary]
     tcn_seed_mean: dict[str, float]

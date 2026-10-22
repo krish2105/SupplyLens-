@@ -14,11 +14,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "baselines.py and models.seasonal_naive_panel index k seasons back: history 1..70 gives week 2 = 57..63 (probe run at 1636381).",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "unit + study rerun",
+      "tests": [
+        "tests/test_seasonal_naive.py (3 new)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Both implementations index the last observed season; F1/S1 rerun under protocol 2.0.0; v1 artifacts marked superseded in evaluations/study_registry.json.",
       "blockers": ""
     },
     {
@@ -32,11 +34,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "replenishment.assess: leadtime basis takes the first N forecast rows regardless of decision_date; other bases and the stockout loop have no lower bound.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "unit",
+      "tests": [
+        "tests/test_remediation.py::test_F02_* (5)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Window is decision_date < day <= decision_date + window; gaps rejected; summed bases reject short forecasts; stockout walk bounded; callers forecast from min(cutoff, decision date).",
       "blockers": ""
     },
     {
@@ -50,11 +54,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "safety_days only affects basis q50_plus_safety; the default is now leadtime_demand (session 3), so the Scenario slider still has no effect by default.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "unit + e2e",
+      "tests": [
+        "tests/test_remediation.py::test_F03_*",
+        "apps/web/e2e/remediation.spec.ts F03"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "ScenarioInput rejects controls that do not apply; result lists applied controls; UI disables non-applicable sliders with the reason.",
       "blockers": ""
     },
     {
@@ -70,12 +77,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "scenario.py and agent/graph.py build Need(...) without capacity_units; solver and validator never receive capacity.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + CP-SAT",
+      "tests": [
+        "tests/test_remediation.py::test_F04_* (4)"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Residual capacity is passed as Need.capacity_units in scenario and agent; uncapped need and capacity-capped units are reported. Capacity 10/need 10/MOQ 12/pack 6 is INFEASIBLE or explicit shortfall.",
+      "blockers": "Capacity treatment of reserved stock and scheduled receipts beyond the ledger is not modelled."
     },
     {
       "id": "F05",
@@ -87,11 +96,13 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "Session 3 added an atomic INSERT..ON CONFLICT claim before fn (DEF-02). Remaining: work committed before the DONE update re-runs after a crash once the claim lease lapses; agent-run/scenario/forecast retries in the web client use a new key per attempt.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + HTTP",
+      "tests": [
+        "tests/test_remediation.py::test_F05_* (2)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Services mark the idempotency key DONE inside the business transaction (supplylens/idempotency.py); web client reuses one key per user intent (lib/api.ts intentKey).",
       "blockers": ""
     },
     {
@@ -103,11 +114,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "actions.service.verify compares supplier, total/currency and a SET of (sku, quantity): prices, units and duplicate lines are not compared.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + sandbox",
+      "tests": [
+        "tests/test_remediation.py::test_F06_* (6)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Read-back compares line multisets (SKU, qty, unit, price, value), supplier, currency, total, need-by and status; sandbox has five read-back faults.",
       "blockers": ""
     },
     {
@@ -119,11 +132,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "_dispatch checks approval expiry before the lookup-first retry, so a committed prior attempt can be marked STALE without reading the ERP.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + sandbox",
+      "tests": [
+        "tests/test_remediation.py::test_F07_*"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Retries look the operation up before any approval check; a committed order is reconciled without a second execute call.",
       "blockers": ""
     },
     {
@@ -136,11 +151,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "agent/graph.py accept(): int(inp.get('budget_minor') or default) turns an explicit 0 into the workspace budget.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + agent",
+      "tests": [
+        "tests/test_remediation.py::test_F08_* (2)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "None inherits the workspace budget, 0 stays 0, negatives rejected; the decision stores its budget and edits revalidate against it.",
       "blockers": ""
     },
     {
@@ -154,12 +171,14 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "config refuses default secrets only when dev_auth is false; dev_auth defaults to true with no environment profile; compose publishes 8000/3100 on all interfaces.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed (local)",
+      "verification": "unit + local Keycloak",
+      "tests": [
+        "tests/test_oidc_keycloak.py::test_production_profile_*"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "SUPPLYLENS_ENVIRONMENT=production refuses dev sign-in, default secrets, owner DB credentials, insecure cookies and missing OIDC; compose ports bind to 127.0.0.1.",
+      "blockers": "Not deployed; TLS termination and a corporate IdP are not qualified."
     },
     {
       "id": "S10",
@@ -173,11 +192,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "GET /documents/versions/{id}/labels has no allowed_roles check; agent citation lookup and evidence packets read chunks without a central document-ACL helper.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + HTTP",
+      "tests": [
+        "tests/test_remediation.py::test_S10_*"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "knowledge/acl.py: require_version on direct reads, redact() on terms, runs, events and action evidence; agent citations filtered by role. Structured term values stay visible (D-044).",
       "blockers": ""
     },
     {
@@ -189,11 +210,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "_approval_valid checks payload hash and expiry only; terms, budget and approver permission are not rechecked before a fresh send.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + sandbox",
+      "tests": [
+        "tests/test_remediation.py::test_S11_* (2)"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "A fresh send rechecks hash, expiry, approver rights, action state, spend and terms; changes route to STALE (review).",
       "blockers": ""
     },
     {
@@ -208,12 +231,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "No purchase-order/receipt ledger; _confirm does not change on_order, so the next plan ignores confirmed open supply.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + agent",
+      "tests": [
+        "tests/test_remediation.py::test_S12_*"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "purchase_order_lines + receipts; planning adds open units and receipts since the snapshot; receipts idempotent; cancellation releases.",
+      "blockers": "Partial ERP receipts are booked manually; no ERP receipt feed."
     },
     {
       "id": "S13",
@@ -225,12 +250,15 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "retrieval_study R2 temporal_off vs temporal_on changes mode AND rerank at once.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "study rerun",
+      "tests": [
+        "artifacts/experiments/R2-20261022T045503Z",
+        "artifacts/reports/r2_query_level.jsonl"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "R2 is a 2x2 factorial (effective-date filter x supersession rerank) with query-level outcomes; the old contrast is labelled combined-pipeline.",
+      "blockers": "Questions remain synthetic and not human-reviewed."
     },
     {
       "id": "S14",
@@ -241,11 +269,13 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "resolve_model(family) ignores dataset_id and status; it can return a RETIRED or other-dataset model.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL",
+      "tests": [
+        "tests/test_remediation.py::test_S14_*"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "resolve_model scopes by dataset and usable status; retired only for explicit replay.",
       "blockers": ""
     },
     {
@@ -260,12 +290,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "No decision-context fingerprint in the web state; scenario baseline/draft compatibility is not checked.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed (scenario studio)",
+      "verification": "e2e (manual browser check)",
+      "tests": [
+        "apps/web/app/(app)/scenarios/page.tsx"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Scenario results carry a context fingerprint (workspace, clocks, dataset, basis); incompatible or late results are hidden and never compared.",
+      "blockers": "Fingerprint not yet applied to every screen (forecast lab already guards late responses)."
     },
     {
       "id": "S16",
@@ -280,11 +312,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "Policies maps mode=='hybrid' to a VERIFIED_LOCALLY badge; Admin maps outbox DELIVERED to RECONCILED; research headlines are hardcoded strings.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "e2e + API",
+      "tests": [
+        "evaluations/study_registry.json",
+        "routes_research.py"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Retrieval mode no longer shown as verification; outbox DELIVERED is not RECONCILED; read-back mismatch has its own label; research headlines come from the reviewed registry with superseded runs listed.",
       "blockers": ""
     },
     {
@@ -301,12 +336,14 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "Session 3 added focus/a11y suites; theme radio group still lacks arrow-key navigation; chart theme refresh untested.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "partially fixed",
+      "verification": "e2e (a11y suite)",
+      "tests": [
+        "apps/web/app/(app)/layout.tsx"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Theme switch uses native radios (arrow keys).",
+      "blockers": "Chart theme refresh after zoom, 200% zoom and WebGL context-loss tests still to add."
     },
     {
       "id": "S18",
@@ -320,12 +357,15 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "No upload/map/validate/publish API or UI; data admission is read-only; admin cannot change memberships.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL + HTTP + e2e",
+      "tests": [
+        "tests/test_onboarding.py (2)",
+        "e2e/remediation.spec.ts S18"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "CSV templates (sales, stock, terms), upload/map/validate/quarantine/publish of immutable snapshots, workspace creation, membership admin via SECURITY DEFINER functions.",
+      "blockers": "One target ERP sandbox integration (BC/SAP) not built; no credentials supplied."
     },
     {
       "id": "S19",
@@ -339,12 +379,14 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "CI now has lint, secret/dependency scans, backend, contracts, e2e, PITR and compose jobs (session 3). Acceptance claims predating these findings need requalification.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "partially fixed",
+      "verification": "CI config",
+      "tests": [
+        "docs/acceptance/acceptance_register.csv"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Acceptance rows touched by the findings were reopened and requalified against this session's tests.",
+      "blockers": "CI artifacts per acceptance claim are not yet linked automatically."
     },
     {
       "id": "S20",
@@ -358,12 +400,15 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "F1 uses one test window and is built on the F01 baseline; S1 policy choices were informed by test results.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "study rerun",
+      "tests": [
+        "ml/configs/forecast_study_v2.json",
+        "artifacts/experiments/F1-*"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Rolling test origins (2011-10-13, 2011-11-10) with refits; 'no clear difference detected' wording; S1 policy choice labelled exploratory.",
+      "blockers": "No untouched holdout remains on UCI; a fresh dataset is needed for a confirmatory test."
     },
     {
       "id": "S21",
@@ -377,12 +422,14 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "agent/graph.py plan_steps: skus[:60] silently truncates; queries collapse location.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "PostgreSQL",
+      "tests": [
+        "tests/test_remediation.py::test_S21_* (2)"
+      ],
       "requirements": [],
-      "resolution": "",
-      "blockers": ""
+      "resolution": "Declared limit of 60 SKUs per run: explicit lists over it are rejected, implicit scope truncation is reported; multi-location SKUs are excluded with a reason instead of collapsed.",
+      "blockers": "SKU-location planning not implemented."
     },
     {
       "id": "S22",
@@ -394,12 +441,15 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "apps/web/lib/api.ts JSON.parse on a non-JSON body (HTML 502) throws SyntaxError instead of ApiError; no request id surfaced.",
-      "code_status": "open",
-      "verification": "not run",
-      "tests": [],
+      "code_status": "fixed",
+      "verification": "e2e",
+      "tests": [
+        "e2e/remediation.spec.ts S22"
+      ],
       "requirements": [],
-      "resolution": "",
+      "resolution": "Client parses by content type, maps gateway HTML to a status message with the trace reference; server returns JSON 500 with a reference; ErrorState distinguishes offline, denied, expired session and server errors.",
       "blockers": ""
     }
-  ]
+  ],
+  "remediated_in_commit": "441c315 and follow-ups (session 4)"
 }

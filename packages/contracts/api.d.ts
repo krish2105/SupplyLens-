@@ -2434,7 +2434,14 @@ export interface components {
                     [key: string]: number[];
                 };
             };
+            /** Pooled Mae */
+            pooled_mae: {
+                [key: string]: number;
+            } | null;
+            review: components["schemas"]["StudyReview"] | null;
             selection: components["schemas"]["StudySelection"];
+            /** Study Version */
+            study_version: string | null;
             /** Summary */
             summary: {
                 [key: string]: components["schemas"]["FamilySummary"];
@@ -2447,6 +2454,8 @@ export interface components {
             tcn_seed_sd: {
                 [key: string]: number;
             };
+            /** Test Origins */
+            test_origins: string[] | null;
             /** Test Window */
             test_window: string[];
         } & {
@@ -4019,6 +4028,7 @@ export interface components {
             available: boolean;
             /** Message */
             message: string | null;
+            review: components["schemas"]["StudyReview"] | null;
         } & {
             [key: string]: unknown;
         };
@@ -4068,6 +4078,27 @@ export interface components {
             available: false;
             /** Message */
             message: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * StudyReview
+         * @description Reviewed status of the served experiment (evaluations/study_registry.json).
+         */
+        StudyReview: {
+            /** Headline */
+            headline: string | null;
+            /** Notes */
+            notes: string | null;
+            /** Status */
+            status: string;
+            /**
+             * Superseded
+             * @default []
+             */
+            superseded: {
+                [key: string]: unknown;
+            }[];
         } & {
             [key: string]: unknown;
         };

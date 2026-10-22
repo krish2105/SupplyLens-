@@ -149,6 +149,11 @@ def main():
         rng = np.random.default_rng(0)
         boots = rng.choice(d, size=(2000, len(d))).mean(1)
         paired[f"{m}_minus_seasonal_naive_fill"] = {"mean": float(d.mean()), "ci95": [float(np.quantile(boots, .025)), float(np.quantile(boots, .975))]}
+    # Diagnostic computed from this run (it used to be a fixed sentence): share of realised review-window volume
+    # covered by the summed q50 of each forecaster, over all review origins.
+    R = ASSUME["review_days"]
+    actual = sum(float(panel.y[i + 1: i + 1 + R].sum()) for i in origins)
+    q50_cover = {m: sum(float(fcs[m][i][:, :R, 1].sum()) for i in origins) / actual for m in fcs}
     out = REPO / "artifacts" / "experiments" / f"S1-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
     out.mkdir(parents=True)
     (out / "metrics.json").write_text(json.dumps({
@@ -158,7 +163,10 @@ def main():
         "caveats": ["Recorded sales are a demand proxy; real lost sales are unobserved.",
                     "Costs are assumptions; simulated cost differences are not realised savings.",
                     "The perfect-foresight reference orders exactly the next review window's sales; with long lead times it is not an upper bound.",
-                    "Diagnostic: summed q50 of LightGBM/TCN covers about 50%/42% of test-window volume vs 87% for seasonal naive (heavy-tailed daily sales), so accuracy-optimal medians under-stock."]}, indent=2))
+                    "Exploratory: the q90 order-up-to policy was chosen after seeing the S1 v1 test-window results (audit S20); policy comparisons here are not a confirmatory test.",
+                    "Diagnostic (this run): summed q50 covers " + ", ".join(f"{m} {v:.0%}" for m, v in q50_cover.items())
+                    + " of review-window volume; medians under-stock heavy-tailed daily sales when coverage is well below 100%."],
+        "q50_volume_coverage": q50_cover, "protocol_note": "rerun on forecast study protocol 2.0.0 (corrected seasonal-naive baseline, audit F01)"}, indent=2))
     print("wrote", out.relative_to(REPO), json.dumps(paired))
 
 

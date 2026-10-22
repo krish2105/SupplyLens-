@@ -4,12 +4,12 @@
   "experiments": {
     "F1-20261021T190101Z": {
       "status": "superseded",
-      "superseded_by": "F1 protocol 2.0.0",
+      "superseded_by": "F1-20261022T090206Z",
       "reason": "seasonal-naive baseline repeated weeks k seasons back for horizons beyond 7 days (audit F01); baseline comparisons, champion selection and the 'trained models beat the baseline' claim are invalid"
     },
     "S1-20261021T193239Z": {
       "status": "superseded",
-      "superseded_by": "S1 rerun on F1 2.0.0",
+      "superseded_by": "S1-20261022T092040Z",
       "reason": "replayed the defective seasonal-naive baseline (F01); its q90 policy choice was informed by the test window and is exploratory (S20)"
     },
     "R2-20261021T191153Z": {
@@ -45,6 +45,16 @@
       "status": "current",
       "headline": "Investigator: every frozen scenario verified, zero unapproved external writes",
       "notes": "57 scenarios x 3 trials on the corrected code (lookup-first retry, full read-back, explicit zero budget). Deterministic control regression, not a model-capability result."
+    },
+    "F1-20261022T090206Z": {
+      "status": "current",
+      "headline": "Trained forecasters cut daily error by about a third against the corrected seasonal baseline; TCN edges LightGBM on average but not on most products",
+      "notes": "Protocol 2.0.0, 503 products (cohort selected on 2011-08-18), rolling test origins 2011-10-13 and 2011-11-10. Pooled per-product MAE: naive 21.35, LightGBM 14.52, TCN 14.26. TCN \u2212 naive \u22127.09 [\u22129.01, \u22125.51]; TCN \u2212 LightGBM \u22120.27 [\u22120.52, \u22120.06], TCN better on 44% of products. Not an untouched holdout: protocol 1.0.0 had seen both windows (D-042)."
+    },
+    "S1-20261022T092040Z": {
+      "status": "exploratory",
+      "headline": "Better forecasts still did not mean better simulated stock outcomes \u2014 the ordering policy mattered more",
+      "notes": "Simulated, assumed costs. Median+safety: fill naive 85.6%, LightGBM 78.4%, TCN 78.8% (summed q50 covers 99% / 52% / 49% of volume). q90 order-up-to: about 95% for all three. The q90 policy was chosen after seeing v1 test results, so the policy comparison is exploratory (S20)."
     }
   }
 }

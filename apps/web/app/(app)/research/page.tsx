@@ -36,7 +36,7 @@ function StudyCard({ id, title: fallback, question, children, q }: { id: string;
           <h2 className="display mt-1 text-xl font-semibold">{review?.headline ?? (q.data?.available ? `${fallback} — headline not yet reviewed` : fallback)}</h2>
           <p className="mt-1 text-sm text-muted">{question}</p></div>
         <div className="flex flex-col items-end gap-1">
-          {review && <Status value={review.status === "current" ? "VERIFIED_LOCALLY" : review.status.toUpperCase()} />}
+          {review && <Status value={review.status.toUpperCase()} />}
           {q.data?.experiment_id && <Mono className="text-muted">{q.data.experiment_id}</Mono>}
         </div>
       </div>
@@ -82,23 +82,26 @@ export default function ResearchPage() {
         Every number here is read from an experiment artifact under <Mono>artifacts/experiments/</Mono>. Simulated outcomes are labelled as such. Nothing is typed in by hand.
       </PageHeader>
 
-      <StudyCard id="F1" q={f1} title="Trained forecasters beat the seasonal baseline; TCN and LightGBM are statistically tied"
+      <StudyCard id="F1" q={f1} title="Forecasting study"
         question="Do LightGBM and a compact quantile TCN improve 28-day daily unit-sales forecasts on UCI Online Retail II?">
         {f1.data?.summary && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
             {f1Opt && <Chart option={f1Opt} height={240} label="Bar chart comparing MAE, pinball and MASE across three models" />}
             <ul className="space-y-2 text-sm">
-              <li>{f1.data.cohort_size} products, test window {f1.data.test_window.join(" → ")}, selection frozen on validation.</li>
-              <li>TCN − naive MAE per product: <b className="num">{num(f1.data.comparisons.tcn_seed0_vs_seasonal_naive.mean_diff, 2)}</b> (95% CI {num(f1.data.comparisons.tcn_seed0_vs_seasonal_naive.ci95[0], 2)} to {num(f1.data.comparisons.tcn_seed0_vs_seasonal_naive.ci95[1], 2)}).</li>
-              <li>TCN − LightGBM: <b className="num">{num(f1.data.comparisons.tcn_seed0_vs_lightgbm.mean_diff, 2)}</b> (95% CI {num(f1.data.comparisons.tcn_seed0_vs_lightgbm.ci95[0], 2)} to {num(f1.data.comparisons.tcn_seed0_vs_lightgbm.ci95[1], 2)}) — interval includes zero.</li>
-              <li>80% interval coverage: naive {pct(f1.data.summary.seasonal_naive.coverage_80)}, LightGBM {pct(f1.data.summary.lightgbm.coverage_80)}, TCN {pct(f1.data.summary.tcn.coverage_80)}.</li>
+              <li>{f1.data.cohort_size} products; test origins {(f1.data.test_origins ?? [f1.data.test_origin]).join(", ")}; selection frozen on validation; chart shows the last origin.</li>
+              {(["tcn_seed0_vs_seasonal_naive", "tcn_seed0_vs_lightgbm", "lightgbm_vs_seasonal_naive"] as const).map((k) => {
+                const c = f1.data!.comparisons[k];
+                const clear = c.ci95[0] > 0 || c.ci95[1] < 0;
+                return <li key={k}>{k.replace("_seed0", "").replaceAll("_", " ").replace(" vs ", " − ")} MAE per product: <b className="num">{num(c.mean_diff, 2)}</b> (95% CI {num(c.ci95[0], 2)} to {num(c.ci95[1], 2)}; first better on {pct(c.share_a_better, 0)} of products) — {clear ? "difference detected" : "no clear difference detected"}.</li>;
+              })}
+              <li>80% interval coverage (last origin): naive {pct(f1.data.summary.seasonal_naive.coverage_80)}, LightGBM {pct(f1.data.summary.lightgbm.coverage_80)}, TCN {pct(f1.data.summary.tcn.coverage_80)}.</li>
               <li><Link className="text-accent hover:underline" href={{ pathname: "/forecast", query: { ws } }}>Full table in the Forecast lab</Link></li>
             </ul>
           </div>
         )}
       </StudyCard>
 
-      <StudyCard id="S1" q={s1} title="Better forecasts did not mean better stock decisions — the policy mattered more"
+      <StudyCard id="S1" q={s1} title="Inventory simulation study"
         question="Holding policy, costs, lead time and the demand path fixed, does a more accurate forecaster lower simulated lost-sales + holding cost?">
         {s1.data?.results && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
@@ -107,14 +110,14 @@ export default function ResearchPage() {
               <li><Provenance kind="simulated" /> {s1.data.products} products, {s1.data.window.join(" → ")}, lead time {s1.data.assumptions.lead_time_days} days, weekly review.</li>
               <li>With a median-based policy, trained models fill {pct(s1.data.results[s1.data.base_case].tcn.fill_rate)} (TCN) vs {pct(s1.data.results[s1.data.base_case].seasonal_naive.fill_rate)} (naive).</li>
               <li>Why: {s1.data.caveats.at(-1)}</li>
-              <li>With the q90 order-up-to policy all three reach ≈{pct(s1.data.results[s1.data.base_case].tcn__sum_q90.fill_rate, 0)} fill. The product used this heuristic until the lead-time-demand model replaced it (D-032); it is kept for comparison.</li>
+              <li>With the q90 order-up-to policy all three reach ≈{pct(s1.data.results[s1.data.base_case].tcn__sum_q90.fill_rate, 0)} fill. Exploratory: that policy was chosen after seeing test results. The product now uses the lead-time-demand model (D-032).</li>
             </ul>
           </div>
         )}
       </StudyCard>
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <StudyCard id="R2" q={r2} title="Effective-date logic removes wrong-version citations"
+        <StudyCard id="R2" q={r2} title="Time-aware retrieval study"
           question="On supplier-terms questions, does explicit effective-date and supersession handling change which version is cited?">
           {r2.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">R2 conditions</caption>
@@ -126,7 +129,7 @@ export default function ResearchPage() {
             </table>
           )}
         </StudyCard>
-        <StudyCard id="C1" q={c1} title="Hybrid search finds the expert-labelled clause most often"
+        <StudyCard id="C1" q={c1} title="Clause localisation study"
           question="Within 73 real CUAD supply/distribution contracts, does a top-k chunk overlap the clause an expert labelled?">
           {c1.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">C1 conditions</caption>
@@ -137,7 +140,7 @@ export default function ResearchPage() {
             </table>
           )}
         </StudyCard>
-        <StudyCard id="R1" q={r1} title="On ACORD, vector search beats the hybrid — a negative result we keep"
+        <StudyCard id="R1" q={r1} title="ACORD retrieval study"
           question="Across 56 expert-graded ACORD test queries, how do keyword, vector and hybrid retrieval rank 3,931 clauses?">
           {r1.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">R1 conditions</caption>
@@ -148,7 +151,7 @@ export default function ResearchPage() {
             </table>
           )}
         </StudyCard>
-        <StudyCard id="IB" q={ib} title="SupplyLens policy scores highest of three tool-only policies on InventoryBench"
+        <StudyCard id="IB" q={ib} title="InventoryBench study"
           question="Scored by the benchmark's own evaluator on all 1,320 instances (pinned commit), normalised reward vs perfect foresight.">
           {ib.data?.policies && (
             <table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
@@ -161,7 +164,7 @@ export default function ResearchPage() {
         </StudyCard>
       </div>
 
-      <StudyCard id="AGT" q={agt} title="Investigator: every frozen scenario verified, zero unapproved external writes"
+      <StudyCard id="AGT" q={agt} title="Investigator study"
         question="Across reference-case dates and budgets, denials, stale approvals, timeouts and crash recovery, does the run end in the oracle's state?">
         {agt.data?.summary && (
           <div className="grid gap-4 sm:grid-cols-4">

@@ -39,7 +39,7 @@ export function ClockRail() {
   const knownLocal = known ? known.slice(0, 16) : "";
 
   return (
-    <div className="border-b border-line bg-surface/70" role="region" aria-label="Decision time">
+    <div className="border-b border-line bg-surface" role="region" aria-label="Decision time">
       <div className="flex flex-col items-start gap-y-2 px-4 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-6 md:px-6">
         <label className="flex items-center gap-2 text-xs">
           <span className="inline-flex size-5 items-center justify-center rounded-full border-2 border-forecast text-[10px] font-bold text-forecast" aria-hidden>K</span>

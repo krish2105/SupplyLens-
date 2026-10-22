@@ -1,13 +1,15 @@
 # SupplyLens project status
 
 **Updated:** 2026-10-22 (UTC) · **Commit:** see `git log -1`
-**Verified gate:** P0 demonstrated locally and in CI for everything that can be run without outside parties — 58 of 80
-acceptance items passed locally, 13 partial, 5 not run (pilot users, support, pricing, production workload), 4 blocked on
-external systems (`docs/acceptance/acceptance_register.csv`). P0 is not claimed complete: the load targets are met at 4 and
-missed at 5 retrieval requests/s on the 4 vCPU machine available (the declared profile is 8 vCPU), mobile LCP is above its
-field target, the manual screen-reader pass and the human review of retrieval questions are undone, and the two models
-added in session 3 (lead-time demand, cross-encoder) are not validated on real data. P1/P2 items needing a real identity
-provider, ERP sandbox or pilot users are blocked.
+**Verified gate:** P0 demonstrated locally for everything that can be run without outside parties — 57 of 80
+acceptance items passed locally, 16 partial, 5 not run (pilot users, support, pricing, production workload), 2 blocked on
+external systems (ERP sandbox credentials). Session 4 remediated the CTO audit: of 22 findings, 18 are fixed with
+correct-behaviour tests, S09 is fixed for local use only, and S15, S17 and S19 are partially fixed
+(`docs/remediation/REGISTER.md`). Rows touched by the findings were reopened and requalified (two moved back to partial:
+ML-004 has no untouched holdout left on UCI; BUS-012/022 are verified against a local Keycloak, not a corporate IdP).
+P0 is still not claimed complete: the load target is missed at 5 retrieval requests/s on 4 vCPU, mobile LCP is above its
+field target, the screen-reader pass and the human review of retrieval questions are undone, and the lead-time-demand
+and cross-encoder models are not validated on real data.
 
 ## CI on GitHub
 `.github/workflows/ci.yml` runs on every push, pull request and weekly. **Run 39700028666 (commit 5809b70): all 7 jobs
@@ -23,11 +25,12 @@ failing steps now publish their output tail as annotations (`scripts/ci_annotate
 
 - **Data:** UCI Online Retail II (reconciled to the row), plus ACORD, CUAD (73 supply agreements, 2,176 expert labels),
   World Bank IPF awards (295,058), InventoryBench (pinned). Raw files immutable and hashed; provenance per dataset.
-- **Forecasting research (F1):** frozen protocol, 506 products. Seasonal naive MAE 21.41 → LightGBM 15.37 → TCN 15.08
-  (3 seeds 15.03 ± 0.04). Both trained models beat the baseline (CI excludes 0); TCN vs LightGBM tied (CI includes 0).
-  TCN is champion by the frozen validation rule and serves forecasts with hash-verified artifacts and a replay guard.
-- **Decision research (S1, simulated):** lower forecast error did not lower simulated cost; the ordering policy
-  dominated. The product first switched to a summed-q90 basis, then (session 3) to the lead-time-demand model (L1, D-032).
+- **Forecasting research (F1, protocol 2.0.0):** the 1.0.0 results are superseded — their seasonal-naive baseline was
+  wrong beyond horizon 7 (audit F01). Rerun on 503 products with rolling test origins 2011-10-13 and 2011-11-10: pooled
+  MAE naive 21.35, LightGBM 14.52, TCN 14.26; TCN − naive −7.09 [−9.01, −5.51]; TCN − LightGBM −0.27 [−0.52, −0.06] with TCN
+  better on only 44% of products. Not an untouched holdout (D-042). TCN 2.0.0 is champion by the frozen validation rule.
+- **Decision research (S1, simulated, exploratory):** rerun on the 2.0.0 models; lower forecast error still did not lower
+  simulated cost under a median policy (fill 78–79% vs 86% naive); the ordering policy dominated. The product first switched to a summed-q90 basis, then (session 3) to the lead-time-demand model (L1, D-032).
 - **Retrieval (R1/R2/C1):** temporal logic removes wrong-version citations (92.6% → 100% top-1 on 118 generated
   questions); hybrid wins inside real contracts (hit@3 76.7%) but loses to vector-only on ACORD (negative result kept).
 - **InventoryBench (official evaluator):** SupplyLens policy 0.482 vs base-stock 0.433 vs last-value 0.453.
@@ -95,3 +98,39 @@ Findings fixed in this pass: Forecast lab now falls back to the baseline when th
 cutoff (replay guard) and says so; Approvals reserves space and scrolls internally (CLS 0.12–0.17 → within target); the 3D
 hover card no longer covers the toolbar; palette test waits for the option. Against the dev server 16 timing-based
 checks fail; they pass against `next start`, which is what CI uses.
+
+## Session 4 — CTO-audit remediation (2026-10-22 UTC, macOS, real UCI data)
+Owner decisions this session: push to `main` (D-037), CSV onboarding for sales/stock/terms (D-038), local Keycloak for
+identity (D-039), 13 of 16 illustrations with HTML fallbacks for A02/A13/A16 (D-040); generative inference stays off (D-041).
+
+- **Planning:** seasonal baseline fixed in both implementations (F01); coverage window, gaps and stockout walk bounded by
+  the decision date (F02); controls that do not apply to the replenishment basis are rejected by the API and disabled in
+  the UI (F03); residual capacity reaches CP-SAT and the validator, uncapped need stays visible (F04); an explicit zero
+  budget stays zero (F08); declared 60-SKU limit and single-location grain (S21, D-043).
+- **Actions:** idempotency outcome committed with the business change and one key per user intent in the client (F05);
+  read-back compares every line field, need-by and status (F06); retries look up before any approval check (F07); fresh
+  sends recheck approver rights, state, spend and terms (S11); reconciled orders become open supply, receipts and
+  cancellations feed replanning (S12).
+- **Access:** central document ACL on labels, citations, run events, evidence and term history (S10, D-044); model
+  resolution scoped by dataset and status (S14); fail-closed production profile and loopback-only compose ports (S09);
+  OIDC code+PKCE with role claims and deactivation, verified against Keycloak 26.0.7 in the browser and in tests.
+- **Onboarding:** CSV templates, upload → map → validate → quarantine → publish an immutable snapshot, new customer
+  workspaces, membership administration through narrow SECURITY DEFINER functions (S18). Migration 0007 rolls back
+  without losing open orders, receipts or imports (D-048, rehearsed).
+- **UI:** honest badges (retrieval mode is not verification; DELIVERED is not RECONCILED; read-back mismatch has its own
+  state), research headlines from `evaluations/study_registry.json` (S16), native theme radios and opaque sticky
+  surfaces (S17 part), gateway HTML and server errors shown with status and reference (S22), scenario context fingerprint
+  (S15 part), 13 illustrations through one `EmptyState` component (`docs/design/illustrations.md`).
+- **Research:** F1 2.0.0 and S1 rerun, R2 as a 2×2 factorial, AGT rerun; superseded runs listed with reasons.
+
+Last verified commands (2026-10-22 UTC):
+```
+uv run ruff check .                                   # clean
+uv run pytest -q                                      # 330 passed, 6 skipped (Keycloak not running; 6/6 passed earlier with it)
+./scripts/check_contracts.sh                          # contracts match
+(cd apps/web && npx tsc --noEmit)                     # ok
+SUPPLYLENS_WEB_URL=http://localhost:3101 npx playwright test   # 107 passed, 1 skipped (production build)
+uv run python scripts/smoke_investigation.py          # OPTIMAL, 3 drafts, order RECONCILED with full read-back
+```
+Fresh screenshots with revision labels: `docs/screenshots/session4/` (manifest lists route, theme, viewport, state).
+

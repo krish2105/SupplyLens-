@@ -2,7 +2,7 @@
 
 Sources stay untouched in design/source-assets/supplylens/ (byte-identical to the supplied pack; their SHA-256 is checked
 against the pack manifest). Derivatives are lossless-alpha WebP at 2x the largest display size, written to
-apps/web/public/illustrations/supplylens/. Three assets are not published (owner decision D-041): A02 shows document
+apps/web/public/illustrations/supplylens/. Three assets are not published (owner decision D-040): A02 shows document
 lines and a chart where a blank sheet was briefed, A13 shows joined suppliers where unjoined connectors were briefed, and
 A16 uses kraft cartons that read as a value claim; those states use HTML/icon fallbacks instead.
 

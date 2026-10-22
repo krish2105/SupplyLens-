@@ -3087,8 +3087,43 @@
             "title": "Pinball By Horizon",
             "type": "object"
           },
+          "pooled_mae": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pooled Mae"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudyReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "selection": {
             "$ref": "#/components/schemas/StudySelection"
+          },
+          "study_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Study Version"
           },
           "summary": {
             "additionalProperties": {
@@ -3111,6 +3146,20 @@
             "title": "Tcn Seed Sd",
             "type": "object"
           },
+          "test_origins": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Origins"
+          },
           "test_window": {
             "items": {
               "type": "string"
@@ -3124,6 +3173,9 @@
           "experiment_id",
           "cohort_size",
           "test_window",
+          "test_origins",
+          "pooled_mae",
+          "study_version",
           "selection",
           "summary",
           "tcn_seed_mean",
@@ -3132,7 +3184,8 @@
           "pinball_by_horizon",
           "environment",
           "config",
-          "dataset_sha256"
+          "dataset_sha256",
+          "review"
         ],
         "title": "ForecastStudyReport",
         "type": "object"
@@ -7258,11 +7311,22 @@
               }
             ],
             "title": "Message"
+          },
+          "review": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudyReview"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "available",
-          "message"
+          "message",
+          "review"
         ],
         "title": "Study",
         "type": "object"
@@ -7375,6 +7439,55 @@
           "message"
         ],
         "title": "StudyMissing",
+        "type": "object"
+      },
+      "StudyReview": {
+        "additionalProperties": true,
+        "description": "Reviewed status of the served experiment (evaluations/study_registry.json).",
+        "properties": {
+          "headline": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Headline"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "superseded": {
+            "default": [],
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Superseded",
+            "type": "array"
+          }
+        },
+        "required": [
+          "status",
+          "headline",
+          "notes",
+          "superseded"
+        ],
+        "title": "StudyReview",
         "type": "object"
       },
       "StudySeeds": {

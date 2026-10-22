@@ -1,7 +1,8 @@
 # SupplyLens research results (dissertation package)
 
-All numbers are copied from `artifacts/experiments/*/metrics.json` (artifacts are git-ignored; rerun
-commands below regenerate them). Simulated outcomes are labelled. Date of runs: 2026-10-21 (UTC).
+All numbers are copied from `artifacts/experiments/*/metrics.json` (metrics, configs and cohorts are committed; weights
+and per-run outputs are not). Simulated outcomes are labelled. Runs: 2026-10-21 and, after the session-4 audit fixes,
+2026-10-22 (UTC). Status and reviewed headline of every run: `evaluations/study_registry.json`.
 Hardware: Apple M4 Pro, 24 GB, macOS 27; Python 3.12.13, LightGBM 4.7.0, PyTorch 2.14.1 (MPS).
 
 ## Research questions
@@ -13,73 +14,87 @@ Hardware: Apple M4 Pro, 24 GB, macOS 27; Python 3.12.13, LightGBM 4.7.0, PyTorch
 5. **IB** — How does SupplyLens' deterministic replenishment logic score on InventoryBench's official evaluator?
 6. **AGT** — Does the stateful investigator end in the oracle's state across frozen business scenarios without unauthorised writes?
 
-## F1 — forecasting (`F1-20261021T190101Z`)
+## F1 — forecasting, protocol 2.0.0 (`F1-20261022T090206Z`, current)
 
-Protocol frozen in `ml/configs/forecast_study_v1.json` before the test window was scored.
-Cohort: 506 UCI products with at least 150 selling days in the year before 2011-09-15 (selection uses only
-data up to that date). Validation origins 2011-09-15 and 2011-10-13; untouched test origin 2011-11-10
-(window 2011-11-11 to 2011-12-08), horizon 28 days, quantiles 0.1/0.5/0.9. Selection rule: lowest mean
-validation pinball. Each origin refits on labels available at that origin.
+**What changed.** Protocol 1.0.0 (`F1-20261021T190101Z`) is **superseded**: its seasonal-naive baseline repeated the
+value from *k* seasons back for horizon days beyond the first week instead of the last observed week (audit F01), so
+its baseline comparisons, champion selection and headline were invalid. Protocol 2.0.0
+(`ml/configs/forecast_study_v2.json`, frozen 2026-10-22) uses the corrected baseline and **rolling test origins**
+(2011-10-13 and 2011-11-10), each refitted on labels available at that origin; validation origins 2011-08-18 and
+2011-09-15 precede both. Cohort: 503 products with at least 150 selling days in the year before
+2011-08-18. **Not an untouched holdout:** protocol 1.0.0 had already looked at both windows; 2.0.0 keeps the same search
+grid and selection rule and is reported as a corrected re-run, not a new confirmatory test (D-042).
 
-| Model | Val. pinball | Test MAE | MASE | Pinball q10 / q50 / q90 | 80% coverage | Width | Raw crossing |
+Selection (mean validation pinball): naive 7.814, LightGBM
+4.951, TCN 4.892 → champion **tcn**
+(registered as 2.0.0; the 1.0.0 trained models are retired).
+
+| Test origin | Model | MAE | MASE | Pinball (mean) | 80% coverage | Width | Raw crossing |
 |---|---|---|---|---|---|---|---|
-| Seasonal naive | 8.251 | 21.41 | 1.050 | 6.085 / 10.702 / 8.040 | 76.8% | 32.7 | 0.00% |
-| LightGBM quantile | 5.421 | 15.37 | 0.793 | 1.913 / 7.687 / 7.151 | 85.1% | 44.0 | 4.45% |
-| Quantile TCN (seed 0) | **5.342** | 15.08 | 0.772 | 1.918 / 7.539 / 6.703 | 84.9% | 39.5 | 8.89% |
+| 2011-10-13 | Seasonal naive | 20.57 | 1.042 | 8.105 | 81.0% | 33.2 | 0.00% |
+| 2011-10-13 | LightGBM quantile | 13.99 | 0.679 | 5.138 | 86.3% | 37.0 | 7.13% |
+| 2011-10-13 | Quantile TCN (seed 0) | 13.80 | 0.664 | 5.097 | 84.9% | 35.9 | 7.77% |
+| 2011-11-10 | Seasonal naive | 22.12 | 1.135 | 8.591 | 75.5% | 34.1 | 0.00% |
+| 2011-11-10 | LightGBM quantile | 15.06 | 0.783 | 5.513 | 84.2% | 42.9 | 7.80% |
+| 2011-11-10 | Quantile TCN (seed 0) | 14.72 | 0.765 | 5.305 | 85.1% | 38.2 | 4.58% |
 
-TCN over seeds 0/1/2: MAE 15.03 ± 0.04, pinball 5.380 ± 0.006. MASE was defined for all 506 series.
+TCN over seeds 0/1/2 at the last origin: MAE 14.75 ± 0.05.
 
-Paired per-product MAE differences (series-level bootstrap, 2,000 resamples):
+Paired comparison of per-product MAE averaged over both test origins (product-level bootstrap, 2,000 resamples):
 
-| Comparison | Mean difference | 95% CI | First model better on |
-|---|---|---|---|
-| LightGBM − naive | −6.03 | −7.28 to −4.83 | 89.3% of products |
-| TCN − naive | −6.33 | −7.51 to −5.26 | 88.5% |
-| TCN − LightGBM | −0.30 | −0.75 to +0.04 | 39.7% |
+| Comparison | Mean difference | 95% CI | First model better on | Reading |
+|---|---|---|---|---|
+| LightGBM − naive | -6.82 | -8.73 to -5.25 | 89.9% | difference detected |
+| TCN − naive | -7.09 | -9.01 to -5.51 | 90.1% | difference detected |
+| TCN − LightGBM | -0.27 | -0.52 to -0.06 | 43.7% | difference detected |
 
-**Finding.** Both trained models clearly beat the baseline. TCN vs LightGBM is not distinguishable (CI
-includes zero; TCN is better on fewer than half of the products). The TCN is the registered champion only
-because the frozen validation rule selected it. Trained models' raw quantiles cross (4–9%), corrected by
-the declared rearrangement.
+**Finding.** Both trained models cut daily absolute error by about a third against the corrected baseline (pooled MAE
+naive 21.35, LightGBM 14.52, TCN 14.26).
+TCN's mean advantage over LightGBM is small and its interval now excludes zero, but TCN is better on fewer than half of
+the products: the average is carried by a minority of series. No equivalence test was run.
 
-## S1 — inventory consequences (`S1-20261021T193239Z`, **simulated**)
+## S1 — inventory consequences (`S1-20261022T092040Z`, **simulated, exploratory**)
 
-Lost-sales simulation over the F1 test window, weekly review, lead time 3 days, z = 1.2816, holding 25%/year,
-unit cost 55% of median selling price (assumptions). Same initial stock and demand path for every condition.
+Rerun on the F1 2.0.0 models (`S1-20261021T193239Z` is superseded). Lost-sales simulation over 2011-11-11 → 2011-12-08,
+weekly review, lead time 3 days, z = 1.2816, holding 25%/year, unit cost 55% of median selling price (assumptions).
 
 | Forecaster / policy | Fill rate | Stockout product-days | Lost margin + holding (£, 28 days) |
 |---|---|---|---|
-| Seasonal naive, median + safety | 85.9% | 1,044 | 37,072 |
-| LightGBM, median + safety | 79.1% | 1,619 | 53,665 |
-| TCN, median + safety | 79.5% | 1,656 | 52,915 |
-| Seasonal naive, q90 order-up-to | 95.1% | 210 | 15,670 |
-| LightGBM, q90 order-up-to | 95.1% | 236 | 16,395 |
-| TCN, q90 order-up-to | 94.9% | 252 | 16,258 |
-| Perfect-foresight reference | 89.4% | 1,961 | 27,229 |
+| Seasonal naive, median + safety | 85.6% | 1,016 | 35,261 |
+| LightGBM, median + safety | 78.4% | 1,542 | 51,478 |
+| TCN, median + safety | 78.8% | 1,609 | 50,903 |
+| Seasonal naive, q90 order-up-to | 94.9% | 201 | 14,709 |
+| LightGBM, q90 order-up-to | 94.8% | 242 | 16,583 |
+| TCN, q90 order-up-to | 94.6% | 258 | 16,264 |
+| Perfect-foresight reference | 89.3% | 1,902 | 25,436 |
 
-**Finding (negative for the trained models).** Lower MAE/pinball did not produce better simulated stock
-outcomes. Daily UCI sales are heavy-tailed; summed q50 of LightGBM/TCN covered about 50%/42% of test-window
-volume versus 87% for seasonal naive, so median-based ordering under-stocks. Changing the *policy* to a q90
-order-up-to target reduced simulated cost by about £21k for every forecaster, and differences between
-forecasters became small (naive was cheapest by about £0.6k). The product's replenishment basis was changed to the
-q90 sum on this evidence (DECISIONS D-024) and has since been replaced by the lead-time-demand model (L1 below, D-032). The perfect-foresight reference is not an upper
-bound with lead times (it only covers each review window).
+**Finding (unchanged in direction).** Lower forecast error did not produce better simulated stock outcomes under a
+median-based policy: summed q50 covered 99% (naive), 52% (LightGBM) and
+49% (TCN) of review-window volume, so the trained models' medians under-stock heavy-tailed daily sales.
+A q90 order-up-to policy brings all three to about 95% fill. **Exploratory:** that policy was picked after seeing the
+first S1 test results (audit S20), so the policy comparison is not confirmatory. The product now uses the
+lead-time-demand model (D-032).
 
-## R2 — time-aware supplier terms (`R2-20261021T191153Z`)
+## R2 — time-aware supplier terms, 2×2 factorial (`R2-20261022T045503Z`, current)
 
-118 questions generated from the UCI workspace's simulated agreements (not human-reviewed): current terms,
-amendment in force, amendment known but not yet in force, historical cutoff before the amendment was known,
-future effective date, and 10 unknown products.
+The first R2 (`R2-20261021T191153Z`, superseded) compared "temporal logic off" with "on" while also switching
+supersession reranking, so it confounded two factors (audit S13). The rerun crosses effective-date filtering
+{off, on} with supersession reranking {off, on}, holding channels (hybrid), queries, permissions and candidate depth
+fixed. 118 synthetic questions (not human-reviewed); query-level outcomes in `artifacts/reports/r2_query_level.jsonl`.
 
-| Condition | Top-1 citation correct | Wrong version at top | Abstention on unknown |
+| Effective-date filter | Rerank | Top-1 citation correct | Wrong version at top |
 |---|---|---|---|
-| Knowledge cutoff only (temporal logic off), hybrid | 92.6% | 7.4% | 100% |
-| Temporal logic on, lexical only | 100% | 0% | 100% |
-| Temporal logic on, hybrid | 100% | 0% | 100% |
+| off | off | 92.6% | 7.4% |
+| off | on | 96.3% | 3.7% |
+| on | off | 95.4% | 4.6% |
+| on | on | 100.0% | 0.0% |
+| on (lexical only) | on | 100.0% | 0.0% |
 
-Cross-tenant probes from the Demo workspace: 0 leaked chunks in 60 queries. **Caveat:** questions come from
-the same simulated records that generated the documents, so this measures the temporal mechanism, not
-real-world contract understanding.
+Main effect of effective-date filtering +3.2 points, of reranking
++4.2 points, interaction +0.9 points. Both mechanisms contribute; neither alone
+removes every wrong-version citation. Abstention on unknown products 100% in every condition; cross-tenant probes:
+0 leaked chunks in 60 queries. The questions come from the same
+simulated records that generated the documents, so this measures the mechanism, not contract understanding.
 
 ## R1 — ACORD clause retrieval (`R1-20261021T191153Z`)
 
@@ -122,7 +137,7 @@ for identifier-heavy and within-document search and hurts on short semantic quer
 
 No LLM is used. Real trajectories derive from H&M data whose upstream terms were not reviewed for redistribution.
 
-## AGT — investigator evaluation (`AGT-20261021T192432Z`)
+## AGT — investigator evaluation (`AGT-20261022T045832Z`; rerun on the session-4 code, same outcome as `AGT-20261021T192432Z`)
 
 57 frozen scenarios × 3 trials against the test database: 44 reference-case dates × budgets, 2 delayed-knowledge,
 missing stock record, conflicting terms, two role denials, administrator approval, self-approval, stale terms,
@@ -136,14 +151,15 @@ median run 67 ms, 6.0 tool calls per run, 0 LLM tokens.
 
 - Sales are a demand proxy; stockouts and lost sales are unobserved. Cost parameters in S1 are assumptions.
 - One retailer (UCI); results may not transfer. M5 was not used (owner decision).
-- F1 uses one test window (28 days before Christmas 2011), which is seasonally unusual.
+- F1 2.0.0 uses two rolling test windows (Oct–Dec 2011), both seen by protocol 1.0.0 and both pre-Christmas; a confirmatory
+  test needs data no protocol has looked at.
 - R2 questions are synthetic and not human-reviewed; no generative LLM was evaluated (owner decision).
 - The investigator is deterministic, so "agent" results concern orchestration and controls, not model reasoning.
 
 ## Reproduce
 
 ```bash
-uv run python evaluations/forecast_study.py
+uv run python evaluations/forecast_study.py --config ml/configs/forecast_study_v2.json
 uv run python evaluations/simulation_study.py
 uv run python evaluations/retrieval_study.py
 uv run python evaluations/inventorybench_study.py
