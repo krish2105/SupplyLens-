@@ -49,7 +49,8 @@ python3 scripts/vercel/build_api.py --pin       # after changing uv.lock: re-pin
 python3 scripts/vercel/build_api.py --check     # what CI runs
 ```
 
-Only when the demo **data** should change (first install on an empty database):
+Only when the demo **data** should change (first install on an empty database; an export made before migration 0010
+lists `chunks.embedding` and must be regenerated):
 ```bash
 SUPPLYLENS_STORAGE_DIR=$PWD/build/hosted-storage uv run python -m supplylens.bootstrap   # against a fresh database
 uv run python scripts/vercel/export_hosted_data.py --db postgresql://supplylens_owner:...@localhost:5432/sl_hosted
@@ -59,7 +60,7 @@ vercel deploy --prod      # a CLI deploy carries the git-ignored deploy/vercel-a
 First install on an empty database: add a 32+ character `SUPPLYLENS_SETUP_TOKEN` (sensitive) and
 `SUPPLYLENS_APP_DB_PASSWORD`, deploy, then `POST /api/v1/internal/setup/schema` and `/setup/data` with header
 `X-Setup-Token`; remove the token and redeploy (the endpoint then does not exist: 404). **Schema upgrades** (a new
-migration, e.g. 0009) use the same steps with only `/setup/schema`: it is idempotent and migrates to head. Without the token
+migration, e.g. 0010) use the same steps with only `/setup/schema`: it is idempotent and migrates to head. Without the token
 the serving function holds no owner credentials, so it cannot migrate. Setup copies each workspace's rows
 through a staging table and inserts them under that workspace's row-level-security context; it refuses a role that can
 bypass row-level security.

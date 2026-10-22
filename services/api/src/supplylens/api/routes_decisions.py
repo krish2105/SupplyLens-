@@ -6,7 +6,7 @@ import json
 import uuid
 from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
@@ -128,16 +128,25 @@ def terms(sku_id: str, knowledge_cutoff: datetime | None = None, effective_date:
 
 
 @router.get("/documents", response_model=list[DocumentRow])
-def documents(a: Actor = Depends(actor)):
+def documents(response: Response, limit: int | None = Query(None, ge=1), offset: int = Query(0, ge=0),
+              a: Actor = Depends(actor)):
+    """Bounded at settings.list_max_rows rows (Phase 3). X-Total-Count gives the full count; pass limit/offset to page.
+    Chunk counts come from one grouped scan instead of a sub-query per version."""
     a.require("read")
+    lim = min(limit or settings.list_max_rows, settings.list_max_rows)
     with tenant_session(a.tenant_id) as s:
         rows = s.execute(text("""SELECT d.id AS document_id, d.title, d.doc_type, d.supplier_id, d.source_kind,
             dv.id AS version_id, dv.version_label, dv.file_name, dv.sha256, dv.known_at, dv.valid_from, dv.valid_to,
-            dv.supersedes_version_id, dv.embed_model, (SELECT count(*) FROM chunks c WHERE c.version_id = dv.id) AS chunks
+            dv.supersedes_version_id, dv.embed_model, COALESCE(cc.n, 0) AS chunks, count(*) OVER () AS _total
             FROM documents d JOIN document_versions dv ON dv.document_id = d.id
-            WHERE :role = ANY(d.allowed_roles) ORDER BY d.supplier_id NULLS LAST, dv.valid_from"""),
-            {"role": a.role}).mappings().all()
-    return [dict(r) for r in rows]
+            LEFT JOIN (SELECT version_id, count(*) AS n FROM chunks GROUP BY version_id) cc ON cc.version_id = dv.id
+            WHERE :role = ANY(d.allowed_roles) ORDER BY d.supplier_id NULLS LAST, dv.valid_from, dv.id
+            LIMIT :lim OFFSET :off"""), {"role": a.role, "lim": lim, "off": offset}).mappings().all()
+        total = rows[0]["_total"] if rows else (0 if offset == 0 else s.execute(text(
+            "SELECT count(*) FROM documents d JOIN document_versions dv ON dv.document_id = d.id "
+            "WHERE :role = ANY(d.allowed_roles)"), {"role": a.role}).scalar())
+    response.headers["X-Total-Count"] = str(total)
+    return [{k: v for k, v in r.items() if k != "_total"} for r in rows]
 
 
 @router.get("/documents/versions/{version_id}", response_model=DocumentVersion)

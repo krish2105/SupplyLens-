@@ -28,7 +28,7 @@ from supplylens.simulation import demo
 from supplylens_worker.main import tick
 
 MIGRATIONS = REPO_ROOT / "services" / "api" / "migrations"
-HEAD = "0009"                     # current migration head; update with each new migration
+HEAD = "0010"                     # current migration head; update with each new migration
 DEMO = {"X-Requested-With": "supplylens", "X-SupplyLens-Tenant": "demo"}
 RUN = {"mode": "draft", "sku_ids": ["DEMO-REF-SKU"], "knowledge_cutoff": "2026-10-20T09:00:00Z",
        "effective_date": "2026-10-20", "budget_minor": 18000, "currency": "USD", "allow_shortfall": False}
@@ -194,8 +194,9 @@ def test_rollback_refuses_to_destroy_deletion_certificates(scratch):
     assert scratch.sql("SELECT count(*) FROM tenant_deletions")[0][0] == 1
 
 
-def test_migration_0006_moves_existing_vectors_inline_and_changes_no_value(scratch):
-    """Rewrites happen under row-level security, per tenant, and the vector values are bit-for-bit unchanged."""
+def test_migrations_0006_and_0010_move_existing_vectors_and_change_no_value(scratch):
+    """0006 moves vectors inline, 0010 into chunk_vectors; both copy under row-level security, per tenant, and the vector
+    values are bit-for-bit unchanged, including after rolling 0010 back."""
     import psycopg
     from sqlalchemy import create_engine
     assert scratch.alembic("downgrade", "0005").returncode == 0
@@ -226,7 +227,7 @@ def test_migration_0006_moves_existing_vectors_inline_and_changes_no_value(scrat
 
     before, toasted_before = snapshot(), toast_rows()
     assert before[1] == 40 and toasted_before > 0                         # at 0005 the vectors live in TOAST
-    r = scratch.alembic("upgrade", "head")
+    r = scratch.alembic("upgrade", "0009")
     assert r.returncode == 0, r.stderr[-800:]
     assert snapshot() == before                                           # identical values, none lost
     assert toast_rows() == 0                                              # all inline now
@@ -234,6 +235,25 @@ def test_migration_0006_moves_existing_vectors_inline_and_changes_no_value(scrat
                                "AND attname IN ('embedding','body','tsv')"))
     assert storage == {"embedding": "p", "body": "m", "tsv": "m"}
     assert scratch.sql("SELECT count(*) FROM pg_indexes WHERE indexname IN ('sales_daily_tenant_day','supplier_terms_tenant_sku')")[0][0] == 2
+
+    # 0010: the vectors move to chunk_vectors, bit for bit, under the same row-level security; chunks loses the column.
+    def moved():
+        with create_engine(scratch.owner_url).begin() as c:
+            c.execute(text("SELECT set_config('app.tenant_id', :t, true)"), {"t": str(tid)})
+            return c.execute(text("""SELECT md5(string_agg(v.embedding::text, '|' ORDER BY c.ordinal)), count(*)
+                                     FROM chunks c JOIN chunk_vectors v ON v.chunk_id = c.id""")).one()
+    r = scratch.alembic("upgrade", "head")
+    assert r.returncode == 0, r.stderr[-800:]
+    assert moved() == before
+    assert scratch.sql("SELECT count(*) FROM pg_attribute WHERE attrelid='chunks'::regclass AND attname='embedding' "
+                       "AND NOT attisdropped")[0][0] == 0
+    assert scratch.sql("SELECT relforcerowsecurity FROM pg_class WHERE oid='chunk_vectors'::regclass")[0][0] is True
+    assert scratch.sql("SELECT attstorage::text FROM pg_attribute WHERE attrelid='chunk_vectors'::regclass "
+                       "AND attname='embedding'")[0][0] == "p"
+    r = scratch.alembic("downgrade", "0009")                              # rollback restores the column and every value
+    assert r.returncode == 0, r.stderr[-800:]
+    assert snapshot() == before
+    assert scratch.alembic("upgrade", "head").returncode == 0
 
 
 # ----------------------------------------------------------------------------- shared invariants
@@ -345,8 +365,9 @@ def test_embedding_outage_degrades_retrieval_but_the_workflow_still_completes(wo
     fall back to lexical search, say so, and the investigation must still produce a cited, approvable draft."""
     c, t = world, tenant_id("demo")
     with tenant_session(t) as s:    # pretend vectors exist so the outage matters
-        s.execute(text("UPDATE chunks SET embedding = (SELECT array_agg(0.001)::vector(1024) FROM generate_series(1,1024)) "
-                       "WHERE id IN (SELECT id FROM chunks LIMIT 2)"))
+        s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) SELECT id, tenant_id, version_id, "
+                       "(SELECT array_agg(0.001)::vector(1024) FROM generate_series(1,1024)) FROM chunks "
+                       "WHERE id NOT IN (SELECT chunk_id FROM chunk_vectors) LIMIT 2"))
     monkeypatch.setattr("supplylens.knowledge.embed.embed", lambda *a, **k: None)
     monkeypatch.setattr("supplylens.knowledge.retrieve.embed", lambda *a, **k: None)
     login(c, "viewer")

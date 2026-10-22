@@ -3708,11 +3708,41 @@
             },
             "title": "Items",
             "type": "array"
+          },
+          "next_offset": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Offset"
+          },
+          "offset": {
+            "default": 0,
+            "title": "Offset",
+            "type": "integer"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total"
           }
         },
         "required": [
           "effective_date",
-          "items"
+          "items",
+          "total",
+          "offset",
+          "next_offset"
         ],
         "title": "Inventory",
         "type": "object"
@@ -11068,8 +11098,37 @@
     },
     "/api/v1/documents": {
       "get": {
+        "description": "Bounded at settings.list_max_rows rows (Phase 3). X-Total-Count gives the full count; pass limit/offset to page.\nChunk counts come from one grouped scan instead of a sub-query per version.",
         "operationId": "documents_api_v1_documents_get",
         "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          },
           {
             "in": "query",
             "name": "ws",
@@ -11713,6 +11772,7 @@
     },
     "/api/v1/inventory": {
       "get": {
+        "description": "Bounded: at most settings.list_max_rows items per response (Phase 3); `total` and `next_offset` say whether more\nexist. Without `limit` the response holds the whole list up to that bound, as before.",
         "operationId": "inventory_api_v1_inventory_get",
         "parameters": [
           {
@@ -11730,6 +11790,34 @@
                 }
               ],
               "title": "Effective Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Limit"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
             }
           },
           {

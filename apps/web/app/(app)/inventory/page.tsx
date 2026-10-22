@@ -53,6 +53,12 @@ export default function InventoryPage() {
         Selecting a row, a rack in 3D or a tile in the floor plan selects the same record everywhere.
       </PageHeader>
       {inv.error && <ErrorState error={inv.error} retry={() => inv.refetch()} />}
+      {inv.data?.next_offset != null && (
+        <p data-testid="inventory-truncated" className="rounded-lg border border-line bg-surface px-4 py-2 text-sm text-muted">
+          Showing the first {int(items.length)} of {int(inv.data.total ?? items.length)} products. Search, filters and the
+          layouts cover these products only.
+        </p>
+      )}
       <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">

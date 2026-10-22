@@ -26,7 +26,7 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P1-PROC-01 | P1 | Process | `main` is unprotected (no required checks/reviews) on a public repo; work pushed directly (D-037) | VERIFIED (`gh api …/protection` 404) | partially fixed: protection on, admins exempt (P1-E15) |
 | P2-REL-01 | P2 | Worker | Job whose lease expires on its last attempt stays `RUNNING` forever | VERIFIED (probe P0-E16) | fixed (P1-E03) |
 | P2-REL-02 | P2 | Worker | Agent-run execution is not fenced; heartbeat thread dies silently on a DB error → possible double execution / duplicate drafts | PLAUSIBLE | fixed: heartbeat + unique index (P1-E03) |
-| P2-REL-03 | P2 | Worker | Single-threaded worker processes tenants serially, one job per tenant per tick; outbox re-claim has no attempt cap or heartbeat | VERIFIED (code); impact PLAUSIBLE | open |
+| P2-REL-03 | P2 | Worker | Single-threaded worker processes tenants serially, one job per tenant per tick; outbox re-claim has no attempt cap or heartbeat | VERIFIED (code); impact PLAUSIBLE | partially fixed: dead letter after 8 interrupted dispatches, per-workspace failure isolation, ≤10 dispatches per workspace per tick (P3-E08); still one thread, no N-tenant load test |
 | P2-PLAN-03 | P2 | Planning / temporal | Replays with `effective_date` > `knowledge_cutoff` read stock, open orders, shares, dependence and capacity dated after the cutoff | VERIFIED (code) | fixed (P1-E03) |
 | P2-PLAN-04 | P2 | Planning | Dependence (ACF) computed on recorded days as if consecutive calendar days → variance understated | VERIFIED (probe by reviewer; code re-read) | fixed (P1-E03) |
 | P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | fixed (P1-E03) |
@@ -41,7 +41,7 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P2-FE-07 | P2 | Web | Onboarding mapping state stale when switching batch; unhandled rejections (onboarding, sign-out) | VERIFIED (code) | open |
 | P2-FE-08 | P2 | Web | Web Vitals reporter re-registers observers on every route change → duplicated, mislabelled vitals | VERIFIED (code) | open |
 | P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | open |
-| P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED in repo docs; not re-run | open |
+| P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED; re-run in Phase 3 on different hardware | partially fixed: per-search cost cut (0010), overload predictable; ARC-07 met on an M4 Pro laptop (P3-E06, P3-E07), **not** on the declared 8 vCPU profile (EXT-04); mobile LCP not addressed |
 | P2-QA-02 | P2 | Tests / CI | Lab Web-Vitals thresholds fail on shared CI runners (desktop INP proxy 224 ms > 200 ms on a docs-only commit) | VERIFIED (CI run 39827354915) | open |
 | SEC-P2-01 | P1 | Test safety | Destructive fixtures (pytest TRUNCATE, Playwright order cancellation) ran against any configured target | VERIFIED | fixed (P2-E03, P2-E07) |
 | SEC-P2-02 | P2 | Sessions | Development sessions were stateless: no revocation on sign-out, no idle timeout | VERIFIED | fixed, verified live (P2-E15) |
@@ -52,7 +52,7 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | SEC-P2-07 | P2 | Privacy | = P2-PRIV-01 (personal data stored from CSV uploads) | VERIFIED | fixed for new uploads |
 | SEC-P2-08 | P3 | Availability | IdP outage made every OIDC request 500 | VERIFIED (code) | fixed in code; not exercised (no Keycloak) |
 | SEC-P2-10 | P3 | Parsing | Oversized CSV field / NUL byte → 500 | VERIFIED | fixed (P2-E03) |
-| SEC-P2-11 | P2 | Rate limits | No per-tenant retrieval ceiling or admission control (security review F-05) | RECORDED | open |
+| SEC-P2-11 | P2 | Rate limits | No per-tenant retrieval ceiling or admission control (security review F-05) | RECORDED | fixed per process: work-conserving per-workspace share of each admission class, 429 `workspace_busy` (P3-E08); not cluster-wide |
 | SEC-P2-12 | P3 | Audit | Audit trail append-only for the app role but not tamper-evident against the owner role | VERIFIED (grants) | open |
 | SEC-P2-13 | P3 | Retention | No retention jobs for auth_sessions, import_rows, web_vitals, alerts | VERIFIED (absence) | open |
 | P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | fixed in README / PROJECT_STATUS current-state section |
@@ -65,6 +65,16 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | open |
 | P3-OPS-02 | P3 | Deployment | Git-triggered Vercel production builds fail within seconds on every push (the API service's `build/vercel-api` is generated locally, not in git); only CLI deploys succeed | VERIFIED (`vercel ls`, P1-E12) | fixed (P2-E02) |
 | P3-FE-10 | P3 | Web | Admin screens do not explain the demo lockdown before a click (the 403 message does) | VERIFIED (code) | open |
+| PERF-P3-01 | P2 | Retrieval / schema | Inline 4 KB vectors made each chunk row fill an 8 KB page: the full-text scan (no index under RLS, D-035) read 782 MB of vectors per search | VERIFIED (EXPLAIN BUFFERS, P3-E03) | fixed: `chunk_vectors` (migration 0010); chunks heap 131 MB (P3-E05) |
+| PERF-P3-02 | P3 | Retrieval | Vector query computed the distance twice per row and carried full chunk rows through the sort | VERIFIED (plan) | fixed: rank on the narrow table, fetch top 30 (P3-E05) |
+| PERF-P3-03 | P2 | API | Admission allowed 64 in flight but sync routes ran on 40 threads (hidden queue); pool waits lasted 30 s and ended in 500 | VERIFIED (code) | fixed: thread pool sized to the cap, 5 s pool timeout → 503 Retry-After (P3-E08) |
+| PERF-P3-04 | P2 | API | One shared "costly" cap: scenario runs could refuse every search; no queue, no per-workspace bound | VERIFIED (code) | fixed: retrieval and compute classes, bounded queue, workspace share (P3-E08) |
+| PERF-P3-05 | P2 | Database | No statement timeout for serving roles; a runaway query held a connection after its caller left | VERIFIED (config) | fixed: 30 s serving, 8 s retrieval, 503 `query_timeout` (P3-E08) |
+| PERF-P3-06 | P3 | API | `/inventory` and `/documents` unbounded; documents counted chunks with a sub-query per version | VERIFIED (code) | fixed: bounded with limit/offset, totals, grouped count (P3-E08) |
+| PERF-P3-07 | P2 | Observability | No request-latency, saturation, queue-depth or per-tenant metrics | VERIFIED (absence) | fixed: `/metrics` with bearer token (P3-E08, P3-E09) |
+| PERF-P3-08 | P2 | Performance | Compute runs inside the API process: 3 planners looping scenarios raise metadata p95 from ~50 to ~210 ms and use 0.8 of a core (GIL) | VERIFIED (P3-E06/E07 mixed runs) | open: targets still met; separate compute workers or processes for production (Phase 6) |
+| PERF-P3-09 | P3 | Retrieval | A 1024-d float vector plus tuple overhead exceeds half a page, so the exact vector scan still reads 781 MB per search at 100,000 chunks (≈113 ms) | VERIFIED (relation size) | open: halfvec or an HNSW index change ranking and need the retrieval studies re-run (Phase 4/5) |
+| PERF-P3-10 | P3 | Platform | Admission caps, the sign-in throttle and metrics are per process; N instances admit N × cap | VERIFIED (design, D-069) | open by design; cluster-wide limits belong with P1-OPS-01 |
 
 ## External blockers (cannot be closed by code alone)
 
@@ -329,3 +339,23 @@ Statuses above point to evidence in EVIDENCE.md (P1-E..). What each fix changed,
 - **P1-FE-02** — approvals receipts keyed by SKU@location. Remaining: inventory table, 3D scene and floor plan still key
   by SKU (moved to Phase 4 with P1-FE-01).
 
+
+---
+
+## Phase 3 resolution notes (2026-10-23) — performance, scalability, backend reliability
+Evidence P3-E.. in EVIDENCE.md; full record in phases/PHASE-03.md; product decisions D-068 … D-072.
+
+- **Historical collapse at 4→5 retrieval req/s** — **not reproducible on the Phase 3 machine** (Apple M4 Pro, 12 cores):
+  before any change it served 5 req/s at retrieval p95 256 ms and saturated near 8–9 req/s (P3-E04). The 2026-10-21
+  result came from a 4 vCPU Xeon; the two are not comparable and no claim is made for the declared 8 vCPU profile.
+- **PERF-P3-01/02** — migration 0010 (`chunk_vectors`, forced RLS, per-tenant copy, transactional rewrite of chunks),
+  `knowledge/retrieve.py` (vector top-n on the narrow table), all writers (`knowledge/ingest.py`, `ingest/cuad.py`,
+  `ingest/acord.py`), readers (`alerts.py`, `lifecycle.py` export keeps the `chunks.ndjson` format).
+- **PERF-P3-03/04/05, SEC-P2-11** — `api/admission.py`, `api/app.py` (gates, lifespan thread pool, 503 handlers),
+  `db.py` (statement_timeout, pool_timeout), `config.py`. Web: `lib/api.ts`, `app/providers.tsx`,
+  `components/connection-banner.tsx` (busy banner, Retry-After-aware retries).
+- **PERF-P3-06** — `routes_core.py` inventory paging, `routes_decisions.py` documents paging, `schemas.Inventory`
+  (total, offset, next_offset), inventory page note when truncated.
+- **PERF-P3-07** — `metrics.py`, `GET /metrics` (token), `deps.actor` records the authorised workspace.
+- **P2-REL-03** — `actions/service.py` (`OUTBOX_MAX_ATTEMPTS` dead letter), `supplylens_worker/main.py`
+  (`tenant_tick`, per-workspace isolation, `DISPATCH_PER_TICK`, worker statement timeout off).

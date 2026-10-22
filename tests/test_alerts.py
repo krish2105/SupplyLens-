@@ -168,8 +168,9 @@ def test_tampered_model_artifact_and_embedding_outage_raise_model_alerts(world, 
     assert alerts.evaluate(t)["resolved"] >= 1
     # embeddings: chunks with vectors exist but the service does not answer
     with tenant_session(t) as s:
-        s.execute(text("UPDATE chunks SET embedding = (SELECT array_agg(0.001)::vector(1024) FROM generate_series(1,1024)) "
-                       "WHERE id IN (SELECT id FROM chunks LIMIT 1)"))
+        s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) SELECT id, tenant_id, version_id, "
+                       "(SELECT array_agg(0.001)::vector(1024) FROM generate_series(1,1024)) FROM chunks "
+                       "WHERE id NOT IN (SELECT chunk_id FROM chunk_vectors) LIMIT 1"))
     monkeypatch.setattr("supplylens.knowledge.embed.embed", lambda *a, **k: None)
     assert "model_unavailable:embeddings" in alerts.evaluate(t)["raised"]
 

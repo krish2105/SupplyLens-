@@ -12,7 +12,12 @@ export function Providers({ children }: { children: ReactNode }) {
       queries: {
         staleTime: 15_000,
         refetchOnWindowFocus: false,
-        retry: (count, err) => !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2,
+        // A capacity refusal (503 overloaded, 429 workspace busy) did no work, so reads retry after the server's Retry-After;
+        // other client errors are final; anything else gets two quick retries.
+        retry: (count, err) => err instanceof ApiError && err.busy ? count < 3
+          : !(err instanceof ApiError && err.status >= 400 && err.status < 500) && count < 2,
+        retryDelay: (count, err) => err instanceof ApiError && err.retryAfter
+          ? Math.min(err.retryAfter, 10) * 1000 : Math.min(1000 * 2 ** count, 8000),
       },
     },
   }));

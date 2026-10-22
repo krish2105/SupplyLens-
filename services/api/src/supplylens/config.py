@@ -65,8 +65,30 @@ class Settings(BaseSettings):
     # approval, retry, reconcile) also runs that tenant's queued jobs and dispatches before it returns.
     inline_jobs: bool = False
     db_pool_size: int = 10
-    max_inflight: int = 64
-    max_inflight_costly: int = 8
+    # Seconds a request waits for a pooled connection before it is refused with 503 (the SQLAlchemy default, 30 s, let
+    # requests pile up behind an exhausted pool long after their callers gave up).
+    db_pool_timeout_s: float = 5.0
+    # Upper bound for any one SQL statement of the API (0 = none). The worker sets its own (worker_statement_timeout_ms).
+    db_statement_timeout_ms: int = 30_000
+    worker_statement_timeout_ms: int = 0
+    # Retrieval statements are cancelled after this long: past it the database is saturated and the answer would arrive
+    # after the 2 s target anyway; cancelling frees the CPU for requests that can still meet it (Phase 3).
+    retrieval_statement_timeout_ms: int = 8_000
+    # Admission control (api/admission.py), per API process. max_inflight bounds all counted requests and sizes the
+    # worker-thread pool that runs them. Retrieval (evidence search) and compute (forecasts, scenarios, run starts) each have
+    # their own cap, so a burst of one cannot starve the other. A request finding its class full may wait up to
+    # admission_wait_ms in a bounded queue (admission_queue per class) before it is refused with 503 and Retry-After. One
+    # workspace may hold at most tenant_share of a class (rounded up), so one tenant cannot take all of it (SEC-P2-11).
+    max_inflight: int = 48
+    max_inflight_retrieval: int = 6
+    max_inflight_compute: int = 4
+    admission_queue: int = 12
+    admission_wait_ms: int = 500
+    tenant_share: float = 0.5
+    # Listing endpoints (inventory, documents) return at most this many rows per request; clients page with limit/offset.
+    list_max_rows: int = 5_000
+    # Prometheus-format metrics at /metrics, only with this bearer token (unset: the endpoint does not exist).
+    metrics_token: str | None = None
     approval_ttl_minutes: int = 60 * 24
     # Operational alert queue: the alerts table is the queue; a webhook is an optional second route.
     alert_webhook_url: str | None = None

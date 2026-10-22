@@ -4,12 +4,33 @@
 import { buildUrl, type Args, type Body, type PathsWith, type Res } from "./contract";
 
 export class ApiError extends Error {
-  /** `reference` is the server trace id (x-trace-id) a user can quote; `offline` means no response arrived at all. */
-  constructor(public status: number, public code: string, message: string, public body?: unknown, public reference?: string) {
+  /** `reference` is the server trace id (x-trace-id) a user can quote; `offline` means no response arrived at all;
+   *  `retryAfter` is the server's Retry-After in seconds, when it sent one. */
+  constructor(public status: number, public code: string, message: string, public body?: unknown, public reference?: string,
+              public retryAfter?: number) {
     super(message);
   }
   get offline() { return this.status === 0; }
   get denied() { return this.status === 403; }
+  /** The service (or this workspace's share of it) is at capacity: the request was refused before any work, so it is safe
+   *  to send again after `retryAfter`. */
+  get busy() {
+    return (this.status === 503 && ["overloaded", "query_timeout"].includes(this.code))
+      || (this.status === 429 && this.code === "workspace_busy");
+  }
+}
+
+// When the service last refused a request for capacity; the connection banner reads it (useSyncExternalStore).
+let busyUntil = 0;
+const busyListeners = new Set<() => void>();
+export const busySignal = {
+  subscribe(cb: () => void) { busyListeners.add(cb); return () => { busyListeners.delete(cb); }; },
+  snapshot: () => busyUntil > Date.now(),
+};
+function noteBusy(seconds: number) {
+  busyUntil = Date.now() + Math.max(seconds, 2) * 1000 + 2000;
+  busyListeners.forEach((cb) => cb());
+  setTimeout(() => busyListeners.forEach((cb) => cb()), busyUntil - Date.now() + 50);
 }
 
 let tenantSlug = "uci-research";
@@ -62,7 +83,12 @@ export async function api<T = unknown>(path: string, init: RequestInit & { idemp
   if (!res.ok) {
     // A proxy or gateway may answer with HTML (audit S22): never surface a parse error, keep the status and reference.
     const fallback = GATEWAY[res.status] ?? `The server answered HTTP ${res.status} without a readable message.`;
-    throw new ApiError(res.status, body?.code ?? (isJson ? "error" : "bad_gateway_response"), body?.message ?? fallback, body, reference);
+    const header = Number(res.headers.get("retry-after"));
+    const retryAfter = Number.isFinite(header) && header > 0 ? header : undefined;
+    const err = new ApiError(res.status, body?.code ?? (isJson ? "error" : "bad_gateway_response"), body?.message ?? fallback, body,
+      reference, retryAfter);
+    if (err.busy) noteBusy(retryAfter ?? 2);
+    throw err;
   }
   if (text && !isJson) throw new ApiError(res.status, "unexpected_response", "The server sent a response SupplyLens cannot read.", undefined, reference);
   if (text && isJson && body === null) throw new ApiError(res.status, "malformed_response", "The server sent a malformed response.", undefined, reference);

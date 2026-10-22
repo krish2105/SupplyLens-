@@ -9,7 +9,18 @@ fictional and public data; `docs/operations/hosted-demo.md`). Still open: field 
 throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
 profile, a corporate identity provider and an ERP sandbox.
 
-## Current state (production-readiness Phase 2, 2026-10-23)
+## Current state (production-readiness Phase 3, 2026-10-23)
+Phase 3 (performance, scalability and backend reliability) is recorded in `docs/agent-handoff/phases/PHASE-03.md`:
+embeddings moved to their own table (migration 0010), admission control with separate retrieval and compute caps, a
+bounded queue and per-workspace shares, statement and pool timeouts answering 503, bounded inventory/document listings,
+token-protected Prometheus metrics, an outbox dead letter and per-workspace worker isolation. On an Apple M4 Pro
+(12 cores, 24 GB; the API, PostgreSQL 17, an embedding stub and the load driver on one machine) with the 100,000-chunk
+reference data and 20 users: retrieval p95 256 → 158 ms at 5 req/s; up to 16 req/s served in full (p95 442 ms) where the
+previous code served about 8; past capacity the excess is refused with 503 and recovery is immediate. This is a
+development laptop with a stubbed embedding service, **not** the declared 8 vCPU / 32 GiB profile and not production
+evidence. pytest 413 passed / 6 skipped (Keycloak), Playwright 116 passed / 2 skipped.
+
+## Phase 2 state (2026-10-23)
 Phase 2 (security hardening) is recorded in `docs/agent-handoff/phases/PHASE-02.md`: revocable server-side sessions,
 request-body cap and sign-in throttle, sanitised database errors, personal-data redaction on upload, fixture safety
 guards, SHA-pinned CI and lock-pinned hosted dependencies. Every push to `main` now deploys the hosted demo. Measured:
@@ -54,8 +65,9 @@ failing steps now publish their output tail as annotations (`scripts/ci_annotate
   database-shared rate limits; alert queue with signed webhook; OpenTelemetry tracing; verified tenant export and
   certified deletion; logical restore drill (6.2 s / 6.6 s) and WAL-archived point-in-time recovery drill (orders reconcile);
   rehearsed failed migration / rollback / ERP outage / embedding outage; full `docker compose` stack and CI running.
-- **Load (ARC-07):** reference data of 100,000 chunks and 1,007,629 sales rows with 20 users: targets met at 4 retrieval
-  req/s (metadata p95 165 ms, retrieval p95 970 ms), not at 5 (`docs/operations/load-test.md`).
+- **Load (ARC-07):** reference data of 100,000 chunks and ~1,000,000 sales rows with 20 users: on the 2026-10-21 4 vCPU
+  host targets met at 4 retrieval req/s, not at 5; on the Phase 3 M4 Pro laptop (different hardware) met at 5 and up to
+  16 req/s after the Phase 3 changes (`docs/operations/load-test.md`). The declared 8 vCPU profile is still untested.
 - **Product UI:** 15 screens (Overview, Exceptions, Inventory with linked 3D/2D/table, Forecast lab with model
   comparison, Scenario studio, Investigations with live stream, Approvals with evidence packets, Policies with
   amendment diff and expert clause labels, Supplier market, Research, Value, Data admission, Administration,

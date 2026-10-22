@@ -20,6 +20,7 @@ from sqlalchemy import text
 from supplylens import alerts, jobs, lifecycle, telemetry
 from supplylens.actions import service as actions
 from supplylens.agent.graph import execute_run
+from supplylens.config import settings
 from supplylens.db import tenant_session
 
 log = logging.getLogger("supplylens.worker")
@@ -94,18 +95,37 @@ def alert_tick(tenant_id) -> None:
             log.exception("alert evaluation failed")
 
 
+# Per tick and workspace: one job and at most this many outbox dispatches, so a workspace with a long backlog cannot hold
+# the loop while the others wait (P2-REL-03). The loop comes straight back while any workspace still had work.
+DISPATCH_PER_TICK = 10
+
+
+def tenant_tick(tenant_id) -> int:
+    worked = 0
+    job = jobs.claim(tenant_id, WORKER_ID)
+    if job:
+        run_job(tenant_id, job)
+        worked += 1
+    for _ in range(DISPATCH_PER_TICK):
+        r = actions.dispatch_once(tenant_id, WORKER_ID)
+        if r is None:
+            break
+        log.info("dispatch %s", r)
+        worked += 1
+    refresh_runs(tenant_id)
+    alert_tick(tenant_id)
+    return worked
+
+
 def tick() -> int:
+    """One pass over every workspace. A failure in one workspace is logged and counted and does not stop the others
+    (P2-REL-03): before, one workspace's database error ended the whole tick, every tick."""
     worked = 0
     for t in jobs.tenants():
-        job = jobs.claim(t, WORKER_ID)
-        if job:
-            run_job(t, job)
-            worked += 1
-        while (r := actions.dispatch_once(t, WORKER_ID)) is not None:
-            log.info("dispatch %s", r)
-            worked += 1
-        refresh_runs(t)
-        alert_tick(t)
+        try:
+            worked += tenant_tick(t)
+        except Exception:
+            log.exception("worker tick failed for workspace %s; continuing with the others", t)
     return worked
 
 
@@ -115,6 +135,8 @@ def main() -> None:
     ap.add_argument("--interval", type=float, default=1.0)
     ns = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    # Exports and deletions may legitimately run long statements; the API's statement_timeout does not apply here.
+    settings.db_statement_timeout_ms = settings.worker_statement_timeout_ms
     telemetry.setup(service_name="supplylens-worker")
     log.info("worker %s started", WORKER_ID)
     while True:

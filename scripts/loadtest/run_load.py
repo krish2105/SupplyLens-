@@ -20,6 +20,7 @@ import os
 import platform
 import random
 import statistics
+import subprocess
 import time
 from datetime import UTC, datetime
 from pathlib import Path
@@ -58,6 +59,20 @@ def summarise(samples: list[tuple[float, int]]) -> dict:
             "mean_ms": statistics.fmean(ok) if ok else None}
 
 
+def _ps_snapshot() -> dict[int, tuple[float, int, str]]:
+    """pid -> (cumulative CPU seconds, RSS KB, command) for every process, from `ps` (macOS and other non-Linux hosts)."""
+    out = subprocess.run(["ps", "-A", "-o", "pid=,time=,rss=,command="], capture_output=True, text=True).stdout
+    snap = {}
+    for line in out.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) < 4 or not parts[0].isdigit():
+            continue
+        t = parts[1].replace("-", ":").split(":")          # [[dd-]hh:]mm:ss.cc
+        secs = sum(float(x) * m for x, m in zip(reversed(t), (1, 60, 3600, 86400), strict=False))
+        snap[int(parts[0])] = (secs, int(parts[2]), parts[3])
+    return snap
+
+
 def pids_matching(*needles: str) -> list[int]:
     out = []
     for p in os.listdir("/proc"):
@@ -87,31 +102,59 @@ def rss_kb(pid: int) -> int:
 
 
 class Sampler:
-    """1 Hz CPU/RSS sampling of the API, PostgreSQL and the load driver itself (all share this machine)."""
+    """1 Hz CPU/RSS sampling of the API, PostgreSQL and the load driver itself (all share this machine). Reads /proc on
+    Linux and `ps` elsewhere (cumulative CPU time, 10 ms resolution)."""
     def __init__(self, api_marker: str):
+        self.api_marker = api_marker
         self.groups = {"api": lambda: pids_matching("uvicorn", api_marker), "postgres": lambda: [int(p) for p in os.listdir("/proc") if p.isdigit() and _comm(p) == "postgres"],
                        "driver": lambda: [os.getpid()]}
         self.series: dict[str, list[tuple[float, float]]] = {k: [] for k in self.groups}
-        self.last: dict[str, dict[int, int]] = {k: {} for k in self.groups}
+        self.last: dict[str, dict[int, float]] = {k: {} for k in self.groups}
         self.stop = False
+        self.linux = os.path.isdir("/proc/self")
         self.tick = os.sysconf("SC_CLK_TCK")
+
+    def _group_of(self, pid: int, cmd: str) -> str | None:
+        if pid == os.getpid():
+            return "driver"
+        if "uvicorn" in " ".join(cmd.split()[:3]) and self.api_marker in cmd:      # the server, not a shell quoting it
+            return "api"
+        exe = cmd.split()[0] if cmd else ""
+        if exe.endswith("/postgres") or exe == "postgres" or cmd.startswith("postgres:"):
+            return "postgres"
+        return None
+
+    def _sample(self) -> dict[str, tuple[dict[int, float], int]]:
+        """group -> ({pid: cumulative CPU seconds}, total RSS KB)."""
+        if self.linux:
+            res = {}
+            for g, finder in self.groups.items():
+                cur, rss = {}, 0
+                for pid in finder():
+                    t = cpu_ticks(pid)
+                    if t is not None:
+                        cur[pid] = t / self.tick
+                        rss += rss_kb(pid)
+                res[g] = (cur, rss)
+            return res
+        res = {g: ({}, 0) for g in self.groups}
+        for pid, (secs, rss, cmd) in _ps_snapshot().items():
+            g = self._group_of(pid, cmd)
+            if g:
+                cur, total = res[g]
+                cur[pid] = secs
+                res[g] = (cur, total + rss)
+        return res
 
     async def run(self):
         prev = time.time()
         while not self.stop:
             await asyncio.sleep(1.0)
             now = time.time(); dt = now - prev; prev = now
-            for g, finder in self.groups.items():
-                cur, used, rss = {}, 0, 0
-                for pid in finder():
-                    t = cpu_ticks(pid)
-                    if t is None:
-                        continue
-                    cur[pid] = t
-                    used += t - self.last[g].get(pid, t)
-                    rss += rss_kb(pid)
+            for g, (cur, rss) in (await asyncio.to_thread(self._sample)).items():
+                used = sum(t - self.last[g].get(pid, t) for pid, t in cur.items())
                 self.last[g] = cur
-                self.series[g].append((used / self.tick / dt, rss / 1024))
+                self.series[g].append((used / dt, rss / 1024))
 
     def summary(self) -> dict:
         out = {}
@@ -137,14 +180,18 @@ async def login(base: str, i: int) -> httpx.AsyncClient:
     return c
 
 
+TRANSPORT_ERRORS: dict[str, int] = {}     # client-side failures (no HTTP response), recorded as status 599, by type
+
+
 async def timed(c: httpx.AsyncClient, url: str, bucket: dict, name: str):
     t = time.perf_counter()
     try:
         r = await c.get(url)
         _ = r.content
         code = r.status_code
-    except Exception:
+    except Exception as e:
         code = 599
+        TRANSPORT_ERRORS[type(e).__name__] = TRANSPORT_ERRORS.get(type(e).__name__, 0) + 1
     bucket.setdefault(name, []).append(((time.perf_counter() - t) * 1000, code))
 
 
@@ -170,6 +217,25 @@ async def retrieval(users: list[httpx.AsyncClient], rate: float, deadline: float
     await asyncio.gather(*tasks)
 
 
+async def compute(c: httpx.AsyncClient, u: int, deadline: float, bucket: dict):
+    """A planner running 60-SKU scenarios (the per-run maximum, D-043) back to back (forecast + CP-SAT), to measure whether
+    compute starves retrieval."""
+    i = 0
+    while time.time() < deadline:
+        skus = [f"L{(u * 400 + i * 60 + k) % 2000 + 1:05d}" for k in range(60)]
+        t = time.perf_counter()
+        try:
+            r = await c.post("/api/v1/scenarios", json={"name": f"load-{u}-{i}", "sku_ids": skus},
+                             headers={"Idempotency-Key": f"compute-{u}-{i}-{time.time_ns()}"})
+            code = r.status_code
+        except Exception:
+            code = 599
+        bucket.setdefault("POST /scenarios", []).append(((time.perf_counter() - t) * 1000, code))
+        if code in (429, 503):
+            await asyncio.sleep(2)
+        i += 1
+
+
 def vocabulary_sample() -> list[str]:
     """Mid-frequency pseudo-words (ranks 150-600) from the same vocabulary the corpus was built from."""
     from seed_reference import vocabulary
@@ -184,15 +250,19 @@ async def interactive_phase(a) -> dict:
     sampler = Sampler(a.api_marker)
     st = asyncio.create_task(sampler.run())
     t0 = time.time(); deadline = t0 + a.seconds
+    planners = [users[i] for i in range(0, USERS, 4)][:a.compute_users]      # load00, load04, ... are planners
     await asyncio.gather(retrieval(users, a.retrieval_rate, deadline, bucket, vocabulary_sample(), rng),
-                         *[interactive(users, u, deadline, bucket, random.Random(100 + u)) for u in range(USERS)])
+                         *[interactive(users, u, deadline, bucket, random.Random(100 + u)) for u in range(USERS)],
+                         *[compute(c, u, deadline, bucket) for u, c in enumerate(planners)])
     elapsed = time.time() - t0
     sampler.stop = True; await st
-    meta = [x for k, v in bucket.items() if k != "GET /evidence/search" for x in v]
+    meta = [x for k, v in bucket.items() if k not in ("GET /evidence/search", "POST /scenarios") for x in v]
     for c in users:
         await c.aclose()
     return {"seconds": round(elapsed, 1), "metadata_reads": {**summarise(meta), "rps": round(len(meta) / elapsed, 2)},
             "retrieval": {**summarise(bucket.get("GET /evidence/search", [])), "rps": round(len(bucket.get("GET /evidence/search", [])) / elapsed, 2)},
+            "compute": {**summarise(bucket.get("POST /scenarios", [])), "users": a.compute_users},
+            "client_transport_errors": dict(TRANSPORT_ERRORS),
             "per_endpoint": {k: summarise(v) for k, v in sorted(bucket.items())}, "resources": sampler.summary()}
 
 
@@ -252,9 +322,15 @@ async def batch_phase(a) -> dict:
 
 
 def host_info() -> dict:
-    mem = {l.split(":")[0]: l.split(":")[1].strip() for l in open("/proc/meminfo")}
-    cpu = [l.split(":")[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")]
-    return {"vcpus": os.cpu_count(), "cpu_model": cpu[0] if cpu else "unknown", "mem_total": mem.get("MemTotal"), "kernel": platform.release(),
+    if os.path.exists("/proc/meminfo"):
+        mem = {l.split(":")[0]: l.split(":")[1].strip() for l in open("/proc/meminfo")}.get("MemTotal")
+        cpu = [l.split(":")[1].strip() for l in open("/proc/cpuinfo") if l.startswith("model name")]
+        model = cpu[0] if cpu else "unknown"
+    else:                                   # macOS
+        def sysctl(k):
+            return subprocess.run(["sysctl", "-n", k], capture_output=True, text=True).stdout.strip()
+        model, mem = sysctl("machdep.cpu.brand_string") or "unknown", f"{int(sysctl('hw.memsize') or 0) // 1024} kB"
+    return {"vcpus": os.cpu_count(), "cpu_model": model, "mem_total": mem, "os": platform.system(), "kernel": platform.release(),
             "python": platform.python_version(), "note": "API, worker, PostgreSQL and this driver all run on the same machine"}
 
 
@@ -265,6 +341,7 @@ async def main():
     ap.add_argument("--condition", default="warm")
     ap.add_argument("--seconds", type=int, default=240)
     ap.add_argument("--retrieval-rate", type=float, default=5.0)
+    ap.add_argument("--compute-users", type=int, default=0, help="planners running 60-SKU scenarios back to back (0-5)")
     ap.add_argument("--api-marker", default="--port 8100")
     ap.add_argument("--out", required=True)
     a = ap.parse_args()

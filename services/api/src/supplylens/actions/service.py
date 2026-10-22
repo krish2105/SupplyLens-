@@ -39,6 +39,10 @@ from ..integrations import sandbox_erp
 from ..planning.terms_service import applicable_terms
 
 LEASE_SECONDS = 45
+# A dispatch whose lease expired this many times (the worker died mid-send each time) is not tried again automatically: it
+# is parked as UNKNOWN_OUTCOME with an alert, where reconcile looks the order up before anything is re-sent (P2-REL-03).
+# Adapter errors stop earlier (5 attempts, then FAILED), so this only catches repeated interruptions.
+OUTBOX_MAX_ATTEMPTS = 8
 
 
 class ActionError(Exception):
@@ -412,6 +416,12 @@ def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
     item = _claim(tenant_id, worker)
     if item is None:
         return None
+    if item["attempts"] > OUTBOX_MAX_ATTEMPTS:
+        # Dead letter: no external call from here; a person reconciles (lookup first, never a blind re-send).
+        reason = (f"dispatch interrupted {item['attempts'] - 1} times without a recorded outcome; "
+                  "reconcile before any retry")
+        _finish(tenant_id, item, "UNKNOWN_OUTCOME", "UNKNOWN_OUTCOME", error="attempts exhausted", reason=reason)
+        return {"operation_id": item["operation_id"], "result": "DEAD_LETTER", "attempts": item["attempts"]}
     with telemetry.span("outbox.dispatch", **{"tenant.id": str(tenant_id), "outbox.operation_id": item["operation_id"],
                                               "outbox.attempt": item["attempts"]}) as sp:
         result = _dispatch(tenant_id, item)

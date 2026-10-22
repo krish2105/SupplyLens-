@@ -36,7 +36,7 @@ DOMAIN = ("supplier lead time minimum order quantity price break payment terms p
 
 
 def conn(dbname=DB, **kw):
-    return psycopg.connect(host=HOST, user="postgres", dbname=dbname, autocommit=True, **kw)
+    return psycopg.connect(host=HOST, user=os.environ.get("PGUSER", "postgres"), dbname=dbname, autocommit=True, **kw)
 
 
 def ensure_database() -> None:
@@ -123,7 +123,7 @@ def main() -> None:
             c.execute("""INSERT INTO document_versions (id,tenant_id,document_id,version_label,file_name,sha256,storage_key,known_at,valid_from,parser_version,embed_model)
                          VALUES (%s,%s,%s,'v1',%s,%s,%s,'2011-01-01T00:00:00Z','2011-01-01','load-v1','synthetic-random')""",
                       (ver_id, t, doc_id, f"agreement-{d:04d}.txt", uuid.uuid4().hex * 2, f"load/{d:04d}"))
-        buf = io.StringIO()
+        buf, vbuf = io.StringIO(), io.StringIO()
         for d in range(N_DOCS):
             ver_id = uuid.uuid5(NS, f"ver{d}")
             vec = rng.standard_normal((CHUNKS_PER_DOC, DIM)).astype(np.float32)
@@ -132,13 +132,18 @@ def main() -> None:
             for k in range(CHUNKS_PER_DOC):
                 body = " ".join(toks[k])
                 emb = "[" + ",".join(f"{x:.3f}" for x in vec[k]) + "]"
-                buf.write("\t".join([str(uuid.uuid5(NS, f"c{d}-{k}")), str(t), str(ver_id), str(k), f"Section {k + 1}",
-                                      str(k * 400), str(k * 400 + len(body)), body, emb]) + "\n")
+                cid = str(uuid.uuid5(NS, f"c{d}-{k}"))
+                buf.write("\t".join([cid, str(t), str(ver_id), str(k), f"Section {k + 1}",
+                                      str(k * 400), str(k * 400 + len(body)), body]) + "\n")
+                vbuf.write("\t".join([cid, str(t), str(ver_id), emb]) + "\n")
             if d % 100 == 99 or d == N_DOCS - 1:
                 buf.seek(0)
-                with c.cursor().copy("COPY chunks (id,tenant_id,version_id,ordinal,section,char_start,char_end,body,embedding) FROM STDIN") as cp:
+                vbuf.seek(0)
+                with c.cursor().copy("COPY chunks (id,tenant_id,version_id,ordinal,section,char_start,char_end,body) FROM STDIN") as cp:
                     cp.write(buf.read())
-                buf = io.StringIO()
+                with c.cursor().copy("COPY chunk_vectors (chunk_id,tenant_id,version_id,embedding) FROM STDIN") as cp:
+                    cp.write(vbuf.read())
+                buf, vbuf = io.StringIO(), io.StringIO()
                 print(f"chunks {(d + 1) * CHUNKS_PER_DOC} / {N_DOCS * CHUNKS_PER_DOC}  {time.time() - t0:.0f}s", flush=True)
         c.execute("ANALYZE")
         counts = {k: c.execute(f"SELECT count(*) FROM {k}").fetchone()[0] for k in ("sales_daily", "chunks", "products", "documents")}

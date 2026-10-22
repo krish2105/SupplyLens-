@@ -86,12 +86,13 @@ def tenant_from_header(request: Request, x_supplylens_tenant: str | None = Heade
     return tid
 
 
-def actor(user_id: uuid.UUID = Depends(current_user_id),
+def actor(request: Request, user_id: uuid.UUID = Depends(current_user_id),
           tenant_id: uuid.UUID = Depends(tenant_from_header)) -> Actor:
     a = resolve_actor(user_id, tenant_id)
     if a is None:
         # Same response whether the tenant exists for others or not.
         raise HTTPException(404, {"code": "tenant_not_found", "message": "unknown workspace"})
+    request.state.workspace = str(a.tenant_id)      # per-workspace consumption metrics (metrics.py), set only once authorised
     return a
 
 

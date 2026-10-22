@@ -2,13 +2,13 @@
 
 Start from `main`. To open a new working session, paste `docs/agent-handoff/NEXT_SESSION_PROMPT.md`. Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
 `docs/agent-handoff/ISSUES.md` (open issues with acceptance criteria), `EVIDENCE.md` and `DECISIONS.md`. Root
-`PROJECT_STATUS.md`, `docs/remediation/REGISTER.md` and `DECISIONS.md` (D-001 … D-060) hold the history.
+`PROJECT_STATUS.md`, `docs/remediation/REGISTER.md` and `DECISIONS.md` (D-001 … D-072) hold the history.
 
 ## Run it
 ```bash
 uv sync && (cd apps/web && npm ci)
 SUPPLYLENS_MIGRATION_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens \
-  uv run alembic -c services/api/alembic.ini upgrade head           # now at 0009
+  uv run alembic -c services/api/alembic.ini upgrade head           # now at 0010
 uv run uvicorn supplylens.api.app:app --port 8000                     # API
 uv run python -m supplylens_worker.main                              # worker
 (cd apps/web && npm run dev)                                         # web on :3100
@@ -21,7 +21,8 @@ Keycloak needs about 700 MB of the Docker VM; on a 2 GB Colima VM run it with a 
 1. **Overview mobile LCP** (2.76 s throttled; target 2.5 s): the headline needs two API responses after hydration;
    consider rendering it on the server or shipping less JavaScript on `/`.
 2. **Manual screen-reader pass** (UX-010) and **human review** of the 50-question R2 sheet (ARC-04).
-3. **Load test on the declared 8 vCPU / 32 GiB profile** (ARC-07); back-pressure is in place.
+3. **Load test on the declared 8 vCPU / 32 GiB profile** (ARC-07) with real embeddings; admission control, timeouts and
+   metrics are in place (Phase 3). Reproduce with `scripts/loadtest/` (`PGUSER=<superuser>` on macOS).
 4. **Corporate identity provider** (BUS-012/022) and an **ERP sandbox** (EXE-013, BUS-013): need outside parties.
 5. **Confirmatory forecast test** on data no protocol has seen (D-042).
 

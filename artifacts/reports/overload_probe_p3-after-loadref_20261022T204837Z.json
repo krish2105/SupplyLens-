@@ -1,0 +1,24 @@
+{
+  "probe": "DEF-10 back-pressure",
+  "at": "2026-10-22T20:48:37.634175+00:00",
+  "base": "http://127.0.0.1:8100",
+  "tenant": "load-ref",
+  "status_codes": {
+    "200": 18,
+    "503": 102
+  },
+  "burst_requests": 120,
+  "client_concurrency": 60,
+  "burst_seconds": 1.8,
+  "accepted": 18,
+  "shed_429_or_503": 102,
+  "other": 0,
+  "accepted_ms_p50": 1229.3,
+  "accepted_ms_p95": 1706.2,
+  "shed_ms_p95": 35.0,
+  "first_request_after_burst": {
+    "status": 200,
+    "ms": 226.2,
+    "seconds_after_burst": 0.23
+  }
+}

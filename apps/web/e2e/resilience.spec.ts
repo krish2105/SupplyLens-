@@ -125,3 +125,39 @@ test.describe("network interruption", () => {
     await expect(page.locator("ol[aria-label='Run stages'] li", { hasText: "done" })).toHaveCount(6);
   });
 });
+
+// Phase 3: capacity refusals (503 overloaded, 429 workspace busy) are announced, retried after Retry-After, and recover
+// without any action from the user.
+test.describe("service at capacity", () => {
+  test("a 503 overload is announced and the screen recovers on its own after Retry-After", async ({ page }) => {
+    await signIn(page, "viewer");
+    let refused = 0;
+    await page.route("**/api/v1/inventory*", async (route) => {
+      if (refused < 1) {
+        refused += 1;
+        return route.fulfill({ status: 503, headers: { "Retry-After": "1", "content-type": "application/json" },
+          body: JSON.stringify({ code: "overloaded", message: "The service is at capacity; retry in a few seconds." }) });
+      }
+      return route.continue();
+    });
+    await page.goto("/inventory?ws=uci-research");
+    await expect(page.getByTestId("service-busy")).toBeVisible();
+    await expect(page.locator("tbody tr").first()).toBeVisible({ timeout: 15_000 });      // retried after 1 s, no click
+    expect(refused).toBe(1);
+    await expect(page.getByTestId("service-busy")).toBeHidden({ timeout: 15_000 });
+  });
+
+  test("a truncated inventory says how many products exist", async ({ page }) => {
+    await signIn(page, "viewer");
+    await page.route("**/api/v1/inventory*", async (route) => {
+      const res = await route.fetch();
+      const body = await res.json();
+      body.items = body.items.slice(0, 3);
+      body.total = 4000;
+      body.next_offset = 3;
+      return route.fulfill({ response: res, json: body });
+    });
+    await page.goto("/inventory?ws=uci-research");
+    await expect(page.getByTestId("inventory-truncated")).toContainText("Showing the first 3 of 4,000 products");
+  });
+});

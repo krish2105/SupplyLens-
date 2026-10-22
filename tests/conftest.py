@@ -47,7 +47,7 @@ TENANT_TABLES_CLEAR_ORDER = [
     "web_vitals", "tenant_exports", "alerts", "rate_limit_buckets", "clause_labels", "public_awards", "tenant_settings", "warehouse_slots",
     "audit_events", "approvals", "outbox", "actions", "agent_events", "agent_runs",
     "idempotency_keys", "jobs", "plan_runs", "forecast_points", "forecast_runs",
-    "model_versions", "supplier_terms", "chunks", "document_versions", "documents",
+    "model_versions", "supplier_terms", "chunk_vectors", "chunks", "document_versions", "documents",
     "inventory_positions", "suppliers", "assumption_sets", "sales_daily", "return_lines",
     "sales_lines", "quarantine", "products", "locations", "datasets",
 ]

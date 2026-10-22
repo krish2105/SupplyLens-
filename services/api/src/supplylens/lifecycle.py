@@ -28,7 +28,8 @@ from .db import app_engine, tenant_session
 
 EXPORT_FORMAT = "supplylens-export/1"
 CACHE_TABLES = ("rate_limit_buckets", "idempotency_keys")
-NOT_EXPORTED = set(CACHE_TABLES) | {"tenant_exports"}
+# chunk_vectors is exported inside chunks.ndjson (format unchanged since before migration 0010), only on request.
+NOT_EXPORTED = set(CACHE_TABLES) | {"tenant_exports", "chunk_vectors"}
 EXPORT_MAX_AGE = timedelta(days=7)
 _IDENT = re.compile(r"^[a-z_][a-z0-9_]*$")
 BACKUP_NOTE = ("Logical dumps and any volume snapshots taken before this deletion still contain this workspace's "
@@ -151,9 +152,9 @@ def _write_archive(tenant_id, export_id, include_vectors: bool, part: Path) -> d
                 if t in NOT_EXPORTED:
                     continue
                 expr = "to_jsonb(t)"
-                if t == "chunks":
-                    expr = ("to_jsonb(t) - 'embedding'" + (" || jsonb_build_object('embedding', t.embedding::text)"
-                                                           if include_vectors else ""))
+                if t == "chunks" and include_vectors:
+                    expr = ("to_jsonb(t) || jsonb_build_object('embedding', "
+                            "(SELECT v.embedding::text FROM chunk_vectors v WHERE v.chunk_id = t.id))")
                 expected = conn.execute(text(f'SELECT count(*) FROM "{t}"')).scalar()
                 h, n, nbytes = hashlib.sha256(), 0, 0
                 res = conn.execution_options(stream_results=True).execute(
@@ -169,7 +170,7 @@ def _write_archive(tenant_id, export_id, include_vectors: bool, part: Path) -> d
                     raise LifecycleError("count_mismatch", f"{t}: wrote {n} rows but the snapshot holds {expected}")
                 manifest["tables"][t] = {"rows": n, "bytes": nbytes, "sha256": h.hexdigest()}
             manifest["vectors"] = {
-                "chunks_with_embedding": conn.execute(text("SELECT count(*) FROM chunks WHERE embedding IS NOT NULL")).scalar(),
+                "chunks_with_embedding": conn.execute(text("SELECT count(*) FROM chunk_vectors")).scalar(),
                 "included": include_vectors,
                 "note": "embedding vectors are rebuildable from documents" if not include_vectors else "in tables/chunks.ndjson"}
             docs = conn.execute(text("SELECT DISTINCT sha256, storage_key FROM document_versions ORDER BY sha256")).all()
@@ -298,7 +299,7 @@ def run_deletion(tenant_id, deletion_id, requested_by, export_id, job_id=None) -
     check_deletable(tenant_id, export_id)
     with tenant_session(tenant_id) as s:
         slug = s.execute(text("SELECT slug FROM tenants WHERE id=:t"), {"t": tenant_id}).scalar()
-        vectors = s.execute(text("SELECT count(*) FROM chunks WHERE embedding IS NOT NULL")).scalar()
+        vectors = s.execute(text("SELECT count(*) FROM chunk_vectors")).scalar()
         caches = {t: s.execute(text(f'SELECT count(*) FROM "{t}"')).scalar() for t in CACHE_TABLES}
         audit = s.execute(text("SELECT count(*) FROM audit_events")).scalar()
     deleted = _purge_rows(tenant_id, keep_job_id=job_id)

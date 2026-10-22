@@ -90,7 +90,8 @@ certificates you keep outside the database (a backup older than the deletion doe
 ## Unknown order outcome
 
 Symptoms: an action shows `UNKNOWN_OUTCOME` (Exceptions inbox or Approvals). Do **not** re-approve or resend.
-Open the draft → *Reconcile with sandbox*. The system looks the operation up by its idempotency key: found →
+This includes a dispatch the worker was interrupted on more than 8 times (reason "dispatch interrupted … reconcile
+before any retry"): it is parked here instead of being sent again. Open the draft → *Reconcile with sandbox*. The system looks the operation up by its idempotency key: found →
 read back and compared → `RECONCILED`; not found → safely re-queued (the sandbox deduplicates by key).
 
 ## Stale approval
@@ -123,6 +124,31 @@ Set `SUPPLYLENS_OTEL_ENDPOINT` to an OTLP/HTTP collector (for example `http://ja
 statements, agent-graph nodes, retrieval, forecasting and ERP dispatch. The trace context is stored in each queued job so a
 worker's spans continue the request that caused them. Unset = tracing off; every response still carries `x-trace-id`.
 
+## Metrics and overload (Phase 3)
+
+Set `SUPPLYLENS_METRICS_TOKEN` (32+ random characters) and scrape `GET /metrics` with `Authorization: Bearer <token>`
+(Prometheus text format; unset = the endpoint does not exist). Each API process reports its own values; sum them. What to
+watch:
+
+| Series | Meaning | Act when |
+|---|---|---|
+| `supplylens_http_request_duration_seconds` (by route) | latency histogram | p95 of metadata reads > 0.5 s or of `/api/v1/evidence/search` > 2 s |
+| `supplylens_admission_rejected_total{class,reason}` | requests refused for capacity (`queue_full`, `wait_timeout`) or a workspace over its share (`tenant_share`) | rising steadily: add API capacity or database CPU |
+| `supplylens_admission_inflight` / `_capacity` / `_waiting` | in-flight and queued per class (all, retrieval, compute) | waiting > 0 for minutes |
+| `supplylens_db_pool_checked_out`, `supplylens_db_pool_timeouts_total` | connection-pool saturation | timeouts > 0 |
+| `supplylens_db_connections{state}`, `supplylens_db_max_connections` | database connections for this database | active near max |
+| `supplylens_db_statement_timeouts_total` | statements cancelled (retrieval 8 s, others 30 s) | any sustained rate |
+| `supplylens_jobs{status}`, `supplylens_jobs_oldest_queued_seconds`, `supplylens_outbox{status}` | queue depth (cached 15 s) | oldest queued job > 60 s; `UNKNOWN_OUTCOME` > 0 (reconcile) |
+| `supplylens_tenant_*_total{workspace}` | per-workspace requests, server seconds, retrieval/compute seconds, refusals, errors | one workspace dominating `retrieval_seconds` |
+
+Overload behaviour: a full class waits up to `SUPPLYLENS_ADMISSION_WAIT_MS` (0.5 s) in a queue of
+`SUPPLYLENS_ADMISSION_QUEUE` (12), then answers **503** `overloaded` with `Retry-After: 2`; a workspace over its share
+answers **429** `workspace_busy`; an exhausted pool or a cancelled statement answers **503** with `Retry-After: 3`. The web
+client shows "SupplyLens is busy" and retries reads after Retry-After. Caps: `SUPPLYLENS_MAX_INFLIGHT` (48, also the
+thread-pool size), `SUPPLYLENS_MAX_INFLIGHT_RETRIEVAL` (6), `SUPPLYLENS_MAX_INFLIGHT_COMPUTE` (4), `SUPPLYLENS_TENANT_SHARE`
+(0.5); timeouts `SUPPLYLENS_DB_STATEMENT_TIMEOUT_MS` (30000), `SUPPLYLENS_RETRIEVAL_STATEMENT_TIMEOUT_MS` (8000),
+`SUPPLYLENS_DB_POOL_TIMEOUT_S` (5). All are per process.
+
 ## Tenant export and deletion (BUS-023)
 
 Administration → *Export*: a consistent snapshot (one `REPEATABLE READ` transaction) of every tenant table as NDJSON, the
@@ -144,7 +170,11 @@ Measured on the reference data set (100,000 chunks, ~1,000,000 sales rows); deta
 * For the database role used by the API, `max_parallel_workers_per_gather = 0` gave steadier retrieval latency under
   concurrent users than the default (the compose file sets it). Revisit if the host has many idle cores.
 * Full-text search runs a sequential scan of the tenant's chunks under row-level security (the GIN index cannot be used
-  there), so retrieval cost grows linearly with a tenant's chunk count: about 0.7 core-seconds per request at 100,000.
+  there), so retrieval cost grows linearly with a tenant's chunk count. Since migration 0010 the vectors live in
+  `chunk_vectors`, so that scan reads text only (131 MB instead of 782 MB at 100,000 chunks); the exact vector scan still
+  reads one 8 KB page per vector (a 1024-d float vector does not fit twice in a page).
+* Listings (`/inventory`, `/documents`) return at most `SUPPLYLENS_LIST_MAX_ROWS` (5,000) rows per response; page with
+  `limit`/`offset`.
 
 ## Rehearsals (BUS-020)
 

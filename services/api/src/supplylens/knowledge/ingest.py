@@ -87,10 +87,14 @@ def ingest_document(tenant_id, *, title: str, doc_type: str, supplier_id: str | 
              "k": key, "ka": known_at, "vf": valid_from, "vt": valid_to, "sv": supersedes_version_id,
              "p": PARSER_VERSION, "em": settings.embed_model if vectors else None})
         for c, v in zip(chunks, vectors or [None] * len(chunks), strict=True):
+            cid = uuid.uuid4()
             s.execute(text(
-                "INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body, "
-                "embedding) VALUES (:i,:t,:v,:o,:s,:a,:b,:body, CAST(:e AS vector))"),
-                {"i": uuid.uuid4(), "t": tenant_id, "v": vid, "o": c.ordinal, "s": c.section, "a": c.start,
-                 "b": c.end, "body": c.body, "e": to_pgvector(v) if v else None})
+                "INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body) "
+                "VALUES (:i,:t,:v,:o,:s,:a,:b,:body)"),
+                {"i": cid, "t": tenant_id, "v": vid, "o": c.ordinal, "s": c.section, "a": c.start, "b": c.end,
+                 "body": c.body})
+            if v:      # vectors live in their own table (migration 0010)
+                s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) VALUES (:i,:t,:v,CAST(:e AS vector))"),
+                          {"i": cid, "t": tenant_id, "v": vid, "e": to_pgvector(v)})
     return {"version_id": vid, "document_id": document_id, "reused": False,
             "chunks": len(chunks), "embedded": vectors is not None}

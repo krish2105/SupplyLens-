@@ -111,3 +111,30 @@ load test, research reruns, hosted Playwright suite (only the non-destructive pr
 Keycloak OIDC tests (SEC-P2-08 is code-reviewed only), local Docker compose and image scans (daemon down), DAST or any
 intrusive test of the hosted demo, penetration test, corporate IdP qualification.
 
+
+## Phase 3 — performance, scalability and backend reliability (2026-10-23, UTC)
+
+**Starting point:** `main` @ `2365f49` (clean; CI run 39843966060 success). **Machine:** Apple M4 Pro, 12 cores, 24 GB,
+macOS 27; PostgreSQL 17.11 (Homebrew, default settings), pgvector 0.8.6; Python 3.12.13; Node 26.10; Ollama running but
+**not** used by the load test (embedding stub). Docker daemon not running.
+
+| ID | Check | Command | Result | Notes |
+|---|---|---|---|---|
+| P3-E01 | Baseline before changes | `uv run ruff check .`; `uv lock --check`; `uv run pytest -q -p no:cacheprovider` | pass; pass; **398 passed, 6 skipped** (110 s) | Skips = Keycloak; matches the hand-over |
+| P3-E02 | Reference data set | `PGHOST=/tmp PGUSER=<local superuser> SUPPLYLENS_LOAD_DB=supplylens_load uv run python scripts/loadtest/seed_reference.py` | 100,000 chunks, 1,008,206 sales rows, 2,000 products, 2,000 documents in 75 s; database 1,045 MB | Synthetic (fixed seed); `PGUSER` override added for hosts without a `postgres` role |
+| P3-E03 | Query profile before | `EXPLAIN (ANALYZE, BUFFERS)` of the lexical and vector queries as `supplylens_app` under RLS (scratch `explain.py`) | lexical 54 ms, vector 155 ms; **both read ≈100,000 buffers (782 MB heap)**; distance evaluated in the sort key and again in the select list | One chunk row per 8 KB page because of the inline 4 KB vector |
+| P3-E04 | Load before (`2365f49`) | `run_load.py --retrieval-rate {5,8,12,16,20}` (+ `--compute-users 3` mixed) on port 8100 against `supplylens_load` | 5/s: retrieval p95 256 ms, metadata p95 44 ms, 0 failures; knee ≈ 8–9 served/s; 12/s: p95 1,953 ms, 280 × 503; 20/s: 9.0/s served, 773 × 503 | `artifacts/reports/loadtest-p3-before-*.json`. The 2026-10-21 4 vCPU collapse at 5/s is **not reproducible on this machine** |
+| P3-E05 | Migration 0010 and query timings after | `alembic upgrade head` on `supplylens_load`; scratch `time_search.py` (18 queries) | migration 31 s for 100,000 vectors; chunks heap 782 → **131 MB**; chunk_vectors 781 MB; lexical 29 ms, vector 113 ms, hybrid 140 ms (medians) | Vector page layout unchanged (PERF-P3-09) |
+| P3-E06 | Load after (final build) | same commands, same data and durations | 5/s: retrieval p95 **157 ms**, metadata p95 52 ms, PostgreSQL 0.67 cores (was 1.09); 12/s: 900/900 served, p95 177 ms; 16/s: 1,200/1,200, p95 442 ms; 20/s: 15.3/s served, p95 978 ms, 253 × 503; mixed: retrieval p95 399 ms, metadata p95 201 ms | `artifacts/reports/loadtest-p3-after-*.json`; one client-side transport error (599, no response, nothing in API log) per 5/s run, cause UNVERIFIED |
+| P3-E07 | Overload and recovery | `overload_probe.py --base http://127.0.0.1:8100 --tenant load-ref --email load01@… --burst 120 --concurrency 60` | final build: 9 accepted (p95 1,016 ms), 111 × 503 (p95 522 ms = queue wait), next request 200 in 223 ms | An earlier build with a 1.5 s wait: 18 accepted (p95 1.7 s), 102 refused; its 20/s run had accepted p95 1.9 s → wait lowered to 0.5 s |
+| P3-E08 | Phase 3 tests | `uv run pytest -q tests/test_phase3_performance.py` | **15 passed** | Admission (share, queue, bounds, separate classes), pool timeout → 503, statement timeout → 503, statement_timeout per role, paging, metrics auth/content, dead letter, worker isolation, dispatch bound. Found a defect in the new share rule (own queue counted against a lone workspace → 429 at 20/s); fixed and covered |
+| P3-E09 | Metrics under load | scrape `/metrics` with the bearer token after the runs | 292 lines: per-route counts and histograms, per-workspace requests and retrieval seconds, admission queued 1,210 / refused 318 queue_full + 124 wait_timeout, pool, connections, job/outbox depth | `artifacts/reports/metrics-sample-p3-loadtest.txt` (synthetic workspace id only) |
+| P3-E10 | Full backend suite after | `uv run ruff check .`; `uv lock --check`; `uv run pytest -q -p no:cacheprovider` | pass; pass; **413 passed, 6 skipped** (109 s) | Includes migration rehearsal 0006 → 0010 → rollback → head with bit-identical vectors |
+| P3-E11 | Contracts, types, build | `scripts/export_openapi.py` + `openapi-typescript` (regenerate); `./scripts/check_contracts.sh`; `npx tsc --noEmit`; `NEXT_DIST_DIR=.next-build npx next build`; `python3 scripts/vercel/build_api.py --check` | contracts match; tsc ok; build ok; hosted pins match | Inventory gains `total`, `offset`, `next_offset`; `/inventory` and `/documents` gain `limit`, `offset` |
+| P3-E12 | Browser suite, disposable stack | `supplylens_p0e2e` migrated to 0010; p0-api/p0-worker/p0-web; `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1 npx playwright test` | **116 passed, 2 skipped** (1.1 min), twice (before and after the truncation-note wording change) | New: busy banner + automatic recovery after a 503; truncated-inventory note |
+| P3-E13 | UI evidence | Playwright script with route mocking | `docs/screenshots/phase3-service-busy-banner.png`, `docs/screenshots/phase3-inventory-truncated.png` | With three refusals in a row a read is attempted 3 times, then the page shows the capacity message and "Try again" |
+
+### Not run in Phase 3
+Declared 8 vCPU / 32 GiB profile (EXT-04); real embedding latency (stub); several API processes, a pooler or replicas;
+a multi-tenant load (fairness is unit-tested only); sustained load beyond 3 minutes; batch phase (`--phase batch`);
+Keycloak tests; local Docker compose; any load against the hosted demo.

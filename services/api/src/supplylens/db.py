@@ -16,7 +16,7 @@ from .config import settings
 
 
 @lru_cache(maxsize=4)
-def engine_for(url: str) -> Engine:
+def engine_for(url: str, statement_timeout_ms: int = 0) -> Engine:
     # All timestamps are handled in UTC; business dates are derived explicitly, never from session TZ.
     #
     # plan_cache_mode=force_custom_plan: psycopg prepares a statement after its 5th use on a connection and PostgreSQL
@@ -25,12 +25,19 @@ def engine_for(url: str) -> Engine:
     # from 0.75 s to 8.2 s per request at the ARC-07 reference size, on the 11th request of a fresh process. Every query in
     # this application filters on parameter values (tenant, dates, search text), so a plan built for the actual values is
     # the right plan; the planning cost is small next to the scans it avoids.
+    #
+    # statement_timeout bounds every statement of the serving roles (Phase 3): a query that runs away under load is
+    # cancelled instead of holding a connection and a CPU until the client has long gone. Owner connections (migrations,
+    # setup, maintenance) pass 0.
+    options = "-c timezone=UTC -c plan_cache_mode=force_custom_plan"
+    if statement_timeout_ms:
+        options += f" -c statement_timeout={int(statement_timeout_ms)}"
     return create_engine(url, pool_pre_ping=True, pool_size=settings.db_pool_size, max_overflow=settings.db_pool_size,
-                         connect_args={"options": "-c timezone=UTC -c plan_cache_mode=force_custom_plan"})
+                         pool_timeout=settings.db_pool_timeout_s, connect_args={"options": options})
 
 
 def app_engine() -> Engine:
-    return engine_for(settings.database_url)
+    return engine_for(settings.database_url, settings.db_statement_timeout_ms)
 
 
 def admin_engine() -> Engine:

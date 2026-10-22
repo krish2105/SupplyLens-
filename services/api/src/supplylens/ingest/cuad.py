@@ -71,10 +71,13 @@ def ingest(tenant_id, log=print) -> dict:
                                           "k": key, "ka": datetime.now(UTC), "p": PARSER_VERSION + "+cuad-windows",
                                           "em": "bge-m3:567m"})
             for n, ((a, z), v) in enumerate(zip(spans, vecs, strict=True)):
-                s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body,
-                    embedding) VALUES (:i,:t,:v,:o,:s,:a,:z,:b,CAST(:e AS vector))"""),
-                    {"i": uuid.uuid4(), "t": tenant_id, "v": vid, "o": n, "s": f"Part {n + 1}", "a": a, "z": z,
-                     "b": body[a:z], "e": to_pgvector(v) if v else None})
+                cid = uuid.uuid4()
+                s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body)
+                    VALUES (:i,:t,:v,:o,:s,:a,:z,:b)"""),
+                    {"i": cid, "t": tenant_id, "v": vid, "o": n, "s": f"Part {n + 1}", "a": a, "z": z, "b": body[a:z]})
+                if v:
+                    s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) VALUES (:i,:t,:v,CAST(:e AS vector))"),
+                              {"i": cid, "t": tenant_id, "v": vid, "e": to_pgvector(v)})
             for qa in para["qas"]:
                 cat = qa["id"].split("__")[-1]
                 for ans in qa["answers"]:

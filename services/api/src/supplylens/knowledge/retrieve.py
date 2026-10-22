@@ -1,7 +1,7 @@
 """Hybrid, permission- and time-filtered retrieval.
 
-Candidates come from PostgreSQL full-text search (lexical; not BM25) and exact pgvector
-cosine search. Both candidate queries apply tenant (RLS), role ACL, knowledge cutoff and
+Candidates come from PostgreSQL full-text search (lexical; not BM25) over `chunks` and exact pgvector
+cosine search over `chunk_vectors` (kept apart since migration 0010 so neither scan reads the other's bytes). Both candidate queries apply tenant (RLS), role ACL, knowledge cutoff and
 (in `effective` mode) effective-date filters in SQL. Results are fused with reciprocal
 rank fusion and re-ordered by a deterministic rule-based reranker.
 """
@@ -90,6 +90,10 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
               "n": n_candidates}
     vectors = embed([query]) if use_vectors else None
     with tenant_session(tenant_id) as s:
+        if settings.retrieval_statement_timeout_ms:
+            # Cancel a search that cannot finish in useful time (Phase 3): it frees the CPU for requests still in time.
+            s.execute(text("SELECT set_config('statement_timeout', :v, true)"),
+                      {"v": str(int(settings.retrieval_statement_timeout_ms))})
         lexical = [] if "lexical" not in channels else s.execute(text(f"""
             SELECT {SELECT_COLS}, ts_rank_cd(c.tsv, websearch_to_tsquery('english', :q)) AS rank
             FROM chunks c JOIN document_versions dv ON dv.id = c.version_id JOIN documents d ON d.id = dv.document_id
@@ -107,11 +111,18 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
                     ORDER BY rank DESC, c.id LIMIT :n"""), {**params, "tq": terms}).all()
         semantic = []
         if vectors:
+            # Rank on the narrow vector table (distance computed once per row), then read the full rows of the top n only.
             semantic = s.execute(text(f"""
-                SELECT {SELECT_COLS}, 1 - (c.embedding <=> {QV}) AS rank
-                FROM chunks c JOIN document_versions dv ON dv.id = c.version_id JOIN documents d ON d.id = dv.document_id
-                WHERE c.embedding IS NOT NULL AND {BASE_FILTER}
-                ORDER BY c.embedding <=> {QV}, c.id LIMIT :n"""),
+                WITH top AS (
+                  SELECT v.chunk_id, v.embedding <=> {QV} AS dist
+                  FROM chunk_vectors v JOIN document_versions dv ON dv.id = v.version_id
+                  JOIN documents d ON d.id = dv.document_id
+                  WHERE {BASE_FILTER}
+                  ORDER BY dist, v.chunk_id LIMIT :n)
+                SELECT {SELECT_COLS}, 1 - top.dist AS rank
+                FROM top JOIN chunks c ON c.id = top.chunk_id JOIN document_versions dv ON dv.id = c.version_id
+                JOIN documents d ON d.id = dv.document_id
+                ORDER BY top.dist, c.id"""),
                 {**params, "qv": to_pgvector(vectors[0])}).all()
     fused: dict[str, dict] = {}
     for name, rows in (("lexical", lexical), ("vector", semantic)):

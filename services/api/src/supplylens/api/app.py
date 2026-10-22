@@ -1,18 +1,24 @@
 """FastAPI application factory. Run: uv run uvicorn supplylens.api.app:app --port 8000"""
 from __future__ import annotations
 
+import hmac
 import logging
 import os
 import re
 import time
 import uuid
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request
+import anyio.to_thread
+import psycopg
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, PlainTextResponse
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import TimeoutError as PoolTimeout
 
-from .. import telemetry
+from .. import metrics, telemetry
 from ..actions.service import ActionError
 from ..authz import Forbidden
 from ..config import settings
@@ -20,6 +26,7 @@ from ..db import app_engine
 from ..forecasting.service import ForecastError
 from ..lifecycle import LifecycleError
 from . import (
+    admission,
     oidc,
     routes_core,
     routes_decisions,
@@ -35,7 +42,16 @@ from .schemas import Health
 
 log = logging.getLogger("supplylens.api")
 
-app = FastAPI(title="SupplyLens API", version="0.1.0",
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Synchronous routes run on worker threads (default 40). Size the pool to the admission cap so admission control, not
+    # a hidden queue in front of the threads, decides what waits (Phase 3).
+    anyio.to_thread.current_default_thread_limiter().total_tokens = max(settings.max_inflight, 8)
+    yield
+
+
+app = FastAPI(title="SupplyLens API", version="0.1.0", lifespan=lifespan,
               description="Evidence-grounded inventory and procurement decisions. /api/v1 is the versioned contract.")
 app.include_router(routes_core.router)
 app.include_router(oidc.router)
@@ -50,30 +66,31 @@ if os.environ.get("SUPPLYLENS_SETUP_TOKEN"):        # hosted one-time setup only
 telemetry.setup(app)
 
 
-COSTLY = ("/api/v1/evidence/search", "/api/v1/scenarios", "/api/v1/forecasts", "/api/v1/agent-runs")
-EXEMPT = ("/health", "/api/v1/auth", "/api/v1/me")
-_inflight = {"all": 0, "costly": 0}
-
-
 @app.middleware("http")
 async def backpressure(request: Request, call_next):
-    """Shed load instead of queueing it (DEF-10). The load test showed requests past capacity waiting in the thread pool
-    for minutes and the service taking minutes to recover; refusing early keeps accepted requests fast and recovery
-    immediate. Event streams and health checks are never counted or refused."""
-    path = request.url.path
-    if path.startswith(EXEMPT) or path.endswith("/stream"):
+    """Shed load instead of queueing it without bound (DEF-10; admission.py). The 2026-10-21 load test showed requests past
+    capacity waiting in the thread pool for minutes and the service taking minutes to recover; a bounded wait and an early
+    refusal keep accepted requests fast and recovery immediate. Event streams and health checks are never counted."""
+    cls = admission.classify(request.method, request.url.path)
+    if cls is None:
         return await call_next(request)
-    costly = path.startswith(COSTLY) and (request.method == "POST" or path.startswith("/api/v1/evidence/search"))
-    if _inflight["all"] >= settings.max_inflight or (costly and _inflight["costly"] >= settings.max_inflight_costly):
-        return JSONResponse({"code": "overloaded", "message": "The service is at capacity; retry in a few seconds."},
-                            status_code=503, headers={"Retry-After": "2"})
-    _inflight["all"] += 1
-    _inflight["costly"] += costly
+    tenant = admission.tenant_of(request.scope)
+    taken: list[admission.Gate] = []
+    for name in ("all", cls) if cls != "all" else ("all",):
+        gate = admission.gates()[name]
+        reason = await gate.acquire(tenant)
+        if reason:
+            for g in taken:
+                g.release(tenant)
+            status, body, headers = admission.refusal(reason, name)
+            return JSONResponse(body, status_code=status, headers=headers)
+        taken.append(gate)
+    request.state.admission_class = cls
     try:
         return await call_next(request)
     finally:
-        _inflight["all"] -= 1
-        _inflight["costly"] -= costly
+        for g in taken:
+            g.release(tenant)
 
 
 @app.middleware("http")
@@ -83,13 +100,16 @@ async def trace(request: Request, call_next):
     trace_id = telemetry.current_trace_id() or (supplied if re.fullmatch(r"[0-9A-Fa-f-]{8,64}", supplied) else uuid.uuid4().hex)
     start = time.perf_counter()
     response = await call_next(request)
+    elapsed = time.perf_counter() - start
+    route = request.scope.get("route")
+    metrics.observe(request.method, getattr(route, "path", "unmatched"), response.status_code, elapsed,
+                    getattr(request.state, "workspace", None), getattr(request.state, "admission_class", None))
     response.headers["x-trace-id"] = trace_id
     # API responses carry tenant data: never cache them, never let a browser sniff their type.
     response.headers.setdefault("Cache-Control", "no-store")
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("Referrer-Policy", "no-referrer")
-    log.info("%s %s %s %.1fms trace=%s", request.method, request.url.path, response.status_code,
-             (time.perf_counter() - start) * 1000, trace_id)
+    log.info("%s %s %s %.1fms trace=%s", request.method, request.url.path, response.status_code, elapsed * 1000, trace_id)
     return response
 
 
@@ -100,6 +120,27 @@ async def unexpected(request: Request, e: Exception):
     log.exception("unhandled error on %s %s ref=%s", request.method, request.url.path, ref)
     return JSONResponse({"code": "server_error", "message": "The server hit an unexpected error. Your input was not lost.",
                          "reference": ref}, status_code=500, headers={"x-trace-id": ref})
+
+
+@app.exception_handler(PoolTimeout)
+async def pool_exhausted(request: Request, e: PoolTimeout):
+    # Every pooled connection stayed busy for db_pool_timeout_s: the database is the bottleneck. Say so and when to retry,
+    # rather than a 500 (Phase 3).
+    metrics.count("db_pool_timeouts_total")
+    log.warning("connection pool exhausted on %s %s", request.method, request.url.path)
+    return JSONResponse({"code": "overloaded", "message": "The service is at capacity; retry in a few seconds.",
+                         "retry_after_s": 3}, status_code=503, headers={"Retry-After": "3"})
+
+
+@app.exception_handler(OperationalError)
+async def database_operational(request: Request, e: OperationalError):
+    if isinstance(e.orig, psycopg.errors.QueryCanceled):
+        # statement_timeout fired (db.py, retrieval): the work was cancelled to protect the requests still in time.
+        metrics.count("db_statement_timeouts_total")
+        log.warning("statement timeout on %s %s", request.method, request.url.path)
+        return JSONResponse({"code": "query_timeout", "message": "The request took too long and was stopped; retry in a "
+                             "few seconds.", "retry_after_s": 3}, status_code=503, headers={"Retry-After": "3"})
+    return await unexpected(request, e)
 
 
 @app.exception_handler(Forbidden)
@@ -132,6 +173,18 @@ async def http_error(_: Request, e: HTTPException):
 async def validation_error(_: Request, e: RequestValidationError):
     return JSONResponse({"code": "invalid_request", "message": "request failed validation",
                          "errors": [{"loc": list(x["loc"]), "msg": x["msg"]} for x in e.errors()]}, status_code=422)
+
+
+@app.get("/metrics", include_in_schema=False)
+def metrics_endpoint(authorization: str | None = Header(None)):
+    """Prometheus text format (metrics.py). Exists only when SUPPLYLENS_METRICS_TOKEN is set; the token is compared in
+    constant time. Workspace ids appear in labels, so this is operator-only."""
+    token = settings.metrics_token
+    if not token:
+        raise HTTPException(404, {"code": "not_found", "message": "Not Found"})
+    if not hmac.compare_digest((authorization or "").encode(), f"Bearer {token}".encode()):
+        raise HTTPException(401, {"code": "unauthenticated", "message": "metrics token required"})
+    return PlainTextResponse(metrics.render(), media_type="text/plain; version=0.0.4")
 
 
 @app.get("/health", response_model=Health)

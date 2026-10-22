@@ -151,7 +151,7 @@ def _model_problems(tenant_id):
     with tenant_session(tenant_id) as s:
         models = s.execute(text("""SELECT id, family, version, artifact_path, artifact_sha256 FROM model_versions
             WHERE status IN ('CHAMPION', 'CANDIDATE') AND artifact_path IS NOT NULL""")).mappings().all()
-        embedded = s.execute(text("SELECT EXISTS (SELECT 1 FROM chunks WHERE embedding IS NOT NULL)")).scalar()
+        embedded = s.execute(text("SELECT EXISTS (SELECT 1 FROM chunk_vectors)")).scalar()
     for m in models:
         arts = m["artifact_sha256"] if isinstance(m["artifact_sha256"], list) else json.loads(m["artifact_sha256"] or "[]")
         for a in arts:

@@ -491,17 +491,19 @@ def test_S12_erp_receipt_feed_books_each_receipt_once_and_never_above_open(demo_
 
 # =========================================================================================== DEF-10 back-pressure
 def test_DEF10_requests_past_capacity_are_refused_at_once_and_recovery_is_immediate(monkeypatch):
-    from supplylens.api import app as app_module
+    from supplylens.api import admission
     c = TestClient(app)
     c.post("/api/v1/auth/dev-login", json={"email": dev_email("viewer")}, headers=H)
-    monkeypatch.setitem(app_module._inflight, "costly", app_module.settings.max_inflight_costly)
+    monkeypatch.setattr(admission.settings, "admission_wait_ms", 50)       # a full class waits briefly, then refuses
+    g = admission.gates()
+    monkeypatch.setattr(g["retrieval"], "inflight", g["retrieval"].cap)
     r = c.get("/api/v1/evidence/search", params={"q": "minimum order"}, headers=DEMO)
     assert r.status_code == 503 and r.json()["code"] == "overloaded" and r.headers["Retry-After"] == "2"
     assert c.get("/api/v1/overview", headers=DEMO).status_code == 200      # cheap reads still served
     assert c.get("/health").status_code == 200
-    monkeypatch.setitem(app_module._inflight, "costly", 0)
+    monkeypatch.setattr(g["retrieval"], "inflight", 0)
     assert c.get("/api/v1/evidence/search", params={"q": "minimum order"}, headers=DEMO).status_code == 200
-    monkeypatch.setitem(app_module._inflight, "all", app_module.settings.max_inflight)
+    monkeypatch.setattr(g["all"], "inflight", g["all"].cap)
     assert c.get("/api/v1/overview", headers=DEMO).status_code == 503
     assert c.get("/api/v1/me").status_code == 200                           # sign-in state is never shed
 

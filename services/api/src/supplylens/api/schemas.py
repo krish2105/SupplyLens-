@@ -191,6 +191,10 @@ class InventoryItem(Out):
 class Inventory(Out):
     effective_date: date | None = None
     items: list[InventoryItem]
+    # Paging (Phase 3): `total` items exist; this page starts at `offset`; `next_offset` is null on the last page.
+    total: int | None = None
+    offset: int = 0
+    next_offset: int | None = None
 
 
 class SalesPoint(Out):

@@ -51,10 +51,13 @@ def ingest(tenant_id, batch: int = 48, log=print) -> dict:
         embedded += sum(v is not None for v in vecs)
         with tenant_session(tenant_id) as s:
             for (cid, a, z, body), v in zip(chunk, vecs, strict=True):
-                s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body,
-                    embedding) VALUES (:i,:t,:v,:o,:s,:a,:z,:b,CAST(:e AS vector))"""),
-                    {"i": uuid.uuid4(), "t": tenant_id, "v": vid, "o": b, "s": cid, "a": a, "z": z, "b": body,
-                     "e": to_pgvector(v) if v else None})
+                chunk_id = uuid.uuid4()
+                s.execute(text("""INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body)
+                    VALUES (:i,:t,:v,:o,:s,:a,:z,:b)"""),
+                    {"i": chunk_id, "t": tenant_id, "v": vid, "o": b, "s": cid, "a": a, "z": z, "b": body})
+                if v:
+                    s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) VALUES (:i,:t,:v,CAST(:e AS vector))"),
+                              {"i": chunk_id, "t": tenant_id, "v": vid, "e": to_pgvector(v)})
         if b % (batch * 20) == 0:
             log(f"acord: {b + len(chunk)}/{len(offsets)} clauses")
     return {"reused": False, "clauses": len(corpus), "embedded": embedded, "sha256": digest}

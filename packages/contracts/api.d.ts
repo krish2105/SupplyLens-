@@ -625,7 +625,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Documents */
+        /**
+         * Documents
+         * @description Bounded at settings.list_max_rows rows (Phase 3). X-Total-Count gives the full count; pass limit/offset to page.
+         *     Chunk counts come from one grouped scan instead of a sub-query per version.
+         */
         get: operations["documents_api_v1_documents_get"];
         put?: never;
         post?: never;
@@ -764,7 +768,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Inventory */
+        /**
+         * Inventory
+         * @description Bounded: at most settings.list_max_rows items per response (Phase 3); `total` and `next_offset` say whether more
+         *     exist. Without `limit` the response holds the whole list up to that bound, as before.
+         */
         get: operations["inventory_api_v1_inventory_get"];
         put?: never;
         post?: never;
@@ -2672,6 +2680,15 @@ export interface components {
             effective_date: string | null;
             /** Items */
             items: components["schemas"]["InventoryItem"][];
+            /** Next Offset */
+            next_offset: number | null;
+            /**
+             * Offset
+             * @default 0
+             */
+            offset: number;
+            /** Total */
+            total: number | null;
         } & {
             [key: string]: unknown;
         };
@@ -5703,6 +5720,8 @@ export interface operations {
     documents_api_v1_documents_get: {
         parameters: {
             query?: {
+                limit?: number | null;
+                offset?: number;
                 ws?: string | null;
             };
             header?: {
@@ -5985,6 +6004,8 @@ export interface operations {
         parameters: {
             query?: {
                 effective_date?: string | null;
+                limit?: number | null;
+                offset?: number;
                 ws?: string | null;
             };
             header?: {

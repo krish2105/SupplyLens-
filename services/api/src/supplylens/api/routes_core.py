@@ -5,7 +5,7 @@ import logging
 import uuid
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from itsdangerous import BadSignature
 from pydantic import BaseModel
 from sqlalchemy import text
@@ -200,19 +200,28 @@ LEFT JOIN (SELECT sku_id, count(*) AS term_count FROM supplier_terms GROUP BY sk
 LEFT JOIN warehouse_slots ws ON ws.sku_id = p.sku_id
 ORDER BY ws.slot_id NULLS LAST, p.sku_id
 """
+# Static compositions of the constant above (no user input): one page with the full count, and the count alone.
+INVENTORY_PAGE_SQL = "SELECT q.*, count(*) OVER () AS _total FROM (" + INVENTORY_SQL + ") q LIMIT :lim OFFSET :off"  # noqa: S608
+INVENTORY_COUNT_SQL = "SELECT count(*) FROM (" + INVENTORY_SQL + ") q"  # noqa: S608
 
 
 @router.get("/inventory", response_model=Inventory)
-def inventory(effective_date: date | None = None, a: Actor = Depends(actor)):
+def inventory(effective_date: date | None = None, limit: int | None = Query(None, ge=1), offset: int = Query(0, ge=0),
+              a: Actor = Depends(actor)):
+    """Bounded: at most settings.list_max_rows items per response (Phase 3); `total` and `next_offset` say whether more
+    exist. Without `limit` the response holds the whole list up to that bound, as before."""
     a.require("read")
+    lim = min(limit or settings.list_max_rows, settings.list_max_rows)
     with tenant_session(a.tenant_id) as s:
         eff = effective_date or s.execute(text("SELECT operational_as_of::date FROM tenant_settings")).scalar()
         if eff is None:
-            return {"effective_date": None, "items": []}
-        rows = s.execute(text(INVENTORY_SQL), {"eff": eff}).mappings().all()
+            return {"effective_date": None, "items": [], "total": 0, "offset": offset, "next_offset": None}
+        rows = s.execute(text(INVENTORY_PAGE_SQL), {"eff": eff, "lim": lim, "off": offset}).mappings().all()
+        total = rows[0]["_total"] if rows else (0 if offset == 0 else s.execute(
+            text(INVENTORY_COUNT_SQL), {"eff": eff}).scalar())
     items = []
     for r in rows:
-        d = dict(r)
+        d = {k: v for k, v in r.items() if k != "_total"}
         avg = d["avg_daily"]
         d["days_of_cover"] = round(d["available"] / avg, 1) if avg else None
         if avg is None:
@@ -225,7 +234,8 @@ def inventory(effective_date: date | None = None, a: Actor = Depends(actor)):
             d["health"] = "healthy"
         d["health_basis"] = "derived: available / mean daily unit sales (last 28 days)" if avg else None
         items.append(d)
-    return {"effective_date": eff, "items": items}
+    return {"effective_date": eff, "items": items, "total": total, "offset": offset,
+            "next_offset": offset + len(items) if offset + len(items) < total else None}
 
 
 @router.get("/products/{sku_id}/sales", response_model=ProductSales)

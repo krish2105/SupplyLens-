@@ -105,9 +105,10 @@ def test_export_with_vectors_includes_embeddings_when_present(customer):
     c, tid = customer["client"], customer["tid"]
     with tenant_session(tid) as s:
         # Start from a known state: with a local embedding service running, ingestion already embeds every chunk.
-        s.execute(text("UPDATE chunks SET embedding = NULL"))
-        s.execute(text("UPDATE chunks SET embedding = (SELECT array_agg(0.001)::vector(1024) "
-                       "FROM generate_series(1, 1024)) WHERE id IN (SELECT id FROM chunks LIMIT 3)"))
+        s.execute(text("DELETE FROM chunk_vectors"))
+        s.execute(text("INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding) SELECT id, tenant_id, "
+                       "version_id, (SELECT array_agg(0.001)::vector(1024) FROM generate_series(1, 1024)) "
+                       "FROM chunks ORDER BY id LIMIT 3"))
     ex = request_export(c, include_vectors=True)
     assert ex["status"] == "READY" and ex["manifest"]["vectors"] == {
         "chunks_with_embedding": 3, "included": True, "note": "in tables/chunks.ndjson"}
