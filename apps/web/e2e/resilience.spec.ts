@@ -74,9 +74,11 @@ test.describe("network interruption", () => {
     expect(held.approvals).toHaveLength(0);
     await context.setOffline(false);
     await expect(page.getByText("You are offline.")).toHaveCount(0);
-    await expect(page.getByText("REJECTED").first()).toBeVisible({ timeout: 15_000 });   // sent automatically on reconnect
+    // sent automatically on reconnect; wait on THIS action, not on any "REJECTED" text elsewhere on the page
+    await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/actions/${id}`, "demo")).status,
+      { timeout: 15_000 }).toBe("REJECTED");
     const a = await getJson<{ approvals: { decision: string }[] }>(page, `/api/v1/actions/${id}`, "demo");
-    expect(a.approvals.filter((x) => x.decision === "REJECTED")).toHaveLength(1);
+    expect(a.approvals.filter((x) => x.decision === "REJECTED")).toHaveLength(1);                     // exactly once
   });
 
   test("unsent input survives a reload", async ({ page }) => {
