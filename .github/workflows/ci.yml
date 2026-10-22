@@ -1,5 +1,6 @@
 name: ci
 on:
+  workflow_dispatch:
   push:
   pull_request:
   schedule:
@@ -17,7 +18,7 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -28,7 +29,7 @@ jobs:
         run: uv run ruff check .
 
   secrets-and-dependencies:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }          # gitleaks scans history, not only the tip
@@ -47,7 +48,7 @@ jobs:
         run: npm --prefix apps/web audit --omit=dev --audit-level=high
 
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: pgvector/pgvector:pg17
@@ -68,7 +69,7 @@ jobs:
         run: uv run pytest -q
 
   contracts-and-web:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -82,7 +83,7 @@ jobs:
 
   e2e:
     needs: [backend, contracts-and-web]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     services:
       postgres:
         image: pgvector/pgvector:pg17
@@ -115,9 +116,9 @@ jobs:
           for i in $(seq 1 60); do curl -fsS http://localhost:3100/login >/dev/null && curl -fsS http://localhost:8000/api/v1/auth/dev-users >/dev/null && exit 0; sleep 2; done
           cat api.log web.log; exit 1
       - name: browser (Chromium)
-        run: cd apps/web && npx playwright install --with-deps chromium
+        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright install --with-deps chromium
       - name: end-to-end, resilience, accessibility and Web Vitals suites
-        run: cd apps/web && npx playwright test
+        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -133,7 +134,7 @@ jobs:
           if-no-files-found: ignore
 
   pitr-drill:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -145,13 +146,13 @@ jobs:
           sudo systemctl stop postgresql
           echo "PGBIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)" >> "$GITHUB_ENV"
       - name: point-in-time recovery drill (ARC-06, BUS-014, BUS-020)
-        run: ./scripts/pitr_drill.sh
+        run: ./scripts/ci_annotate.sh ./scripts/pitr_drill.sh
       - uses: actions/upload-artifact@v4
         with: { name: pitr-report, path: artifacts/reports/pitr_drill_*.json, if-no-files-found: ignore }
 
   compose-smoke:
     needs: [backend]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: build and start the full stack
