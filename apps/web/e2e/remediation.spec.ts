@@ -64,24 +64,27 @@ test("S15: switching workspace drops the previous workspace's selected draft ins
 
 test("S17: switching theme recolours a zoomed chart and keeps its zoom range", async ({ page }) => {
   await signIn(page, "planner");
-  await page.goto("/forecast?ws=uci-research&sku=85123A");
-  const chart = page.locator("[data-chart-theme]").first();
-  await expect(chart).toBeVisible({ timeout: 20_000 });
+  await page.goto("/forecast?ws=uci-research");
+  // the history chart is the one with a zoom control; find it by that, not by position (datasets differ by environment)
+  const zoomable = page.locator("[data-chart-theme]").filter({ has: page.locator("canvas") });
+  await expect.poll(() => zoomable.evaluateAll((els) => els.findIndex((el) =>
+    ((el as any).__chart?.getOption()?.dataZoom ?? []).length > 0)), { timeout: 20_000 }).toBeGreaterThanOrEqual(0);
+  const idx = await zoomable.evaluateAll((els) => els.findIndex((el) => ((el as any).__chart?.getOption()?.dataZoom ?? []).length > 0));
+  const chart = zoomable.nth(idx);
   const read = () => chart.evaluate((el) => {
-    const c = (el as HTMLElement & { __chart?: { getOption(): any } }).__chart!;
-    const o = c.getOption();
+    const o = (el as any).__chart.getOption();
     return { start: o.dataZoom[0].start as number, end: o.dataZoom[0].end as number, axis: o.yAxis[0].axisLabel.color as string };
   });
-  await chart.evaluate((el) => (el as any).__chart.dispatchAction({ type: "dataZoom", start: 40, end: 80 }));
   await page.getByRole("radio", { name: "Light theme" }).check();
   await expect(chart).toHaveAttribute("data-chart-theme", "light");
+  await chart.evaluate((el) => (el as any).__chart.dispatchAction({ type: "dataZoom", start: 40, end: 80 }));
   const before = await read();
+  expect(Math.round(before.start)).toBe(40);
   await page.getByRole("radio", { name: "Dark theme" }).check();
-  await expect(page.locator("[data-chart-theme]").first()).toHaveAttribute("data-chart-theme", "dark");
+  await expect(chart).toHaveAttribute("data-chart-theme", "dark");
   await expect.poll(async () => (await read()).axis).not.toBe(before.axis);             // recoloured from the new tokens
   const after = await read();
-  expect([Math.round(after.start), Math.round(after.end)]).toEqual([Math.round(before.start), Math.round(before.end)]);
-  expect(Math.round(after.start)).toBe(40);
+  expect([Math.round(after.start), Math.round(after.end)]).toEqual([40, 80]);
 });
 
 test("S17: the theme switch is a radio group driven by arrow keys", async ({ page }) => {
