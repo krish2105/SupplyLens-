@@ -9,7 +9,14 @@ fictional and public data; `docs/operations/hosted-demo.md`). Still open: field 
 throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
 profile, a corporate identity provider and an ERP sandbox.
 
-## Current state (production-readiness Phase 1, 2026-10-22)
+## Current state (production-readiness Phase 2, 2026-10-23)
+Phase 2 (security hardening) is recorded in `docs/agent-handoff/phases/PHASE-02.md`: revocable server-side sessions,
+request-body cap and sign-in throttle, sanitised database errors, personal-data redaction on upload, fixture safety
+guards, SHA-pinned CI and lock-pinned hosted dependencies. Every push to `main` now deploys the hosted demo. Measured:
+pytest 398 passed / 6 skipped (Keycloak), Playwright 114 passed / 2 skipped. No security certification is claimed; a
+penetration test and corporate IdP qualification have not been performed.
+
+## Phase 1 state (2026-10-22)
 The live register of open issues, evidence and decisions is `docs/agent-handoff/` (STATUS.md first). Phase 0 audited
 commit 9fcbedb (2 P0, 10 P1, 18 P2, 8 P3). Phase 1 fixed both P0s (public demo administration, default shortfall),
 five P1s (lead-time sizing, STALE re-approval, unreconciled orders as supply and the CONFIRMED dead end, owner

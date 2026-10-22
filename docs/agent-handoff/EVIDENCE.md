@@ -85,3 +85,29 @@ answering (worker log shows `POST /api/embed 200`); gitleaks, gh, vercel CLIs pr
 Keycloak OIDC tests (Keycloak not running), local Docker compose (daemon down; CI `compose-smoke` passed on `037e42b`),
 load test, research reruns, hosted Playwright suite (only the non-destructive probes above).
 
+## Phase 2 — security hardening (2026-10-23, UTC)
+
+**Starting point:** `main` @ `eaabf6b`. **Commits:** `ec6c208` (Git deploys), `1813f43` (security fixes). Environment as before.
+
+| ID | Check | Command | Result | Notes |
+|---|---|---|---|---|
+| P2-E01 | Git-shaped Vercel build | `git archive HEAD` into a scratch dir → `vercel deploy` (preview) | Ready; build ran `python3 ../../scripts/vercel/build_api.py` | Preview answers 302 (deployment protection); a Ready build proves staging and bundling |
+| P2-E02 | Git-triggered production deploys | push `ec6c208`, then `1813f43`; `vercel ls`, `vercel inspect` | both **Ready** (56 s, 45 s), aliased to `supplylens-self.vercel.app` | First successful Git deploys; before: `ENTRYPOINT_NOT_FOUND` in 4 s on every push |
+| P2-E03 | Phase 2 security tests | `uv run pytest -q tests/test_phase2_security.py` | **24 passed** | During development they exposed two defects in the new code (idle revocation rolled back; chunked overflow surfaced as 500), both fixed |
+| P2-E04 | Full backend suite | `uv run pytest -q -p no:cacheprovider` | **398 passed, 6 skipped** in 103.5 s | Skips = Keycloak |
+| P2-E05 | Lint / lock / hosted pins | `ruff check .`; `uv lock --check`; `python3 scripts/vercel/build_api.py --check` | pass; "hosted API pins match uv.lock" | — |
+| P2-E06 | Browser suite, disposable stack | API with `SUPPLYLENS_E2E_DISPOSABLE=true`; `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1 npx playwright test` | **114 passed, 2 skipped** (1.0 min) | `/api/v1/auth/config` reported `disposable: true` |
+| P2-E07 | Destructive-setup guard | same stack, no opt-in: `npx playwright test e2e/consistency.spec.ts`; then `SUPPLYLENS_E2E_SKIP_RESET=1 npx playwright test e2e/layout.spec.ts` | refused: "Refusing to modify business data: SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE is not 1"; read-only run: 15 passed, "not resetting test orders" | pytest guard: `SUPPLYLENS_ADMIN_DATABASE_URL=…/supplylens pytest` → UsageError "refusing to run" |
+| P2-E08 | Contracts / types | `./scripts/update_contracts.sh`; `check_contracts.sh`; `npx tsc --noEmit` | contract regenerated (`AuthConfig.disposable`); match; tsc ok | — |
+| P2-E09 | Dependency advisories | `uvx pip-audit==2.10.1 …`; `npm --prefix apps/web audit --omit=dev --audit-level=high` | no known vulnerabilities; 0 vulnerabilities | — |
+| P2-E10 | Secret scan | `gitleaks detect --source . --redact --config .gitleaks.toml` | no leaks (≈3.6 MB) | Includes the new committed `deploy/vercel-api/hosted_storage` documents |
+| P2-E11 | CI pins resolved | `gh api repos/<action>/commits/<tag>` | checkout 11d5960…, setup-uv d0cc045…, setup-node 49933ea…, upload-artifact ea165f8…, download-artifact d3f86a1…; gitleaks 8.21.2 linux_x64 sha256 5bc41815… | From the publishers' repositories over HTTPS |
+| P2-E12 | CI on `ec6c208` | `gh run list --workflow ci.yml --branch main` | **cancelled** (superseded by the `1813f43` push; workflow `cancel-in-progress`) | `eaabf6b` likewise cancelled; `1813f43` covers both |
+| P2-E13 | CI on `1813f43` | `gh run view 39836268410` | **success, 8/8 jobs** (lint incl. hosted pin check, secrets-and-dependencies with checksum-verified gitleaks, backend, contracts-and-web, e2e with the disposable-stack guard, pitr-drill, compose-smoke, acceptance-evidence) | First run with SHA-pinned actions |
+| P2-E15 | Live session revocation (non-destructive) | `scratchpad live_p2.py`: viewer signs in, reads, signs out; the copied cookie is replayed | before sign-out 200; replay **401 `session_revoked`**; no cookie 401; `auth/config` `disposable: false` | — |
+| P2-E16 | Live demo lockdown re-probe | `scratchpad live_probe.py` | admin writes 403; setup 404; planner overview 200 | Same probes as P1-E14 |
+
+### Not run in Phase 2
+Keycloak OIDC tests (SEC-P2-08 is code-reviewed only), local Docker compose and image scans (daemon down), DAST or any
+intrusive test of the hosted demo, penetration test, corporate IdP qualification.
+

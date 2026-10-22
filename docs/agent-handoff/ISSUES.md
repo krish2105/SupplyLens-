@@ -32,8 +32,8 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | fixed (P1-E03) |
 | P2-ML-01 | P2 | Forecasting | No test of a successful trained-model forecast through the service; missing artifacts raise `artifact_missing` without baseline fallback | VERIFIED (tests); fallback gap PLAUSIBLE | open |
 | P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | open |
-| P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | open |
-| P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | open |
+| P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | fixed for new uploads (SEC-P2-07); old rows not rewritten |
+| P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | fixed (SEC-P2-03, P2-E03) |
 | P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | open |
 | P2-FE-04 | P2 | Web | No `error.tsx` / `global-error.tsx` / `not-found.tsx`; render errors white-screen the app | VERIFIED (absence) | open |
 | P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | partially fixed: agent-run start, retry, reconcile |
@@ -43,15 +43,27 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | open |
 | P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED in repo docs; not re-run | open |
 | P2-QA-02 | P2 | Tests / CI | Lab Web-Vitals thresholds fail on shared CI runners (desktop INP proxy 224 ms > 200 ms on a docs-only commit) | VERIFIED (CI run 39827354915) | open |
+| SEC-P2-01 | P1 | Test safety | Destructive fixtures (pytest TRUNCATE, Playwright order cancellation) ran against any configured target | VERIFIED | fixed (P2-E03, P2-E07) |
+| SEC-P2-02 | P2 | Sessions | Development sessions were stateless: no revocation on sign-out, no idle timeout | VERIFIED | fixed, verified live (P2-E15) |
+| SEC-P2-03 | P2 | Resource limits | No body cap before parsing/auth; unlimited sign-in attempts and admin writes | VERIFIED | fixed; throttle per process (residual) |
+| SEC-P2-04 | P3 | Error disclosure | Database error text returned by onboarding routes and integration status | VERIFIED | fixed (P2-E03) |
+| SEC-P2-05 | P3 | Object-level authz | Cross-tenant reconcile / alert acknowledge answered 409, not 404 (no oracle) | VERIFIED | fixed (P2-E03) |
+| SEC-P2-06 | P2 | Supply chain | Actions by tag, unverified gitleaks download, unpinned pip-audit, unpinned hosted dependencies | VERIFIED | fixed; Docker digests open |
+| SEC-P2-07 | P2 | Privacy | = P2-PRIV-01 (personal data stored from CSV uploads) | VERIFIED | fixed for new uploads |
+| SEC-P2-08 | P3 | Availability | IdP outage made every OIDC request 500 | VERIFIED (code) | fixed in code; not exercised (no Keycloak) |
+| SEC-P2-10 | P3 | Parsing | Oversized CSV field / NUL byte → 500 | VERIFIED | fixed (P2-E03) |
+| SEC-P2-11 | P2 | Rate limits | No per-tenant retrieval ceiling or admission control (security review F-05) | RECORDED | open |
+| SEC-P2-12 | P3 | Audit | Audit trail append-only for the app role but not tamper-evident against the owner role | VERIFIED (grants) | open |
+| SEC-P2-13 | P3 | Retention | No retention jobs for auth_sessions, import_rows, web_vitals, alerts | VERIFIED (absence) | open |
 | P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | fixed in README / PROJECT_STATUS current-state section |
 | P3-DOC-02 | P3 | Docs | Contradictory statements (no deployments vs D-050; "current task: session 3"; OIDC "outstanding") | VERIFIED | fixed (root DECISIONS, PROJECT_STATUS, README) |
 | P3-PLAN-06 | P3 | Planning | Smaller planner issues (ScaleError escapes explainer; UNKNOWN timeouts trigger extra solves; weekly budget on 21-day plan; stale docstrings) | VERIFIED (reviewer probes; code re-read for budget) | open |
 | P3-ML-02 | P3 | Forecasting | Model file hashed then re-read by path (TOCTOU); `simulation_study.py` loads models without hash check | VERIFIED (code) | open |
-| P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | open |
-| P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | open |
-| P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | open |
+| P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | partially fixed: parser errors (SEC-P2-10); publish re-check and atomic workspace creation open |
+| P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | partially fixed: dev sessions revocable, IdP outage 503; CSP unsafe-inline and stream role open |
+| P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | partially fixed: actions SHA-pinned, hosted deps pinned (SEC-P2-06); Docker images open |
 | P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | open |
-| P3-OPS-02 | P3 | Deployment | Git-triggered Vercel production builds fail within seconds on every push (the API service's `build/vercel-api` is generated locally, not in git); only CLI deploys succeed | VERIFIED (`vercel ls`, P1-E12) | open |
+| P3-OPS-02 | P3 | Deployment | Git-triggered Vercel production builds fail within seconds on every push (the API service's `build/vercel-api` is generated locally, not in git); only CLI deploys succeed | VERIFIED (`vercel ls`, P1-E12) | fixed (P2-E02) |
 | P3-FE-10 | P3 | Web | Admin screens do not explain the demo lockdown before a click (the 403 message does) | VERIFIED (code) | open |
 
 ## External blockers (cannot be closed by code alone)
