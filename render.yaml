@@ -1,0 +1,45 @@
+# Render Blueprint for the public SupplyLens demo (owner decision D-050): FastAPI API + worker in one Docker web service,
+# Render Postgres 17 with pgvector. Fictional Demo data and public UCI research data only; demo role accounts.
+# Apply: Render Dashboard -> New -> Blueprint -> this repository. Then set SUPPLYLENS_API_URL on the Vercel project to the
+# service URL and redeploy the web app (docs/operations/hosted-demo.md).
+databases:
+  - name: supplylens-db
+    plan: 0.5c-1g
+    postgresMajorVersion: "17"
+    databaseName: supplylens
+    user: supplylens_owner
+    region: frankfurt
+    diskSizeGB: 5
+
+services:
+  - type: web
+    name: supplylens-api
+    runtime: docker
+    dockerfilePath: ./infra/docker/api.Dockerfile
+    dockerContext: .
+    plan: 1c-2g
+    region: frankfurt
+    healthCheckPath: /health
+    preDeployCommand: ./scripts/render/predeploy.sh
+    dockerCommand: ./scripts/render/start.sh
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: supplylens-db
+          property: connectionString
+      - key: SUPPLYLENS_APP_DB_PASSWORD
+        generateValue: true
+      - key: SUPPLYLENS_SESSION_SECRET
+        generateValue: true
+      - key: SUPPLYLENS_ALERT_WEBHOOK_SECRET
+        generateValue: true
+      - key: SUPPLYLENS_ENVIRONMENT
+        value: demo
+      - key: SUPPLYLENS_DEV_AUTH
+        value: "true"
+      - key: SUPPLYLENS_COOKIE_SECURE
+        value: "true"
+      - key: SUPPLYLENS_STORAGE_DIR
+        value: /tmp/supplylens-storage
+      - key: SUPPLYLENS_DEMO_LOAD_UCI
+        value: "true"

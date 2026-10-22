@@ -17,6 +17,7 @@ from ..authz import Actor, resolve_actor
 from ..config import settings
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
+from ..inline_jobs import drain
 from ..integrations import sandbox_erp
 from ..knowledge import acl
 from ..knowledge.ingest import read_version_text
@@ -217,6 +218,7 @@ def start_run(body: AgentRunIn, a: Actor = Depends(limit("agent_run", 30)), idem
         code, resp = idempotent(a, idempotency_key, "agent-runs", body.model_dump(mode="json"), do)
     except ValueError as e:
         raise HTTPException(422, {"code": "invalid_run", "message": str(e)}) from e
+    drain(a.tenant_id)           # serverless hosting only (settings.inline_jobs); the worker does this otherwise
     return JSONResponse(resp, status_code=code)
 
 
@@ -352,6 +354,7 @@ def approve(action_id: uuid.UUID, body: ApproveIn, a: Actor = Depends(actor),
                                 a, action_id, payload_hash=body.payload_hash,
                                 expected_row_version=body.expected_row_version,
                                 max_spend_minor=body.max_spend_minor))))
+    drain(a.tenant_id)
     return JSONResponse(json.loads(json.dumps(resp, default=str)), status_code=code)
 
 
@@ -380,13 +383,17 @@ def edit(action_id: uuid.UUID, body: EditIn, a: Actor = Depends(actor), idempote
 
 @router.post("/actions/{action_id}/reconcile", response_model=ActionResult)
 def reconcile(action_id: uuid.UUID, a: Actor = Depends(actor)):
-    return _guard(lambda: actions.reconcile(a, action_id))
+    out = _guard(lambda: actions.reconcile(a, action_id))
+    drain(a.tenant_id)
+    return out
 
 
 @router.post("/actions/{action_id}/retry", response_model=ActionResult)
 def retry(action_id: uuid.UUID, a: Actor = Depends(actor)):
     """Re-queue a FAILED dispatch (e.g. after a connector outage) under the same idempotency key."""
-    return _guard(lambda: actions.retry_failed(a, action_id))
+    out = _guard(lambda: actions.retry_failed(a, action_id))
+    drain(a.tenant_id)
+    return out
 
 
 class ReceiptIn(BaseModel):

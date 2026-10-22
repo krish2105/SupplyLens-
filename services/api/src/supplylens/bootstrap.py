@@ -1,13 +1,16 @@
 """One-shot local bootstrap: seed control plane, ingest UCI (if downloaded), build the
 simulated UCI operations layer, and load the fictional Demo workspace. Idempotent."""
 import json
+import os
+from pathlib import Path
 
 from .config import REPO_ROOT
 from .ingest.uci import ingest
 from .seed import seed, tenant_id
 from .simulation import demo, uci_ops
 
-UCI_ZIP = REPO_ROOT / "data" / "raw" / "core" / "online_retail_ii" / "online_retail_ii.zip"
+# SUPPLYLENS_UCI_ZIP lets hosted deploys keep the downloaded file outside the read-only image (scripts/render/)
+UCI_ZIP = Path(os.environ.get("SUPPLYLENS_UCI_ZIP") or REPO_ROOT / "data" / "raw" / "core" / "online_retail_ii" / "online_retail_ii.zip")
 
 
 def main() -> None:

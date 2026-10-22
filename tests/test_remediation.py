@@ -504,3 +504,40 @@ def test_DEF10_requests_past_capacity_are_refused_at_once_and_recovery_is_immedi
     monkeypatch.setitem(app_module._inflight, "all", app_module.settings.max_inflight)
     assert c.get("/api/v1/overview", headers=DEMO).status_code == 503
     assert c.get("/api/v1/me").status_code == 200                           # sign-in state is never shed
+
+
+# =========================================================================================== S09 profiles (no IdP needed)
+def test_S09_production_and_demo_profiles_fail_closed():
+    from supplylens.config import Settings
+    safe = dict(session_secret="x" * 40, alert_webhook_secret="y" * 40, cookie_secure=True,
+                database_url="postgresql+psycopg://supplylens_app:s3cret@db/sl", admin_database_url="postgresql+psycopg://own:s3c@db/sl")
+    with pytest.raises(ValueError, match="production profile refused"):
+        Settings(environment="production", dev_auth=True, **safe)
+    with pytest.raises(ValueError, match="OIDC provider"):
+        Settings(environment="production", dev_auth=False, **safe)
+    demo_ok = Settings(environment="demo", dev_auth=True, **safe)              # public demo keeps the role accounts
+    assert demo_ok.dev_login_available
+    for bad in ({"cookie_secure": False}, {"session_secret": "dev-only-change-me"},
+                {"database_url": "postgresql+psycopg://supplylens_app:supplylens_app_dev@db/sl"},
+                {"database_url": safe["admin_database_url"]}):
+        with pytest.raises(ValueError, match="demo profile refused"):
+            Settings(environment="demo", dev_auth=True, **{**safe, **bad})
+
+
+def test_inline_jobs_complete_a_run_and_a_dispatch_without_a_worker(demo_tenant, monkeypatch):
+    """Serverless hosting: with inline_jobs the request that queues work also performs it (no worker process)."""
+    from supplylens.config import settings
+    monkeypatch.setattr(settings, "inline_jobs", True)
+    c = TestClient(app)
+    c.post("/api/v1/auth/dev-login", json={"email": dev_email("planner")}, headers=H)
+    r = c.post("/api/v1/agent-runs", headers={**DEMO, "Idempotency-Key": uuid.uuid4().hex}, json={
+        "mode": "draft", "sku_ids": ["DEMO-REF-SKU"], "knowledge_cutoff": CUTOFF.isoformat(), "effective_date": "2026-10-20",
+        "budget_minor": 18000, "currency": "USD", "allow_shortfall": False})
+    d = c.get(f"/api/v1/agent-runs/{r.json()['run_id']}", headers=DEMO).json()
+    assert d["status"] == "WAITING_FOR_APPROVAL" and len(d["actions"]) == 1             # done before the reply
+    action = c.get(f"/api/v1/actions/{d['actions'][0]['id']}", headers=DEMO).json()
+    c.post("/api/v1/auth/dev-login", json={"email": dev_email("approver")}, headers=H)
+    ok = c.post(f"/api/v1/actions/{action['id']}/approve", headers={**DEMO, "Idempotency-Key": uuid.uuid4().hex},
+                json={"payload_hash": action["payload_hash"], "expected_row_version": action["row_version"]})
+    assert ok.status_code == 200
+    assert c.get(f"/api/v1/actions/{action['id']}", headers=DEMO).json()["status"] == "RECONCILED"

@@ -1,6 +1,8 @@
 """Runtime settings loaded from environment variables (prefix SUPPLYLENS_) or .env.
 
-Environment profile (audit S09). `environment` is development (the default for a local checkout), test or production.
+Environment profile (audit S09). `environment` is development (the default for a local checkout), test, demo or
+production. `demo` is a public showcase on fictional and public data: the role accounts stay available, but everything else
+fails closed like production (generated secrets, Secure cookies, no owner credentials for the API).
 Production fails closed at start-up: development sign-in must be off, every secret and database password must differ
 from the published development defaults, session cookies must be Secure, and an OIDC identity provider must be
 configured. Development sign-in itself is only available in development and test.
@@ -30,7 +32,7 @@ class Settings(BaseSettings):
     # Optional cross-encoder reranker: a local model directory or hub id. Unset = rule-based reranking only.
     reranker_model: str | None = None
     reranker_candidates: int = 20
-    environment: Literal["development", "test", "production"] = "development"
+    environment: Literal["development", "test", "demo", "production"] = "development"
     session_secret: str = "dev-only-change-me"
     dev_auth: bool = True
     cookie_secure: bool = False
@@ -46,6 +48,10 @@ class Settings(BaseSettings):
     oidc_recheck_seconds: int = 60                # how often a session is re-confirmed with the provider
     # Back-pressure (DEF-10): requests in flight per API process. Past the limit a request is refused at once with 503
     # and Retry-After instead of queueing; costly routes (retrieval, forecasts, scenarios, run starts) have a lower cap.
+    # Serverless hosting (Vercel) has no always-on worker: with inline_jobs the request that queues work (agent run,
+    # approval, retry, reconcile) also runs that tenant's queued jobs and dispatches before it returns.
+    inline_jobs: bool = False
+    db_pool_size: int = 10
     max_inflight: int = 64
     max_inflight_costly: int = 8
     approval_ttl_minutes: int = 60 * 24
@@ -63,9 +69,9 @@ class Settings(BaseSettings):
         if not self.dev_auth and defaults:
             raise ValueError("SUPPLYLENS_DEV_AUTH=false requires SUPPLYLENS_SESSION_SECRET and "
                              "SUPPLYLENS_ALERT_WEBHOOK_SECRET to be set to non-default values")
-        if self.environment == "production":
+        if self.environment in ("production", "demo"):
             problems = []
-            if self.dev_auth:
+            if self.dev_auth and self.environment == "production":
                 problems.append("SUPPLYLENS_DEV_AUTH must be false")
             if defaults:
                 problems.append("session and webhook secrets must not be the development defaults")
@@ -77,10 +83,10 @@ class Settings(BaseSettings):
                 problems.append("the API must not connect with the migration/owner credentials")
             if not self.cookie_secure:
                 problems.append("SUPPLYLENS_COOKIE_SECURE must be true (cookies only over TLS)")
-            if not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret):
+            if self.environment == "production" and not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret):
                 problems.append("an OIDC provider (issuer, client id, client secret) must be configured")
             if problems:
-                raise ValueError("production profile refused to start: " + "; ".join(problems))
+                raise ValueError(f"{self.environment} profile refused to start: " + "; ".join(problems))
         return self
 
     @property
