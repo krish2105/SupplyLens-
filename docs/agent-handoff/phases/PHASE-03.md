@@ -53,7 +53,7 @@ Single requests: lexical 54 → 29 ms, vector 155 → 113 ms. Burst of 120 (60 c
 | Suite | Result |
 |---|---|
 | ruff, `uv lock --check`, hosted pin check | pass |
-| pytest (full) | 398 → **413 passed, 6 skipped** (Keycloak) |
+| pytest (full) | 398 → **414 passed, 6 skipped** (Keycloak; 413 before the hosted-migration regression test) |
 | `tests/test_phase3_performance.py` | 15 passed (exposed one defect in the new share rule, fixed) |
 | Migration rehearsal (0005 → 0009 → 0010 → rollback → head) | vectors bit-identical |
 | Contracts, tsc, `next build` | pass |
@@ -74,8 +74,12 @@ Single requests: lexical 54 → 29 ms, vector 155 → 113 ms. Burst of 120 (60 c
   `plan_cache_mode=force_custom_plan`, real `bge-m3` embeddings, a metrics scraper with alerting on the runbook series.
 
 ## 6. Hosted demo
-Migration 0010 reaches Neon through the temporary setup token (PD-009, PD-016); results and live checks in EVIDENCE.
-`/metrics` stays absent on the demo (no token configured).
+Migration 0010 reaches Neon through the temporary setup token (PD-009, PD-016). **The first attempt failed** (P3-E14):
+Neon's owner role bypasses row-level security, so the per-workspace copy saw every workspace on every pass and hit a
+duplicate key. The transaction rolled back (schema stayed at 0009, demo unaffected). The copy now also filters
+`tenant_id = t`, and a new rehearsal migrates as a role that bypasses RLS (P3-E15). Lesson: local rehearsals ran with an
+owner bound by RLS; hosted owners may not be — data migrations must be correct under both. Results of the retried
+migration and the live checks are in EVIDENCE. `/metrics` stays absent on the demo (no token configured).
 
 ## 7. Next actions
 1. Web robustness (deferred by PD-014): P1-FE-01, P1-FE-02 rest, P2-FE-03…08, P2-QA-01/02, P3-FE-09/10.

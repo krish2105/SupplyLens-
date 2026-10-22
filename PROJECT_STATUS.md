@@ -18,7 +18,7 @@ token-protected Prometheus metrics, an outbox dead letter and per-workspace work
 reference data and 20 users: retrieval p95 256 → 158 ms at 5 req/s; up to 16 req/s served in full (p95 442 ms) where the
 previous code served about 8; past capacity the excess is refused with 503 and recovery is immediate. This is a
 development laptop with a stubbed embedding service, **not** the declared 8 vCPU / 32 GiB profile and not production
-evidence. pytest 413 passed / 6 skipped (Keycloak), Playwright 116 passed / 2 skipped.
+evidence. pytest 414 passed / 6 skipped (Keycloak), Playwright 116 passed / 2 skipped.
 
 ## Phase 2 state (2026-10-23)
 Phase 2 (security hardening) is recorded in `docs/agent-handoff/phases/PHASE-02.md`: revocable server-side sessions,

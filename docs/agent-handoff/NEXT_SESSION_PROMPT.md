@@ -26,7 +26,7 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      PostgreSQL 17 + pgvector with roles supplylens_owner / supplylens_app (passwords *_dev) and database supplylens_test
      (copy the CI workflow's "databases and roles" step), then `uv sync`, `npm --prefix apps/web ci`,
      `uv run alembic -c services/api/alembic.ini upgrade head` against supplylens_test, `uv run pytest -q`.
-     Expected baseline: 413 passed, 6 skipped (Keycloak). Browser suite: see STATUS.md (disposable stack; expected
+     Expected baseline: 414 passed, 6 skipped (Keycloak). Browser suite: see STATUS.md (disposable stack; expected
      116 passed, 2 skipped). Migration head 0010.
    - Never point tests at a real database: pytest refuses anything but a local *_test database, and the browser suite
      only resets data on a proven disposable stack (D-065). Do not weaken these guards.

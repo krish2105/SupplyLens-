@@ -6,8 +6,8 @@ retrieval queries scanned the whole table, so each search moved about 1.5 GB thr
 their own table the lexical scan reads only text and the vector scan only vectors.
 
 chunk_vectors has the same forced row-level security policy as every tenant table and a cascade from chunks. Existing
-vectors are copied workspace by workspace under that workspace's context (row-level security applies to the owner too),
-then chunks is rewritten without the column (ALTER ... TYPE with USING forces a transactional rewrite; DROP COLUMN alone
+vectors are copied workspace by workspace under that workspace's context and with an explicit tenant predicate (row-level
+security binds a local owner, but a hosted owner role may bypass it), then chunks is rewritten without the column (ALTER ... TYPE with USING forces a transactional rewrite; DROP COLUMN alone
 leaves the old bytes in place). Rollback copies the vectors back the same way and drops the table.
 
 Revision ID: 0010
@@ -40,8 +40,10 @@ def upgrade() -> None:
     BEGIN
       FOR t IN SELECT id FROM tenants LOOP
         PERFORM set_config('app.tenant_id', t::text, true);
+        -- tenant_id = t as well as the context: a migrating role that bypasses row-level security (Neon's owner does)
+        -- would otherwise see every workspace's rows on every pass
         INSERT INTO chunk_vectors (chunk_id, tenant_id, version_id, embedding)
-          SELECT id, tenant_id, version_id, embedding FROM chunks WHERE embedding IS NOT NULL;
+          SELECT id, tenant_id, version_id, embedding FROM chunks WHERE embedding IS NOT NULL AND tenant_id = t;
       END LOOP;
       PERFORM set_config('app.tenant_id', '', true);
     END $$""")
@@ -58,7 +60,7 @@ def downgrade() -> None:
     BEGIN
       FOR t IN SELECT id FROM tenants LOOP
         PERFORM set_config('app.tenant_id', t::text, true);
-        UPDATE chunks c SET embedding = v.embedding FROM chunk_vectors v WHERE v.chunk_id = c.id;
+        UPDATE chunks c SET embedding = v.embedding FROM chunk_vectors v WHERE v.chunk_id = c.id AND c.tenant_id = t;
       END LOOP;
       PERFORM set_config('app.tenant_id', '', true);
     END $$""")

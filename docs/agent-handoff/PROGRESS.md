@@ -13,7 +13,7 @@ anything you rely on.
 | 2 — security hardening | `1813f43`, `550b427` | Fixture safety guards; revocable server-side sessions; body cap and sign-in throttle; sanitised DB errors; PII redaction on upload; SHA-pinned CI and Dependabot; IdP-outage 503; 404 consistency | P2-E01…E16; CI 8/8 on `1813f43` |
 | 3 — performance and backend reliability (owner brief) | see `git log` after `2365f49` | `chunk_vectors` (0010); admission classes, queue, workspace share; statement/pool timeouts → 503; bounded listings; `/metrics`; outbox dead letter; worker isolation; busy banner in the web app | P3-E01…; before/after load matrix on an M4 Pro laptop |
 
-Test counts over time: pytest 336 → 374 → 398 → **413 passed, 6 skipped** (Keycloak). Playwright 113 (+1 order-dependent
+Test counts over time: pytest 336 → 374 → 398 → **414 passed, 6 skipped** (Keycloak). Playwright 113 (+1 order-dependent
 failure) → 114 → **116 passed, 2 skipped** (Phase 3, twice).
 
 ## Issue status (as of `550b427`; Phase 3 changes below)

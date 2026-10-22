@@ -256,6 +256,40 @@ def test_migrations_0006_and_0010_move_existing_vectors_and_change_no_value(scra
     assert scratch.alembic("upgrade", "head").returncode == 0
 
 
+def test_migration_0010_is_correct_for_a_role_that_bypasses_row_level_security(scratch):
+    """Hosted databases migrate with the provider's owner role, which may bypass row-level security (Neon's does): each
+    per-workspace pass must still copy only that workspace's vectors (the first hosted run failed on a duplicate key)."""
+    from sqlalchemy import create_engine
+    assert scratch.alembic("downgrade", "0009").returncode == 0
+    tenants = {}
+    with create_engine(scratch.owner_url).begin() as c:
+        for slug in ("ws-a", "ws-b"):
+            tid, doc, ver = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+            c.execute(text("INSERT INTO tenants (id, slug, name, kind) VALUES (:i, :s, :s, 'customer')"), {"i": tid, "s": slug})
+            c.execute(text("SELECT set_config('app.tenant_id', :t, true)"), {"t": str(tid)})
+            c.execute(text("INSERT INTO documents (id, tenant_id, title, doc_type, source_kind) VALUES (:d,:t,'x','contract','generated')"),
+                      {"d": doc, "t": tid})
+            c.execute(text("""INSERT INTO document_versions (id, tenant_id, document_id, version_label, file_name, sha256,
+                storage_key, known_at, valid_from, parser_version) VALUES (:v,:t,:d,'v1','f',:h,'k',now(),'2011-01-01','p')"""),
+                      {"v": ver, "t": tid, "d": doc, "h": uuid.uuid4().hex})
+            for i in range(3):
+                c.execute(text("INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body, embedding) "
+                               "VALUES (gen_random_uuid(), :t, :v, :o, 's', 0, 1, 'body', "
+                               "(SELECT array_agg(CAST(:x AS real))::vector(1024) FROM generate_series(1, 1024)))"),
+                          {"t": tid, "v": ver, "o": i, "x": 0.001 * (i + 1)})
+            tenants[slug] = tid
+    superuser_url = f"postgresql+psycopg:///{scratch.name}"         # libpq environment: a role that bypasses RLS
+    r = subprocess.run([sys.executable, "-m", "alembic", "-c", str(REPO_ROOT / "services" / "api" / "alembic.ini"), "upgrade", "head"],
+                       env={**scratch.env(), "SUPPLYLENS_MIGRATION_URL": superuser_url}, capture_output=True, text=True,
+                       cwd=REPO_ROOT, timeout=300)
+    assert r.returncode == 0, r.stderr[-1500:]
+    import psycopg
+    with psycopg.connect(dbname=scratch.name, autocommit=True) as c:      # sees every workspace
+        rows = c.execute("SELECT v.tenant_id, count(*) FROM chunk_vectors v JOIN chunks c ON c.id = v.chunk_id "
+                         "AND c.tenant_id = v.tenant_id GROUP BY v.tenant_id").fetchall()
+    assert {str(t): n for t, n in rows} == {str(tenants["ws-a"]): 3, str(tenants["ws-b"]): 3}
+
+
 # ----------------------------------------------------------------------------- shared invariants
 def assert_orders_accounted(tid):
     """Every sandbox order maps to exactly one action of the tenant; no operation key is duplicated."""
