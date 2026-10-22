@@ -36,4 +36,6 @@ Keycloak needs about 700 MB of the Docker VM; on a 2 GB Colima VM run it with a 
   by earlier test orders (S12 working as intended).
 - Run Playwright against a production build (`NEXT_DIST_DIR=.next-build npx next build && npx next start --port 3101`);
   the dev server fails timing checks.
+- The PITR drill on macOS needs `LC_ALL=en_US.UTF-8 TMPDIR=/tmp ./scripts/pitr_drill.sh` (postmaster refuses an unset
+  locale; long temp paths break the socket path).
 - Generative inference stays disabled unless the owner changes D-041.

@@ -132,5 +132,11 @@ uv run pytest -q                                      # 330 passed, 6 skipped (K
 SUPPLYLENS_WEB_URL=http://localhost:3101 npx playwright test   # 107 passed, 1 skipped (production build)
 uv run python scripts/smoke_investigation.py          # OPTIMAL, 3 drafts, order RECONCILED with full read-back
 ```
+CI on GitHub: **run 39757531923 (commit 49a8caa): all 7 jobs passed** (lint, secrets/dependencies, backend, contracts and
+web, e2e, PITR drill, compose smoke). The previous push failed only the PITR drill: its repeated workload found the
+reference need already covered by its first order (open supply, S12); the workload now releases its own test order.
+Local PITR drill: `ok: true` (`artifacts/reports/pitr_drill_20261022T094235Z.json`; on macOS run it with
+`LC_ALL=en_US.UTF-8 TMPDIR=/tmp`).
+
 Fresh screenshots with revision labels: `docs/screenshots/session4/` (manifest lists route, theme, viewport, state).
 
