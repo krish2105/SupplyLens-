@@ -79,3 +79,8 @@ encryption review (local WAL archive is unencrypted; no production backups exist
 5. CSP without `'unsafe-inline'` (nonces) — P3-SEC-03 remainder.
 6. Docker base-image digest pins and image scanning (P3-CI-01 remainder).
 7. Owner actions: scope Neon variables (P1-SEC-02 residual); require `e2e` in branch protection once P2-QA-02 is fixed.
+
+## Status update (2026-10-23, at hand-over — `550b427`)
+- CI on `1813f43`: 8/8 success; the security fixes are live from a Git deploy.
+- Dependabot opened 7 PRs (actions v7/v8, setup-uv v10, TypeScript 7, web-vitals 6). None merged (PD-013).
+- §5 remaining work is unchanged and is mapped to phases in `../PROGRESS.md`.

@@ -104,3 +104,9 @@ External blockers EXT-01 … EXT-10 unchanged. No new blocker. Docker daemon sti
    duplicate-commitment warning above.
 3. Owner: scope the Neon integration variables away from the web service (P1-SEC-02 residual); decide whether
    Git-triggered Vercel builds should be disabled (P3-OPS-02).
+
+## Status update (2026-10-23, after Phase 2 — `550b427`)
+- §6 risks still open: pending drafts not counted as supply (D-056); P2-REL-03; CSV terms `known_at`; P2-KNOW-01;
+  P1-FE-01 and the inventory part of P1-FE-02; P2-QA-01/02; P1-SEC-02 residual.
+- §6 risks closed in Phase 2: P2-PRIV-01 (for new uploads) and P2-API-01 (SEC-P2-07, SEC-P2-03).
+- §8 item 3 (Git-triggered Vercel builds, P3-OPS-02) is fixed: every push to `main` deploys (`ec6c208`).

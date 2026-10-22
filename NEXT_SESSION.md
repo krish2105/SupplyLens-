@@ -1,6 +1,6 @@
 # Next session
 
-Start from `main`. Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
+Start from `main`. To open a new working session, paste `docs/agent-handoff/NEXT_SESSION_PROMPT.md`. Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
 `docs/agent-handoff/ISSUES.md` (open issues with acceptance criteria), `EVIDENCE.md` and `DECISIONS.md`. Root
 `PROJECT_STATUS.md`, `docs/remediation/REGISTER.md` and `DECISIONS.md` (D-001 … D-060) hold the history.
 

@@ -1,12 +1,13 @@
 # Agent handoff — status
 
-**Read this first.** Then `ISSUES.md` (what to fix), `DECISIONS.md` (constraints), `EVIDENCE.md` (what was proven and
-how), `phases/PHASE-NN.md` (per-phase record). Update this file at the end of every phase; keep older phase rows.
+**Read this first.** Then `PROGRESS.md` (cross-phase map and remaining order), `ISSUES.md` (what to fix),
+`DECISIONS.md` (constraints), `EVIDENCE.md` (what was proven and how), `phases/PHASE-NN.md` (per-phase record). To start a
+new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at the end of every phase; keep older rows.
 
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 2 — complete for its delivered scope** (enterprise security hardening; checkpoint list in PHASE-02 §5). Phase 3 **not started**; start only on the owner's instruction. |
+| Current phase | **Hand-over after Phase 2** (2026-10-23): Phase 2 complete for its delivered scope (enterprise security hardening; checkpoint list in PHASE-02 §5). Phase 3 **not started**; start only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
 | Code commits | `ec6c208` (Git pushes deploy on Vercel), `1813f43` (Phase 2 security fixes); the handoff/docs commit follows (see `git log`) |
 | CI on `1813f43` | run 39836268410: **8/8 jobs success** (EVIDENCE P2-E13) |

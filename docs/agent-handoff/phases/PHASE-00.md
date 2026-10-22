@@ -129,3 +129,12 @@ requires external evidence (EXT-01 … EXT-10) that code changes cannot produce.
 8. **In parallel, owner-driven:** EXT-01 … EXT-10 (IdP, ERP sandbox, pilot users, pentest, pricing/SLA).
 
 Phase 0 stops here; Phase 1 has not been started.
+
+## Status update (2026-10-23, after Phase 2 — `550b427`)
+- Both P0s are fixed (P0-SEC-01 verified live; P0-PLAN-01 with tests). Of the 10 P1s: 3 fixed (P1-PLAN-02, P1-ACT-01,
+  P1-ACT-02), 3 partially fixed (P1-SEC-02: fixed in code, platform still injects owner variables; P1-FE-02; P1-PROC-01),
+  4 open (P1-FE-01, P1-IAM-01, P1-OPS-01, P1-SAAS-01).
+- The Phase 0 §7 execution order was followed for steps 1–3; Phase 2 was a security-hardening phase the owner asked for.
+  The remaining order is in `../PROGRESS.md`.
+- The score table above is the Phase 0 baseline; current scores are in `../PROGRESS.md`.
+- The E2E order-dependent failure (P2-QA-01) and the CI lab-vitals flake (P2-QA-02) are still open.
