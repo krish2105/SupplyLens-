@@ -22,6 +22,7 @@ from ..authz import Actor
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from .demand_history import dependence_by_sku
+from .grain import demand_shares, expand_offers
 from .positions import bounded_scope, load_positions
 from .terms_service import applicable_terms
 
@@ -64,6 +65,8 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
             "SELECT DISTINCT sku_id FROM inventory_positions ORDER BY sku_id"))]
         skus, scope = bounded_scope(skus, explicit=bool(inp.sku_ids))
         positions, excluded = load_positions(s, skus, eff)
+        shares = demand_shares(s, st.dataset_id, positions, eff)
+    real_skus = sorted({p["sku_id"] for p in positions.values()})
     planning = st.planning or {}
     currency = inp.currency or st.currency.strip()
     budget = inp.budget_minor if inp.budget_minor is not None else int(planning.get("weekly_budget_minor", 0))
@@ -75,37 +78,39 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
     # The forecast origin is the earlier of the knowledge cutoff and the decision date: nothing after the cutoff is known,
     # and demand on or before the decision date is not part of the coverage window (audit F02).
     origin = min(cutoff.date(), eff)
-    fr = run_forecast(actor.tenant_id, st.dataset_id, list(positions), origin, horizon=28,
+    fr = run_forecast(actor.tenant_id, st.dataset_id, real_skus, origin, horizon=28,
                       created_by=actor.user_id, allow_baseline_fallback=True)
-    res = applicable_terms(actor.tenant_id, list(positions), cutoff, eff)
+    res = applicable_terms(actor.tenant_id, real_skus, cutoff, eff)
     offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days})
               for t in res.applicable if t.currency == currency]
     lead_by_sku: dict[str, int] = {}
     for o in offers:                       # protection interval uses the fastest permitted supplier's lead time
         lead_by_sku[o.sku_id] = min(o.lead_time_days, lead_by_sku.get(o.sku_id, o.lead_time_days))
     service_level = inp.service_level or planning.get("service_level", 0.9)
-    dependence = dependence_by_sku(actor.tenant_id, st.dataset_id, list(positions), eff)
+    dependence = dependence_by_sku(actor.tenant_id, st.dataset_id, real_skus, eff)
     needs = {}
-    for sku, r in positions.items():
+    for key, r in positions.items():
+        sku = r["sku_id"]
         pts = fr.points[fr.points["sku_id"] == sku]
         if pts.empty:
-            excluded[sku] = "no forecast for this SKU"
+            excluded[key] = "no forecast for this SKU"
             continue
-        path = [{"day": p.day.date(), "q10": p.q10 * inp.demand_multiplier, "q50": p.q50 * inp.demand_multiplier,
-                 "q90": p.q90 * inp.demand_multiplier} for p in pts.itertuples()]
+        share, _ = shares[key]
+        m = inp.demand_multiplier * share       # a location plans for its own share of the SKU's demand (grain.py)
+        path = [{"day": p.day.date(), "q10": p.q10 * m, "q50": p.q50 * m, "q90": p.q90 * m} for p in pts.itertuples()]
         acf, dep_basis = dependence.get(sku, (None, "assumed default"))
         try:
-            needs[sku] = assess(Position(sku_id=sku, **{k: r[k] for k in ("on_hand", "allocated", "on_order", "capacity")}),
+            needs[key] = assess(Position(sku_id=key, **{k: r[k] for k in ("on_hand", "allocated", "on_order", "capacity")}),
                                 path, eff, coverage, safety, basis, lead_time_days=lead_by_sku.get(sku, 0),
                                 service_level=service_level, acf=acf, dependence_basis=dep_basis)
         except ValueError as e:
-            excluded[sku] = str(e)
+            excluded[key] = str(e)
     to_buy = {k: v for k, v in needs.items() if v.required_units > 0}
     req = PlanRequest(decision_date=eff, need_by=eff + timedelta(days=coverage), currency=currency,
                       budget_minor=budget, needs=[Need(sku_id=k, required_units=v.required_units,
                                                        capacity_units=v.capacity_headroom_units)
                                                   for k, v in to_buy.items()],
-                      offers=[o for o in offers if o.sku_id in to_buy], allow_shortfall=inp.allow_shortfall,
+                      offers=expand_offers(offers, list(to_buy)), allow_shortfall=inp.allow_shortfall,
                       shortage_penalty_minor=inp.shortage_penalty_minor)
     result = plan(req) if to_buy else None
     lines = result.lines if result else []
@@ -132,7 +137,8 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
         "value_kinds": {"forecast": "forecast", "stock": "simulated", "terms": "simulated", "budget": "assumed",
                         "demand_multiplier": "assumed", "supplier_delay_days": "assumed"},
         "forecast_run_id": str(fr.run_id),
-        "needs": {k: v.model_dump(mode="json") for k, v in needs.items()},
+        "needs": {k: {**v.model_dump(mode="json"), "location_id": positions[k]["location_id"],
+                      "demand_share": round(shares[k][0], 4), "demand_share_basis": shares[k][1]} for k, v in needs.items()},
         "plan": result.model_dump(mode="json") if result else {"status": "NO_ACTION", "lines": []},
         "terms": {"applicable": len(res.applicable), "ignored": [i.model_dump() for i in res.ignored],
                   "conflicts": res.conflicts},

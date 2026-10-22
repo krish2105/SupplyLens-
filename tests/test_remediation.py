@@ -164,12 +164,47 @@ def test_F04_agent_run_reports_capacity_infeasibility_and_prepares_nothing(uci_w
     assert r["state"]["plan"]["request"]["needs"][0]["capacity_units"] == 10
 
 
-def test_S21_multi_location_sku_is_excluded_with_a_reason_not_collapsed(uci_world):
-    with tenant_session(uci_world) as s:
+def test_S21_multi_location_sku_is_planned_per_location_with_its_own_demand_share(uci_world):
+    with tenant_session(uci_world) as s:       # S2 also sells at WH2, at half the WH rate
+        did = s.execute(text("SELECT dataset_id FROM tenant_settings")).scalar()
+        for i in range(140):
+            s.execute(text("INSERT INTO sales_daily VALUES (:t,:d,'S2','WH2',:day,:u)"),
+                      {"t": uci_world, "d": did, "day": date(2011, 1, 1) + timedelta(days=i), "u": ((i % 7) + 2) / 2})
         positions, excluded = load_positions(s, ["S1", "S2"], date(2011, 5, 20))
-    assert "S1" in positions and "S2" not in positions and "2 locations" in excluded["S2"]
-    out = run_scenario(who(uci_world, "planner"), ScenarioInput())
-    assert "S2" in out["scope"]["not_assessed"] and "S2" not in out["needs"]
+    assert set(positions) == {"S1", "S2@WH", "S2@WH2"} and not excluded
+    assert positions["S2@WH2"]["location_id"] == "WH2" and positions["S2@WH2"]["on_hand"] == 3   # not pooled to 6
+    out = run_scenario(who(uci_world, "planner"), ScenarioInput(sku_ids=["S2"], budget_minor=10**8))
+    wh, wh2 = out["needs"]["S2@WH"], out["needs"]["S2@WH2"]
+    assert wh["demand_share"] > wh2["demand_share"] > 0 and abs(wh["demand_share"] + wh2["demand_share"] - 1) < 1e-9
+    assert wh["demand_q50"] > wh2["demand_q50"]
+    keys = {l["sku_id"] for l in out["plan"]["lines"]}
+    assert keys <= {"S2@WH", "S2@WH2"} and len(out["plan"]["lines"]) == 2     # one line per site, never one pooled line
+
+
+def test_S21_agent_drafts_carry_locations_and_receipts_need_one(uci_world):
+    with tenant_session(uci_world) as s:       # both sites sell S2
+        did = s.execute(text("SELECT dataset_id FROM tenant_settings")).scalar()
+        for i in range(140):
+            s.execute(text("INSERT INTO sales_daily VALUES (:t,:d,'S2','WH2',:day,:u)"),
+                      {"t": uci_world, "d": did, "day": date(2011, 1, 1) + timedelta(days=i), "u": (i % 7) + 2})
+    run = create_run(who(uci_world, "planner"), mode="draft", inp={"sku_ids": ["S2"], "budget_minor": 10**8})
+    tick()
+    with tenant_session(uci_world) as s:
+        a = s.execute(text("SELECT id, payload, payload_hash, row_version FROM actions WHERE agent_run_id=:r"),
+                      {"r": run}).mappings().one()
+    locs = sorted(l["location_id"] for l in a["payload"]["lines"])
+    assert locs == ["WH", "WH2"] and {l["sku_id"] for l in a["payload"]["lines"]} == {"S2"}
+    assert {l["term_id"] for l in a["payload"]["lines"]} == {"T-S2"}         # real term id, not the planning copy
+    act.approve(who(uci_world, "approver"), a["id"], payload_hash=a["payload_hash"], expected_row_version=a["row_version"])
+    assert act.dispatch_once(uci_world)["result"] == "RECONCILED"
+    lines = [x for x in act.open_orders(who(uci_world, "viewer")) if x["action_id"] == a["id"]]
+    assert sorted(x["location_id"] for x in lines) == ["WH", "WH2"]
+    with pytest.raises(act.ActionError) as e:
+        act.record_receipt(who(uci_world, "planner"), a["id"], sku_id="S2", quantity=1, received_on=date(2011, 5, 21), key="r1")
+    assert e.value.code == "location_required"
+    r = act.record_receipt(who(uci_world, "planner"), a["id"], sku_id="S2", quantity=1, received_on=date(2011, 5, 21),
+                           key="r1", location_id="WH2")
+    assert r["received_units"] == 1
 
 
 def test_S21_explicit_scope_over_the_limit_is_rejected():
@@ -419,3 +454,53 @@ def test_S14_model_resolution_is_scoped_by_dataset_and_status(clean_db, tenant_a
     assert resolve_model(tenant_a, d1)["version"] == "1.0"
     with pytest.raises(ForecastError):
         resolve_model(tenant_a, d2, "tcn_quantile")
+
+
+def test_F04_capacity_counts_allocated_stock_and_scheduled_receipts_as_occupied():
+    # 100 capacity, 60 on hand of which 50 allocated, 30 arriving: only 10 units of space remain
+    a = assess(Position(sku_id="S", on_hand=60, allocated=50, on_order=30, capacity=100), path(), DEC, 14, 0, acf=AR,
+               lead_time_days=3)
+    assert a.capacity_headroom_units == 10 and a.required_units <= 10 < a.uncapped_required_units
+
+
+def test_S12_erp_receipt_feed_books_each_receipt_once_and_never_above_open(demo_tenant):
+    from supplylens.onboarding import service as onb
+    a = approved(demo_tenant)
+    assert act.dispatch_once(demo_tenant)["result"] == "RECONCILED"
+    po = sandbox_erp.lookup(f"po-{a['id']}")["po_number"]
+    admin = who(demo_tenant, "tenant_admin")
+    csv_text = ("receipt_id,po_number,sku_id,quantity,received_on\n"
+                f"GRN-1,{po},DEMO-REF-SKU,10,2026-10-22\n"
+                f"GRN-1,{po},DEMO-REF-SKU,10,2026-10-22\n"          # duplicate id in the same file
+                f"GRN-2,{po},DEMO-REF-SKU,25,2026-10-22\n"          # 10 + 25 > 30 ordered
+                f"GRN-3,SBX-PO-NOPE,DEMO-REF-SKU,5,2026-10-22\n"    # unknown order
+                f"GRN-4,{po},DEMO-REF-SKU,5,2026-10-01\n")          # before the order date
+    b = onb.upload(admin, kind="receipts", file_name="grn.csv", data=csv_text.encode(), rights="ERP goods-receipt export")
+    v = onb.validate_batch(admin, b["id"], b["mapping"])
+    assert (v["rows_valid"], v["rows_quarantined"]) == (1, 4)
+    reasons = " | ".join(" ".join(r["errors"]) for r in v["quarantined_sample"])
+    assert "duplicate" in reasons and "exceeds" in reasons and "no reconciled" in reasons and "before the order date" in reasons
+    onb.publish(admin, b["id"])
+    line = [x for x in act.open_orders(who(demo_tenant, "viewer")) if x["action_id"] == a["id"]][0]
+    assert (line["received_units"], line["open_units"], line["status"]) == (10, 20, "PARTIAL")
+    again = onb.upload(admin, kind="receipts", file_name="grn2.csv", rights="ERP goods-receipt export",
+                       data=f"receipt_id,po_number,sku_id,quantity,received_on\nGRN-1,{po},DEMO-REF-SKU,10,2026-10-22\n".encode())
+    v2 = onb.validate_batch(admin, again["id"], again["mapping"])
+    assert v2["rows_valid"] == 0 and "already booked" in v2["quarantined_sample"][0]["errors"][0]
+
+
+# =========================================================================================== DEF-10 back-pressure
+def test_DEF10_requests_past_capacity_are_refused_at_once_and_recovery_is_immediate(monkeypatch):
+    from supplylens.api import app as app_module
+    c = TestClient(app)
+    c.post("/api/v1/auth/dev-login", json={"email": dev_email("viewer")}, headers=H)
+    monkeypatch.setitem(app_module._inflight, "costly", app_module.settings.max_inflight_costly)
+    r = c.get("/api/v1/evidence/search", params={"q": "minimum order"}, headers=DEMO)
+    assert r.status_code == 503 and r.json()["code"] == "overloaded" and r.headers["Retry-After"] == "2"
+    assert c.get("/api/v1/overview", headers=DEMO).status_code == 200      # cheap reads still served
+    assert c.get("/health").status_code == 200
+    monkeypatch.setitem(app_module._inflight, "costly", 0)
+    assert c.get("/api/v1/evidence/search", params={"q": "minimum order"}, headers=DEMO).status_code == 200
+    monkeypatch.setitem(app_module._inflight, "all", app_module.settings.max_inflight)
+    assert c.get("/api/v1/overview", headers=DEMO).status_code == 503
+    assert c.get("/api/v1/me").status_code == 200                           # sign-in state is never shed

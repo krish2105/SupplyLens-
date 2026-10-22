@@ -799,6 +799,7 @@ class OpenOrderLine(Out):
     external_ref: str
     supplier_id: str
     sku_id: str
+    location_id: str | None = None
     ordered_units: int
     received_units: int
     cancelled_units: int

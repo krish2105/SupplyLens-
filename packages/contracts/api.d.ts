@@ -1554,6 +1554,8 @@ export interface components {
         };
         /** CancelOpenIn */
         CancelOpenIn: {
+            /** Location Id */
+            location_id?: string | null;
             /** Reason */
             reason: string;
             /** Sku Id */
@@ -3060,6 +3062,8 @@ export interface components {
             expected_on: string | null;
             /** External Ref */
             external_ref: string;
+            /** Location Id */
+            location_id: string | null;
             /** Open Units */
             open_units: number;
             /**
@@ -3490,6 +3494,8 @@ export interface components {
         };
         /** ReceiptIn */
         ReceiptIn: {
+            /** Location Id */
+            location_id?: string | null;
             /** Quantity */
             quantity: number;
             /**

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import clsx from "clsx";
 import { ArrowDownUp } from "lucide-react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
 import { Card, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
@@ -140,13 +140,14 @@ function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: s
   const terms = useApi(["terms", item?.sku_id, known, eff], item && known && eff ? "/api/v1/terms" : null,
     { query: { sku_id: item?.sku_id ?? "", knowledge_cutoff: known, effective_date: eff } });
   const sales = useApi(["sales", item?.sku_id], item ? "/api/v1/products/{sku_id}/sales" : null, { path: { sku_id: item?.sku_id ?? "" } });
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const option = useMemo(() => {
     const pts = (sales.data?.daily ?? []).filter((d) => !eff || d.day <= eff).slice(-120);
     const b = baseOption();
     return { ...b, grid: { left: 40, right: 12, top: 16, bottom: 28 }, legend: { show: false },
       xAxis: { ...(b.xAxis as object), type: "time" }, yAxis: { ...(b.yAxis as object), type: "value", name: "units" },
       series: [{ type: "bar", name: "Units sold", data: pts.map((p) => [p.day, p.units]), itemStyle: { color: token("--accent") }, barMaxWidth: 6 }] };
-  }, [sales.data, eff]);
+  }, [sales.data, eff, chartTheme]);
 
   if (!item) return (
     <Card className="p-5"><Eyebrow>Selection</Eyebrow>

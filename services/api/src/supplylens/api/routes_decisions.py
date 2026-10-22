@@ -391,12 +391,14 @@ def retry(action_id: uuid.UUID, a: Actor = Depends(actor)):
 
 class ReceiptIn(BaseModel):
     sku_id: str = Field(min_length=1, max_length=64)
+    location_id: str | None = Field(default=None, max_length=64)
     quantity: int = Field(gt=0, le=1_000_000)
     received_on: date
 
 
 class CancelOpenIn(BaseModel):
     sku_id: str = Field(min_length=1, max_length=64)
+    location_id: str | None = Field(default=None, max_length=64)
     reason: str = Field(min_length=1, max_length=500)
 
 
@@ -406,12 +408,14 @@ def receipt(action_id: uuid.UUID, body: ReceiptIn, a: Actor = Depends(actor), id
     if not idempotency_key:
         raise HTTPException(428, {"code": "idempotency_key_required", "message": "Idempotency-Key header required"})
     return _guard(lambda: actions.record_receipt(a, action_id, sku_id=body.sku_id, quantity=body.quantity,
-                                                 received_on=body.received_on, key=idempotency_key))
+                                                 received_on=body.received_on, key=idempotency_key,
+                                                 location_id=body.location_id))
 
 
 @router.post("/actions/{action_id}/cancel-open", response_model=CancelOpenResult)
 def cancel_open(action_id: uuid.UUID, body: CancelOpenIn, a: Actor = Depends(actor)):
-    return _guard(lambda: actions.cancel_open_units(a, action_id, sku_id=body.sku_id, reason=body.reason))
+    return _guard(lambda: actions.cancel_open_units(a, action_id, sku_id=body.sku_id, reason=body.reason,
+                                                    location_id=body.location_id))
 
 
 @router.get("/open-orders", response_model=list[OpenOrderLine])

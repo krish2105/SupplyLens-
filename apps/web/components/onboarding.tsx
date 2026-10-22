@@ -12,11 +12,12 @@ import { usePlanningContext } from "@/lib/state";
 import { dateTime, int, short } from "@/lib/format";
 
 type Batch = Schemas["ImportBatch"];
-type Kind = "sales" | "stock" | "terms";
+type Kind = "sales" | "stock" | "terms" | "receipts";
 const KIND_COPY: Record<Kind, string> = {
   sales: "Daily units sold per product and location. Becomes the forecasting history.",
   stock: "A stock snapshot per location and product on a date.",
   terms: "Supplier prices, MOQ, pack size and lead time with the dates they apply and became known.",
+  receipts: "Goods receipts from your ERP against SupplyLens orders: moves units from on-order to on-hand, once per receipt id.",
 };
 
 export function Onboarding({ admin }: { admin: boolean }) {
@@ -178,7 +179,7 @@ function NewWorkspace() {
       intent.settle();
       return r;
     },
-    onSuccess: async (r) => { await qc.invalidateQueries({ queryKey: ["me"] }); setCtx({ ws: r.slug, sku: null, known: null, eff: null }); },
+    onSuccess: async (r) => { await qc.invalidateQueries({ queryKey: ["me"] }); setCtx({ ws: r.slug, sku: null, known: null, eff: null, action: null, run: null }); },
   });
   return (
     <Card className="p-5">

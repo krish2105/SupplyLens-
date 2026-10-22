@@ -876,6 +876,18 @@
       },
       "CancelOpenIn": {
         "properties": {
+          "location_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
           "reason": {
             "maxLength": 500,
             "minLength": 1,
@@ -4840,6 +4852,17 @@
             "title": "External Ref",
             "type": "string"
           },
+          "location_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
           "open_units": {
             "title": "Open Units",
             "type": "integer"
@@ -4875,6 +4898,7 @@
           "external_ref",
           "supplier_id",
           "sku_id",
+          "location_id",
           "ordered_units",
           "received_units",
           "cancelled_units",
@@ -5990,6 +6014,18 @@
       },
       "ReceiptIn": {
         "properties": {
+          "location_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
           "quantity": {
             "exclusiveMinimum": 0.0,
             "maximum": 1000000.0,

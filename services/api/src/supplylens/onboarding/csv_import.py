@@ -1,9 +1,10 @@
 """CSV onboarding: upload -> map columns -> validate (invalid rows quarantined) -> publish an immutable snapshot (audit S18).
 
-Three canonical templates, schema version `supplylens-csv-v1`:
+Four canonical templates, schema version `supplylens-csv-v1`:
   sales  one row per day, SKU and location with units sold (a demand proxy: stock-outs are not visible in sales)
   stock  stock snapshot per location and SKU on a date (on hand, allocated, on order, optional capacity)
   terms  supplier terms per SKU with effective dates and the time the terms became known
+  receipts  goods receipts from the ERP against reconciled SupplyLens orders (moves units from on-order to on-hand)
 
 Every uploaded file is kept as an import batch with its SHA-256 and raw rows. Validation never edits a value silently:
 a row either normalises cleanly or is quarantined with its reasons. Publishing writes the valid rows into the operational
@@ -71,8 +72,18 @@ TEMPLATES: dict[str, list[Column]] = {
         Column("valid_to", "date", False, "Last day the term applies (blank = open)", ""),
         Column("known_at", "datetime", True, "When the term became known (ISO 8601, UTC)", "2025-12-15T09:00:00Z"),
     ],
+    # Goods receipts exported from the ERP against SupplyLens orders (audit S12): matched by the external PO number the
+    # sandbox/ERP returned, booked once per receipt_id, never above the line's open quantity.
+    "receipts": [
+        Column("receipt_id", "id", True, "The ERP's own id for this receipt line (makes re-imports safe)", "GRN-000123-1"),
+        Column("po_number", "id", True, "Purchase-order number the ERP assigned (shown on the approval)", "SBX-PO-100041"),
+        Column("sku_id", "id", True, "Your product code", "SKU-1001"),
+        Column("quantity", "int>0", True, "Units received", "30"),
+        Column("received_on", "date", True, "Business date the goods arrived", "2026-10-24"),
+        Column("location_id", "id", False, "Receiving location (needed when one order carries the SKU for several sites)", ""),
+    ],
 }
-KEYS = {"sales": ("day", "sku_id", "location_id"), "stock": ("as_of", "location_id", "sku_id"), "terms": ("term_id",)}
+KEYS = {"sales": ("day", "sku_id", "location_id"), "stock": ("as_of", "location_id", "sku_id"), "terms": ("term_id",), "receipts": ("receipt_id",)}
 
 
 class ImportError_(ValueError):

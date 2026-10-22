@@ -1,6 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance } from "@/components/ui";
 import { useApi } from "@/lib/queries";
 import { money, num } from "@/lib/format";
@@ -11,6 +11,7 @@ const CASES: Record<string, string> = { L3_h25: "Base: 3-day lead, 25% holding",
 export default function ValuePage() {
   const v = useApi(["value"], "/api/v1/value");
   const [model, setModel] = useState("tcn");
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const opt = useMemo(() => {
     if (!v.data?.sensitivity) return null;
     const b = baseOption();
@@ -22,7 +23,7 @@ export default function ValuePage() {
         { type: "bar", name: "q90 order-up-to policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![`${model}__sum_q90`]!.total_cost)), itemStyle: { color: token("--accent") } },
         { type: "line", name: "Perfect-foresight reference", data: cases.map((c) => Math.round(v.data!.sensitivity![c]!.perfect_foresight_reference!.total_cost)), lineStyle: { color: token("--risk"), type: "dashed" }, itemStyle: { color: token("--risk") } },
       ] };
-  }, [v.data, model]);
+  }, [v.data, model, chartTheme]);
   if (v.isLoading) return <Loading />;
   if (v.error) return <ErrorState error={v.error} />;
   const d = v.data!;

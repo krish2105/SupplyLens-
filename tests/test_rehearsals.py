@@ -116,14 +116,14 @@ def scratch():
 
 
 def broken_scripts(tmp: Path) -> Path:
-    """A copy of the migrations plus a 0008 that makes visible changes and then fails."""
+    """A copy of the migrations plus a 0009 that makes visible changes and then fails."""
     shutil.copytree(MIGRATIONS, tmp / "migrations")
-    (tmp / "migrations" / "versions" / "0008_broken.py").write_text(textwrap.dedent('''
+    (tmp / "migrations" / "versions" / "0009_broken.py").write_text(textwrap.dedent('''
         """Rehearsal-only migration: changes data and schema, then fails midway."""
         from alembic import op
 
-        revision = "0008"
-        down_revision = "0007"
+        revision = "0009"
+        down_revision = "0008"
 
 
         def upgrade():
@@ -153,7 +153,7 @@ def test_failed_migration_leaves_schema_data_orders_and_audit_untouched(scratch)
         script_dir = broken_scripts(Path(td))
         r = scratch.alembic("upgrade", "head", script_dir=script_dir)
     assert r.returncode != 0 and "division by zero" in r.stderr
-    assert scratch.version() == "0007"                                              # version pointer did not move
+    assert scratch.version() == "0008"                                              # version pointer did not move
     assert scratch.sql("SELECT count(*) FROM information_schema.columns "
                        "WHERE table_name='actions' AND column_name='rehearsal_flag'")[0][0] == 0     # DDL rolled back
     assert scratch.sql("SELECT to_regclass('rehearsal_partial')")[0][0] is None
@@ -166,14 +166,14 @@ def test_rollback_to_previous_release_keeps_operational_records_and_audit(scratc
     before = scratch.workload()
     assert before["counts"]["audit_events"] > 0
     assert before["counts"]["open_order_lines"] == 1           # the reconciled order entered the open-order ledger
-    for previous in ("0006", "0005"):                          # one release back, then two
+    for previous in ("0007", "0006"):                          # one release back, then two
         r = scratch.alembic("downgrade", previous)
         assert r.returncode == 0, r.stderr[-800:]
         assert scratch.version() == previous
         assert scratch.counts() == before["counts"]           # orders, approvals, outbox and audit trail intact
         r = scratch.alembic("upgrade", "head")                # roll forward again
         assert r.returncode == 0, r.stderr[-800:]
-        assert scratch.version() == "0007" and scratch.counts() == before["counts"]
+        assert scratch.version() == "0008" and scratch.counts() == before["counts"]
     # the app role is still unable to rewrite history after the round trip
     from sqlalchemy import create_engine
     eng = create_engine(scratch.app_url)
@@ -189,7 +189,7 @@ def test_rollback_refuses_to_destroy_deletion_certificates(scratch):
         WHERE t.slug = 'gone' LIMIT 1""")
     r = scratch.alembic("downgrade", "0004")
     assert r.returncode != 0 and "deletion certificates" in r.stderr
-    assert scratch.version() == "0007"                        # the whole downgrade rolled back, including 0006/0007
+    assert scratch.version() == "0008"                        # the whole downgrade rolled back, including 0006-0008
     assert scratch.sql("SELECT count(*) FROM tenant_deletions")[0][0] == 1
 
 

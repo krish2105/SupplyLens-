@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
@@ -193,6 +193,7 @@ function Compare({ base, draft, currency, stale }: { base?: Result; draft?: Resu
     ["Shortfall (units not covered)", (r) => r.metrics.shortfall_units, (n) => int(n)],
     ["Projected q50 coverage", (r) => r.metrics.projected_q50_coverage, (n) => (n == null ? "—" : `${num(n * 100, 1)}%`)],
   ];
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const option = useMemo(() => {
     if (!base || !draft) return null;
     const b = baseOption();
@@ -203,7 +204,7 @@ function Compare({ base, draft, currency, stale }: { base?: Result; draft?: Resu
         { type: "bar", name: "Baseline", itemStyle: { color: token("--muted") }, data: [base.metrics.spend_minor / 100_000, base.metrics.shortfall_units / 1000, base.metrics.units_ordered / 1000] },
         { type: "bar", name: "Draft", itemStyle: { color: token("--accent") }, data: [draft.metrics.spend_minor / 100_000, draft.metrics.shortfall_units / 1000, draft.metrics.units_ordered / 1000] },
       ] };
-  }, [base, draft]);
+  }, [base, draft, chartTheme]);
   if (!base && !draft) return <Card className="p-5"><Empty title="Nothing computed yet">Compute the baseline, then a draft with changed inputs to compare them.</Empty></Card>;
   return (
     <Card className="p-5">

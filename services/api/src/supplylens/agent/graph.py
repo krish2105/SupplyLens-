@@ -19,7 +19,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, StateGraph
 from sqlalchemy import text
 
-from supplylens_opt.planner import Need, PlanRequest, plan
+from supplylens_opt.planner import Need, Offer, PlanRequest, plan
 from supplylens_opt.replenishment import Position, assess
 
 from .. import alerts, telemetry
@@ -29,6 +29,7 @@ from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from ..knowledge.retrieve import search
 from ..planning.demand_history import dependence_by_sku
+from ..planning.grain import demand_shares, expand_offers, restore_line
 from ..planning.positions import MAX_SKUS_PER_RUN, bounded_scope, load_positions
 from ..planning.terms_service import applicable_terms
 
@@ -159,6 +160,7 @@ def gather(state):
     _tool(state)
     with tenant_session(state["tenant_id"]) as s:
         positions, not_assessed = load_positions(s, skus, eff)
+        shares = demand_shares(s, st["dataset_id"], positions, eff)
     forecast = {"available": False}
     if st["dataset_id"]:
         _tool(state)
@@ -192,7 +194,8 @@ def gather(state):
             if c:
                 citations[t.term_id] = {**{k: str(v) if k == "id" else v for k, v in c.items()},
                                         "document_version_id": t.document_version_id}
-    state["needs"] = {"positions": {k: {**v, "as_of": v["as_of"].isoformat()} for k, v in positions.items()},
+    state["needs"] = {"positions": {k: {**v, "as_of": v["as_of"].isoformat(), "demand_share": shares[k][0],
+                                        "demand_share_basis": shares[k][1]} for k, v in positions.items()},
                       "missing_positions": [k for k in skus if k not in positions], "not_assessed": not_assessed}
     state["forecast"] = forecast
     state["terms"] = {"applicable": [t.model_dump(mode="json") for t in res.applicable],
@@ -220,24 +223,27 @@ def compute(state):
     eff = date.fromisoformat(st["effective_date"])
     planning = st["planning"]
     assessments = {}
-    for sku, p in state["needs"]["positions"].items():
+    for key, p in state["needs"]["positions"].items():
+        sku = p.get("sku_id", key)
         if state["forecast"]["available"]:
-            pts = [{"day": date.fromisoformat(x["day"]), "q10": x["q10"], "q50": x["q50"], "q90": x["q90"]}
-                   for x in state["forecast"]["points"].get(sku, [])]
+            share = p.get("demand_share", 1.0)      # a location plans for its share of the SKU's forecast (grain.py)
+            pts = [{"day": date.fromisoformat(x["day"]), "q10": x["q10"] * share, "q50": x["q50"] * share,
+                    "q90": x["q90"] * share} for x in state["forecast"]["points"].get(sku, [])]
             if not pts:
                 continue
             lead = min([t["lead_time_days"] for t in state["terms"]["applicable"]
                         if t["sku_id"] == sku and t["currency"] == st["currency"]], default=0)
             acf, basis = state["forecast"].get("dependence", {}).get(sku, (None, "assumed default"))
             try:
-                a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=sku),
+                a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=key),
                            pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
                            lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
                            dependence_basis=basis)
             except ValueError as e:
-                state["needs"].setdefault("not_assessed", {})[sku] = str(e)
+                state["needs"].setdefault("not_assessed", {})[key] = str(e)
                 continue
-            assessments[sku] = a.model_dump(mode="json")
+            assessments[key] = {**a.model_dump(mode="json"), "location_id": p.get("location_id"),
+                                "demand_share": share, "demand_share_basis": p.get("demand_share_basis")}
         else:
             # No sales history (demo): reorder-point rule from the fixture; required units only if below it.
             ref = planning.get("reference_case", {})
@@ -253,7 +259,7 @@ def compute(state):
                 avail = p["on_hand"] - p["allocated"] + p["on_order"]
                 req = max(0, reorder_point - avail)
                 need_by = (eff + timedelta(days=14)).isoformat()
-            assessments[sku] = {"sku_id": sku, "required_units": req, "need_by": need_by,
+            assessments[key] = {"sku_id": key, "location_id": p.get("location_id"), "required_units": req, "need_by": need_by,
                                 "status": "reorder" if req else "healthy",
                                 "method": "reorder point rule (synthetic fixture)"}
     to_buy = {k: v for k, v in assessments.items() if v["required_units"] > 0}
@@ -261,8 +267,8 @@ def compute(state):
     if not to_buy:
         state["plan"] = {"status": "NO_ACTION", "lines": []}
         return "No SKU requires replenishment within the coverage window", {"assessed": len(assessments)}
-    offers = [t for t in state["terms"]["applicable"] if t["sku_id"] in to_buy
-              and t["currency"] == st["currency"]]
+    offers = expand_offers([Offer(**t) for t in state["terms"]["applicable"] if t["currency"] == st["currency"]],
+                           list(to_buy))
     # Offers must arrive within the coverage window; arrivals after a SKU's projected stockout
     # are allowed (late stock still serves later demand) but flagged as warnings below.
     window_end = eff + timedelta(days=planning.get("coverage_days", 21))
@@ -285,7 +291,13 @@ def compute(state):
         if stockout and line.arrival_date > date.fromisoformat(stockout):
             late.append({"sku_id": line.sku_id, "supplier_id": line.supplier_id,
                          "warning": f"arrives {line.arrival_date}, after projected stockout {stockout}"})
-    state["plan"] = {**result.model_dump(mode="json"), "arrival_warnings": late,
+    # Lines leave the optimiser at the plan grain; everything downstream (checks, citations, drafts) sees the real SKU,
+    # term and location.
+    real_lines = []
+    for line in result.lines:
+        restored, loc = restore_line(line)
+        real_lines.append({**restored.model_dump(mode="json"), "location_id": loc, "plan_key": line.sku_id})
+    state["plan"] = {**result.model_dump(mode="json"), "lines": real_lines, "arrival_warnings": late,
                      "request": {"budget_minor": req.budget_minor, "currency": req.currency,
                                  "allow_shortfall": req.allow_shortfall,
                                  "shortage_penalty_minor": req.shortage_penalty_minor,
@@ -326,8 +338,10 @@ def prepare_action(state):
     actor = _actor(state)
     by_supplier: dict[str, list] = {}
     from supplylens_opt.planner import PlanLine
+    locations: dict[str, list] = {}
     for l in p["lines"]:
         by_supplier.setdefault(l["supplier_id"], []).append(PlanLine(**l))
+        locations.setdefault(l["supplier_id"], []).append(l.get("location_id"))
     created = []
     with tenant_session(state["tenant_id"]) as s:
         existing = {r.payload["supplier_id"]: str(r.id) for r in s.execute(
@@ -344,7 +358,8 @@ def prepare_action(state):
             "ignored_terms": [i for i in state["terms"]["ignored"]
                               if i["sku_id"] in {l.sku_id for l in lines}][:20],
             "upcoming_changes": [u for u in state["upcoming_changes"] if u["supplier_id"] == supplier],
-            "needs": {l.sku_id: state["needs"]["assessments"].get(l.sku_id) for l in lines},
+            "needs": {k: state["needs"]["assessments"].get(k) for k in (
+                f"{l.sku_id}@{loc}" if loc else l.sku_id for l, loc in zip(lines, locations[supplier], strict=True))},
             "plan": {k: p.get(k) for k in ("status", "input_hash", "solver", "objective", "explanation")},
             "checks": state["checks"],
             "provenance": {"stock": "simulated" if state["forecast"]["available"] else "synthetic",
@@ -355,7 +370,7 @@ def prepare_action(state):
         decision = {"knowledge_cutoff": st["knowledge_cutoff"], "effective_date": st["effective_date"],
                     "plan_input_hash": p["input_hash"], "agent_run_id": state["run_id"],
                     "budget_minor": st["budget_minor"]}
-        a = actions.prepare(actor, supplier_id=supplier, lines=lines, currency=st["currency"],
+        a = actions.prepare(actor, supplier_id=supplier, lines=lines, locations=locations[supplier], currency=st["currency"],
                             need_by=max(l.arrival_date for l in lines), decision=decision, evidence=evidence,
                             versions={"forecast_run": state["forecast"].get("run_id"),
                                       "terms": [l.term_id for l in lines], "plan_input_hash": p["input_hash"]},

@@ -1,8 +1,8 @@
 """Stock positions for planning: the latest snapshot per SKU, plus SupplyLens' own open orders and receipts.
 
-Grain (audit S21). Planning is per SKU at a single location. A SKU whose latest snapshots sit at more than one location is
-not collapsed into one number: it is excluded with an explicit reason, because adding stock across sites would hide a
-shortage at one of them. SKU-location planning is a declared limit of this pilot slice.
+Grain (audit S21). A SKU stocked at one location is keyed by its SKU id; a SKU stocked at several locations gets one
+position per location, keyed `SKU@LOCATION` (planning/grain.py), so stock is never pooled across sites and a shortage at
+one site cannot hide behind surplus at another.
 
 Open supply (audit S12). The imported snapshot is the source system's view and never contains orders SupplyLens placed.
 For each SKU the position adds, from purchase_order_lines, the units still open on SupplyLens orders dated on or after
@@ -15,6 +15,8 @@ from __future__ import annotations
 from datetime import date
 
 from sqlalchemy import text
+
+from .grain import plan_key
 
 MAX_SKUS_PER_RUN = 60   # declared pilot limit for one agent run or scenario (see DECISIONS D-043)
 
@@ -37,7 +39,8 @@ def bounded_scope(skus: list[str], explicit: bool) -> tuple[list[str], dict]:
 
 
 def load_positions(s, skus: list[str], decision_date: date) -> tuple[dict[str, dict], dict[str, str]]:
-    """Return ({sku: position}, {sku: reason not assessed}). `s` is a tenant session."""
+    """Return ({plan key: position}, {sku: reason not assessed}). `s` is a tenant session. Each position carries its real
+    `sku_id` and `location_id`; the key is the SKU id, or `SKU@LOCATION` when the SKU is stocked at several locations."""
     rows = s.execute(text("""SELECT DISTINCT ON (sku_id, location_id) sku_id, location_id, on_hand, allocated, on_order,
             capacity, value_kind, as_of
         FROM inventory_positions WHERE sku_id = ANY(:k) AND as_of <= :e
@@ -50,14 +53,15 @@ def load_positions(s, skus: list[str], decision_date: date) -> tuple[dict[str, d
         snaps = by_sku.get(sku)
         if not snaps:
             excluded[sku] = "no stock record on or before the decision date"
-        elif len(snaps) > 1:
-            excluded[sku] = (f"held at {len(snaps)} locations ({', '.join(x['location_id'] for x in snaps)}); "
-                             "SKU-location planning is not supported in this pilot, so the SKU is not assessed")
-        else:
-            positions[sku] = {**snaps[0], "open_order_units": 0, "received_since_snapshot": 0}
+            continue
+        multi = len(snaps) > 1
+        for snap in snaps:
+            positions[plan_key(sku, snap["location_id"], multi)] = {**snap, "multi_location": multi,
+                                                                    "open_order_units": 0, "received_since_snapshot": 0}
     if positions:
+        # Open supply per SKU and location; ledger lines without a location belong to a single-location SKU only.
         supply = s.execute(text("""
-            SELECT l.sku_id, min(p.as_of) AS snap,
+            SELECT l.sku_id, l.location_id,
               sum(CASE WHEN l.ordered_on BETWEEN p.as_of AND :e
                        THEN l.ordered_units - l.cancelled_units
                             - COALESCE((SELECT sum(r.quantity) FROM receipts r WHERE r.po_line_id = l.id
@@ -66,13 +70,21 @@ def load_positions(s, skus: list[str], decision_date: date) -> tuple[dict[str, d
                        THEN COALESCE((SELECT sum(r.quantity) FROM receipts r WHERE r.po_line_id = l.id
                                       AND r.received_on BETWEEN p.as_of AND :e), 0) ELSE 0 END) AS received_units
             FROM purchase_order_lines l
-            JOIN (SELECT sku_id, max(as_of) AS as_of FROM inventory_positions
-                  WHERE sku_id = ANY(:k) AND as_of <= :e GROUP BY sku_id) p ON p.sku_id = l.sku_id
-            WHERE l.sku_id = ANY(:k) GROUP BY l.sku_id"""), {"k": list(positions), "e": decision_date}).mappings()
+            JOIN (SELECT sku_id, location_id, max(as_of) AS as_of FROM inventory_positions
+                  WHERE sku_id = ANY(:k) AND as_of <= :e GROUP BY sku_id, location_id) p
+              ON p.sku_id = l.sku_id AND (l.location_id IS NULL OR l.location_id = p.location_id)
+            WHERE l.sku_id = ANY(:k) GROUP BY l.sku_id, l.location_id"""),
+            {"k": sorted({p["sku_id"] for p in positions.values()}), "e": decision_date}).mappings()
         for r in supply:
-            p = positions[r["sku_id"]]
-            p["open_order_units"] = max(int(r["open_units"] or 0), 0)
-            p["received_since_snapshot"] = int(r["received_units"] or 0)
-            p["on_order"] += p["open_order_units"]
-            p["on_hand"] += p["received_since_snapshot"]
+            multi = len(by_sku[r["sku_id"]]) > 1
+            if r["location_id"] is None and multi:
+                continue          # a location-less order line cannot be attributed to one of several sites
+            key = r["sku_id"] if not multi else plan_key(r["sku_id"], r["location_id"], True)
+            p = positions.get(key)
+            if p is None:
+                continue
+            p["open_order_units"] += max(int(r["open_units"] or 0), 0)
+            p["received_since_snapshot"] += int(r["received_units"] or 0)
+            p["on_order"] += max(int(r["open_units"] or 0), 0)
+            p["on_hand"] += int(r["received_units"] or 0)
     return positions, excluded

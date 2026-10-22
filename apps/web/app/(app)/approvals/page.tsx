@@ -142,17 +142,21 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
           <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Product</th><th className="font-medium">Quantity</th>
             <th className="font-medium">Unit cost</th><th className="font-medium">Line</th><th className="font-medium">Term</th></tr></thead>
           <tbody>
-            {p.lines.map((l) => (
-              <tr key={l.sku_id} className="border-b border-line/60">
-                <td className="py-2"><Mono>{l.sku_id}</Mono></td>
+            {p.lines.map((l) => {
+              // lines of a multi-location SKU are addressed as SKU@LOCATION (planning/grain.py)
+              const loc = (l as { location_id?: string | null }).location_id;
+              const k = loc ? `${l.sku_id}@${loc}` : l.sku_id;
+              return (
+              <tr key={k} className="border-b border-line/60">
+                <td className="py-2"><Mono>{l.sku_id}</Mono>{loc && <span className="ml-2 text-xs text-muted">at {loc}</span>}</td>
                 <td className="num">{editing ? (
-                  <input type="number" min={0} aria-label={`Quantity for ${l.sku_id}`} value={editing[l.sku_id] ?? l.quantity}
-                    onChange={(e) => setEditing({ ...editing, [l.sku_id]: Number(e.target.value) })} className="w-24 rounded border border-line bg-surface px-2 py-1" />
+                  <input type="number" min={0} aria-label={`Quantity for ${l.sku_id}${loc ? ` at ${loc}` : ""}`} value={editing[k] ?? l.quantity}
+                    onChange={(e) => setEditing({ ...editing, [k]: Number(e.target.value) })} className="w-24 rounded border border-line bg-surface px-2 py-1" />
                 ) : `${int(l.quantity)} ${l.unit}`}</td>
                 <td className="num">{money(l.unit_cost_minor, p.currency)}</td><td className="num">{money(l.line_minor, p.currency)}</td>
                 <td><Mono className="text-xs text-muted">{l.term_id}</Mono></td>
-              </tr>
-            ))}
+              </tr>);
+            })}
           </tbody>
         </table>
         <p className="num mt-2 text-xs text-muted">Payload hash {short(x.payload_hash, 20)}… · row version {x.row_version}</p>
@@ -262,10 +266,10 @@ function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
   const [qty, setQty] = useState<Record<string, number>>({});
   const [on, setOn] = useState<string>(new Date().toISOString().slice(0, 10));
   const book = useMutation({
-    mutationFn: async ({ sku, n }: { sku: string; n: number }) => {
-      const intent = intentKey(`receipt:${id}`, { sku, n, on });
+    mutationFn: async ({ sku, loc, n }: { sku: string; loc: string | null; n: number }) => {
+      const intent = intentKey(`receipt:${id}`, { sku, loc, n, on });
       const r = await apiPost("/api/v1/actions/{action_id}/receipts", { path: { action_id: id }, idempotencyKey: intent.key,
-        body: { sku_id: sku, quantity: n, received_on: on } });
+        body: { sku_id: sku, quantity: n, received_on: on, location_id: loc } });
       intent.settle();
       return r;
     },
@@ -282,14 +286,14 @@ function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
         <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Product</th><th className="font-medium">Ordered</th>
           <th className="font-medium">Received</th><th className="font-medium">Open</th><th className="font-medium">Status</th>{canBook && <th className="font-medium">Book receipt</th>}</tr></thead>
         <tbody>{mine.map((l) => (
-          <tr key={l.sku_id} className="border-b border-line/60">
-            <td className="py-2"><Mono>{l.sku_id}</Mono></td><td className="num">{int(l.ordered_units)}</td><td className="num">{int(l.received_units)}</td>
+          <tr key={`${l.sku_id}@${l.location_id ?? ""}`} className="border-b border-line/60">
+            <td className="py-2"><Mono>{l.sku_id}</Mono>{l.location_id && <span className="ml-2 text-xs text-muted">at {l.location_id}</span>}</td><td className="num">{int(l.ordered_units)}</td><td className="num">{int(l.received_units)}</td>
             <td className="num">{int(l.open_units)}</td><td><Status value={l.status} /></td>
             {canBook && <td>{l.open_units > 0 && (
               <span className="flex items-center gap-1">
                 <input type="number" min={1} max={l.open_units} aria-label={`Units received for ${l.sku_id}`} value={qty[l.sku_id] ?? l.open_units}
                   onChange={(e) => setQty({ ...qty, [l.sku_id]: Number(e.target.value) })} className="num w-20 rounded border border-line bg-surface px-2 py-1" />
-                <Button size="sm" variant="outline" busy={book.isPending} onClick={() => book.mutate({ sku: l.sku_id, n: qty[l.sku_id] ?? l.open_units })}>
+                <Button size="sm" variant="outline" busy={book.isPending} onClick={() => book.mutate({ sku: l.sku_id, loc: l.location_id ?? null, n: qty[l.sku_id] ?? l.open_units })}>
                   <PackageCheck className="size-4" aria-hidden /> Book</Button>
               </span>)}</td>}
           </tr>))}</tbody>

@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     oidc_post_login_uri: str = "http://localhost:3100/"
     oidc_role_claim: str = "supplylens_roles"     # values "<workspace-slug>:<role>"
     oidc_recheck_seconds: int = 60                # how often a session is re-confirmed with the provider
+    # Back-pressure (DEF-10): requests in flight per API process. Past the limit a request is refused at once with 503
+    # and Retry-After instead of queueing; costly routes (retrieval, forecasts, scenarios, run starts) have a lower cap.
+    max_inflight: int = 64
+    max_inflight_costly: int = 8
     approval_ttl_minutes: int = 60 * 24
     # Operational alert queue: the alerts table is the queue; a webhook is an optional second route.
     alert_webhook_url: str | None = None

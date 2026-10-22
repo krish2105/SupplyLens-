@@ -19,7 +19,10 @@ same window and nothing beyond it.
 
 Controls (audit F03). `safety_days` changes the result only under `q50_plus_safety`; `safety_days_applied` says whether
 it did. Capacity (audit F04): `uncapped_required_units` keeps the demand-driven need visible when storage capacity caps
-`required_units`, and `capacity_headroom_units` is the residual capacity the planner and validator must respect.
+`required_units`, and `capacity_headroom_units` is the residual capacity the planner and validator must respect. Headroom
+is measured against physical occupancy, on hand + on order: allocated units still occupy storage until they ship, and
+scheduled receipts (including SupplyLens' own open orders) will occupy it when they arrive. It is not measured against the
+inventory position, which subtracts allocations and would overstate free space.
 """
 from __future__ import annotations
 
@@ -130,7 +133,7 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
     uncapped = required
     headroom = None
     if pos.capacity is not None:
-        headroom = max(pos.capacity - position, 0)
+        headroom = max(pos.capacity - (pos.on_hand + pos.on_order), 0)
         required = min(required, headroom)
     stockout, running = None, float(available)
     for f in window:

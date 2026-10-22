@@ -2,7 +2,7 @@
 import type { UseQueryResult } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { Card, Eyebrow, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { useApi, useWs } from "@/lib/queries";
@@ -54,6 +54,7 @@ export default function ResearchPage() {
   const ws = useWs();
   const f1 = useStudy("F1"), s1 = useStudy("S1"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
 
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const f1Opt = useMemo(() => {
     const d = f1.data;
     if (!d?.summary) return null;
@@ -63,7 +64,7 @@ export default function ResearchPage() {
       { name: "LightGBM", color: token("--accent"), data: [d.summary.lightgbm.mae, d.summary.lightgbm.pinball_mean, d.summary.lightgbm.mase * 10] },
       { name: "TCN", color: token("--forecast"), data: [d.summary.tcn.mae, d.summary.tcn.pinball_mean, d.summary.tcn.mase * 10] },
     ].filter((_, i) => fams[i]), "lower is better");
-  }, [f1.data]);
+  }, [f1.data, chartTheme]);
 
   const s1Opt = useMemo(() => {
     const d = s1.data;
@@ -74,7 +75,7 @@ export default function ResearchPage() {
       { name: "Median + safety policy", color: token("--muted"), data: keys.map((k) => Math.round(b[k].total_cost)) },
       { name: "q90 order-up-to policy", color: token("--accent"), data: keys.map((k) => Math.round(b[`${k}__sum_q90`].total_cost)) },
     ], "simulated £ cost (28 days)");
-  }, [s1.data]);
+  }, [s1.data, chartTheme]);
 
   return (
     <div className="space-y-6">

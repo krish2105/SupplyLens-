@@ -8,6 +8,10 @@ export const contextParsers = {
   known: parseAsString,      // knowledge cutoff (ISO datetime); null = workspace operational as-of
   eff: parseAsString,        // effective date (YYYY-MM-DD); null = date of the cutoff
   sku: parseAsString,        // selected product
+  // Entity selections belong to one workspace and clock: switching workspace clears them (audit S15), so an action or
+  // run id from the previous workspace can never be shown, fetched or exported against the new one.
+  action: parseAsString,     // approvals: selected purchase-order draft
+  run: parseAsString,        // investigations: selected run
 };
 
 export function usePlanningContext() {

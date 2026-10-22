@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Skeleton, Stat } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
@@ -18,13 +18,14 @@ export default function MarketPage() {
   const [hits, setHits] = useState<Schemas["SupplierHit"][] | null>(null);
   const [sel, setSel] = useState<Schemas["SupplierDetail"] | null>(null);
   const [err, setErr] = useState<unknown>(null);
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const yearOpt = useMemo(() => {
     if (!s.data?.available) return null;
     const b = baseOption();
     return { ...b, legend: { show: false }, xAxis: { ...(b.xAxis as object), type: "category", data: s.data.by_year.map((r) => `FY${r.fiscal_year}`) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "USD bn", axisLabel: { formatter: (v: number) => v.toFixed(0) } },
       series: [{ type: "bar", name: "Award value (USD bn)", data: s.data.by_year.map((r) => +((r.usd ?? 0) / 1e9).toFixed(2)), itemStyle: { color: token("--accent") } }] };
-  }, [s.data]);
+  }, [s.data, chartTheme]);
   async function find(e: React.FormEvent) {
     e.preventDefault(); setErr(null);
     try { setHits(await apiGet("/api/v1/market/suppliers", { query: { q }, tenant: ws })); } catch (x) { setErr(x); }

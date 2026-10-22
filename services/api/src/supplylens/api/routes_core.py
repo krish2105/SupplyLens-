@@ -222,8 +222,9 @@ def product_sales(sku_id: str, start: date | None = None, end: date | None = Non
                            "WHERE sku_id=:k"), {"k": sku_id}).mappings().first()
         if not p:
             raise HTTPException(404, {"code": "not_found", "message": "unknown product"})
-        rows = s.execute(text("""SELECT day, units FROM sales_daily WHERE sku_id=:k
-            AND (CAST(:s AS date) IS NULL OR day >= :s) AND (CAST(:e AS date) IS NULL OR day <= :e) ORDER BY day"""),
+        rows = s.execute(text("""SELECT day, sum(units)::int AS units FROM sales_daily WHERE sku_id=:k
+            AND (CAST(:s AS date) IS NULL OR day >= :s) AND (CAST(:e AS date) IS NULL OR day <= :e)
+            GROUP BY day ORDER BY day"""),            # all locations of the SKU, one point per day
             {"k": sku_id, "s": start, "e": end}).all()
         returns = s.execute(text("""SELECT invoiced_at::date AS day, sum(quantity) AS units FROM return_lines
             WHERE sku_id=:k GROUP BY 1 ORDER BY 1"""), {"k": sku_id}).all()

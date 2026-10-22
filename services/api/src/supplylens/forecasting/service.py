@@ -197,8 +197,10 @@ def _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_fami
         if origin > max_day:
             raise ForecastError("origin_after_data", f"origin {origin} is after last observed day {max_day}")
         daily = pd.DataFrame(s.execute(text(
-            "SELECT sku_id, day, units FROM sales_daily WHERE dataset_id=:d AND sku_id = ANY(:k) "
-            "AND day <= :o"), {"d": dataset_id, "k": sku_ids, "o": origin}).mappings().all(),
+            # forecasts are per SKU: sales recorded at several locations are summed per day (the location split
+            # happens in planning, planning/grain.py)
+            "SELECT sku_id, day, sum(units)::int AS units FROM sales_daily WHERE dataset_id=:d AND sku_id = ANY(:k) "
+            "AND day <= :o GROUP BY sku_id, day ORDER BY sku_id, day"), {"d": dataset_id, "k": sku_ids, "o": origin}).mappings().all(),
             columns=["sku_id", "day", "units"])
     model_id = model["id"]
     frames, flags = [], {}

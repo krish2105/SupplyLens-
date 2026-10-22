@@ -71,7 +71,7 @@ def set_membership(actor: Actor, *, email: str, role: str | None) -> dict:
 def upload(actor: Actor, *, kind: str, file_name: str, data: bytes, rights: str) -> dict:
     actor.require("admin.write")
     if kind not in ci.TEMPLATES:
-        raise OnboardingError("unknown_kind", "kind must be sales, stock or terms")
+        raise OnboardingError("unknown_kind", "kind must be sales, stock, terms or receipts")
     if len(rights.strip()) < 5:
         raise OnboardingError("rights_required", "state the rights basis for this file (for example 'our own ERP export')")
     try:
@@ -142,6 +142,8 @@ def validate_batch(actor: Actor, batch_id, mapping: dict[str, str | None]) -> di
             results = [(n, e + ["a snapshot for this date, location and SKU is already published"])
                        if n and (n["as_of"], n["location_id"], n["sku_id"]) in existing else (n, e) for n, e in results]
             results = [(None if e else n, e) for n, e in results]
+        if b["kind"] == "receipts":
+            results = _check_receipts(s, results)
         if b["kind"] == "terms":
             existing = {r[0] for r in s.execute(text("SELECT term_id FROM supplier_terms"))}
             results = [(None, e + ["term_id already published"]) if n and n["term_id"] in existing else (n, e)
@@ -218,6 +220,23 @@ def publish(actor: Actor, batch_id) -> dict:
                 allocated, on_order, capacity, value_kind) SELECT :t, x->>'location_id', 'DEFAULT', x->>'sku_id',
                 (x->>'as_of')::date, (x->>'on_hand')::int, (x->>'allocated')::int, (x->>'on_order')::int,
                 (x->>'capacity')::int, 'observed' FROM jsonb_array_elements(CAST(:rows AS jsonb)) x"""), {"t": t, "rows": payload})
+        elif b["kind"] == "receipts":
+            # re-check against the ledger as it is now (another import or a manual booking may have happened since)
+            again = _check_receipts(s, [(r, []) for r in rows])
+            if any(e for _, e in again):
+                raise OnboardingError("stale_validation", "the order ledger changed since validation; validate again", 409)
+            for r in rows:
+                line = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units FROM purchase_order_lines
+                    WHERE external_ref=:x AND sku_id=:k AND (CAST(:l AS text) IS NULL OR location_id = :l) FOR UPDATE"""),
+                    {"x": r["po_number"], "k": r["sku_id"], "l": r.get("location_id")}).mappings().one()
+                s.execute(text("""INSERT INTO receipts (id, tenant_id, po_line_id, sku_id, quantity, received_on, idempotency_key,
+                    created_by) VALUES (:i,:t,:l,:k,:q,:d,:key,:u)"""),
+                    {"i": uuid.uuid4(), "t": t, "l": line["id"], "k": r["sku_id"], "q": r["quantity"], "d": r["received_on"],
+                     "key": f"erp:{r['receipt_id']}", "u": actor.user_id})
+                got = line["received_units"] + r["quantity"]
+                s.execute(text("""UPDATE purchase_order_lines SET received_units=:g, updated_at=now(),
+                    status = CASE WHEN :g + cancelled_units = ordered_units THEN 'RECEIVED' ELSE 'PARTIAL' END WHERE id=:i"""),
+                    {"g": got, "i": line["id"]})
         else:
             s.execute(text("""INSERT INTO suppliers (tenant_id, supplier_id, name, source_kind, value_kind)
                 SELECT DISTINCT ON (x->>'supplier_id') :t, x->>'supplier_id', COALESCE(NULLIF(x->>'supplier_name', ''),
@@ -234,3 +253,40 @@ def publish(actor: Actor, batch_id) -> dict:
         _audit(s, actor, "import.published", batch_id, {"kind": b["kind"], "rows": len(rows), "snapshot_sha256": sha,
                                                         "dataset_id": dataset_id})
     return get(actor, batch_id)
+
+
+def _check_receipts(s, results: list[tuple[dict | None, list[str]]]) -> list[tuple[dict | None, list[str]]]:
+    """Receipts must match a reconciled SupplyLens order line, not be booked already, not predate the order and never take a
+    line above its open quantity (counting earlier rows of the same file)."""
+    booked = {r[0] for r in s.execute(text("SELECT idempotency_key FROM receipts WHERE idempotency_key LIKE 'erp:%'"))}
+    lines: dict[tuple, list] = {}
+    for r in s.execute(text("""SELECT external_ref, sku_id, location_id, ordered_units, received_units, cancelled_units,
+            ordered_on FROM purchase_order_lines""")):
+        lines.setdefault((r.external_ref, r.sku_id), []).append(r)
+    pending: dict[tuple, int] = {}
+    out = []
+    for n, e in results:
+        if n is None:
+            out.append((None, e))
+            continue
+        errs = []
+        cands = [x for x in lines.get((n["po_number"], n["sku_id"]), [])
+                 if not n.get("location_id") or x.location_id == n["location_id"]]
+        line = cands[0] if len(cands) == 1 else None
+        if f"erp:{n['receipt_id']}" in booked:
+            errs.append("receipt_id already booked")
+        elif len(cands) > 1:
+            errs.append("this order carries the SKU for several locations; fill location_id")
+        elif line is None:
+            errs.append("no reconciled SupplyLens order line for this PO number and SKU")
+        else:
+            key = (n["po_number"], n["sku_id"], line.location_id)
+            open_units = line.ordered_units - line.received_units - line.cancelled_units - pending.get(key, 0)
+            if n["quantity"] > open_units:
+                errs.append(f"quantity exceeds the {max(open_units, 0)} unit(s) still open on this line")
+            elif n["received_on"] < str(line.ordered_on):
+                errs.append("received before the order date")
+            else:
+                pending[key] = pending.get(key, 0) + n["quantity"]
+        out.append((None, errs) if errs else (n, e))
+    return out

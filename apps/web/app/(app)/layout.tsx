@@ -126,7 +126,7 @@ function AppShell({ children }: { children: ReactNode }) {
                   onChange={(e) => {
                     qc.cancelQueries();
                     setTenant(e.target.value);
-                    setCtx({ ws: e.target.value, sku: null, known: null, eff: null });
+                    setCtx({ ws: e.target.value, sku: null, known: null, eff: null, action: null, run: null });
                   }}>
                   {me.data.memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)}
                 </select>

@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
-import { baseOption, Chart, token } from "@/components/chart";
+import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
@@ -73,6 +73,7 @@ export default function ForecastPage() {
     return { n: scored.length, mae: errs.reduce((a, b) => a + b, 0) / errs.length, coverage: inside / scored.length };
   }, [pts, actualsAfter, sales.data]);
 
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const option = useMemo(() => {
     const b = baseOption();
     const fc = token("--forecast");
@@ -91,7 +92,7 @@ export default function ForecastPage() {
         ...(backtest ? [{ type: "scatter", name: "Actual after origin", data: actualsAfter.slice(0, 28).map((d) => [d.day, d.units]), symbolSize: 5, itemStyle: { color: token("--risk") } }] : []),
       ],
     };
-  }, [history, pts, origin, backtest, actualsAfter]);
+  }, [history, pts, origin, backtest, actualsAfter, chartTheme]);
 
   const onEvents = useMemo(() => ({
     datazoom: (e: any) => { const b = e.batch?.[0] ?? e; setZoom([b.start ?? 0, b.end ?? 100]); },
@@ -212,6 +213,7 @@ const STUDY_NAME: Record<string, string> = { seasonal_naive: "Seasonal naive", l
 
 function StudyPanel() {
   const st = useApi(["study-f1"], "/api/v1/research/forecast-study");
+  const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const option = useMemo(() => {
     const d = st.data;
     if (!d?.available) return null;
@@ -221,7 +223,7 @@ function StudyPanel() {
     return { ...b, xAxis: { ...(b.xAxis as object), type: "category", name: "horizon (days)", data: Array.from({ length: 28 }, (_, i) => i + 1) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "median pinball" },
       series: fams.map((f) => ({ type: "line", name: STUDY_NAME[f], data: d.pinball_by_horizon[f]!.q50, symbol: "none", lineStyle: { color: colors[f], width: 2 }, itemStyle: { color: colors[f] } })) };
-  }, [st.data]);
+  }, [st.data, chartTheme]);
   if (st.isLoading) return <Card className="p-5"><Skeleton className="h-40" /></Card>;
   if (!st.data?.available) return <Card className="p-5"><Eyebrow>Model comparison study</Eyebrow><p className="mt-2 text-sm text-muted">{st.data?.message}</p></Card>;
   const d = st.data;

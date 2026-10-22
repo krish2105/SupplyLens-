@@ -43,7 +43,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
       ...nav.map((n) => ({ id: `nav:${n.href}`, label: n.label, hint: `Go to · ${n.group}`, run: go(n.href) })),
       ...(me.data?.memberships ?? []).filter((m) => m.slug !== ctx.ws).map((m) => ({
         id: `ws:${m.slug}`, label: `Switch to ${m.name}`, hint: "Workspace",
-        run: () => { qc.cancelQueries(); setTenant(m.slug); setCtx({ ws: m.slug, sku: null, known: null, eff: null }); setOpen(false); } })),
+        run: () => { qc.cancelQueries(); setTenant(m.slug); setCtx({ ws: m.slug, sku: null, known: null, eff: null, action: null, run: null }); setOpen(false); } })),
       ...["light", "dark", "system"].map((t) => ({ id: `theme:${t}`, label: `Theme: ${t}`, hint: "Appearance", run: () => { setTheme(t); setOpen(false); } })),
       ...(inv.data?.items ?? []).map((i) => ({ id: `sku:${i.sku_id}`, label: `${i.sku_id} — ${i.description}`, hint: "Product · open in inventory",
         run: go("/inventory", { sku: i.sku_id }) })),

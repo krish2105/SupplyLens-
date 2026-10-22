@@ -66,22 +66,31 @@ def _load(s, action_id, lock=False):
     return dict(row)
 
 
+def line_key(line: dict) -> str:
+    """How a payload line is addressed in edits: the SKU, or SKU@LOCATION for multi-location SKUs (planning/grain.py)."""
+    return f"{line['sku_id']}@{line['location_id']}" if line.get("location_id") else line["sku_id"]
+
+
 def build_payload(supplier_id: str, lines: list[PlanLine], currency: str, need_by: date,
-                  decision: dict) -> dict:
+                  decision: dict, locations: list[str | None] | None = None) -> dict:
+    locations = locations or [None] * len(lines)
     return {
         "environment": "sandbox", "destination": "sandbox_erp", "operation": "create_purchase_order",
         "supplier_id": supplier_id, "currency": currency, "need_by": need_by.isoformat(),
+        # location_id appears only on lines of multi-location SKUs, so single-site payloads (and their hashes) are unchanged
         "lines": [{"sku_id": l.sku_id, "quantity": l.quantity, "unit": "unit", "unit_cost_minor": l.unit_cost_minor,
-                   "line_minor": l.line_minor, "term_id": l.term_id} for l in lines],
+                   "line_minor": l.line_minor, "term_id": l.term_id, **({"location_id": loc} if loc else {})}
+                  for l, loc in zip(lines, locations, strict=True)],
         "total_minor": sum(l.line_minor for l in lines),
         "decision": decision,
     }
 
 
 def prepare(actor: Actor, *, supplier_id: str, lines: list[PlanLine], currency: str, need_by: date,
-            decision: dict, evidence: dict, versions: dict, agent_run_id=None) -> dict:
+            decision: dict, evidence: dict, versions: dict, agent_run_id=None,
+            locations: list[str | None] | None = None) -> dict:
     actor.require("action.prepare")
-    payload = build_payload(supplier_id, lines, currency, need_by, decision)
+    payload = build_payload(supplier_id, lines, currency, need_by, decision, locations)
     aid = uuid.uuid4()
     with tenant_session(actor.tenant_id) as s:
         s.execute(text("""INSERT INTO actions (id, tenant_id, kind, status, payload, payload_hash, evidence, versions,
@@ -217,7 +226,7 @@ def edit_quantities(actor: Actor, action_id, *, quantities: dict[str, int], expe
         terms = {t.term_id: t for t in res.applicable}
         new_lines = []
         for l in p["lines"]:
-            q = int(quantities.get(l["sku_id"], l["quantity"]))
+            q = int(quantities.get(line_key(l), quantities.get(l["sku_id"], l["quantity"])))
             t = terms.get(l["term_id"])
             if t is None:
                 raise ActionError("term_unavailable", f"{l['sku_id']}: term {l['term_id']} no longer applicable")
@@ -235,7 +244,8 @@ def edit_quantities(actor: Actor, action_id, *, quantities: dict[str, int], expe
         errors = validate(req, result)
         if errors:
             raise ActionError("validation_failed", "; ".join(errors), 422)
-        payload = build_payload(p["supplier_id"], new_lines, p["currency"], date.fromisoformat(p["need_by"]), d)
+        payload = build_payload(p["supplier_id"], new_lines, p["currency"], date.fromisoformat(p["need_by"]), d,
+                                [l.get("location_id") for l in p["lines"]])
         h = canonical_hash(payload)
         s.execute(text("""UPDATE actions SET payload=CAST(:p AS jsonb), payload_hash=:h, total_minor=:t,
             status='PENDING_APPROVAL', status_reason='edited; requires fresh approval', row_version=row_version+1,
@@ -340,7 +350,7 @@ def _fresh_send_problems(tenant_id, item) -> list[str]:
 
 
 def _norm_line(line: dict) -> tuple:
-    return (line.get("sku_id"), int(line.get("quantity", 0)), line.get("unit", "unit"),
+    return (line.get("sku_id"), line.get("location_id"), int(line.get("quantity", 0)), line.get("unit", "unit"),
             int(line.get("unit_cost_minor", -1)), int(line.get("line_minor", -1)))
 
 
@@ -363,10 +373,10 @@ def verify(tenant_id, item, order: dict) -> list[str]:
     if want != got:
         missing, extra = want - got, got - want
         detail = []
-        for sku, qty, unit, price, value in sorted(missing.elements(), key=str):
-            detail.append(f"approved {sku} x{qty} {unit} @ {price} (line {value}) not returned")
-        for sku, qty, unit, price, value in sorted(extra.elements(), key=str):
-            detail.append(f"returned {sku} x{qty} {unit} @ {price} (line {value}) not approved")
+        for sku, loc, qty, unit, price, value in sorted(missing.elements(), key=str):
+            detail.append(f"approved {sku}{'@' + loc if loc else ''} x{qty} {unit} @ {price} (line {value}) not returned")
+        for sku, loc, qty, unit, price, value in sorted(extra.elements(), key=str):
+            detail.append(f"returned {sku}{'@' + loc if loc else ''} x{qty} {unit} @ {price} (line {value}) not approved")
         mismatches.append("lines differ: " + "; ".join(detail))
     return mismatches
 
@@ -377,11 +387,11 @@ def _open_order_lines(s, tenant_id, item, order: dict) -> None:
     ordered_on = p["decision"]["effective_date"]
     for line in p["lines"]:
         s.execute(text("""INSERT INTO purchase_order_lines (id, tenant_id, action_id, operation_id, external_ref,
-            supplier_id, sku_id, ordered_units, ordered_on, expected_on) VALUES (:i,:t,:a,:o,:x,:s,:k,:q,:d,:e)
-            ON CONFLICT (tenant_id, action_id, sku_id) DO NOTHING"""),
+            supplier_id, location_id, sku_id, ordered_units, ordered_on, expected_on) VALUES (:i,:t,:a,:o,:x,:s,:l,:k,:q,:d,:e)
+            ON CONFLICT DO NOTHING"""),
             {"i": uuid.uuid4(), "t": tenant_id, "a": item["action_id"], "o": item["operation_id"],
-             "x": order["po_number"], "s": p["supplier_id"], "k": line["sku_id"], "q": line["quantity"],
-             "d": ordered_on, "e": p["need_by"]})
+             "x": order["po_number"], "s": p["supplier_id"], "l": line.get("location_id"), "k": line["sku_id"],
+             "q": line["quantity"], "d": ordered_on, "e": p["need_by"]})
 
 
 def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
@@ -488,7 +498,20 @@ def reconcile(actor: Actor, action_id) -> dict:
 
 # ---------------------------------------------------------------- receipts and cancellations (open-order ledger)
 
-def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, received_on: date, key: str) -> dict:
+def _line_for(s, action_id, sku_id: str, location_id: str | None):
+    rows = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units, status, ordered_on, location_id
+        FROM purchase_order_lines WHERE action_id=:a AND sku_id=:k
+        AND (CAST(:l AS text) IS NULL OR location_id = :l) FOR UPDATE"""),
+        {"a": action_id, "k": sku_id, "l": location_id}).mappings().all()
+    if not rows:
+        raise ActionError("not_open", "no reconciled order line for this SKU on this action", 404)
+    if len(rows) > 1:
+        raise ActionError("location_required", "this SKU is ordered for several locations; name the location", 422)
+    return rows[0]
+
+
+def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, received_on: date, key: str,
+                   location_id: str | None = None) -> dict:
     """Book units received against a reconciled order line. One receipt per idempotency key; never more than open."""
     actor.require("action.reconcile")
     if quantity <= 0:
@@ -497,11 +520,7 @@ def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, recei
         dup = s.execute(text("SELECT po_line_id, quantity FROM receipts WHERE idempotency_key=:k"), {"k": key}).first()
         if dup:
             return {"status": "DUPLICATE", "po_line_id": str(dup.po_line_id), "quantity": dup.quantity}
-        line = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units, status, ordered_on
-            FROM purchase_order_lines WHERE action_id=:a AND sku_id=:k FOR UPDATE"""),
-            {"a": action_id, "k": sku_id}).mappings().first()
-        if line is None:
-            raise ActionError("not_open", "no reconciled order line for this SKU on this action", 404)
+        line = _line_for(s, action_id, sku_id, location_id)
         open_units = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
         if quantity > open_units:
             raise ActionError("over_receipt", f"only {open_units} unit(s) are open on this line", 422)
@@ -521,16 +540,13 @@ def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, recei
             "open_units": open_units - quantity}
 
 
-def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str) -> dict:
+def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str, location_id: str | None = None) -> dict:
     """Release the still-open units of a reconciled line (the supplier cancelled or short-shipped)."""
     actor.require("action.reconcile")
     if not reason.strip():
         raise ActionError("reason_required", "a cancellation reason is required", 422)
     with tenant_session(actor.tenant_id) as s:
-        line = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units FROM purchase_order_lines
-            WHERE action_id=:a AND sku_id=:k FOR UPDATE"""), {"a": action_id, "k": sku_id}).mappings().first()
-        if line is None:
-            raise ActionError("not_open", "no reconciled order line for this SKU on this action", 404)
+        line = _line_for(s, action_id, sku_id, location_id)
         released = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
         if released <= 0:
             raise ActionError("nothing_open", "no open units remain on this line")
@@ -545,7 +561,7 @@ def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str) -> d
 def open_orders(actor: Actor) -> list[dict]:
     actor.require("read")
     with tenant_session(actor.tenant_id) as s:
-        rows = s.execute(text("""SELECT l.action_id, l.external_ref, l.supplier_id, l.sku_id, l.ordered_units,
+        rows = s.execute(text("""SELECT l.action_id, l.external_ref, l.supplier_id, l.sku_id, l.location_id, l.ordered_units,
             l.received_units, l.cancelled_units, l.ordered_units - l.received_units - l.cancelled_units AS open_units,
             l.status, l.ordered_on, l.expected_on FROM purchase_order_lines l
             ORDER BY l.ordered_on DESC, l.sku_id LIMIT 200""")).mappings().all()
