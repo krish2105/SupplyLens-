@@ -54,6 +54,12 @@ def main() -> dict:
     assert r.status_code == 200, r.text
     tick()
     final = c.get(f"/api/v1/actions/{action['id']}", headers=H).json()
+    # Release the order's open units (audited cancel; the ledger row stays) so a repeated workload on the same database
+    # still finds the reference need uncovered: reconciled orders count as open supply in the next plan (S12).
+    for line in c.get("/api/v1/open-orders", headers=H).json():
+        if line["action_id"] == action["id"] and line["open_units"] > 0:
+            c.post(f"/api/v1/actions/{action['id']}/cancel-open", headers=H,
+                   json={"sku_id": line["sku_id"], "reason": "rehearsal workload: release test order"})
     return {"action_id": action["id"], "status": final["status"], "counts": counts()}
 
 
