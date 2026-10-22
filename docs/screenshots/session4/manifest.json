@@ -1,0 +1,136 @@
+{
+  "base_url": "http://localhost:3101",
+  "revision": "faa21f2",
+  "shots": [
+    {
+      "file": "login-light-1440w-faa21f2.png",
+      "route": "/login",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": null,
+      "state": "sign-in with welcome art (A01), OIDC + dev accounts",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:33:58.019Z"
+    },
+    {
+      "file": "login-dark-1440w-faa21f2.png",
+      "route": "/login",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "role": null,
+      "state": "sign-in, dark theme",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:01.191Z"
+    },
+    {
+      "file": "login-light-375w-faa21f2.png",
+      "route": "/login",
+      "theme": "light",
+      "viewport": "375x812",
+      "role": null,
+      "state": "sign-in at 375 px (art hidden)",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:04.328Z"
+    },
+    {
+      "file": "scenarios-basis-light-1440w-faa21f2.png",
+      "route": "/scenarios?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "F03: safety buffer not applicable under lead-time demand",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:07.622Z"
+    },
+    {
+      "file": "scenarios-basis-dark-1440w-faa21f2.png",
+      "route": "/scenarios?ws=uci-research",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "F03 dark theme",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:10.904Z"
+    },
+    {
+      "file": "data-onboarding-light-1440w-faa21f2.png",
+      "route": "/data?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "tenant_admin",
+      "state": "S18 onboarding wizard",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:14.912Z"
+    },
+    {
+      "file": "research-registry-light-1440w-faa21f2.png",
+      "route": "/research?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "S16 reviewed headlines and superseded runs",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:18.236Z"
+    },
+    {
+      "file": "research-registry-dark-1440w-faa21f2.png",
+      "route": "/research?ws=uci-research",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "S16 dark theme",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:22.261Z"
+    },
+    {
+      "file": "settings-connections-light-1440w-faa21f2.png",
+      "route": "/settings?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "A11 no live ERP connector; OIDC status",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:26.322Z"
+    },
+    {
+      "file": "approvals-empty-dark-1440w-faa21f2.png",
+      "route": "/approvals?ws=contract-research",
+      "theme": "dark",
+      "viewport": "1440x900",
+      "role": "viewer",
+      "state": "A08 no pending items in this view",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:34:29.584Z"
+    },
+    {
+      "file": "inventory-filtered-light-1440w-faa21f2.png",
+      "route": "/inventory?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "planner",
+      "state": "A07 zero matches for a search",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:35:04.538Z"
+    },
+    {
+      "file": "investigations-empty-light-1440w-faa21f2.png",
+      "route": "/runs?ws=contract-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "viewer",
+      "state": "A15 no runs in this workspace",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:35:07.805Z"
+    },
+    {
+      "file": "admin-members-light-1440w-faa21f2.png",
+      "route": "/admin?ws=uci-research",
+      "theme": "light",
+      "viewport": "1440x900",
+      "role": "tenant_admin",
+      "state": "S18 membership administration",
+      "revision": "faa21f2",
+      "captured_at": "2026-10-22T09:35:11.106Z"
+    }
+  ]
+}
