@@ -81,6 +81,7 @@ known-first-party = ["supplylens", "supplylens_ml", "supplylens_opt", "supplylen
 "services/api/src/supplylens/knowledge/retrieve.py" = ["S608"]
 "services/api/src/supplylens/lifecycle.py" = ["S608"]
 "services/api/src/supplylens/config.py" = ["S105"]                   # published development defaults; refused when dev auth is off
+"deploy/vercel-api/index.py" = ["S108"]                              # /tmp is the only writable path in a Vercel function
 
 # Containers run on Linux CPU: use PyTorch's CPU wheels there (no CUDA libraries); macOS keeps the default wheel (MPS).
 [tool.uv.sources]

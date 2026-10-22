@@ -1,6 +1,6 @@
 """Export the hosted-demo dataset (built locally by `supplylens.bootstrap` into a fresh database) for the Vercel API bundle.
 
-Output: build/vercel-api/hosted_data/*.csv.gz plus manifest.json, loaded into the hosted database by the token-guarded
+Output: deploy/vercel-api/hosted_data/ (git-ignored; CLI deploys only)*.csv.gz plus manifest.json, loaded into the hosted database by the token-guarded
 setup step (supplylens/hosting/setup.py). Files are written per table and per workspace, because tenant tables use forced
 row-level security: rows are copied in under their own workspace context, never with RLS switched off.
 
@@ -20,7 +20,7 @@ import psycopg
 from psycopg import sql
 
 ROOT = Path(__file__).resolve().parents[2]
-OUT = ROOT / "build" / "vercel-api" / "hosted_data"
+OUT = ROOT / "deploy" / "vercel-api" / "hosted_data"
 CONTROL = ["tenants", "users", "memberships"]
 SKIP = {"alembic_version", "idempotency_keys", "rate_limit_buckets", "web_vitals", "jobs", "auth_sessions"}
 TRIM = {"sales_lines": sql.SQL(" AND invoiced_at >= '2011-06-01'")}

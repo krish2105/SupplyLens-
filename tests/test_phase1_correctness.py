@@ -140,12 +140,9 @@ def test_P0_SEC_01_outside_the_demo_sign_in_never_touches_orders(demo_tenant):
 # =========================================================================================== P1-SEC-02 owner credentials
 def _run_vercel_entry(monkeypatch, tmp_path, env: dict) -> dict:
     """Execute the generated Vercel entrypoint up to (not including) the application import, in a scratch environment."""
-    import importlib.util
     import os
-    spec = importlib.util.spec_from_file_location("build_api", settings_repo() / "scripts" / "vercel" / "build_api.py")
-    mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    entry = mod.ENTRY.split("from supplylens.api.app import app")[0]
+    source = (settings_repo() / "deploy" / "vercel-api" / "index.py").read_text()
+    entry = source.split("from supplylens.api.app import app")[0]
     for k in list(os.environ):
         if k.startswith(("DATABASE_URL", "POSTGRES_", "PG", "NEON_", "SUPPLYLENS_")):
             monkeypatch.delenv(k, raising=False)

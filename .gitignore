@@ -71,3 +71,11 @@ apps/web/.next-build/
 .vercel
 .env*
 /build/
+
+# Vercel API service: code staged by scripts/vercel/build_api.py (committed: index.py, pyproject.toml, hosted_storage/)
+/deploy/vercel-api/services/
+/deploy/vercel-api/ml/
+/deploy/vercel-api/optimisation/
+/deploy/vercel-api/artifacts/
+/deploy/vercel-api/evaluations/
+/deploy/vercel-api/hosted_data/
