@@ -39,7 +39,7 @@ appenv() {  # database URLs for the application, pointing at port $1
 }
 
 echo "== 1. cluster with WAL archiving on port $PORT"
-pg initdb -D "$DATA" -A trust -E UTF8 >/dev/null
+pg initdb -D "$DATA" -U postgres -A trust -E UTF8 >/dev/null   # superuser is "postgres" whichever OS user runs this
 cat >> "$DATA/postgresql.conf" <<CONF
 port = $PORT
 listen_addresses = '127.0.0.1'

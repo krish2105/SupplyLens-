@@ -106,7 +106,7 @@ jobs:
           psql -c "CREATE DATABASE supplylens OWNER supplylens_owner"
           psql -d supplylens -c "CREATE EXTENSION vector" -c "GRANT CONNECT ON DATABASE supplylens TO supplylens_app"
           uv run alembic -c services/api/alembic.ini upgrade head
-          uv run python -m supplylens.seed
+          uv run python -m supplylens.bootstrap        # workspaces, dev accounts and the fictional Demo workspace (UCI step skips: no licensed file)
           uv run python scripts/seed_e2e_fixture.py
       - name: start API, worker and web
         run: |

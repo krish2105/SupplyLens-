@@ -1,7 +1,7 @@
 {
   "drill": "point-in-time recovery",
   "ok": true,
-  "target_time_utc": "2026-10-21 23:37:32.273849+00",
+  "target_time_utc": "2026-10-22 00:29:31.648536+00",
   "counts_at_target": {
     "actions": 3,
     "approvals": 3,
@@ -32,8 +32,8 @@
   "orders_accounted": true,
   "wal_segments_archived": 4,
   "archive_timeout_s": 30,
-  "backup_seconds": 0.7,
-  "restore_seconds_rto": 0.8,
+  "backup_seconds": 0.6,
+  "restore_seconds_rto": 0.6,
   "rpo_bound_s": 30,
   "postgres_server_version": "16.15 (Ubuntu 16.15-0ubuntu0.24.04.1)",
   "database_bytes_restored": 10370071,
