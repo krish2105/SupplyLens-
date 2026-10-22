@@ -52,13 +52,19 @@ def r1():
     queries = [json.loads(l) for l in (ACORD_DIR / "queries.jsonl").read_text().splitlines() if l.strip()]
     all_test = [q for q in queries if q["metadata"]["split"] == "test"]
     qrels = defaultdict(dict)
-    for line in (ACORD_DIR / "qrels" / "test.tsv").read_text().splitlines()[1:]:
-        qid, cid, sc = line.rsplit("\t", 2)
-        qid = qid.strip('"').replace('""', '"')
-        qrels[qid][cid] = int(sc)
+    # The qrels file quotes ids CSV-style ('"""as-is"" clause"' is the id '"as-is" clause'); parse it as CSV, not by stripping
+    # every quote character, which dropped the id's own leading quote and excluded that query (DEF-04).
+    import csv
+    with (ACORD_DIR / "qrels" / "test.tsv").open(newline="") as f:
+        for qid, cid, sc in list(csv.reader(f, delimiter="\t"))[1:]:
+            qrels[qid][cid] = int(sc)
     # Queries whose id does not match any judgement (quote-escaping differences in the source) are excluded and counted.
     test = [q for q in all_test if q["_id"] in qrels]
     unjudged = [q["_id"] for q in all_test if q["_id"] not in qrels]
+    # The corpus is the ACORD clause document only: the same workspace also holds the CUAD contracts (study C1), which
+    # must not act as extra distractors here (fixed after the 2026-10-22 rerun exposed the difference).
+    with tenant_session(t) as s:
+        acord_doc = str(s.execute(text("SELECT id FROM documents WHERE doc_type = 'benchmark_corpus'")).scalar_one())
     out = {}
     for cond, channels in (("lexical", ("lexical",)), ("vector", ("vector",)), ("hybrid_rrf", ("lexical", "vector"))):
         nd, rec, mrr, lat, empty = [], [], [], [], 0
@@ -67,7 +73,7 @@ def r1():
             rel = {d for d, g in gains.items() if g >= 2}
             t0 = time.perf_counter()
             res = search(t, q["text"], as_of=FAR, role="viewer", mode="known", channels=channels, rerank=False,
-                         k=10, n_candidates=50)
+                         k=10, n_candidates=50, document_id=acord_doc)
             lat.append((time.perf_counter() - t0) * 1000)
             ranked = [e.section for e in res["results"]]
             empty += not ranked

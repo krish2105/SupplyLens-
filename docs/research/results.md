@@ -96,18 +96,19 @@ removes every wrong-version citation. Abstention on unknown products 100% in eve
 0 leaked chunks in 60 queries. The questions come from the same
 simulated records that generated the documents, so this measures the mechanism, not contract understanding.
 
-## R1 — ACORD clause retrieval (`R1-20261021T191153Z`)
+## R1 — ACORD clause retrieval (`R1-20261022T161030Z`, current)
 
-3,931 clauses, 56 judged test queries (one excluded because its id does not match the qrels' quoting).
-Relevant = grade ≥ 2.
+3,931 clauses, all 57 judged test queries (the first run, `R1-20261021T191153Z`, excluded one because the judgement file's
+CSV quoting was parsed by stripping quote characters: DEF-04, fixed). Search is restricted to the ACORD clause document,
+because the same workspace now also holds the CUAD contracts. Relevant = grade ≥ 2.
 
 | Retrieval | nDCG@10 | Recall@10 | MRR@10 | p95 latency |
 |---|---|---|---|---|
-| PostgreSQL full-text (lexical, not BM25) | 0.062 | 0.062 | 0.133 | 19 ms |
-| bge-m3 vector | **0.107** | **0.117** | **0.237** | 68 ms |
-| Hybrid RRF | 0.089 | 0.098 | 0.189 | 81 ms |
+| PostgreSQL full-text (lexical, not BM25) | 0.061 | 0.061 | 0.131 | 17 ms |
+| bge-m3 vector | **0.108** | **0.118** | **0.238** | 78 ms |
+| Hybrid RRF | 0.089 | 0.100 | 0.187 | 147 ms |
 
-**Finding (negative for the hybrid).** On short clause-category queries, vector-only beats the hybrid; the
+**Finding (negative for the hybrid, unchanged).** On short clause-category queries, vector-only beats the hybrid; the
 weak lexical channel dilutes RRF. Absolute scores are low and were not compared with published ACORD baselines.
 
 ## C1 — clause localisation in CUAD (`C1-20261021T191800Z`)

@@ -1,0 +1,40 @@
+{
+  "experiment_id": "R1-20261022T161030Z",
+  "commit": "2c88fd52e7c823acb9f5a2af213c28c84174308a",
+  "embedding_model": "bge-m3:567m",
+  "study": "R1",
+  "corpus": "ACORD (3,931 clauses)",
+  "split": "test",
+  "relevance": "graded 0-4; relevant >= 2",
+  "excluded_unjudged_queries": [],
+  "conditions": {
+    "lexical": {
+      "ndcg@10": 0.061191395329212625,
+      "recall@10_rel>=2_capped": 0.06079086605402395,
+      "mrr@10": 0.13106377053745474,
+      "queries": 57,
+      "queries_no_results": 0,
+      "latency_ms_p50": 5.7171249645762146,
+      "latency_ms_p95": 16.53116598026827
+    },
+    "vector": {
+      "ndcg@10": 0.10761567204591686,
+      "recall@10_rel>=2_capped": 0.11832358674463939,
+      "mrr@10": 0.23762879420774158,
+      "queries": 57,
+      "queries_no_results": 0,
+      "latency_ms_p50": 52.50808299751952,
+      "latency_ms_p95": 78.24449997860938
+    },
+    "hybrid_rrf": {
+      "ndcg@10": 0.08913327406049229,
+      "recall@10_rel>=2_capped": 0.10026455026455026,
+      "mrr@10": 0.18749651907546644,
+      "queries": 57,
+      "queries_no_results": 0,
+      "latency_ms_p50": 84.10258399089798,
+      "latency_ms_p95": 146.85183303663507
+    }
+  },
+  "note": "Recall@10 denominator is min(#relevant, 10) per query; unjudged clauses count as 0."
+}

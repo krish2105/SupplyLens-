@@ -49,7 +49,8 @@ export default function OverviewPage() {
             <Eyebrow>{o?.dataset ? "UCI Online Retail II · one online retailer" : "Fictional demo workspace"}</Eyebrow>
             {inv.isLoading || !o ? <Skeleton className="mt-3 h-36" /> : (
               <motion.h1 id="hero" className="display mt-2 text-[clamp(2.1rem,4.2vw,3.6rem)] font-semibold leading-[1.02]"
-                initial={reduce ? false : { opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}>
+                // slide only: an opacity fade-in hides the headline from LCP until it ends (UX-011)
+                initial={reduce ? false : { y: 14 }} animate={{ y: 0 }} transition={{ duration: 0.5, ease: [0.2, 0.7, 0.2, 1] }}>
                 {risk.length > 0 ? (
                   <><span className="text-danger">{risk.length}</span> of {items.length} stocked products have under a week of cover on {day(inv.data?.effective_date ?? eff)}.</>
                 ) : items.length ? (

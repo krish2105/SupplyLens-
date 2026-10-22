@@ -17,15 +17,16 @@ Keycloak needs about 700 MB of the Docker VM; on a 2 GB Colima VM run it with a 
 (`JAVA_OPTS_KC_HEAP="-Xms128m -Xmx384m"`), as the session-4 tests did.
 
 ## Open work, in priority order
-1. **S17 rest:** chart theme refresh after zoom/selection, 200 % zoom, WebGL context-loss tests (UX-010).
-2. **S15 rest:** apply the decision-context fingerprint used by the scenario studio to the forecast lab, approvals
-   drawer and exports.
-3. **S19:** link each acceptance row to an immutable CI artifact automatically (acceptance register `evidence` column).
-4. **Research:** a confirmatory forecast test needs data no protocol has looked at (UCI has none left, D-042); have the
-   50-question R2 review sheet reviewed by a person; validate the lead-time-demand model on real windows.
-5. **SKU-location planning** (D-043) before multiple warehouses; receipt feed from an ERP instead of manual booking.
-6. **Corporate identity:** qualify OIDC against the customer's IdP (BUS-012, BUS-022 remain partial until then).
-7. **ERP connector** (EXE-013, BUS-013): blocked on sandbox credentials from the owner.
+1. **Overview mobile LCP** (2.76 s throttled; target 2.5 s): the headline needs two API responses after hydration;
+   consider rendering it on the server or shipping less JavaScript on `/`.
+2. **Manual screen-reader pass** (UX-010) and **human review** of the 50-question R2 sheet (ARC-04).
+3. **Load test on the declared 8 vCPU / 32 GiB profile** (ARC-07); back-pressure is in place.
+4. **Corporate identity provider** (BUS-012/022) and an **ERP sandbox** (EXE-013, BUS-013): need outside parties.
+5. **Confirmatory forecast test** on data no protocol has seen (D-042).
+
+## Hosted demo
+https://supplylens-self.vercel.app — rebuild and redeploy steps in `docs/operations/hosted-demo.md`. After code changes:
+`uv run python scripts/vercel/build_api.py --storage build/hosted-storage && vercel deploy --prod`.
 
 ## Things that are easy to get wrong
 - Never mention any AI assistant in commits or files (owner instruction). Commit as

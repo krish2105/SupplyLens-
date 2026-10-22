@@ -1,15 +1,13 @@
 # SupplyLens project status
 
 **Updated:** 2026-10-22 (UTC) · **Commit:** see `git log -1`
-**Verified gate:** P0 demonstrated locally for everything that can be run without outside parties — 57 of 80
-acceptance items passed locally, 16 partial, 5 not run (pilot users, support, pricing, production workload), 2 blocked on
-external systems (ERP sandbox credentials). Session 4 remediated the CTO audit: of 22 findings, 18 are fixed with
-correct-behaviour tests, S09 is fixed for local use only, and S15, S17 and S19 are partially fixed
-(`docs/remediation/REGISTER.md`). Rows touched by the findings were reopened and requalified (two moved back to partial:
-ML-004 has no untouched holdout left on UCI; BUS-012/022 are verified against a local Keycloak, not a corporate IdP).
-P0 is still not claimed complete: the load target is missed at 5 retrieval requests/s on 4 vCPU, mobile LCP is above its
-field target, the screen-reader pass and the human review of retrieval questions are undone, and the lead-time-demand
-and cross-encoder models are not validated on real data.
+**Verified gate:** P0 demonstrated locally and on a hosted demo — 59 of 80 acceptance items passed locally, 14 partial,
+5 not run (pilot users, support, pricing, production workload), 2 blocked on an ERP sandbox. All 22 CTO-audit findings
+are fixed with correct-behaviour tests (`docs/remediation/REGISTER.md`); S09 is fixed for local and hosted-demo use, not
+for a corporate deployment. **Live demo:** https://supplylens-self.vercel.app (Vercel Services + Neon; demo accounts on
+fictional and public data; `docs/operations/hosted-demo.md`). Still open: field Web Vitals and the overview's 2.76 s
+throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
+profile, a corporate identity provider and an ERP sandbox.
 
 ## CI on GitHub
 `.github/workflows/ci.yml` runs on every push, pull request and weekly. **Run 39700028666 (commit 5809b70): all 7 jobs

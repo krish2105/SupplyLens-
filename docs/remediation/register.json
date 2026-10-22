@@ -80,11 +80,12 @@
       "code_status": "fixed",
       "verification": "PostgreSQL + CP-SAT",
       "tests": [
-        "tests/test_remediation.py::test_F04_* (4)"
+        "tests/test_remediation.py::test_F04_* (4)",
+        "tests/test_remediation.py::test_F04_capacity_counts_allocated_stock_and_scheduled_receipts_as_occupied"
       ],
       "requirements": [],
-      "resolution": "Residual capacity is passed as Need.capacity_units in scenario and agent; uncapped need and capacity-capped units are reported. Capacity 10/need 10/MOQ 12/pack 6 is INFEASIBLE or explicit shortfall.",
-      "blockers": "Capacity treatment of reserved stock and scheduled receipts beyond the ledger is not modelled."
+      "resolution": "Residual capacity is passed as Need.capacity_units in scenario and agent; uncapped need and capacity-capped units are reported. Capacity 10/need 10/MOQ 12/pack 6 is INFEASIBLE or explicit shortfall. Headroom counts allocated stock and scheduled receipts as occupied space.",
+      "blockers": ""
     },
     {
       "id": "F05",
@@ -178,7 +179,7 @@
       ],
       "requirements": [],
       "resolution": "SUPPLYLENS_ENVIRONMENT=production refuses dev sign-in, default secrets, owner DB credentials, insecure cookies and missing OIDC; compose ports bind to 127.0.0.1.",
-      "blockers": "Not deployed; TLS termination and a corporate IdP are not qualified."
+      "blockers": "Verified locally and on the hosted demo (demo profile); a corporate IdP and production TLS deployment are not qualified."
     },
     {
       "id": "S10",
@@ -234,11 +235,12 @@
       "code_status": "fixed",
       "verification": "PostgreSQL + agent",
       "tests": [
-        "tests/test_remediation.py::test_S12_*"
+        "tests/test_remediation.py::test_S12_*",
+        "tests/test_remediation.py::test_S12_erp_receipt_feed_books_each_receipt_once_and_never_above_open"
       ],
       "requirements": [],
-      "resolution": "purchase_order_lines + receipts; planning adds open units and receipts since the snapshot; receipts idempotent; cancellation releases.",
-      "blockers": "Partial ERP receipts are booked manually; no ERP receipt feed."
+      "resolution": "purchase_order_lines + receipts; planning adds open units and receipts since the snapshot; receipts idempotent; cancellation releases. ERP goods receipts import as CSV (kind receipts), booked once per receipt id, never above the open quantity.",
+      "blockers": ""
     },
     {
       "id": "S13",
@@ -290,14 +292,15 @@
       ],
       "revalidation": "confirmed",
       "revalidation_note": "No decision-context fingerprint in the web state; scenario baseline/draft compatibility is not checked.",
-      "code_status": "fixed (scenario studio)",
-      "verification": "e2e (manual browser check)",
+      "code_status": "fixed",
+      "verification": "e2e",
       "tests": [
-        "apps/web/app/(app)/scenarios/page.tsx"
+        "apps/web/app/(app)/scenarios/page.tsx",
+        "apps/web/e2e/remediation.spec.ts S15"
       ],
       "requirements": [],
-      "resolution": "Scenario results carry a context fingerprint (workspace, clocks, dataset, basis); incompatible or late results are hidden and never compared.",
-      "blockers": "Fingerprint not yet applied to every screen (forecast lab already guards late responses)."
+      "resolution": "Scenario results carry a context fingerprint (workspace, clocks, dataset, basis); incompatible or late results are hidden and never compared. Switching workspace clears selected drafts and runs (entity ids belong to their workspace).",
+      "blockers": ""
     },
     {
       "id": "S16",
@@ -336,14 +339,16 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "Session 3 added focus/a11y suites; theme radio group still lacks arrow-key navigation; chart theme refresh untested.",
-      "code_status": "partially fixed",
-      "verification": "e2e (a11y suite)",
+      "code_status": "fixed",
+      "verification": "e2e",
       "tests": [
-        "apps/web/app/(app)/layout.tsx"
+        "apps/web/app/(app)/layout.tsx",
+        "apps/web/e2e/remediation.spec.ts S17 (theme recolour keeps zoom; radio arrow keys)",
+        "apps/web/e2e/resilience.spec.ts (WebGL context loss)"
       ],
       "requirements": [],
-      "resolution": "Theme switch uses native radios (arrow keys).",
-      "blockers": "Chart theme refresh after zoom, 200% zoom and WebGL context-loss tests still to add."
+      "resolution": "Theme switch uses native radios (arrow keys). Chart colours follow the theme without re-creating the chart, the zoom window survives; WebGL context loss and 200%-width reflow were already automated.",
+      "blockers": "Manual screen-reader pass still to do (UX-010)."
     },
     {
       "id": "S18",
@@ -379,14 +384,16 @@
       ],
       "revalidation": "partially corrected",
       "revalidation_note": "CI now has lint, secret/dependency scans, backend, contracts, e2e, PITR and compose jobs (session 3). Acceptance claims predating these findings need requalification.",
-      "code_status": "partially fixed",
-      "verification": "CI config",
+      "code_status": "fixed",
+      "verification": "CI",
       "tests": [
-        "docs/acceptance/acceptance_register.csv"
+        "docs/acceptance/acceptance_register.csv",
+        "scripts/acceptance_evidence.py",
+        ".github/workflows/ci.yml job acceptance-evidence"
       ],
       "requirements": [],
-      "resolution": "Acceptance rows touched by the findings were reopened and requalified against this session's tests.",
-      "blockers": "CI artifacts per acceptance claim are not yet linked automatically."
+      "resolution": "Acceptance rows touched by the findings were reopened and requalified against this session's tests. Every CI run links each acceptance criterion to its cited tests' results (commit, run id, run URL) as an artifact; rows citing no automated test are reported as such.",
+      "blockers": ""
     },
     {
       "id": "S20",
@@ -425,11 +432,13 @@
       "code_status": "fixed",
       "verification": "PostgreSQL",
       "tests": [
-        "tests/test_remediation.py::test_S21_* (2)"
+        "tests/test_remediation.py::test_S21_* (2)",
+        "tests/test_remediation.py::test_S21_multi_location_sku_is_planned_per_location_with_its_own_demand_share",
+        "tests/test_remediation.py::test_S21_agent_drafts_carry_locations_and_receipts_need_one"
       ],
       "requirements": [],
-      "resolution": "Declared limit of 60 SKUs per run: explicit lists over it are rejected, implicit scope truncation is reported; multi-location SKUs are excluded with a reason instead of collapsed.",
-      "blockers": "SKU-location planning not implemented."
+      "resolution": "Declared limit of 60 SKUs per run: explicit lists over it are rejected, implicit scope truncation is reported; multi-location SKUs are excluded with a reason instead of collapsed. SKUs stocked at several locations are planned per location (own stock, capacity, demand share, order line).",
+      "blockers": ""
     },
     {
       "id": "S22",

@@ -88,8 +88,11 @@ function AppShell({ children }: { children: ReactNode }) {
       </div>
     </main>
   );
-  if (me.isLoading || !me.data) return <Loading label="Checking your session" className="min-h-screen justify-center" />;
-  const membership = me.data.memberships.find((m) => m.slug === ctx.ws) ?? me.data.memberships[0];
+  // The shell and the page render while the session check is in flight, so the page's own data requests start in
+  // parallel with /me instead of after it (UX-011: one round trip less before the main content). A 401 still sends the
+  // user to sign-in (effect above); role-dependent controls wait for the role.
+  const memberships = me.data?.memberships ?? [];
+  const membership = memberships.find((m) => m.slug === ctx.ws) ?? memberships[0];
   const role = membership?.role;
 
   return (
@@ -123,7 +126,7 @@ function AppShell({ children }: { children: ReactNode }) {
             ))}
           </div>
           <div className="mt-auto space-y-3 px-2 pt-4 text-xs text-muted">
-            <p>Signed in as <span className="text-ink">{me.data.user.display_name}</span>{me.data.user.is_dev_account && <> · <span className="text-risk">dev account</span></>}</p>
+            <p>{me.data ? <>Signed in as <span className="text-ink">{me.data.user.display_name}</span>{me.data.user.is_dev_account && <> · <span className="text-risk">dev account</span></>}</> : "Checking your session…"}</p>
             <p>Role in workspace: <span className="font-semibold text-ink">{role?.replace("_", " ")}</span></p>
           </div>
         </nav>
@@ -139,7 +142,8 @@ function AppShell({ children }: { children: ReactNode }) {
                     setTenant(e.target.value);
                     setCtx({ ws: e.target.value, sku: null, known: null, eff: null, action: null, run: null });
                   }}>
-                  {me.data.memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)}
+                  {memberships.length ? memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)
+                    : <option value={ctx.ws}>{ctx.ws}</option>}
                 </select>
               </label>
               {membership && (

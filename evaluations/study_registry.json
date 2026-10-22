@@ -23,9 +23,9 @@
       "notes": "2x2 factorial on 118 synthetic questions (not human-reviewed): temporal main effect +3.2 points, rerank main effect +4.2 points, interaction +0.9 points. Measures the mechanism, not real-world contract understanding."
     },
     "R1-20261021T191153Z": {
-      "status": "current",
-      "headline": "On ACORD, vector search beats the hybrid \u2014 a negative result we keep",
-      "notes": "Absolute scores are low and were not compared with published ACORD baselines."
+      "status": "superseded",
+      "superseded_by": "R1-20261022T161030Z",
+      "reason": "one judged test query was excluded by a qrels parsing error (DEF-04)"
     },
     "C1-20261021T191800Z": {
       "status": "current",
@@ -55,6 +55,11 @@
       "status": "exploratory",
       "headline": "Better forecasts still did not mean better simulated stock outcomes \u2014 the ordering policy mattered more",
       "notes": "Simulated, assumed costs. Median+safety: fill naive 85.6%, LightGBM 78.4%, TCN 78.8% (summed q50 covers 99% / 52% / 49% of volume). q90 order-up-to: about 95% for all three. The q90 policy was chosen after seeing v1 test results, so the policy comparison is exploratory (S20)."
+    },
+    "R1-20261022T161030Z": {
+      "status": "current",
+      "headline": "On ACORD, vector search beats the hybrid \u2014 a negative result we keep",
+      "notes": "All 57 judged test queries (one was wrongly excluded before, DEF-04); search restricted to the ACORD clause corpus. nDCG@10: vector 0.108, hybrid 0.089, lexical 0.061. Absolute scores are low and were not compared with published ACORD baselines."
     }
   }
 }

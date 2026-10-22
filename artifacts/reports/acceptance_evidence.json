@@ -1,0 +1,815 @@
+{
+ "commit": "2c88fd52e7c823acb9f5a2af213c28c84174308a",
+ "run_id": null,
+ "run_url": null,
+ "criteria": [
+  {
+   "id": "AGT-01",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "AGT-02",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_actions.py",
+     "test": null,
+     "ran": 14,
+     "failed": 0,
+     "passed": 14
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F06_",
+     "ran": 6,
+     "failed": 0,
+     "passed": 6
+    },
+    {
+     "file": "tests/test_actions.py",
+     "test": null,
+     "ran": 14,
+     "failed": 0,
+     "passed": 14
+    }
+   ]
+  },
+  {
+   "id": "ARC-01",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ARC-02",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_contract_responses.py",
+     "test": null,
+     "ran": 11,
+     "failed": 0,
+     "passed": 11
+    }
+   ]
+  },
+  {
+   "id": "ARC-03",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_golden_boundaries.py",
+     "test": null,
+     "ran": 69,
+     "failed": 0,
+     "passed": 69
+    }
+   ]
+  },
+  {
+   "id": "ARC-04",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ARC-05",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_planner_fixture.py",
+     "test": null,
+     "ran": 10,
+     "failed": 0,
+     "passed": 10
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F04_",
+     "ran": 5,
+     "failed": 0,
+     "passed": 5
+    }
+   ]
+  },
+  {
+   "id": "ARC-06",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ARC-07",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ARC-08",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-001",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-002",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-003",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_api.py",
+     "test": null,
+     "ran": 9,
+     "failed": 0,
+     "passed": 9
+    }
+   ]
+  },
+  {
+   "id": "BUS-004",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-005",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_agent_graph.py",
+     "test": null,
+     "ran": 6,
+     "failed": 0,
+     "passed": 6
+    }
+   ]
+  },
+  {
+   "id": "BUS-006",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_actions.py",
+     "test": null,
+     "ran": 14,
+     "failed": 0,
+     "passed": 14
+    },
+    {
+     "file": "tests/test_security_matrix.py",
+     "test": null,
+     "ran": 64,
+     "failed": 0,
+     "passed": 64
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F08_",
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  },
+  {
+   "id": "BUS-007",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_actions.py",
+     "test": null,
+     "ran": 14,
+     "failed": 0,
+     "passed": 14
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F05_",
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  },
+  {
+   "id": "BUS-008",
+   "register_status": "passed_local",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/resilience.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "BUS-009",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-010",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-011",
+   "register_status": "partial",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_security_matrix.py",
+     "test": null,
+     "ran": 64,
+     "failed": 0,
+     "passed": 64
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_S10_",
+     "ran": 1,
+     "failed": 0,
+     "passed": 1
+    },
+    {
+     "file": "tests/test_security_matrix.py",
+     "test": null,
+     "ran": 64,
+     "failed": 0,
+     "passed": 64
+    }
+   ]
+  },
+  {
+   "id": "BUS-012",
+   "register_status": "partial",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_oidc_keycloak.py",
+     "test": null,
+     "ran": 6,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "BUS-013",
+   "register_status": "blocked",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-014",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-015",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-016",
+   "register_status": "not_run",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-017",
+   "register_status": "not_run",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-018",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_alerts.py",
+     "test": null,
+     "ran": 8,
+     "failed": 0,
+     "passed": 8
+    }
+   ]
+  },
+  {
+   "id": "BUS-019",
+   "register_status": "partial",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_onboarding.py",
+     "test": null,
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  },
+  {
+   "id": "BUS-020",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_rehearsals.py",
+     "test": null,
+     "ran": 7,
+     "failed": 0,
+     "passed": 7
+    }
+   ]
+  },
+  {
+   "id": "BUS-021",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-022",
+   "register_status": "partial",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_oidc_keycloak.py",
+     "test": null,
+     "ran": 6,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "BUS-023",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_lifecycle.py",
+     "test": null,
+     "ran": 8,
+     "failed": 0,
+     "passed": 8
+    }
+   ]
+  },
+  {
+   "id": "BUS-024",
+   "register_status": "not_run",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-025",
+   "register_status": "not_run",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "BUS-026",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-001",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-002",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-003",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-004",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-005",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-006",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "DAT-007",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-001",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-002",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-003",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-004",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-005",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-006",
+   "register_status": "passed_local",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/consistency.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "EXE-007",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F05_",
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  },
+  {
+   "id": "EXE-008",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_S11_",
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  },
+  {
+   "id": "EXE-009",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_F07_",
+     "ran": 1,
+     "failed": 0,
+     "passed": 1
+    }
+   ]
+  },
+  {
+   "id": "EXE-010",
+   "register_status": "passed_local",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/resilience.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "EXE-011",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-012",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-013",
+   "register_status": "blocked",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "EXE-014",
+   "register_status": "not_run",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-001",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-002",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_seasonal_naive.py",
+     "test": null,
+     "ran": 8,
+     "failed": 0,
+     "passed": 8
+    }
+   ]
+  },
+  {
+   "id": "ML-003",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_ml_leakage.py",
+     "test": null,
+     "ran": 6,
+     "failed": 0,
+     "passed": 6
+    },
+    {
+     "file": "tests/test_ml_leakage.py",
+     "test": null,
+     "ran": 6,
+     "failed": 0,
+     "passed": 6
+    }
+   ]
+  },
+  {
+   "id": "ML-004",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-005",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-006",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-007",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "ML-008",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "SEC-01",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_security_matrix.py",
+     "test": null,
+     "ran": 64,
+     "failed": 0,
+     "passed": 64
+    },
+    {
+     "file": "tests/test_security_matrix.py",
+     "test": null,
+     "ran": 64,
+     "failed": 0,
+     "passed": 64
+    },
+    {
+     "file": "tests/test_remediation.py",
+     "test": "test_S10_",
+     "ran": 1,
+     "failed": 0,
+     "passed": 1
+    }
+   ]
+  },
+  {
+   "id": "UX-001",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-002",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-003",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-004",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_onboarding.py",
+     "test": null,
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    },
+    {
+     "file": "apps/web/e2e/remediation.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "UX-005",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-006",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-007",
+   "register_status": "passed_local",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/remediation.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "UX-008",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-009",
+   "register_status": "partial",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/remediation.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "UX-010",
+   "register_status": "partial",
+   "ci": "cited tests did not run in this job set",
+   "tests": [
+    {
+     "file": "apps/web/e2e/a11y.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    },
+    {
+     "file": "apps/web/e2e/a11y.spec.ts",
+     "test": null,
+     "ran": 0,
+     "failed": 0,
+     "passed": 0
+    }
+   ]
+  },
+  {
+   "id": "UX-011",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-012",
+   "register_status": "partial",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-013",
+   "register_status": "passed_local",
+   "ci": "no automated test cited",
+   "tests": []
+  },
+  {
+   "id": "UX-014",
+   "register_status": "passed_local",
+   "ci": "passed in CI",
+   "tests": [
+    {
+     "file": "tests/test_onboarding.py",
+     "test": null,
+     "ran": 2,
+     "failed": 0,
+     "passed": 2
+    }
+   ]
+  }
+ ],
+ "summary": {
+  "cited tests did not run in this job set": 6,
+  "no automated test cited": 51,
+  "passed in CI": 23
+ }
+}

@@ -1,7 +1,8 @@
 "use client";
 // Apache ECharts is the single chart library (UX-005). Loaded lazily (see chart.tsx) so it is only downloaded by
-// screens that draw charts. The chart re-initialises when the theme changes and keeps the user's zoom range across it
-// (audit S17); pages rebuild their options with the new theme's colours (useChartTheme in chart.tsx).
+// screens that draw charts. The chart is created once; a theme change arrives as a rebuilt option (pages build options
+// from the theme's tokens, useChartTheme in chart.tsx), applied in place with the user's zoom window kept (audit S17).
+// Re-creating the chart on every theme switch cost ~240 ms of interaction delay on a throttled phone (UX-011).
 import { useEffect, useRef } from "react";
 import * as echarts from "echarts/core";
 import { BarChart, LineChart, ScatterChart } from "echarts/charts";
@@ -30,13 +31,8 @@ export default function ChartImpl({ option, onEvents }: {
     (el.current as HTMLDivElement & { __chart?: echarts.ECharts }).__chart = chart;   // read by the e2e theme test
     const ro = new ResizeObserver(() => chart.resize());
     ro.observe(el.current);
-    return () => {
-      // remember the zoom range so the re-created chart shows the same window
-      const dz = (chart.getOption()?.dataZoom ?? []) as { start?: number; end?: number }[];
-      zoomed.current = dz.length ? dz.map((z) => ({ start: z.start ?? 0, end: z.end ?? 100 })) : null;
-      ro.disconnect(); chart.dispose(); inst.current = null;
-    };
-  }, [resolvedTheme]);
+    return () => { ro.disconnect(); chart.dispose(); inst.current = null; };
+  }, []);
 
   useEffect(() => {
     const chart = inst.current;
@@ -48,12 +44,12 @@ export default function ChartImpl({ option, onEvents }: {
     chart.setOption(option, { notMerge: true });
     if (zoomed.current) {
       zoomed.current.forEach((z, i) => chart.dispatchAction({ type: "dataZoom", dataZoomIndex: i, start: z.start, end: z.end }));
-      zoomed.current = null;     // applied once, to the chart re-created for the new theme
+      zoomed.current = null;     // re-applied once after the option was replaced
     }
     const handlers = Object.entries(onEvents ?? {});
     handlers.forEach(([ev, fn]) => chart.on(ev, fn));
     return () => { handlers.forEach(([ev, fn]) => chart.off(ev, fn)); };
-  }, [option, onEvents, resolvedTheme]);
+  }, [option, onEvents]);
 
   return <div ref={el} className="size-full" data-chart-theme={resolvedTheme} />;
 }

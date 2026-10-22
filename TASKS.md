@@ -58,13 +58,13 @@ passed locally. The per-requirement status lives in `docs/acceptance/acceptance_
 | DEF-01 | — | drei `Html` unmount crash | fixed (DOM overlay), verified E-22 |
 | DEF-02 | medium | Idempotency key check not atomic under concurrent identical requests | fixed (atomic claim; `tests/test_reliability.py`) |
 | DEF-03 | low | Rate limits are per process | fixed (PostgreSQL token buckets, shared across processes) |
-| DEF-04 | low | One ACORD test query excluded due to source quoting mismatch | open (documented) |
+| DEF-04 | low | One ACORD test query excluded due to source quoting mismatch | fixed: qrels parsed as CSV; R1 rerun on all 57 queries |
 | DEF-05 | high | Inventory page never selected the 3D view on WebGL-capable browsers (introduced by the layout-shift work) | fixed; found by the resilience tests |
 | DEF-06 | high | Retrieval slowed ten-fold on the 11th request of a process (generic plan) | fixed (D-033); found by the load test |
 | DEF-07 | medium | Planner returned a misleading MODEL_INVALID for unit prices above ~5e7 minor units | fixed; found by a golden boundary case |
 | DEF-08 | medium | Web image build failed behind a proxy CA; worker container reported unhealthy | fixed; found by running compose |
 | DEF-09 | low | Scenario/plan limited to 200 SKUs per run (422) while the default is "all SKUs" | superseded by D-043: declared 60-SKU limit, explicit rejection or reported truncation |
-| DEF-10 | medium | No back-pressure: past capacity requests queue and the service takes minutes to recover | open (load test finding 5) |
+| DEF-10 | medium | No back-pressure: past capacity requests queue and the service takes minutes to recover | fixed: requests past capacity get 503 + Retry-After in <50 ms; recovery immediate (overload probe) |
 
 ## Done in session 4 (2026-10-22; see EVIDENCE_INDEX E-38 … E-45, docs/remediation/REGISTER.md)
 | Task | Findings / req IDs | Result |
@@ -84,3 +84,19 @@ passed locally. The per-requirement status lives in `docs/acceptance/acceptance_
 ## Open after session 4
 See NEXT_SESSION.md. Partially fixed: S15 (fingerprint only in scenario studio), S17 (chart theme/zoom/context-loss
 tests), S19 (automatic CI-artifact links). DEF-09 is superseded by the declared 60-SKU limit (D-043).
+
+## Done in session 4, second pass (2026-10-22)
+| Task | IDs | Result |
+|---|---|---|
+| SKU-location planning | S21 | per-location needs, drafts, ledger and receipts; forecasts sum locations |
+| ERP goods-receipt feed | S12 | CSV kind `receipts`, booked once per receipt id (migration 0008) |
+| Capacity counts allocated and scheduled stock | F04 | done |
+| Back-pressure | DEF-10, ARC-07 | done; overload probe evidence |
+| Workspace switch clears entity selection | S15 | done |
+| Theme-safe charts, radio group | S17 | done; chart no longer re-created on theme switch |
+| Non-happy states automated | UX-009 | done |
+| Mobile page load | UX-011 | 7 of 8 screens under 2.5 s throttled LCP; overview 2.76 s; INP ≤ 136 ms |
+| ACORD qrels parsing | DEF-04 | fixed; R1 rerun |
+| Acceptance evidence per CI run | S19 | `acceptance-evidence` CI job |
+| Hosted demo on Vercel | D-050 | https://supplylens-self.vercel.app: Next.js + FastAPI services, Neon Postgres |
+
