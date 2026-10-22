@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 import time
 import uuid
@@ -27,6 +28,7 @@ from . import (
     routes_onboarding,
     routes_ops,
     routes_research,
+    routes_setup,
 )
 from .schemas import Health
 
@@ -42,6 +44,8 @@ app.include_router(routes_market.router)
 app.include_router(routes_ops.router)
 app.include_router(routes_lifecycle.router)
 app.include_router(routes_onboarding.router)
+if os.environ.get("SUPPLYLENS_SETUP_TOKEN"):        # hosted one-time setup only (hosting/setup.py)
+    app.include_router(routes_setup.router)
 telemetry.setup(app)
 
 

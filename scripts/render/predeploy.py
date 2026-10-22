@@ -27,7 +27,7 @@ def main() -> None:
         if not (exists and _app_login_works(owner, pw)):        # redeploys keep the role and its generated password
             verb = "ALTER" if exists else "CREATE"
             try:
-                c.execute(sql.SQL("{} ROLE supplylens_app LOGIN NOBYPASSRLS PASSWORD {}").format(sql.SQL(verb), sql.Literal(pw)))
+                c.execute(sql.SQL("{} ROLE supplylens_app LOGIN PASSWORD {}").format(sql.SQL(verb), sql.Literal(pw)))
             except psycopg.Error as e:
                 sys.exit(f"cannot {verb.lower()} role supplylens_app as the database owner ({e}); "
                          "refusing to run the API as owner")

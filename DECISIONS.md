@@ -51,6 +51,7 @@
 | D-047 | 2026-10-22 | Read-back verification compares line multisets, prices, units, need-by and status; any difference leaves the action CONFIRMED with a mismatch reason, never RECONCILED | F06 | Total-only comparison | Accepted |
 | D-048 | 2026-10-22 | Migration 0007 rolls back by parking its tables and identity values in schema `retired_0007` and restores them on the next upgrade | Rollback must not destroy open orders, receipts or imports | Refuse downgrade with data | Accepted |
 | D-049 | 2026-10-22 | The production profile fails closed: no dev sign-in, no default secrets or owner DB credentials, Secure cookies, OIDC required | S09 | Warn only | Accepted |
+| D-050 | 2026-10-22 | Public demo hosted entirely on Vercel: Next.js and FastAPI as Services in one project, Neon Postgres, demo role accounts on fictional and public data, `demo` profile; jobs run inline (no worker), no trained models or embeddings on the server | Owner decisions: "deploy everything to Vercel", demo accounts and demo data; Neon credentials are sensitive and cannot leave Vercel, so setup runs in the deployment behind a temporary token | Render with containers (kept as `render.yaml`); local backend only | Accepted (owner) |
 
 ## Authorisation scope recorded
 Routine local development, local databases, dataset download of UCI (owner-approved); use of the core datasets the
