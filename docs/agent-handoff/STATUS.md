@@ -6,41 +6,41 @@ how), `phases/PHASE-NN.md` (per-phase record). Update this file at the end of ev
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 0 — complete** (baseline audit). Phase 1 **not started**; start only on the owner's instruction. |
-| Branch | `main` (only branch; `origin/main` identical at audit time) |
-| Commit audited | `9fcbedb19b0831ad2599b5291569dfae309d5b6e` — "S17 e2e: find the zoomable chart by its zoom control…" |
-| Working tree | Clean. The only Phase 0 change is the `docs/agent-handoff/` folder, committed locally on `main` on top of `9fcbedb`; not pushed |
-| CI on audited commit | GitHub Actions run 39813602236: 8/8 jobs success |
-| Hosted demo | https://supplylens-self.vercel.app — up 2026-10-22, `environment=demo` |
-| Local scratch state | DB `supplylens_p0e2e` and dir `storage_p0e2e/` (git-ignored) created for isolated E2E; safe to drop: `psql -h localhost -d postgres -c "DROP DATABASE supplylens_p0e2e WITH (FORCE)"` and `rm -rf storage_p0e2e` |
+| Current phase | **Phase 1 — complete for its delivered scope** (core correctness and procurement safety). Phase 2 **not started**; start only on the owner's instruction. |
+| Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
+| Code commit | `037e42b` — "Phase 1: demo lockdown, owner credentials out of serving, procurement correctness"; the handoff/docs commit follows it (see `git log`) |
+| CI on code commit | GitHub Actions run 39831397239: **8/8 jobs success** |
+| Database schema | migration head **0009** (local test DBs and the hosted Neon database) |
+| Hosted demo | https://supplylens-self.vercel.app — redeployed 2026-10-23 from `037e42b` (CLI deploy), lockdown verified live (EVIDENCE P1-E14) |
+| Local scratch state | DB `supplylens_p0e2e` (now at 0009) and dir `storage_p0e2e/` (git-ignored) for isolated E2E; safe to drop. Launch configs `p0-api`, `p0-worker`, `p0-web` in a local, git-excluded launch config start the stack on it |
 
 ## Phase log
 | Phase | Dates (UTC) | Outcome | Record |
 |---|---|---|---|
-| 0 | 2026-10-22 | Baseline: all local static checks and builds green; pytest 336/6 skipped; Playwright 113 passed / 1 order-dependent failure / 2 skipped; 2 P0, 10 P1, 18 P2, 8 P3, 10 external blockers registered | `phases/PHASE-00.md` |
+| 0 | 2026-10-22 | Baseline: static checks and builds green; pytest 336/6 skipped; Playwright 113 / 1 order-dependent failure / 2 skipped; 2 P0, 10 P1, 18 P2, 8 P3, 10 external blockers | `phases/PHASE-00.md` |
+| 1 | 2026-10-22/23 | Both P0s fixed (demo lockdown verified live; coverage-first planning); P1 fixed: PLAN-02, ACT-01, ACT-02, SEC-02 (residual), FE-02 (approvals part), PROC-01 (partial); P2 fixed: REL-01, REL-02, PLAN-03/04/05, FE-05 (part); docs reconciled. pytest 374/6 skipped; Playwright 114/2 skipped ×2; CI 8/8; 3 new findings (P2-QA-02, P3-OPS-02, P3-FE-10) | `phases/PHASE-01.md` |
 
-## Completed work (Phase 0)
-- Repository, environment and CI baseline verified (EVIDENCE P0-E01 … P0-E21).
-- Architecture map, backlog, scores and execution order (PHASE-00 §2, §4, §5, §7).
-- Handoff files created; no application code, configuration under version control, or data in the `supplylens`
-  database was modified.
+## Open P0/P1 after Phase 1
+- P0: none open.
+- P1 open: P1-FE-01 (workspace default), P1-FE-02 remainder (inventory/3D keys), P1-IAM-01 (identity model; needs
+  EXT-01), P1-OPS-01 (production platform), P1-SAAS-01 (SaaS plumbing; owner scope decision), P1-PROC-01 remainder
+  (admins exempt; e2e not required), P1-SEC-02 residual (owner must scope Neon integration variables).
 
 ## Blockers
-- External: EXT-01 corporate IdP, EXT-02 ERP sandbox, EXT-03 pilot users, EXT-04 8 vCPU load profile, EXT-05
-  screen-reader tester, EXT-06 R2 reviewer, EXT-07 pentest, EXT-08 LLM decision (D-041), EXT-09 dataset licences,
-  EXT-10 pricing/SLA/support.
-- Local: Docker daemon (colima) not running — needed for a local compose smoke test and Keycloak tests.
+- External: EXT-01 … EXT-10 (unchanged; see ISSUES.md).
+- Local: Docker daemon (colima) not running — local compose smoke and Keycloak tests not run (CI compose-smoke green).
 
-## Next actions (Phase 1 proposal — awaiting owner go-ahead)
-1. P0-SEC-01: restrict the `demo` profile (no admin writes, workspace creation, imports, export/deletion for dev
-   accounts; rate-limit dev-login/mutations; scheduled demo reset); tests; redeploy; read-only live probe.
-2. P1-SEC-02: remove the owner DSN from the serving function; refuse to start with one in demo/production.
-3. P0-PLAN-01: shortfall opt-in or penalty > unit cost; flag any shortfall; tests at/below/above unit cost.
-4. P1-PROC-01: enable branch protection with required CI checks (owner action in GitHub settings).
-5. P3-DOC-01/02: reconcile README / PROJECT_STATUS / TASKS / root DECISIONS with measured numbers.
+## Next actions (Phase 2 proposal — awaiting owner go-ahead)
+1. Stabilise CI e2e (P2-QA-02 lab-vitals thresholds on shared runners; P2-QA-01 shared fixture), then require `e2e`.
+2. Approval-time warning when another committed order already covers the same SKU (remaining D-056 risk).
+3. Remaining planning/ML: P2-ML-01 (trained-model service test, artifact fallback), P3-PLAN-06, P3-ML-02.
+4. Owner actions: scope Neon variables away from the web service; decide on Git-triggered Vercel builds (P3-OPS-02).
 
 ## Notes for the next session
 - Re-verify HEAD and CI before trusting anything here (`git rev-parse HEAD`, `gh run list --limit 3`).
-- Run Playwright only against a production build and preferably an isolated DB (DECISIONS PD-002); the suite's global
-  setup cancels open Demo orders.
+- Hosted schema changes: temporary `SUPPLYLENS_SETUP_TOKEN` → deploy → `/setup/schema` → remove → redeploy (PD-009,
+  `docs/operations/hosted-demo.md`). Rebuild the bundle first: `uv run python scripts/vercel/build_api.py --storage build/hosted-storage`.
+- New migrations must bump `HEAD` in `tests/test_rehearsals.py`.
+- Run Playwright against a production build on an isolated DB (PD-002); `e2e/global-setup.ts` now also settles CONFIRMED
+  and UNKNOWN_OUTCOME test orders.
 - Root `NEXT_SESSION.md` records the owner's commit-authorship preference; check it before committing.

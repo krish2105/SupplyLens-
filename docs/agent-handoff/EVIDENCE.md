@@ -56,3 +56,32 @@ answering (worker log shows `POST /api/embed 200`); gitleaks, gh, vercel CLIs pr
 - The E2E data is the synthetic fixture, not the real UCI workspace.
 - Three delegated read-only code reviews (planning/ML, web, retrieval/agent/onboarding) informed ISSUES.md; every finding carried
   into ISSUES.md is labelled VERIFIED only where the file and line were re-read by the auditing session.
+
+## Phase 1 — core correctness and procurement safety (2026-10-22/23, UTC)
+
+**Starting point:** `main` @ `8171994` (Phase 0 handoff). **Code commit:** `037e42b`. Environment as in Phase 0.
+
+| ID | Check | Command | Result | Notes |
+|---|---|---|---|---|
+| P1-E01 | Lint | `uv run ruff check .` | "All checks passed!" | After hoisting test imports (no new `noqa`) |
+| P1-E02 | Lockfile / contracts / types | `uv lock --check`; `./scripts/update_contracts.sh` then `./scripts/check_contracts.sh`; `(cd apps/web && npx tsc --noEmit)` | pass; contract regenerated (69 paths: `accept-remote`, `ChecksRef.warnings`, `ScenarioTerms.excluded_for_conflict`) | — |
+| P1-E03 | Phase 1 regression tests | `uv run pytest -q tests/test_phase1_correctness.py` | **38 passed** | Covers every fixed P0/P1/P2 (test names carry the issue IDs) |
+| P1-E04 | Full backend suite | `uv run pytest -q -p no:cacheprovider` | **374 passed, 6 skipped** in 89.4 s | Skips = Keycloak OIDC tests (not running). Phase 0 baseline was 336 passed |
+| P1-E05 | Migration rehearsals | `uv run pytest -q tests/test_rehearsals.py` | 7 passed | Head constant updated to 0009; rollback 0009→0008→0007 and back keeps all records |
+| P1-E06 | Migration 0009 on the test DB | `alembic upgrade head`; `downgrade 0008`; `upgrade head` on `supplylens_test` | version 0009; index `actions_one_draft_per_run_supplier` present | Pre-check: 0 duplicate drafts per run+supplier in `supplylens`, `supplylens_test`, `supplylens_p0e2e` |
+| P1-E07 | Web build | `NEXT_DIST_DIR=.next-build npx next build` | pass, 17 routes | — |
+| P1-E08 | Browser E2E (isolated DB at 0009) | fresh `supplylens_p0e2e` + bootstrap + `seed_e2e_fixture.py`; API/worker/`next start`; `npx playwright test` | **114 passed, 2 skipped, 0 failed** (1.1 min) | Same 2 skips as Phase 0 |
+| P1-E09 | E2E repeat | second full `npx playwright test` | **114 passed, 2 skipped** | The Phase 0 order-dependent failure (P2-QA-01) did not recur in 2 runs; its cause is not removed |
+| P1-E10 | UI check of mismatch acceptance | API: planner run → approver injects `alter_line_price` → approve → worker ⇒ CONFIRMED; browser as `approver2`: Approvals page | shows READBACK MISMATCH, reason field and "Accept supplier's version"; after click ⇒ RECONCILED with differences in the reason | Console: only the expected 401s of the pre-sign-in session check |
+| P1-E11 | Hosted migration | temporary `SUPPLYLENS_SETUP_TOKEN` (Vercel, sensitive) → `vercel deploy --prod` → `POST /api/v1/internal/setup/schema` | `{"migrated_to":"0009"}` | Token generated locally, never printed; removed afterwards (`vercel env rm`), local copy deleted |
+| P1-E12 | Hosted redeploy without token | `vercel deploy --prod` | Ready: `supplylens-e9j301hgg-…vercel.app` aliased to production | `vercel ls` also shows Git-triggered production builds failing in 4–6 s on each push (P3-OPS-02), before and after Phase 1 |
+| P1-E13 | Owner credentials (indirect) | live `/health` after redeploy without token | 200 | The `demo` profile refuses to start if an owner URL is configured without the setup token, so a healthy start shows the entrypoint removed it. Platform-level injection is UNVERIFIED-removable (owner action) |
+| P1-E14 | Live lockdown probes (non-destructive) | `scratchpad live_probe.py`: tenant_admin `POST /models/{random uuid}/status`, `POST /admin/members` (nonexistent email) | both **403** "'admin.write' is disabled in the public demo…"; setup endpoint 404; planner `/overview` 200, `/me` 200 | Probes cannot change data even if the lock were absent |
+| P1-E15 | Branch protection | `gh api -X PUT repos/krish2105/SupplyLens-/branches/main/protection` | required checks `lint, secrets-and-dependencies, backend, contracts-and-web`; force-push and deletion off; `enforce_admins: false` | e2e not required while P2-QA-02 is open; admins exempt to keep D-037 direct pushes |
+| P1-E16 | CI on the Phase 0 docs commit | `gh run view 39827354915` | **failure**: e2e `vitals.spec.ts:21` desktop INP proxy 224 ms > 200 ms; all other 7 jobs success | Docs-only commit ⇒ timing flake (P2-QA-02). Phase 0 summary had said it would likely pass; it did not |
+| P1-E17 | CI on `037e42b` | `gh run view 39831397239` | **success, 8/8 jobs** (lint, secrets-and-dependencies, backend, contracts-and-web, e2e, pitr-drill, compose-smoke, acceptance-evidence) | — |
+
+### Not run in Phase 1
+Keycloak OIDC tests (Keycloak not running), local Docker compose (daemon down; CI `compose-smoke` passed on `037e42b`),
+load test, research reruns, hosted Playwright suite (only the non-destructive probes above).
+

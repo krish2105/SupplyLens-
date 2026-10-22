@@ -50,7 +50,7 @@ def schema() -> dict:
     command.upgrade(cfg, "head")
     with psycopg.connect(_owner_dsn()) as c:
         version = c.execute("SELECT version_num FROM alembic_version").fetchone()[0]
-    return {"role": verb.lower() + "d", "migrated_to": version}
+    return {"role": "updated" if verb == "ALTER" else "created", "migrated_to": version}
 
 
 def _copy(c, table: str, cols: list[str], path: Path) -> None:

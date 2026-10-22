@@ -12,44 +12,47 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 
 | ID | P | Area | Title | Label | Status |
 |---|---|---|---|---|---|
-| P0-SEC-01 | P0 | Hosted demo / authz | Public passwordless `tenant_admin` can alter the shared live demo (memberships, workspaces, imports) | VERIFIED (code + live account list) | open |
-| P0-PLAN-01 | P0 | Planning | Default `allow_shortfall=True` with 500-minor penalty makes "order nothing" optimal for any unit cost ≥ 5.00 | VERIFIED (code + solver probe) | open |
-| P1-PLAN-02 | P1 | Planning | Lead-time demand sized with the *fastest* supplier's lead time; optimiser then buys from slower one | VERIFIED (code + probe) | open |
-| P1-ACT-01 | P1 | Actions | An action that went STALE at dispatch cannot be re-approved (outbox UNIQUE violation → 500) | VERIFIED (code + schema) | open |
-| P1-ACT-02 | P1 | Actions / planning | Orders not yet RECONCILED (QUEUED, SUBMITTED, UNKNOWN_OUTCOME, CONFIRMED-mismatch) are invisible to planning → duplicate purchasing; CONFIRMED has no exit | VERIFIED (code) | open |
-| P1-SEC-02 | P1 | Hosted demo / secrets | Hosted API function derives and holds the Neon **owner** DSN at runtime | VERIFIED (code) | open |
+| P0-SEC-01 | P0 | Hosted demo / authz | Public passwordless `tenant_admin` can alter the shared live demo (memberships, workspaces, imports) | VERIFIED (code + live account list) | fixed, verified live (P1-E14) |
+| P0-PLAN-01 | P0 | Planning | Default `allow_shortfall=True` with 500-minor penalty makes "order nothing" optimal for any unit cost ≥ 5.00 | VERIFIED (code + solver probe) | fixed (P1-E03) |
+| P1-PLAN-02 | P1 | Planning | Lead-time demand sized with the *fastest* supplier's lead time; optimiser then buys from slower one | VERIFIED (code + probe) | fixed (P1-E03) |
+| P1-ACT-01 | P1 | Actions | An action that went STALE at dispatch cannot be re-approved (outbox UNIQUE violation → 500) | VERIFIED (code + schema) | fixed (P1-E03) |
+| P1-ACT-02 | P1 | Actions / planning | Orders not yet RECONCILED (QUEUED, SUBMITTED, UNKNOWN_OUTCOME, CONFIRMED-mismatch) are invisible to planning → duplicate purchasing; CONFIRMED has no exit | VERIFIED (code) | fixed (P1-E03, P1-E10) |
+| P1-SEC-02 | P1 | Hosted demo / secrets | Hosted API function derives and holds the Neon **owner** DSN at runtime | VERIFIED (code) | fixed in code; residual: platform still injects owner vars (P1-E13) |
 | P1-FE-01 | P1 | Web | Workspace defaults to `uci-research` and is never reconciled with the user's memberships | VERIFIED (code); user impact INFERRED | open |
-| P1-FE-02 | P1 | Web | Receipt quantities keyed by `sku_id` on SKU@location rows → booking against the wrong location | VERIFIED (code) | open |
+| P1-FE-02 | P1 | Web | Receipt quantities keyed by `sku_id` on SKU@location rows → booking against the wrong location | VERIFIED (code) | fixed in approvals receipts; inventory/3D single-location keys PENDING |
 | P1-IAM-01 | P1 | Identity / SaaS | One platform-wide IdP, roles from a `<slug>:<role>` claim, link-by-email, no SCIM; not qualified against a corporate IdP | VERIFIED (code); qualification = external | open |
 | P1-OPS-01 | P1 | Platform | No production deployment architecture: no IaC, no staging, no secret manager, single uvicorn process, no SLOs/dashboards/on-call | VERIFIED (absence) | open |
 | P1-SAAS-01 | P1 | SaaS | No self-serve signup, billing, plans, usage metering or tenant provisioning outside an existing admin | VERIFIED (absence, grep) | open |
-| P1-PROC-01 | P1 | Process | `main` is unprotected (no required checks/reviews) on a public repo; work pushed directly (D-037) | VERIFIED (`gh api …/protection` 404) | open |
-| P2-REL-01 | P2 | Worker | Job whose lease expires on its last attempt stays `RUNNING` forever | VERIFIED (probe P0-E16) | open |
-| P2-REL-02 | P2 | Worker | Agent-run execution is not fenced; heartbeat thread dies silently on a DB error → possible double execution / duplicate drafts | PLAUSIBLE | open |
+| P1-PROC-01 | P1 | Process | `main` is unprotected (no required checks/reviews) on a public repo; work pushed directly (D-037) | VERIFIED (`gh api …/protection` 404) | partially fixed: protection on, admins exempt (P1-E15) |
+| P2-REL-01 | P2 | Worker | Job whose lease expires on its last attempt stays `RUNNING` forever | VERIFIED (probe P0-E16) | fixed (P1-E03) |
+| P2-REL-02 | P2 | Worker | Agent-run execution is not fenced; heartbeat thread dies silently on a DB error → possible double execution / duplicate drafts | PLAUSIBLE | fixed: heartbeat + unique index (P1-E03) |
 | P2-REL-03 | P2 | Worker | Single-threaded worker processes tenants serially, one job per tenant per tick; outbox re-claim has no attempt cap or heartbeat | VERIFIED (code); impact PLAUSIBLE | open |
-| P2-PLAN-03 | P2 | Planning / temporal | Replays with `effective_date` > `knowledge_cutoff` read stock, open orders, shares, dependence and capacity dated after the cutoff | VERIFIED (code) | open |
-| P2-PLAN-04 | P2 | Planning | Dependence (ACF) computed on recorded days as if consecutive calendar days → variance understated | VERIFIED (probe by reviewer; code re-read) | open |
-| P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | open |
+| P2-PLAN-03 | P2 | Planning / temporal | Replays with `effective_date` > `knowledge_cutoff` read stock, open orders, shares, dependence and capacity dated after the cutoff | VERIFIED (code) | fixed (P1-E03) |
+| P2-PLAN-04 | P2 | Planning | Dependence (ACF) computed on recorded days as if consecutive calendar days → variance understated | VERIFIED (probe by reviewer; code re-read) | fixed (P1-E03) |
+| P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | fixed (P1-E03) |
 | P2-ML-01 | P2 | Forecasting | No test of a successful trained-model forecast through the service; missing artifacts raise `artifact_missing` without baseline fallback | VERIFIED (tests); fallback gap PLAUSIBLE | open |
 | P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | open |
 | P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | open |
 | P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | open |
 | P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | open |
 | P2-FE-04 | P2 | Web | No `error.tsx` / `global-error.tsx` / `not-found.tsx`; render errors white-screen the app | VERIFIED (absence) | open |
-| P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | open |
+| P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | partially fixed: agent-run start, retry, reconcile |
 | P2-FE-06 | P2 | Web | Query errors rendered as endless loading or as empty states on several screens | VERIFIED (code, per reviewer list) | open |
 | P2-FE-07 | P2 | Web | Onboarding mapping state stale when switching batch; unhandled rejections (onboarding, sign-out) | VERIFIED (code) | open |
 | P2-FE-08 | P2 | Web | Web Vitals reporter re-registers observers on every route change → duplicated, mislabelled vitals | VERIFIED (code) | open |
 | P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | open |
 | P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED in repo docs; not re-run | open |
-| P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | open |
-| P3-DOC-02 | P3 | Docs | Contradictory statements (no deployments vs D-050; "current task: session 3"; OIDC "outstanding") | VERIFIED | open |
+| P2-QA-02 | P2 | Tests / CI | Lab Web-Vitals thresholds fail on shared CI runners (desktop INP proxy 224 ms > 200 ms on a docs-only commit) | VERIFIED (CI run 39827354915) | open |
+| P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | fixed in README / PROJECT_STATUS current-state section |
+| P3-DOC-02 | P3 | Docs | Contradictory statements (no deployments vs D-050; "current task: session 3"; OIDC "outstanding") | VERIFIED | fixed (root DECISIONS, PROJECT_STATUS, README) |
 | P3-PLAN-06 | P3 | Planning | Smaller planner issues (ScaleError escapes explainer; UNKNOWN timeouts trigger extra solves; weekly budget on 21-day plan; stale docstrings) | VERIFIED (reviewer probes; code re-read for budget) | open |
 | P3-ML-02 | P3 | Forecasting | Model file hashed then re-read by path (TOCTOU); `simulation_study.py` loads models without hash check | VERIFIED (code) | open |
 | P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | open |
 | P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | open |
 | P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | open |
 | P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | open |
+| P3-OPS-02 | P3 | Deployment | Git-triggered Vercel production builds fail within seconds on every push (the API service's `build/vercel-api` is generated locally, not in git); only CLI deploys succeed | VERIFIED (`vercel ls`, P1-E12) | open |
+| P3-FE-10 | P3 | Web | Admin screens do not explain the demo lockdown before a click (the 403 message does) | VERIFIED (code) | open |
 
 ## External blockers (cannot be closed by code alone)
 
@@ -280,3 +283,37 @@ See summary rows; file references: `planner.py:203-204,246-248`; `scenario.py:72
 `forecasting/service.py:129-130`; `ml/supplylens_ml/tcn.py:125-128`; `evaluations/simulation_study.py:50,59`;
 `onboarding/csv_import.py:121-125`; `onboarding/service.py:36-52,139-150,212-250`; `api/oidc.py:93-99,163-187`;
 `api/routes_decisions.py:288-290`; `.github/workflows/ci.yml` (`uses: …@v4/@v6`); `infra/docker/*.Dockerfile`.
+
+---
+
+## Phase 1 resolution notes (2026-10-22/23)
+Statuses above point to evidence in EVIDENCE.md (P1-E..). What each fix changed, and what remains:
+
+- **P0-SEC-01** — `supplylens/demo.py` (locked operations; `release_stale_orders`), `authz.py` (`Actor.require` refuses
+  locked operations in `demo`), `api/routes_core.py` (release on demo sign-in). Remaining: dev-login and per-account
+  mutation rate limits for anonymous visitors; per-visitor sandboxes (not required by the acceptance criteria met).
+- **P1-SEC-02** — `config.py` (`admin_database_url` optional, `owner_database_url`, `maintenance`, demo/production
+  refusal), `db.py`, `migrations/env.py`, `hosting/setup.py`, `scripts/vercel/build_api.py` (entrypoint scrubs owner
+  variables unless the setup token is set), `scripts/render/env.py` / `start.sh` (`--serve`). Remaining: Vercel still
+  injects the Neon owner variables into both services at process start; removing or scoping them is an owner action in
+  the Vercel/Neon integration settings.
+- **P0-PLAN-01** — `optimisation/supplylens_opt/planner.py` (two-pass lexicographic solve; explanation for any
+  shortfall), `agent/graph.py` (`checks.warnings` shortfall; `shortfall_unmet` issue), `api/schemas.py`
+  (`ChecksRef.warnings`), web approvals/runs pages show the warning.
+- **P1-PLAN-02** — `Need.required_units_by_lead_time` + `required_for()` in the planner, per-offer constraint, validator
+  checks the chosen lead time; scenario and agent assess each distinct lead time.
+- **P1-ACT-01** — `actions/service.py::approve` resets a FAILED outbox row (same operation key, attempts=1 ⇒ lookup
+  first) and refuses while a dispatch is active.
+- **P1-ACT-02** — `planning/positions.py` counts QUEUED/SUBMITTED/UNKNOWN_OUTCOME/CONFIRMED payload lines as open supply;
+  `actions/service.py::accept_remote_order` + `POST /api/v1/actions/{id}/accept-remote` (approver ≠ preparer) books the
+  target's lines and reconciles. Remaining: pending drafts are not counted (by decision D-056); two drafts for one need
+  can still both be approved if neither has been approved when the other is.
+- **P2-REL-01/02** — `jobs.py` (`expire_exhausted`, resilient heartbeat), migration 0009 (unique draft per run+supplier;
+  alert kind `job_failed`), `agent/graph.py` handles the conflict. Remaining (P2-REL-03): serial worker loop, outbox
+  re-claim cap.
+- **P2-PLAN-03/04/05** — `planning/scenario.py`, `agent/graph.py` (`known = min(cutoff, eff)`),
+  `leadtime_demand.py` (`ordinals` ⇒ calendar lags), `planning/demand_history.py`, scenario `excluded_for_conflict`.
+  Remaining: CSV-imported terms still carry a user-supplied `known_at` with no system recorded-at.
+- **P1-FE-02** — approvals receipts keyed by SKU@location. Remaining: inventory table, 3D scene and floor plan still key
+  by SKU (moved to Phase 4 with P1-FE-01).
+
