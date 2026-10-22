@@ -46,7 +46,7 @@ jobs:
         run: |
           uv export --frozen --no-hashes --no-emit-project --no-emit-workspace | sed 's/+cpu//' > /tmp/requirements.txt   # torch's local version tag is not a PyPI version
           uvx pip-audit==2.10.1 --requirement /tmp/requirements.txt --no-deps --disable-pip --strict
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 24 }
       - name: JavaScript dependency advisories (production tree, high and above)
         run: npm --prefix apps/web audit --omit=dev --audit-level=high
@@ -80,7 +80,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 24 }
       - run: uv sync --frozen && npm --prefix apps/web ci
       - name: API schema, generated types and web client agree
@@ -108,7 +108,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with: { node-version: 24 }
       - run: uv sync --frozen && npm --prefix apps/web ci
       - name: database, migrations, workspaces and the synthetic browser-test fixture
