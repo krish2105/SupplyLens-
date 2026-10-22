@@ -13,7 +13,7 @@ import { CommandPalette } from "@/components/command-palette";
 import { ClockRail } from "@/components/clock-rail";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { VitalsReporter } from "@/components/vitals-reporter";
-import { Loading } from "@/components/ui";
+import { ErrorState, Loading } from "@/components/ui";
 import { ApiError, apiPost, setTenant } from "@/lib/api";
 import { useMe } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
@@ -77,6 +77,17 @@ function AppShell({ children }: { children: ReactNode }) {
     if (me.error instanceof ApiError && me.error.status === 401) router.replace("/login");
   }, [me.error, router]);
 
+  // A failed session check is never an endless spinner (audit S22): 401 goes to sign-in (effect above); any other failure
+  // (service down, gateway error, no API behind this deployment) says so and offers a retry.
+  if (me.error && !(me.error instanceof ApiError && me.error.status === 401)) return (
+    <main className="flex min-h-screen items-center justify-center bg-bg p-4">
+      <div className="w-full max-w-xl space-y-4">
+        <ErrorState error={me.error} retry={() => me.refetch()} />
+        <p className="text-sm text-muted">SupplyLens could not confirm your session because its service did not answer.
+          Nothing you entered has been lost. <a className="font-medium text-accent underline" href="/login">Go to sign-in</a></p>
+      </div>
+    </main>
+  );
   if (me.isLoading || !me.data) return <Loading label="Checking your session" className="min-h-screen justify-center" />;
   const membership = me.data.memberships.find((m) => m.slug === ctx.ws) ?? me.data.memberships[0];
   const role = membership?.role;

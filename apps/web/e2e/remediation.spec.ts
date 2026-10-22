@@ -127,3 +127,12 @@ test.describe("UX-009 non-happy states", () => {
     await expect(page.getByText(/not zero stock/)).toBeVisible();
   });
 });
+
+test("S22: a session check that fails for any reason other than 401 shows an error with retry, not an endless spinner", async ({ page }) => {
+  await signIn(page, "planner");
+  await page.route("**/api/v1/me", (r) => r.fulfill({ status: 404, contentType: "text/plain", body: "The page could not be found" }));
+  await page.goto("/?ws=uci-research");
+  await expect(page.getByText(/could not confirm your session/)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("button", { name: "Try again" })).toBeVisible();
+  await expect(page.getByText("Checking your session")).toHaveCount(0);
+});
