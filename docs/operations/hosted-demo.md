@@ -41,12 +41,14 @@ marked sensitive by Vercel and cannot be downloaded, so setup runs inside the de
 
 ## Deploy
 **Every push to `main` deploys** (Vercel Git integration, both services). The `api` service's committed files are
-`deploy/vercel-api/index.py`, `pyproject.toml` (dependencies pinned to `uv.lock`; CI fails on drift) and `hosted_storage/`
+`deploy/vercel-api/index.py`, `pyproject.toml` (dependencies pinned to `uv.lock`; CI fails on drift), `source.sha256` (digest of
+the staged API sources: Vercel rebuilds a service only when files under its root change, so a backend-only commit must
+change this file; CI fails when it is stale) and `hosted_storage/`
 (the cited documents); its buildCommand stages the code trees, migrations, published metrics and study registry.
 
 ```bash
-python3 scripts/vercel/build_api.py --pin       # after changing uv.lock: re-pin the hosted dependencies, commit
-python3 scripts/vercel/build_api.py --check     # what CI runs
+python3 scripts/vercel/build_api.py --pin       # after changing uv.lock or any API/worker/ML/optimiser code: re-pin, commit
+python3 scripts/vercel/build_api.py --check     # what CI runs (dependency pins and source.sha256)
 ```
 
 Only when the demo **data** should change (first install on an empty database; an export made before migration 0010

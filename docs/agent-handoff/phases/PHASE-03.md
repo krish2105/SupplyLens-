@@ -78,7 +78,10 @@ Migration 0010 reaches Neon through the temporary setup token (PD-009, PD-016). 
 Neon's owner role bypasses row-level security, so the per-workspace copy saw every workspace on every pass and hit a
 duplicate key. The transaction rolled back (schema stayed at 0009, demo unaffected). The copy now also filters
 `tenant_id = t`, and a new rehearsal migrates as a role that bypasses RLS (P3-E15). Lesson: local rehearsals ran with an
-owner bound by RLS; hosted owners may not be — data migrations must be correct under both. Results of the retried
+owner bound by RLS; hosted owners may not be — data migrations must be correct under both. The fix commit itself did not
+deploy: Vercel rebuilds a service only when files under its root change, and the API's code lives outside
+`deploy/vercel-api/` (P3-OPS-03, P3-E16). `build_api.py --pin` now commits a digest of the staged sources there, and
+CI's `--check` fails when it is stale. Results of the retried
 migration and the live checks are in EVIDENCE. `/metrics` stays absent on the demo (no token configured).
 
 ## 7. Next actions
