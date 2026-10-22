@@ -26,7 +26,7 @@ test("reference case: planner drafts, approver approves, sandbox order reconcile
   await page.getByRole("button", { name: "Approve US$180.00" }).click();
   await expectReconciled(page, actionId);
   await expect(page.getByText("RECONCILED").first()).toBeVisible();
-  await expect(page.getByText("sandbox order read back and matched payload")).toBeVisible();
+  await expect(page.getByText("sandbox order read back and matched the approved payload line by line")).toBeVisible();
 });
 
 test("amendment known before 20 Oct changes the decision (A on 19 Oct)", async ({ page }) => {
@@ -90,6 +90,9 @@ test("forecast lab refuses a replay the champion has already seen", async ({ pag
   const champion = models.find((m) => m.status === "CHAMPION" && m.family !== "seasonal_naive");
   test.skip(champion?.training_cutoff !== "2011-11-10", "needs the trained champion from the real UCI study (training cutoff 2011-11-10)");
   await page.goto("/forecast?ws=uci-research&sku=85123A&known=2011-10-01T23:59:00.000Z");
+  // The lab says so before running and replays with the seasonal-naive baseline instead of leaking the future.
+  await expect(page.getByText(/was trained on data up to 10 Nov 2011, so it cannot replay 01 Oct 2011/)).toBeVisible();
   await page.getByRole("button", { name: /Run forecast/ }).click();
-  await expect(page.getByText(/trained on data up to 2011-11-10/)).toBeVisible();
+  await expect(page.getByText(/This run will use the seasonal-naive baseline instead/)).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: /trained on data/ })).toHaveCount(0);   // no failed run
 });

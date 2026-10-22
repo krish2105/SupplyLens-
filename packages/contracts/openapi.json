@@ -814,6 +814,107 @@
         "title": "AuditRow",
         "type": "object"
       },
+      "AuthConfig": {
+        "additionalProperties": true,
+        "properties": {
+          "dev_login": {
+            "title": "Dev Login",
+            "type": "boolean"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "oidc": {
+            "title": "Oidc",
+            "type": "boolean"
+          },
+          "oidc_login_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Oidc Login Url"
+          }
+        },
+        "required": [
+          "environment",
+          "dev_login",
+          "oidc",
+          "oidc_login_url"
+        ],
+        "title": "AuthConfig",
+        "type": "object"
+      },
+      "Body_upload_api_v1_onboarding_batches_post": {
+        "properties": {
+          "file": {
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "rights": {
+            "title": "Rights",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "rights",
+          "file"
+        ],
+        "title": "Body_upload_api_v1_onboarding_batches_post",
+        "type": "object"
+      },
+      "CancelOpenIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "sku_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Sku Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku_id",
+          "reason"
+        ],
+        "title": "CancelOpenIn",
+        "type": "object"
+      },
+      "CancelOpenResult": {
+        "additionalProperties": true,
+        "properties": {
+          "released_units": {
+            "title": "Released Units",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "released_units"
+        ],
+        "title": "CancelOpenResult",
+        "type": "object"
+      },
       "Capability": {
         "additionalProperties": true,
         "properties": {
@@ -974,18 +1075,40 @@
       },
       "CitedClause": {
         "additionalProperties": true,
+        "description": "A cited clause. Document-derived fields are null and `withheld` is set when the reader's role may not see the\ndocument (audit S10).",
         "properties": {
           "body": {
-            "title": "Body",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Body"
           },
           "char_end": {
-            "title": "Char End",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Char End"
           },
           "char_start": {
-            "title": "Char Start",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Char Start"
           },
           "document_version_id": {
             "title": "Document Version Id",
@@ -1001,16 +1124,37 @@
             "type": "string"
           },
           "section": {
-            "title": "Section",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
           },
           "sha256": {
-            "title": "Sha256",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sha256"
           },
           "title": {
-            "title": "Title",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
           },
           "valid_from": {
             "format": "date",
@@ -1018,8 +1162,26 @@
             "type": "string"
           },
           "version_label": {
-            "title": "Version Label",
-            "type": "string"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Label"
+          },
+          "withheld": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld"
           }
         },
         "required": [
@@ -1033,7 +1195,8 @@
           "known_at",
           "sha256",
           "title",
-          "document_version_id"
+          "document_version_id",
+          "withheld"
         ],
         "title": "CitedClause",
         "type": "object"
@@ -2124,6 +2287,17 @@
           "value_kind": {
             "title": "Value Kind",
             "type": "string"
+          },
+          "withheld": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld"
           }
         },
         "required": [
@@ -2142,6 +2316,7 @@
           "valid_to",
           "known_at",
           "supersedes",
+          "withheld",
           "citation"
         ],
         "title": "EvidenceTerm",
@@ -3023,6 +3198,305 @@
         "title": "IgnoredTerm",
         "type": "object"
       },
+      "ImportBatch": {
+        "additionalProperties": true,
+        "properties": {
+          "columns": {
+            "items": {
+              "$ref": "#/components/schemas/ImportColumn"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "dataset_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dataset Id"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "header": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Header",
+            "type": "array"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "mapping": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Mapping",
+            "type": "object"
+          },
+          "preview": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Preview",
+            "type": "array"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "quarantined_sample": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Quarantined Sample",
+            "type": "array"
+          },
+          "report": {
+            "additionalProperties": true,
+            "title": "Report",
+            "type": "object"
+          },
+          "rows_quarantined": {
+            "title": "Rows Quarantined",
+            "type": "integer"
+          },
+          "rows_total": {
+            "title": "Rows Total",
+            "type": "integer"
+          },
+          "rows_valid": {
+            "title": "Rows Valid",
+            "type": "integer"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Sha256"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "file_name",
+          "sha256",
+          "rows_total",
+          "rows_valid",
+          "rows_quarantined",
+          "snapshot_sha256",
+          "created_at",
+          "published_at",
+          "header",
+          "mapping",
+          "report",
+          "dataset_id",
+          "columns",
+          "quarantined_sample",
+          "preview"
+        ],
+        "title": "ImportBatch",
+        "type": "object"
+      },
+      "ImportBatchRow": {
+        "additionalProperties": true,
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "file_name": {
+            "title": "File Name",
+            "type": "string"
+          },
+          "id": {
+            "format": "uuid",
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "published_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
+          "rows_quarantined": {
+            "title": "Rows Quarantined",
+            "type": "integer"
+          },
+          "rows_total": {
+            "title": "Rows Total",
+            "type": "integer"
+          },
+          "rows_valid": {
+            "title": "Rows Valid",
+            "type": "integer"
+          },
+          "sha256": {
+            "title": "Sha256",
+            "type": "string"
+          },
+          "snapshot_sha256": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot Sha256"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "status",
+          "file_name",
+          "sha256",
+          "rows_total",
+          "rows_valid",
+          "rows_quarantined",
+          "snapshot_sha256",
+          "created_at",
+          "published_at"
+        ],
+        "title": "ImportBatchRow",
+        "type": "object"
+      },
+      "ImportColumn": {
+        "additionalProperties": true,
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "example": {
+            "title": "Example",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "required": {
+            "title": "Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "name",
+          "kind",
+          "required",
+          "description",
+          "example"
+        ],
+        "title": "ImportColumn",
+        "type": "object"
+      },
+      "ImportTemplates": {
+        "additionalProperties": true,
+        "properties": {
+          "max_bytes": {
+            "title": "Max Bytes",
+            "type": "integer"
+          },
+          "max_rows": {
+            "title": "Max Rows",
+            "type": "integer"
+          },
+          "schema_version": {
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "templates": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/ImportColumn"
+              },
+              "type": "array"
+            },
+            "title": "Templates",
+            "type": "object"
+          }
+        },
+        "required": [
+          "schema_version",
+          "max_bytes",
+          "max_rows",
+          "templates"
+        ],
+        "title": "ImportTemplates",
+        "type": "object"
+      },
       "Integration": {
         "additionalProperties": true,
         "properties": {
@@ -3561,6 +4035,29 @@
         "title": "LedgerLine",
         "type": "object"
       },
+      "MappingIn": {
+        "properties": {
+          "mapping": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "title": "Mapping",
+            "type": "object"
+          }
+        },
+        "required": [
+          "mapping"
+        ],
+        "title": "MappingIn",
+        "type": "object"
+      },
       "MarketCategory": {
         "additionalProperties": true,
         "properties": {
@@ -4022,6 +4519,33 @@
         "title": "Member",
         "type": "object"
       },
+      "MemberIn": {
+        "properties": {
+          "email": {
+            "maxLength": 200,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "pattern": "^(viewer|planner|approver|tenant_admin)$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "MemberIn",
+        "type": "object"
+      },
       "Members": {
         "additionalProperties": true,
         "properties": {
@@ -4087,6 +4611,32 @@
           "role"
         ],
         "title": "Membership",
+        "type": "object"
+      },
+      "MembershipChanged": {
+        "additionalProperties": true,
+        "properties": {
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          }
+        },
+        "required": [
+          "email",
+          "result"
+        ],
+        "title": "MembershipChanged",
         "type": "object"
       },
       "ModelStatusChanged": {
@@ -4207,6 +4757,80 @@
           "ok"
         ],
         "title": "Ok",
+        "type": "object"
+      },
+      "OpenOrderLine": {
+        "additionalProperties": true,
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "cancelled_units": {
+            "title": "Cancelled Units",
+            "type": "integer"
+          },
+          "expected_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected On"
+          },
+          "external_ref": {
+            "title": "External Ref",
+            "type": "string"
+          },
+          "open_units": {
+            "title": "Open Units",
+            "type": "integer"
+          },
+          "ordered_on": {
+            "format": "date",
+            "title": "Ordered On",
+            "type": "string"
+          },
+          "ordered_units": {
+            "title": "Ordered Units",
+            "type": "integer"
+          },
+          "received_units": {
+            "title": "Received Units",
+            "type": "integer"
+          },
+          "sku_id": {
+            "title": "Sku Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "supplier_id": {
+            "title": "Supplier Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "external_ref",
+          "supplier_id",
+          "sku_id",
+          "ordered_units",
+          "received_units",
+          "cancelled_units",
+          "open_units",
+          "status",
+          "ordered_on",
+          "expected_on"
+        ],
+        "title": "OpenOrderLine",
         "type": "object"
       },
       "OutboxInfo": {
@@ -5311,6 +5935,89 @@
         "title": "QuarantineSummary",
         "type": "object"
       },
+      "ReceiptIn": {
+        "properties": {
+          "quantity": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "received_on": {
+            "format": "date",
+            "title": "Received On",
+            "type": "string"
+          },
+          "sku_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Sku Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sku_id",
+          "quantity",
+          "received_on"
+        ],
+        "title": "ReceiptIn",
+        "type": "object"
+      },
+      "ReceiptResult": {
+        "additionalProperties": true,
+        "properties": {
+          "open_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Units"
+          },
+          "po_line_id": {
+            "title": "Po Line Id",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "received_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Received Units"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "po_line_id",
+          "received_units",
+          "open_units",
+          "quantity"
+        ],
+        "title": "ReceiptResult",
+        "type": "object"
+      },
       "RejectIn": {
         "properties": {
           "expected_row_version": {
@@ -5858,6 +6565,18 @@
             "title": "Lines",
             "type": "array"
           },
+          "need_by": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need By"
+          },
           "po_number": {
             "title": "Po Number",
             "type": "string"
@@ -5884,6 +6603,7 @@
           "total_minor",
           "currency",
           "status",
+          "need_by",
           "created_at"
         ],
         "title": "SandboxOrder",
@@ -5968,6 +6688,22 @@
             "default": "Scenario",
             "title": "Name",
             "type": "string"
+          },
+          "replenishment_basis": {
+            "anyOf": [
+              {
+                "enum": [
+                  "leadtime_demand",
+                  "q90_sum",
+                  "q50_plus_safety"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replenishment Basis"
           },
           "safety_days": {
             "anyOf": [
@@ -6054,6 +6790,17 @@
             "title": "Effective Date",
             "type": "string"
           },
+          "forecast_origin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Forecast Origin"
+          },
           "knowledge_cutoff": {
             "title": "Knowledge Cutoff",
             "type": "string"
@@ -6062,9 +6809,21 @@
             "title": "Name",
             "type": "string"
           },
+          "replenishment_basis": {
+            "default": "leadtime_demand",
+            "title": "Replenishment Basis",
+            "type": "string"
+          },
           "safety_days": {
-            "title": "Safety Days",
-            "type": "integer"
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Days"
           },
           "service_level": {
             "anyOf": [
@@ -6107,9 +6866,11 @@
           "budget_minor",
           "demand_multiplier",
           "supplier_delay_days",
+          "replenishment_basis",
           "safety_days",
           "coverage_days",
           "service_level",
+          "forecast_origin",
           "allow_shortfall",
           "shortage_penalty_minor",
           "currency",
@@ -6121,6 +6882,11 @@
       "ScenarioMetrics": {
         "additionalProperties": true,
         "properties": {
+          "capacity_capped_units": {
+            "default": 0,
+            "title": "Capacity Capped Units",
+            "type": "integer"
+          },
           "metric_note": {
             "title": "Metric Note",
             "type": "string"
@@ -6148,8 +6914,18 @@
             "title": "Skus Needing Order",
             "type": "integer"
           },
+          "skus_not_assessed": {
+            "default": 0,
+            "title": "Skus Not Assessed",
+            "type": "integer"
+          },
           "spend_minor": {
             "title": "Spend Minor",
+            "type": "integer"
+          },
+          "uncapped_units": {
+            "default": 0,
+            "title": "Uncapped Units",
             "type": "integer"
           },
           "units_ordered": {
@@ -6159,7 +6935,10 @@
         },
         "required": [
           "skus_assessed",
+          "skus_not_assessed",
           "skus_needing_order",
+          "uncapped_units",
+          "capacity_capped_units",
           "units_ordered",
           "spend_minor",
           "shortfall_units",
@@ -6172,6 +6951,14 @@
       "ScenarioResult": {
         "additionalProperties": true,
         "properties": {
+          "controls": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Controls",
+            "type": "object"
+          },
           "forecast_run_id": {
             "title": "Forecast Run Id",
             "type": "string"
@@ -6202,6 +6989,12 @@
             "title": "Scenario Id",
             "type": "string"
           },
+          "scope": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Scope",
+            "type": "object"
+          },
           "terms": {
             "$ref": "#/components/schemas/ScenarioTerms"
           },
@@ -6223,7 +7016,9 @@
           "needs",
           "plan",
           "terms",
-          "metrics"
+          "metrics",
+          "controls",
+          "scope"
         ],
         "title": "ScenarioResult",
         "type": "object"
@@ -7007,6 +7802,17 @@
           "value_kind": {
             "title": "Value Kind",
             "type": "string"
+          },
+          "withheld": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Withheld"
           }
         },
         "required": [
@@ -7024,7 +7830,8 @@
           "valid_from",
           "valid_to",
           "known_at",
-          "supersedes"
+          "supersedes",
+          "withheld"
         ],
         "title": "Term",
         "type": "object"
@@ -7386,6 +8193,71 @@
         ],
         "title": "Warehouse",
         "type": "object"
+      },
+      "WorkspaceCreated": {
+        "additionalProperties": true,
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "tenant_id": {
+            "title": "Tenant Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tenant_id",
+          "slug",
+          "name"
+        ],
+        "title": "WorkspaceCreated",
+        "type": "object"
+      },
+      "WorkspaceIn": {
+        "properties": {
+          "coverage_days": {
+            "default": 21,
+            "maximum": 28.0,
+            "minimum": 7.0,
+            "title": "Coverage Days",
+            "type": "integer"
+          },
+          "currency": {
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 80,
+            "minLength": 2,
+            "title": "Name",
+            "type": "string"
+          },
+          "slug": {
+            "pattern": "^[a-z0-9][a-z0-9-]{2,40}$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "weekly_budget_minor": {
+            "maximum": 10000000000.0,
+            "minimum": 0.0,
+            "title": "Weekly Budget Minor",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "currency",
+          "weekly_budget_minor"
+        ],
+        "title": "WorkspaceIn",
+        "type": "object"
       }
     }
   },
@@ -7648,6 +8520,88 @@
         "summary": "Approve"
       }
     },
+    "/api/v1/actions/{action_id}/cancel-open": {
+      "post": {
+        "operationId": "cancel_open_api_v1_actions__action_id__cancel_open_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Action Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOpenIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CancelOpenResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Open"
+      }
+    },
     "/api/v1/actions/{action_id}/edit": {
       "post": {
         "operationId": "edit_api_v1_actions__action_id__edit_post",
@@ -7744,6 +8698,105 @@
           }
         },
         "summary": "Edit"
+      }
+    },
+    "/api/v1/actions/{action_id}/receipts": {
+      "post": {
+        "description": "Book units received on a reconciled order line (moves them from on-order to on-hand in the next plan).",
+        "operationId": "receipt_api_v1_actions__action_id__receipts_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Action Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReceiptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Receipt"
       }
     },
     "/api/v1/actions/{action_id}/reconcile": {
@@ -8393,6 +9446,77 @@
           }
         },
         "summary": "Members"
+      },
+      "post": {
+        "description": "Add, change (role) or remove (role null) a locally managed membership in this workspace.",
+        "operationId": "set_member_api_v1_admin_members_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MembershipChanged"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Set Member"
       }
     },
     "/api/v1/admin/tenant-deletion": {
@@ -9270,6 +10394,25 @@
         "summary": "Audit"
       }
     },
+    "/api/v1/auth/config": {
+      "get": {
+        "description": "What the sign-in page may offer. Never reveals secrets.",
+        "operationId": "auth_config_api_v1_auth_config_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthConfig"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Auth Config"
+      }
+    },
     "/api/v1/auth/dev-login": {
       "post": {
         "operationId": "dev_login_api_v1_auth_dev_login_post",
@@ -9342,6 +10485,98 @@
           }
         },
         "summary": "Logout"
+      }
+    },
+    "/api/v1/auth/oidc/callback": {
+      "get": {
+        "operationId": "callback_api_v1_auth_oidc_callback_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "code",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Code"
+            }
+          },
+          {
+            "in": "query",
+            "name": "state",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "State"
+            }
+          },
+          {
+            "in": "query",
+            "name": "error",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Error"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Callback"
+      }
+    },
+    "/api/v1/auth/oidc/login": {
+      "get": {
+        "operationId": "login_api_v1_auth_oidc_login_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Login"
       }
     },
     "/api/v1/datasets": {
@@ -10704,6 +11939,639 @@
           }
         },
         "summary": "Set Model Status"
+      }
+    },
+    "/api/v1/onboarding/batches": {
+      "get": {
+        "operationId": "batches_api_v1_onboarding_batches_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportBatchRow"
+                  },
+                  "title": "Response Batches Api V1 Onboarding Batches Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batches"
+      },
+      "post": {
+        "operationId": "upload_api_v1_onboarding_batches_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_api_v1_onboarding_batches_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload"
+      }
+    },
+    "/api/v1/onboarding/batches/{batch_id}": {
+      "get": {
+        "operationId": "batch_api_v1_onboarding_batches__batch_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Batch"
+      }
+    },
+    "/api/v1/onboarding/batches/{batch_id}/publish": {
+      "post": {
+        "operationId": "publish_api_v1_onboarding_batches__batch_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publish"
+      }
+    },
+    "/api/v1/onboarding/batches/{batch_id}/validate": {
+      "post": {
+        "operationId": "validate_api_v1_onboarding_batches__batch_id__validate_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "batch_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Batch Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MappingIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportBatch"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate"
+      }
+    },
+    "/api/v1/onboarding/templates": {
+      "get": {
+        "operationId": "templates_api_v1_onboarding_templates_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportTemplates"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Templates"
+      }
+    },
+    "/api/v1/onboarding/templates/{kind}.csv": {
+      "get": {
+        "operationId": "template_file_api_v1_onboarding_templates__kind__csv_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Template File"
+      }
+    },
+    "/api/v1/onboarding/workspaces": {
+      "post": {
+        "operationId": "create_workspace_api_v1_onboarding_workspaces_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkspaceIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkspaceCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Workspace"
+      }
+    },
+    "/api/v1/open-orders": {
+      "get": {
+        "operationId": "list_open_orders_api_v1_open_orders_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/OpenOrderLine"
+                  },
+                  "title": "Response List Open Orders Api V1 Open Orders Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Open Orders"
       }
     },
     "/api/v1/overview": {

@@ -19,6 +19,7 @@ from supplylens.db import admin_engine
 from supplylens.seed import seed, tenant_id
 
 TENANT_TABLES_CLEAR_ORDER = [
+    "receipts", "purchase_order_lines", "import_rows", "import_batches",
     "web_vitals", "tenant_exports", "alerts", "rate_limit_buckets", "clause_labels", "public_awards", "tenant_settings", "warehouse_slots",
     "audit_events", "approvals", "outbox", "actions", "agent_events", "agent_runs",
     "idempotency_keys", "jobs", "plan_runs", "forecast_points", "forecast_runs",

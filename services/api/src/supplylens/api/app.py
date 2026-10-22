@@ -18,10 +18,12 @@ from ..db import app_engine
 from ..forecasting.service import ForecastError
 from ..lifecycle import LifecycleError
 from . import (
+    oidc,
     routes_core,
     routes_decisions,
     routes_lifecycle,
     routes_market,
+    routes_onboarding,
     routes_ops,
     routes_research,
 )
@@ -32,11 +34,13 @@ log = logging.getLogger("supplylens.api")
 app = FastAPI(title="SupplyLens API", version="0.1.0",
               description="Evidence-grounded inventory and procurement decisions. /api/v1 is the versioned contract.")
 app.include_router(routes_core.router)
+app.include_router(oidc.router)
 app.include_router(routes_decisions.router)
 app.include_router(routes_research.router)
 app.include_router(routes_market.router)
 app.include_router(routes_ops.router)
 app.include_router(routes_lifecycle.router)
+app.include_router(routes_onboarding.router)
 telemetry.setup(app)
 
 
@@ -55,6 +59,15 @@ async def trace(request: Request, call_next):
     log.info("%s %s %s %.1fms trace=%s", request.method, request.url.path, response.status_code,
              (time.perf_counter() - start) * 1000, trace_id)
     return response
+
+
+@app.exception_handler(Exception)
+async def unexpected(request: Request, e: Exception):
+    # Always JSON with a reference the user can quote (audit S22); the detail stays in the server log.
+    ref = telemetry.current_trace_id() or uuid.uuid4().hex
+    log.exception("unhandled error on %s %s ref=%s", request.method, request.url.path, ref)
+    return JSONResponse({"code": "server_error", "message": "The server hit an unexpected error. Your input was not lost.",
+                         "reference": ref}, status_code=500, headers={"x-trace-id": ref})
 
 
 @app.exception_handler(Forbidden)

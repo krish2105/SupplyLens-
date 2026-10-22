@@ -5,6 +5,7 @@ import { Play } from "lucide-react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { apiPost, getTenant } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
@@ -136,7 +137,8 @@ export default function ForecastPage() {
                 label={`Daily unit sales for ${sku} up to ${origin}${pts.length ? ", with a 28-day median forecast and 10 to 90 percent interval" : ""}`} />
             ) : <Empty title="No sales history before this origin" />}
             {zoom && <p className="mt-1 text-xs text-muted">Zoomed to {num(zoom[0], 0)}–{num(zoom[1], 0)}% of the visible range. Zoom changes the view only, never the data or exports.</p>}
-            {!pts.length && history.length > 0 && <p className="mt-2 text-sm text-muted">Run a forecast to overlay the median and interval.</p>}
+            {!pts.length && history.length > 0 && <div className="mt-3"><EmptyState variant="first_run" art="forecast-setup" title="Create a forecast for this product" compact>
+              No forecast run exists for this product, origin and model yet. Run one to overlay the median and the 10–90% interval.</EmptyState></div>}
           </Card>
           {replayBeforeTraining && (
             <p role="note" className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">

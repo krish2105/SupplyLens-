@@ -18,7 +18,7 @@ test("a forecast that returns after the user moved to another product is not sho
   await expect(page.getByText(`${b} — history and 28-day forecast`)).toBeVisible();
   await page.waitForTimeout(2500);                                                // A's run has now returned
   await expect(page.locator("[data-run-id]")).toHaveCount(0);                     // ...and is not displayed against B
-  await expect(page.getByText("Run a forecast to overlay the median and interval.")).toBeVisible();
+  await expect(page.getByText("Create a forecast for this product")).toBeVisible();
   // B's own run shows normally and carries B's name only
   await page.unroute("**/api/v1/forecasts");
   await page.getByRole("button", { name: /Run forecast/ }).click();

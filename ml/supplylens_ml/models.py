@@ -28,7 +28,7 @@ def seasonal_naive_panel(panel: Panel, i: int, horizon: int = HORIZON, season: i
     lo_hist = max(0, i - error_lookback + 1)
     for h in range(1, horizon + 1):
         k = math.ceil(h / season)
-        point = y[i + 1 - k * season + (h - 1) % season]
+        point = y[i + 1 - season + (h - 1) % season]   # last observed season repeats (audit F01)
         lag = k * season
         hist = y[lo_hist: i + 1]
         errs = hist[lag:] - hist[:-lag]

@@ -6,7 +6,8 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CalendarClock, FileWarning } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
-import { Card, Empty, ErrorState, Eyebrow, Provenance, Skeleton, Stat, Status } from "@/components/ui";
+import { Card, ErrorState, Eyebrow, Provenance, Skeleton, Stat, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
 import { useApi, useWs, type Overview } from "@/lib/queries";
@@ -88,7 +89,8 @@ export default function OverviewPage() {
               <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
                 <Warehouse3D items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} onFail={() => setGlFailed(true)} />
               </GLBoundary>
-            ) : <div className="p-6"><Empty title="No stock positions at this date">Move “In force on” to a date with a recorded snapshot.</Empty></div>}
+            ) : <div className="p-6"><EmptyState variant="empty_scope" art="empty-inventory" title="No stock positions at this date" compact>
+              Move “In force on” to a date with a recorded snapshot, or publish a stock file on the Data page. Missing records are not zero stock.</EmptyState></div>}
           {ctx.sku && (() => {
             const it = items.find((i) => i.sku_id === ctx.sku);
             return it ? (

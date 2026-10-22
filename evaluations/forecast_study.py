@@ -144,51 +144,83 @@ def main():
     (out / "selection.json").write_text(json.dumps(selection, indent=2))
     log(f"selection frozen: {selection}")
 
-    # ---------------- final test: scored once with frozen choices
-    ti = panel.idx(conf["test_origin"])
-    y = actuals(panel, ti, H)
-    ms = mase_scale(panel, ti)
-    results, artifacts = {}, {}
-    sn_raw, _, _ = fit_predict("seasonal_naive", {}, panel, ti, 0, conf)
-    results["seasonal_naive"] = score(sn_raw, y, ms)
-    raw, info, files = fit_predict("lightgbm", selection["lightgbm"]["config"], panel, ti, 0, conf, out)
-    results["lightgbm"] = {**score(raw, y, ms), "train": info}
-    artifacts["lightgbm"] = [{"file": f.name, "sha256": sha(f)} for f in files]
-    tcn_scores = []
-    for seed in conf["seeds"]["tcn"]:
-        raw, info, files = fit_predict("tcn", selection["tcn"]["config"], panel, ti, seed, conf, out)
-        s = {**score(raw, y, ms), "train": info, "seed": seed}
-        tcn_scores.append(s)
-        artifacts.setdefault("tcn", []).extend({"file": f.name, "sha256": sha(f), "seed": seed} for f in files)
-        log(f"test tcn seed {seed}: pinball={s['pinball_mean']:.4f} mae={s['mae']:.3f}")
+    # ---------------- final test: scored once per test origin with frozen choices (v2: rolling origins, audit S20).
+    # Each origin refits on labels available at that origin; the last origin's models are the ones registered and the
+    # ones the simulation study (S1) replays, so their files keep the untagged names.
+    test_origins = conf.get("test_origins") or [conf["test_origin"]]
     keys = ["mae", "mase", "pinball_mean", "coverage_80", "width_80", "crossing_rate_raw"]
-    results["tcn"] = {**tcn_scores[0], "seed_runs": [{k: t[k] for k in keys + ["seed"]} for t in tcn_scores],
-                      "seed_mean": {k: float(np.mean([t[k] for t in tcn_scores if t[k] is not None])) for k in keys},
-                      "seed_sd": {k: float(np.std([t[k] for t in tcn_scores if t[k] is not None])) for k in keys}}
+    per_origin, artifacts, pooled = {}, {}, {f: [] for f in ("seasonal_naive", "lightgbm", "tcn")}
+    for n, origin in enumerate(test_origins):
+        last = n == len(test_origins) - 1
+        tag = "" if last else f"_o{origin}"
+        ti = panel.idx(origin)
+        y = actuals(panel, ti, H)
+        ms = mase_scale(panel, ti)
+        results = {}
+        sn_raw, _, _ = fit_predict("seasonal_naive", {}, panel, ti, 0, conf)
+        results["seasonal_naive"] = score(sn_raw, y, ms)
+        raw, info, files = fit_predict("lightgbm", selection["lightgbm"]["config"], panel, ti, 0, conf, out, tag)
+        results["lightgbm"] = {**score(raw, y, ms), "train": info}
+        if last:
+            artifacts["lightgbm"] = [{"file": f.name, "sha256": sha(f)} for f in files]
+        tcn_scores = []
+        for seed in conf["seeds"]["tcn"]:
+            raw, info, files = fit_predict("tcn", selection["tcn"]["config"], panel, ti, seed, conf, out, tag)
+            sc = {**score(raw, y, ms), "train": info, "seed": seed}
+            tcn_scores.append(sc)
+            if last:
+                artifacts.setdefault("tcn", []).extend({"file": f.name, "sha256": sha(f), "seed": seed} for f in files)
+            log(f"test {origin} tcn seed {seed}: pinball={sc['pinball_mean']:.4f} mae={sc['mae']:.3f}")
+        results["tcn"] = {**tcn_scores[0], "seed_runs": [{k: t[k] for k in keys + ["seed"]} for t in tcn_scores],
+                          "seed_mean": {k: float(np.mean([t[k] for t in tcn_scores if t[k] is not None])) for k in keys},
+                          "seed_sd": {k: float(np.std([t[k] for t in tcn_scores if t[k] is not None])) for k in keys}}
+        for f in pooled:
+            pooled[f].append(np.asarray(results[f]["per_series_mae"], dtype=float))
+        per_origin[origin] = {
+            "test_window": [str(panel.dates[ti + 1].date()), str(panel.dates[ti + H].date())],
+            "summary": {f: {k: results[f][k] for k in keys + ["pinball", "mase_undefined_series"]} for f in results},
+            "tcn_seed_mean": results["tcn"]["seed_mean"], "tcn_seed_sd": results["tcn"]["seed_sd"],
+            "pinball_by_horizon": {f: results[f]["pinball_by_horizon"] for f in results},
+            "comparisons": {
+                "lightgbm_vs_seasonal_naive": paired_bootstrap(results["lightgbm"]["per_series_mae"], results["seasonal_naive"]["per_series_mae"]),
+                "tcn_seed0_vs_seasonal_naive": paired_bootstrap(results["tcn"]["per_series_mae"], results["seasonal_naive"]["per_series_mae"]),
+                "tcn_seed0_vs_lightgbm": paired_bootstrap(results["tcn"]["per_series_mae"], results["lightgbm"]["per_series_mae"]),
+            }}
+        log(f"test origin {origin}: {json.dumps(per_origin[origin]['summary'], default=str)[:600]}")
+    # per-product MAE averaged over the test origins, then the paired bootstrap across products
+    mean_mae = {f: np.mean(np.stack(v), axis=0).tolist() for f, v in pooled.items()}
     comparisons = {
-        "lightgbm_vs_seasonal_naive": paired_bootstrap(results["lightgbm"]["per_series_mae"], results["seasonal_naive"]["per_series_mae"]),
-        "tcn_seed0_vs_seasonal_naive": paired_bootstrap(results["tcn"]["per_series_mae"], results["seasonal_naive"]["per_series_mae"]),
-        "tcn_seed0_vs_lightgbm": paired_bootstrap(results["tcn"]["per_series_mae"], results["lightgbm"]["per_series_mae"]),
+        "lightgbm_vs_seasonal_naive": paired_bootstrap(mean_mae["lightgbm"], mean_mae["seasonal_naive"]),
+        "tcn_seed0_vs_seasonal_naive": paired_bootstrap(mean_mae["tcn"], mean_mae["seasonal_naive"]),
+        "tcn_seed0_vs_lightgbm": paired_bootstrap(mean_mae["tcn"], mean_mae["lightgbm"]),
     }
-    summary = {f: {k: results[f][k] for k in keys + ["pinball", "mase_undefined_series"]} for f in results}
-    metrics = {"experiment_id": exp_id, "smoke_run": ns.quick, "dataset_sha256": ds.sha256, "cohort_size": len(cohort),
-               "test_origin": conf["test_origin"], "test_window": [str(panel.dates[ti + 1].date()), str(panel.dates[ti + H].date())],
-               "selection": selection, "summary": summary, "tcn_seed_mean": results["tcn"]["seed_mean"],
-               "tcn_seed_sd": results["tcn"]["seed_sd"], "comparisons": comparisons, "artifacts": artifacts, "environment": env,
-               "pinball_by_horizon": {f: results[f]["pinball_by_horizon"] for f in results}}
+    last_o = test_origins[-1]
+    summary = per_origin[last_o]["summary"]
+    metrics = {"experiment_id": exp_id, "study_version": conf.get("version"), "smoke_run": ns.quick,
+               "dataset_sha256": ds.sha256, "cohort_size": len(cohort), "test_origin": last_o, "test_origins": test_origins,
+               "test_window": per_origin[last_o]["test_window"], "selection": selection, "summary": summary,
+               "pooled_mae": {f: float(np.mean(v)) for f, v in mean_mae.items()},
+               "tcn_seed_mean": per_origin[last_o]["tcn_seed_mean"], "tcn_seed_sd": per_origin[last_o]["tcn_seed_sd"],
+               "comparisons": comparisons, "comparison_basis": "per-product MAE averaged over all test origins",
+               "per_origin": per_origin, "artifacts": artifacts, "environment": env,
+               "pinball_by_horizon": per_origin[last_o]["pinball_by_horizon"]}
     (out / "metrics.json").write_text(json.dumps(metrics, indent=2))
-    per = pd.DataFrame({"sku_id": cohort, **{f"mae_{f}": results[f]["per_series_mae"] for f in results}})
+    per = pd.DataFrame({"sku_id": cohort, **{f"mae_mean_{f}": v for f, v in mean_mae.items()}})
     per.to_csv(out / "per_series_mae.csv", index=False)
-    log(f"summary: {json.dumps(summary, indent=1)}")
-    log(f"comparisons: {json.dumps(comparisons, indent=1)}")
+    log(f"pooled comparisons: {json.dumps(comparisons, indent=1)}")
+    results = {"tcn": {"seed_mean": metrics["tcn_seed_mean"], "seed_sd": metrics["tcn_seed_sd"]}}
 
     if ns.quick:
         log("smoke run: models NOT registered")
         return
     # ---------------- registry: status follows the frozen validation rule, not the test result
     with tenant_session(tenant) as s:
-        for family, ver, art in (("seasonal_naive", "1.0.0", None), ("lightgbm_quantile", "1.0.0", artifacts["lightgbm"]),
-                                 ("tcn_quantile", "1.0.0", artifacts["tcn"])):
+        ver = conf.get("registry_version", "1.0.0")
+        if ver != "1.0.0":
+            # versions selected under an earlier protocol stop serving; they stay in the registry for replay and audit
+            s.execute(text("UPDATE model_versions SET status='RETIRED' WHERE family IN ('lightgbm_quantile','tcn_quantile') "
+                           "AND version <> :v AND status <> 'RETIRED'"), {"v": ver})
+        for family, art in (("seasonal_naive", None), ("lightgbm_quantile", artifacts["lightgbm"]), ("tcn_quantile", artifacts["tcn"])):
             key = {"seasonal_naive": "seasonal_naive", "lightgbm_quantile": "lightgbm", "tcn_quantile": "tcn"}[family]
             status = "CHAMPION" if key == champion else "EVALUATED"
             m = {**summary[key], "experiment_id": exp_id, "validation_pinball": selection[key]["validation_pinball"]}
@@ -200,7 +232,8 @@ def main():
                 CAST(:m AS jsonb),:p,:h,:code) ON CONFLICT (tenant_id, family, version) DO UPDATE SET status=EXCLUDED.status,
                 training_cutoff=EXCLUDED.training_cutoff, config=EXCLUDED.config, metrics=EXCLUDED.metrics,
                 artifact_path=EXCLUDED.artifact_path, artifact_sha256=EXCLUDED.artifact_sha256, code_version=EXCLUDED.code_version"""),
-                {"i": uuid.uuid4(), "t": tenant, "f": family, "v": ver, "st": status, "d": ds.id, "c": conf["test_origin"],
+                {"i": uuid.uuid4(), "t": tenant, "f": family, "v": "1.0.0" if family == "seasonal_naive" else ver, "st": status,
+                 "d": ds.id, "c": last_o,
                  "cfg": json.dumps(cfg), "m": json.dumps(m), "p": str(out.relative_to(REPO_ROOT)) if art else None,
                  "h": json.dumps(art) if art else None, "code": commit})
     log(f"registered models; champion by validation = {champion}; artifacts in {out.relative_to(REPO_ROOT)}")

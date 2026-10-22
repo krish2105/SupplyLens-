@@ -4,6 +4,17 @@ States: PENDING_APPROVAL -> APPROVED -> QUEUED -> SUBMITTED -> CONFIRMED -> RECO
 with REJECTED, STALE, UNKNOWN_OUTCOME and FAILED. An approval binds the exact payload
 hash, the source versions, the maximum spend, the approver and an expiry. Any edit or
 change in the underlying terms makes the old approval unusable.
+
+Dispatch rules (audits F07, S11). A retry of an attempt that may have reached the target looks the operation up FIRST,
+before any approval check: an order the target already holds is verified and reconciled, never re-sent and never marked
+stale because the approval has since expired. Only a demonstrably fresh send needs current authority, and it rechecks
+everything the approval relied on: the bound payload hash, expiry, the approver still active with approval rights, the
+action still queued, the spend within the approved maximum and the supplier terms still applicable. A changed fact
+routes the action back to review (STALE) instead of sending.
+
+Read-back (audit F06) compares the returned order with the approved payload line by line as multisets (SKU, quantity,
+unit, unit price, line value), plus supplier, currency, total, need-by date and order status. Equal totals never stand
+in for equal orders. A reconciled order enters the open-order ledger (purchase_order_lines) that planning reads (S12).
 """
 from __future__ import annotations
 
@@ -11,6 +22,7 @@ import hashlib
 import json
 import socket
 import uuid
+from collections import Counter
 from datetime import UTC, date, datetime, timedelta
 
 from sqlalchemy import text
@@ -19,9 +31,10 @@ from supplylens_opt.planner import Need, PlanLine, PlanRequest, PlanResult
 from supplylens_opt.validator import validate
 
 from .. import alerts, telemetry
-from ..authz import Actor
+from ..authz import MATRIX, Actor, resolve_actor
 from ..config import settings
 from ..db import tenant_session
+from ..idempotency import record_outcome
 from ..integrations import sandbox_erp
 from ..planning.terms_service import applicable_terms
 
@@ -136,7 +149,9 @@ def approve(actor: Actor, action_id, *, payload_hash: str, expected_row_version:
             s.execute(text("UPDATE actions SET status='STALE', status_reason=:r, row_version=row_version+1, "
                            "updated_at=now() WHERE id=:i"), {"i": action_id, "r": "; ".join(problems)})
             _audit(s, actor.tenant_id, actor.user_id, "action.stale", action_id, {"problems": problems})
-            return {"status": "STALE", "problems": problems}
+            out = {"status": "STALE", "problems": problems}
+            record_outcome(s, 200, out)
+            return out
         expires = datetime.now(UTC) + timedelta(minutes=settings.approval_ttl_minutes)
         s.execute(text("""INSERT INTO approvals (id, tenant_id, action_id, decision, payload_hash, versions,
             max_spend_minor, approver_id, expires_at) VALUES (:i,:t,:a,'APPROVED',:h,CAST(:v AS jsonb),:m,:u,:x)"""),
@@ -152,7 +167,9 @@ def approve(actor: Actor, action_id, *, payload_hash: str, expected_row_version:
                        "WHERE id=:i"), {"i": action_id})
         _audit(s, actor.tenant_id, actor.user_id, "action.approved", action_id,
                {"payload_hash": a["payload_hash"], "expires_at": expires.isoformat(), "operation_id": op_id})
-    return {"status": "QUEUED", "operation_id": op_id}
+        out = {"status": "QUEUED", "operation_id": op_id}
+        record_outcome(s, 200, out)
+    return out
 
 
 def reject(actor: Actor, action_id, *, reason: str, expected_row_version: int) -> dict:
@@ -172,12 +189,16 @@ def reject(actor: Actor, action_id, *, reason: str, expected_row_version: int) -
         s.execute(text("UPDATE actions SET status='REJECTED', status_reason=:r, row_version=row_version+1, "
                        "updated_at=now() WHERE id=:i"), {"i": action_id, "r": reason})
         _audit(s, actor.tenant_id, actor.user_id, "action.rejected", action_id, {"reason": reason})
+        record_outcome(s, 200, {"status": "REJECTED"})
     return {"status": "REJECTED"}
 
 
 def edit_quantities(actor: Actor, action_id, *, quantities: dict[str, int], expected_row_version: int,
-                    budget_minor: int) -> dict:
-    """Edit line quantities; revalidates and produces a new payload hash (old approvals become unusable)."""
+                    budget_minor: int | None) -> dict:
+    """Edit line quantities; revalidates and produces a new payload hash (old approvals become unusable).
+
+    The spend limit is the budget the plan was made under (stored in the decision, audit F08); `budget_minor` is the
+    fallback for drafts prepared before the decision carried its budget."""
     actor.require("action.edit")
     with tenant_session(actor.tenant_id) as s:
         a = _load(s, action_id, lock=True)
@@ -187,6 +208,10 @@ def edit_quantities(actor: Actor, action_id, *, quantities: dict[str, int], expe
             raise ActionError("invalid_state", f"cannot edit an action in state {a['status']}")
         p = a["payload"]
         d = p["decision"]
+        if d.get("budget_minor") is not None:
+            budget_minor = int(d["budget_minor"])
+        if budget_minor is None:
+            raise ActionError("budget_unknown", "the draft carries no budget and the workspace has none", 422)
         res = applicable_terms(actor.tenant_id, [l["sku_id"] for l in p["lines"]],
                                datetime.fromisoformat(d["knowledge_cutoff"]), date.fromisoformat(d["effective_date"]))
         terms = {t.term_id: t for t in res.applicable}
@@ -218,6 +243,9 @@ def edit_quantities(actor: Actor, action_id, *, quantities: dict[str, int], expe
                                               "i": action_id})
         _audit(s, actor.tenant_id, actor.user_id, "action.edited", action_id,
                {"old_hash": a["payload_hash"], "new_hash": h, "quantities": quantities})
+        # replay summary if the process dies before the full response is stored; the route stores the full detail
+        record_outcome(s, 200, {"id": str(action_id), "status": "PENDING_APPROVAL", "payload_hash": h,
+                                "row_version": a["row_version"] + 1, "replay_summary": True})
     return get(actor, action_id)
 
 
@@ -240,7 +268,7 @@ def _claim(tenant_id, worker: str):
 
 
 def _finish(tenant_id, item, outbox_status, action_status, *, external_ref=None, error=None, reason=None,
-            retry_in: int | None = None, keep_lease: bool = False) -> bool:
+            retry_in: int | None = None, keep_lease: bool = False, order: dict | None = None) -> bool:
     lease = "" if keep_lease else "lease_owner=NULL, lease_expires_at=NULL,"
     with tenant_session(tenant_id) as s:
         updated = s.execute(text(f"""
@@ -256,6 +284,8 @@ def _finish(tenant_id, item, outbox_status, action_status, *, external_ref=None,
                   {"st": action_status, "x": external_ref, "r": reason, "i": item["action_id"]})
         _audit(s, tenant_id, None, f"dispatch.{action_status.lower()}", item["action_id"],
                {"operation_id": item["operation_id"], "external_ref": external_ref, "error": error})
+        if action_status == "RECONCILED" and order is not None:
+            _open_order_lines(s, tenant_id, item, order)
         supplier = s.execute(text("SELECT payload->>'supplier_id' FROM actions WHERE id=:i"),
                              {"i": item["action_id"]}).scalar()
     key = f"failed_reconciliation:{item['action_id']}"
@@ -286,17 +316,72 @@ def _approval_valid(tenant_id, item) -> str | None:
     return None
 
 
+def _fresh_send_problems(tenant_id, item) -> list[str]:
+    """Everything a first send relies on, re-read now (audit S11). Empty list = safe to send."""
+    problem = _approval_valid(tenant_id, item)
+    if problem:
+        return [problem]
+    with tenant_session(tenant_id) as s:
+        a = s.execute(text("SELECT status, payload, total_minor FROM actions WHERE id=:i"),
+                      {"i": item["action_id"]}).mappings().first()
+        ap = s.execute(text("""SELECT approver_id, max_spend_minor FROM approvals WHERE action_id=:i
+            AND decision='APPROVED' AND payload_hash=:h ORDER BY created_at DESC LIMIT 1"""),
+            {"i": item["action_id"], "h": item["payload_hash"]}).mappings().first()
+    problems = []
+    if a["status"] not in ("QUEUED", "SUBMITTED"):
+        problems.append(f"action is {a['status']}, not queued")
+    approver = resolve_actor(ap["approver_id"], tenant_id)
+    if approver is None or "action.approve" not in MATRIX.get(approver.role, set()):
+        problems.append("the approver no longer holds approval rights in this workspace")
+    if a["total_minor"] > ap["max_spend_minor"]:
+        problems.append("total exceeds the approved maximum spend")
+    problems += _recheck_terms(tenant_id, a["payload"])
+    return problems
+
+
+def _norm_line(line: dict) -> tuple:
+    return (line.get("sku_id"), int(line.get("quantity", 0)), line.get("unit", "unit"),
+            int(line.get("unit_cost_minor", -1)), int(line.get("line_minor", -1)))
+
+
 def verify(tenant_id, item, order: dict) -> list[str]:
+    """Compare the order the target returned with the approved payload (audit F06). Every difference is listed."""
     p = item["payload"]
     mismatches = []
     if order["supplier_id"] != p["supplier_id"]:
         mismatches.append("supplier differs")
-    if order["total_minor"] != p["total_minor"] or order["currency"].strip() != p["currency"]:
-        mismatches.append("total or currency differs")
-    got = {(l["sku_id"], l["quantity"]) for l in order["lines"]}
-    if got != {(l["sku_id"], l["quantity"]) for l in p["lines"]}:
-        mismatches.append("line quantities differ")
+    if order["currency"].strip() != p["currency"]:
+        mismatches.append("currency differs")
+    if order["total_minor"] != p["total_minor"]:
+        mismatches.append(f"total {order['total_minor']} differs from approved {p['total_minor']}")
+    if (order.get("status") or "OPEN") not in ("OPEN", "CONFIRMED"):
+        mismatches.append(f"external order status is {order.get('status')}")
+    need_by = order.get("need_by")
+    if need_by is not None and str(need_by) != p["need_by"]:
+        mismatches.append(f"need-by {need_by} differs from approved {p['need_by']}")
+    want, got = Counter(_norm_line(x) for x in p["lines"]), Counter(_norm_line(x) for x in order["lines"])
+    if want != got:
+        missing, extra = want - got, got - want
+        detail = []
+        for sku, qty, unit, price, value in sorted(missing.elements(), key=str):
+            detail.append(f"approved {sku} x{qty} {unit} @ {price} (line {value}) not returned")
+        for sku, qty, unit, price, value in sorted(extra.elements(), key=str):
+            detail.append(f"returned {sku} x{qty} {unit} @ {price} (line {value}) not approved")
+        mismatches.append("lines differ: " + "; ".join(detail))
     return mismatches
+
+
+def _open_order_lines(s, tenant_id, item, order: dict) -> None:
+    """Record a reconciled order's lines as open supply, once per action and SKU (audit S12)."""
+    p = item["payload"]
+    ordered_on = p["decision"]["effective_date"]
+    for line in p["lines"]:
+        s.execute(text("""INSERT INTO purchase_order_lines (id, tenant_id, action_id, operation_id, external_ref,
+            supplier_id, sku_id, ordered_units, ordered_on, expected_on) VALUES (:i,:t,:a,:o,:x,:s,:k,:q,:d,:e)
+            ON CONFLICT (tenant_id, action_id, sku_id) DO NOTHING"""),
+            {"i": uuid.uuid4(), "t": tenant_id, "a": item["action_id"], "o": item["operation_id"],
+             "x": order["po_number"], "s": p["supplier_id"], "k": line["sku_id"], "q": line["quantity"],
+             "d": ordered_on, "e": p["need_by"]})
 
 
 def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
@@ -314,15 +399,17 @@ def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
 
 def _dispatch(tenant_id, item) -> dict:
     key = item["operation_id"]
-    problem = _approval_valid(tenant_id, item)
-    if problem:
-        _finish(tenant_id, item, "FAILED", "STALE", error=problem, reason=problem)
-        return {"operation_id": key, "result": "STALE", "reason": problem}
     if item["attempts"] > 1:
-        # A previous attempt may have reached the sandbox: look before sending again.
+        # A previous attempt may have reached the target: look before anything else (audit F07). An order that exists
+        # is verified and reconciled even if the approval has expired since; it is never sent again.
         found = sandbox_erp.lookup(key)
         if found:
             return _confirm(tenant_id, item, found)
+    problems = _fresh_send_problems(tenant_id, item)
+    if problems:
+        reason = "; ".join(problems)
+        _finish(tenant_id, item, "FAILED", "STALE", error=reason, reason=reason + " (review again before sending)")
+        return {"operation_id": key, "result": "STALE", "reason": reason}
     try:
         resp = sandbox_erp.execute(key, str(item["action_id"]), item["payload"])
     except sandbox_erp.AdapterTimeout as e:
@@ -352,7 +439,7 @@ def _confirm(tenant_id, item, order: dict | None) -> dict:
                 reason="read-back mismatch: " + "; ".join(mismatches))
         return {"operation_id": item["operation_id"], "result": "MISMATCH", "mismatches": mismatches}
     _finish(tenant_id, item, "DELIVERED", "RECONCILED", external_ref=order["po_number"],
-            reason="sandbox order read back and matched payload")
+            reason="sandbox order read back and matched the approved payload line by line", order=order)
     return {"operation_id": item["operation_id"], "result": "RECONCILED", "po_number": order["po_number"]}
 
 
@@ -397,3 +484,69 @@ def reconcile(actor: Actor, action_id) -> dict:
     # Not found: the sandbox deduplicates on the key, so re-queueing is safe for this adapter.
     _finish(actor.tenant_id, item, "PENDING", "QUEUED", reason="not found in sandbox; safe re-queue (idempotent key)")
     return {"operation_id": item["operation_id"], "result": "REQUEUED"}
+
+
+# ---------------------------------------------------------------- receipts and cancellations (open-order ledger)
+
+def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, received_on: date, key: str) -> dict:
+    """Book units received against a reconciled order line. One receipt per idempotency key; never more than open."""
+    actor.require("action.reconcile")
+    if quantity <= 0:
+        raise ActionError("invalid_quantity", "received quantity must be positive", 422)
+    with tenant_session(actor.tenant_id) as s:
+        dup = s.execute(text("SELECT po_line_id, quantity FROM receipts WHERE idempotency_key=:k"), {"k": key}).first()
+        if dup:
+            return {"status": "DUPLICATE", "po_line_id": str(dup.po_line_id), "quantity": dup.quantity}
+        line = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units, status, ordered_on
+            FROM purchase_order_lines WHERE action_id=:a AND sku_id=:k FOR UPDATE"""),
+            {"a": action_id, "k": sku_id}).mappings().first()
+        if line is None:
+            raise ActionError("not_open", "no reconciled order line for this SKU on this action", 404)
+        open_units = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
+        if quantity > open_units:
+            raise ActionError("over_receipt", f"only {open_units} unit(s) are open on this line", 422)
+        if received_on < line["ordered_on"]:
+            raise ActionError("invalid_date", "a receipt cannot predate its order", 422)
+        s.execute(text("""INSERT INTO receipts (id, tenant_id, po_line_id, sku_id, quantity, received_on, idempotency_key,
+            created_by) VALUES (:i,:t,:l,:k,:q,:d,:key,:u)"""),
+            {"i": uuid.uuid4(), "t": actor.tenant_id, "l": line["id"], "k": sku_id, "q": quantity, "d": received_on,
+             "key": key, "u": actor.user_id})
+        received = line["received_units"] + quantity
+        status = "RECEIVED" if received + line["cancelled_units"] == line["ordered_units"] else "PARTIAL"
+        s.execute(text("UPDATE purchase_order_lines SET received_units=:r, status=:s, updated_at=now() WHERE id=:i"),
+                  {"r": received, "s": status, "i": line["id"]})
+        _audit(s, actor.tenant_id, actor.user_id, "order.received", action_id,
+               {"sku_id": sku_id, "quantity": quantity, "received_on": received_on.isoformat()})
+    return {"status": status, "po_line_id": str(line["id"]), "received_units": received,
+            "open_units": open_units - quantity}
+
+
+def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str) -> dict:
+    """Release the still-open units of a reconciled line (the supplier cancelled or short-shipped)."""
+    actor.require("action.reconcile")
+    if not reason.strip():
+        raise ActionError("reason_required", "a cancellation reason is required", 422)
+    with tenant_session(actor.tenant_id) as s:
+        line = s.execute(text("""SELECT id, ordered_units, received_units, cancelled_units FROM purchase_order_lines
+            WHERE action_id=:a AND sku_id=:k FOR UPDATE"""), {"a": action_id, "k": sku_id}).mappings().first()
+        if line is None:
+            raise ActionError("not_open", "no reconciled order line for this SKU on this action", 404)
+        released = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
+        if released <= 0:
+            raise ActionError("nothing_open", "no open units remain on this line")
+        s.execute(text("""UPDATE purchase_order_lines SET cancelled_units = cancelled_units + :c,
+            status = CASE WHEN received_units = 0 THEN 'CANCELLED' ELSE 'RECEIVED' END, updated_at=now() WHERE id=:i"""),
+            {"c": released, "i": line["id"]})
+        _audit(s, actor.tenant_id, actor.user_id, "order.cancelled_open_units", action_id,
+               {"sku_id": sku_id, "units": released, "reason": reason})
+    return {"status": "CANCELLED", "released_units": released}
+
+
+def open_orders(actor: Actor) -> list[dict]:
+    actor.require("read")
+    with tenant_session(actor.tenant_id) as s:
+        rows = s.execute(text("""SELECT l.action_id, l.external_ref, l.supplier_id, l.sku_id, l.ordered_units,
+            l.received_units, l.cancelled_units, l.ordered_units - l.received_units - l.cancelled_units AS open_units,
+            l.status, l.ordered_on, l.expected_on FROM purchase_order_lines l
+            ORDER BY l.ordered_on DESC, l.sku_id LIMIT 200""")).mappings().all()
+    return [dict(r) for r in rows]

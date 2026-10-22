@@ -58,16 +58,32 @@ def ensure_seasonal_naive(tenant_id, dataset_id) -> uuid.UUID:
         return mid
 
 
-def resolve_model(tenant_id, dataset_id, family: str | None = None) -> dict:
-    """The requested family, else the registry CHAMPION, else the seasonal-naive baseline."""
+USABLE = ("CHAMPION", "CANDIDATE", "EVALUATED")   # never TRAINING, FAILED or RETIRED (audit S14)
+
+
+def resolve_model(tenant_id, dataset_id, family: str | None = None, *, allow_retired: bool = False) -> dict:
+    """The requested family, else the registry CHAMPION, else the seasonal-naive baseline.
+
+    Trained models are scoped to the dataset they were trained on and to usable statuses; within a family the CHAMPION
+    wins, then CANDIDATE, then EVALUATED, newest first. A retired version is returned only for an explicit historical
+    replay (`allow_retired`). The seasonal-naive rule has no trained state, so it serves any dataset of the tenant."""
+    statuses = USABLE + (("RETIRED",) if allow_retired else ())
     with tenant_session(tenant_id) as s:
-        q = ("SELECT id, family, version, status, training_cutoff, artifact_path, artifact_sha256 FROM model_versions "
-             + ("WHERE family = :f ORDER BY created_at DESC LIMIT 1" if family else
-                "WHERE status = 'CHAMPION' ORDER BY created_at DESC LIMIT 1"))
-        row = s.execute(text(q), {"f": family}).mappings().first()
+        cols = "id, family, version, status, dataset_id, training_cutoff, artifact_path, artifact_sha256"
+        if family == "seasonal_naive":
+            row = s.execute(text(f"SELECT {cols} FROM model_versions WHERE family = 'seasonal_naive' "
+                                 "ORDER BY created_at DESC LIMIT 1")).mappings().first()
+        elif family:
+            row = s.execute(text(f"""SELECT {cols} FROM model_versions WHERE family = :f AND dataset_id = :d
+                AND status = ANY(:st) ORDER BY array_position(CAST(:order AS text[]), status), created_at DESC LIMIT 1"""),
+                {"f": family, "d": dataset_id, "st": list(statuses), "order": list(statuses)}).mappings().first()
+        else:
+            row = s.execute(text(f"""SELECT {cols} FROM model_versions WHERE status = 'CHAMPION'
+                AND (dataset_id = :d OR family = 'seasonal_naive')
+                ORDER BY (family = 'seasonal_naive'), created_at DESC LIMIT 1"""), {"d": dataset_id}).mappings().first()
     if row is None:
         if family not in (None, "seasonal_naive"):
-            raise ForecastError("model_not_found", f"no registered model {family}")
+            raise ForecastError("model_not_found", f"no usable {family} model trained on this dataset")
         ensure_seasonal_naive(tenant_id, dataset_id)
         return resolve_model(tenant_id, dataset_id, "seasonal_naive")
     return dict(row)

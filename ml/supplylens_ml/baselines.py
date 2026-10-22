@@ -12,8 +12,8 @@ QUANTILES = (0.1, 0.5, 0.9)
 def seasonal_naive(history: pd.Series, horizon: int = 28, season: int = 7) -> pd.DataFrame:
     """Forecast days origin+1..origin+horizon where origin is history's last index.
 
-    Point (q50): value on the same weekday in the last observed season.
-    Interval: for k = ceil(h/season) seasons ahead, empirical 10%/90% quantiles of the
+    Point (q50): value on the same weekday in the last observed season, for every horizon (the last
+    observed week repeats; it is never a value from k seasons back). Interval: for k = ceil(h/season) seasons ahead, empirical 10%/90% quantiles of the
     k-season-lag errors y_t - y_{t-k*season} computed on `history` only (no future data).
     Negative bounds are clipped to zero, applied identically at every origin.
     """
@@ -24,7 +24,7 @@ def seasonal_naive(history: pd.Series, horizon: int = 28, season: int = 7) -> pd
     rows = []
     for h in range(1, horizon + 1):
         k = math.ceil(h / season)
-        point = y[len(y) - k * season + (h - 1) % season]
+        point = y[len(y) - season + (h - 1) % season]
         lag = k * season
         errs = y[lag:] - y[:-lag] if len(y) > lag else np.array([0.0])
         lo, hi = np.quantile(errs, [0.1, 0.9])

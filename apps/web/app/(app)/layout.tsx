@@ -36,6 +36,7 @@ const NAV = [
 ];
 const GROUPS = ["Plan", "Decide", "Know", "Prove", "Govern"];
 
+/** Native radio inputs (audit S17): arrow keys move and select, Tab enters and leaves the group as one stop. */
 function ThemeSwitch() {
   const { theme, setTheme } = useTheme();
   const opts = [
@@ -44,15 +45,18 @@ function ThemeSwitch() {
     { v: "system", icon: Monitor, label: "Follow system theme" },
   ];
   return (
-    <div role="radiogroup" aria-label="Theme" className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+    <fieldset className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+      <legend className="sr-only">Theme</legend>
       {opts.map(({ v, icon: Icon, label }) => (
-        <button key={v} role="radio" aria-checked={theme === v} aria-label={label} title={label}
-          onClick={() => setTheme(v)}
-          className={clsx("flex size-7 items-center justify-center rounded-md", theme === v ? "bg-accent text-accent-ink" : "text-muted hover:text-ink")}>
+        <label key={v} title={label}
+          className={clsx("relative flex size-7 cursor-pointer items-center justify-center rounded-md has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent",
+            theme === v ? "bg-accent text-accent-ink" : "text-muted hover:text-ink")}>
+          <input type="radio" name="theme-switch" value={v} checked={theme === v} onChange={() => setTheme(v)} aria-label={label}
+            className="absolute inset-0 m-0 cursor-pointer appearance-none opacity-0" />
           <Icon className="size-3.5" aria-hidden />
-        </button>
+        </label>
       ))}
-    </div>
+    </fieldset>
   );
 }
 

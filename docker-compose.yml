@@ -3,6 +3,11 @@
 #
 #   docker compose up -d --build                         the application
 #   docker compose --profile observability up -d        + Jaeger (traces at http://localhost:16686)
+#   docker compose --profile identity up -d keycloak     + local Keycloak for OIDC sign-in (infra/keycloak/README.md)
+#
+# This stack is a LOCAL development profile (SUPPLYLENS_ENVIRONMENT=development): published ports bind to 127.0.0.1 only,
+# development sign-in is on and the secrets are published defaults. A production profile refuses to start with any of
+# that (services/api/src/supplylens/config.py).
 #   scripts/base_backup.sh                               a physical base backup (to the basebackups volume)
 #
 # WAL archiving: every completed WAL segment is copied to the `walarchive` volume (archive_timeout bounds how much recent
@@ -14,7 +19,12 @@ x-app-env: &env
   SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@db:5432/supplylens
   SUPPLYLENS_OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
   SUPPLYLENS_STORAGE_DIR: /app/storage
+  SUPPLYLENS_ENVIRONMENT: development
   SUPPLYLENS_SESSION_SECRET: ${SUPPLYLENS_SESSION_SECRET:-dev-only-change-me}
+  SUPPLYLENS_OIDC_ISSUER: ${SUPPLYLENS_OIDC_ISSUER:-}
+  SUPPLYLENS_OIDC_PUBLIC_ISSUER: ${SUPPLYLENS_OIDC_PUBLIC_ISSUER:-}
+  SUPPLYLENS_OIDC_CLIENT_ID: ${SUPPLYLENS_OIDC_CLIENT_ID:-}
+  SUPPLYLENS_OIDC_CLIENT_SECRET: ${SUPPLYLENS_OIDC_CLIENT_SECRET:-}
   # OpenTelemetry: empty = tracing off. With the observability profile: SUPPLYLENS_OTEL_ENDPOINT=http://jaeger:4318
   SUPPLYLENS_OTEL_ENDPOINT: ${SUPPLYLENS_OTEL_ENDPOINT:-}
   SUPPLYLENS_ALERT_WEBHOOK_URL: ${SUPPLYLENS_ALERT_WEBHOOK_URL:-}
@@ -64,7 +74,14 @@ services:
     profiles: [observability]
     image: jaegertracing/all-in-one:1.62.0
     environment: { COLLECTOR_OTLP_ENABLED: "true" }
-    ports: ["16686:16686"]
+    ports: ["127.0.0.1:16686:16686"]
+  keycloak:
+    profiles: [identity]
+    image: quay.io/keycloak/keycloak:26.0.7
+    command: ["start-dev", "--import-realm"]
+    environment: { KC_BOOTSTRAP_ADMIN_USERNAME: admin, KC_BOOTSTRAP_ADMIN_PASSWORD: admin }
+    volumes: ["./infra/keycloak/realm-supplylens.json:/opt/keycloak/data/import/realm-supplylens.json:ro"]
+    ports: ["127.0.0.1:8180:8080"]
   migrate:
     build: *api-build
     environment: *env
@@ -76,7 +93,7 @@ services:
     environment: *env
     volumes: [storage:/app/storage, ./artifacts:/app/artifacts:ro]
     depends_on: { migrate: { condition: service_completed_successfully } }
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]
   worker:
     build: *api-build
     environment: *env
@@ -91,7 +108,7 @@ services:
     depends_on: { migrate: { condition: service_completed_successfully } }
   web:
     build: { context: ., dockerfile: infra/docker/web.Dockerfile, args: { SUPPLYLENS_API_URL: "http://api:8000" } }
-    ports: ["3100:3100"]
+    ports: ["127.0.0.1:3100:3100"]
     depends_on: { api: { condition: service_healthy } }
 volumes:
   pgdata: {}

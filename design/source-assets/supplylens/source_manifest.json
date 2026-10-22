@@ -1,0 +1,799 @@
+{
+  "project": "SupplyLens",
+  "manifest_kind": "current_pack_inventory_not_application_approval",
+  "supersedes_for_asset_availability": "image_prompts/asset_manifest.json (historical prompt-only inventory)",
+  "count": 16,
+  "scope": "Six prior standalone delivered files plus ten atlas-derived files; no new generation or image editing in this update.",
+  "assets": [
+    {
+      "id": "A01",
+      "filename": "sl-welcome.png",
+      "package_path": "assets/png/sl-welcome.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-welcome.png",
+      "ui_area": "Login / first-time welcome; optional marketing reuse",
+      "show_only_when": "First-time/auth illustration; never above a populated planner work queue",
+      "suggested_css_size": "360-560px wide on desktop; omit or reduce on small screens",
+      "example_html_heading": "Welcome to SupplyLens",
+      "brief": "Create a miniature open-roof warehouse with three clean rack modules, a few unbranded rectangular cartons, and one circular inspection lens in the foreground. One fine mint connection path links two parts of the miniature. Keep the warehouse architecture plausible but deliberately generic. Compose the subject in the right 60% of a landscape 3:2 canvas, leaving the left 40% transparent for separately rendered interface copy. Request 1536 x 1024. Restrained studio detail, elegant negative space, no truck fleet, map, screens, live-data overlays, dashboard, charts, or numbers. This is conceptual welcome artwork, not a digital twin of a real facility.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1536,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          254
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 1053849,
+        "partially_transparent_pixel_count": 519015,
+        "alpha_nonzero_bbox": [
+          0,
+          27,
+          1536,
+          984
+        ]
+      },
+      "size_bytes": 1519389,
+      "sha256": "33b79ee176964b519128a4cf2d4221f4fa1a33be75fb6a8fd1778231dab4f665",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "Detailed prior warehouse illustration; check legibility and framing at 360-560 CSS pixels.",
+        "The right edge has less than the requested 15% content margin. Do not claim full composition compliance.",
+        "Transparency includes partial alpha. Check both backgrounds for edge/glow artifacts."
+      ]
+    },
+    {
+      "id": "A02",
+      "filename": "sl-import-data.png",
+      "package_path": "assets/png/sl-import-data.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-import-data.png",
+      "ui_area": "Data onboarding",
+      "show_only_when": "No admitted dataset and the user has permission to import",
+      "suggested_css_size": "140-180px",
+      "example_html_heading": "Add your first dataset",
+      "brief": "Create a shallow precision-built import tray with three blank, gently rounded data sheets aligned above it, ready to be placed inside. Give one sheet a subtle unmarked square-cell texture, not a readable spreadsheet. Place one small mint upward arrow beside the tray as a simple decorative upload cue. The sheets are not yet processed: no check mark, completion badge, numbers, file extension, fake validation result, or floating upload UI. Compact square composition, confident and orderly, transparent background.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "review_brief_deviation_before_use",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 570631,
+        "partially_transparent_pixel_count": 475644,
+        "alpha_nonzero_bbox": [
+          0,
+          20,
+          1013,
+          983
+        ]
+      },
+      "size_bytes": 685576,
+      "sha256": "3841754ece4124899cb024914d54679e9b005c948bd8f3c3384fb81aae33e87b",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "Visual review of the supplied preview shows document-like lines and a pie-chart symbol, unlike the blank-sheet brief.",
+        "Preserve the supplied source. Obtain a corrected or explicitly accepted variant before claiming brief-compliant import artwork."
+      ]
+    },
+    {
+      "id": "A03",
+      "filename": "sl-empty-inventory.png",
+      "package_path": "assets/png/sl-empty-inventory.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-inventory.png",
+      "ui_area": "Inventory and first-run overview",
+      "show_only_when": "A successful authorized response confirms no inventory records for this scope; not a fetch failure or zero stock",
+      "suggested_css_size": "140-180px",
+      "example_html_heading": "No inventory records in this workspace",
+      "brief": "Create one compact warehouse shelving module with two empty shelves, gently beveled dark-teal supports, pale-mint shelf surfaces, and one closed unbranded carton beside the module rather than on it. Show clear negative space in the shelving. No stock-count badges, capacity bars, warning lights, product labels, or warehouse backdrop. The visual introduces an unconfigured inventory workspace, not a real stockout or a measured empty warehouse. Square, transparent, readable at small size.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 647501,
+        "partially_transparent_pixel_count": 398051,
+        "alpha_nonzero_bbox": [
+          0,
+          22,
+          1006,
+          1024
+        ]
+      },
+      "size_bytes": 669156,
+      "sha256": "b1258a57e1220d3ff88bb02b2b8ceb8b395cdfce1863da68f8822a1f752ba08f",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A04",
+      "filename": "sl-empty-evidence.png",
+      "package_path": "assets/png/sl-empty-evidence.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-evidence.png",
+      "ui_area": "Policies and evidence",
+      "show_only_when": "Authorized library has no documents; do not reveal hidden documents",
+      "suggested_css_size": "140-180px",
+      "example_html_heading": "Add your first source document",
+      "brief": "Create an upright open document folio holding two blank matte sheets, with a small circular inspection lens resting beside it. Use a forest-teal folio, pale-mint page edges, and a neutral satin lens rim. The folio and lens form one coherent compact object group. No signatures, legal seals, contracts with pseudo-writing, citation numbers, badges, shield, or check marks. This is an empty evidence-library illustration, not proof that any policy has been verified. Square transparent canvas.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 761196,
+        "partially_transparent_pixel_count": 286750,
+        "alpha_nonzero_bbox": [
+          150,
+          151,
+          874,
+          873
+        ]
+      },
+      "size_bytes": 443989,
+      "sha256": "94ef5601def4e829014e005fd48a22bb0410dad23d8cf7df7ca1318a32a12d02",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "Reused isolated folio asset. Earlier conversation output contained evidence and forecast objects together before this isolated asset was supplied.",
+        "The source manifest calls A01-A06 individual-generation; this field is preserved as a source claim, not a verified native rendering resolution."
+      ]
+    },
+    {
+      "id": "A05",
+      "filename": "sl-forecast-setup.png",
+      "package_path": "assets/png/sl-forecast-setup.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-forecast-setup.png",
+      "ui_area": "Forecast lab",
+      "show_only_when": "No forecast run available for the selected compatible context",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Create a forecast for this dataset",
+      "brief": "Create a compact fold-out planning object with three overlapping blank calendar-like tiles on a clean mechanical hinge and one small mint slider knob. Tiles have only simple unmarked square recesses; no dates, numbers, weekdays, legends, or rendered data. A small unbranded carton at the side connects the subject to inventory planning. The visual suggests preparing a planning horizon, not successful model training or positive future sales. No trend line, chart, trophy, or rising arrow. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 545788,
+        "partially_transparent_pixel_count": 501705,
+        "alpha_nonzero_bbox": [
+          0,
+          19,
+          998,
+          1009
+        ]
+      },
+      "size_bytes": 777576,
+      "sha256": "35270d80b9a971e60084e9a2b910bd50bda8ec89bd91c1309a216c89ec86c546",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A06",
+      "filename": "sl-empty-scenarios.png",
+      "package_path": "assets/png/sl-empty-scenarios.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-scenarios.png",
+      "ui_area": "Scenario studio",
+      "show_only_when": "No saved scenarios; not an infeasible solver result",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Compare your first planning scenario",
+      "brief": "Create a compact isometric decision fork: one short mint path separates into two equal branches leading to two identical blank planning tiles. Each tile holds one small unbranded carton. Give both branches equal weight, identical lighting, and no winning option. The geometry should feel engineered and purposeful, with ample open space. No numeric axes, cost labels, scales, check marks, red-versus-green outcomes, or apparent recommendation. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 739094,
+        "partially_transparent_pixel_count": 308220,
+        "alpha_nonzero_bbox": [
+          25,
+          50,
+          1003,
+          997
+        ]
+      },
+      "size_bytes": 543852,
+      "sha256": "fadb6b8a66a646673dc20c4eaa2a36734b87fec38f7e4b6bb3646e0df877a067",
+      "source_pack_production_claim": "individual-generation",
+      "sheet_derived": false,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "The supplied planning tiles contain square recesses and a central control, rather than completely blank tiles. Review against the requested neutral scenario metaphor."
+      ]
+    },
+    {
+      "id": "A07",
+      "filename": "sl-no-results.png",
+      "package_path": "assets/png/sl-no-results.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-no-results.png",
+      "ui_area": "Search and filtered lists",
+      "show_only_when": "A completed authorized search has zero matches; never used for errors, loading, or denied access",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "No matches for these filters",
+      "brief": "Create one mint-rimmed magnifying lens angled above an empty shallow rectangular tray. The lens remains optically clear and the tray contains no objects. Use softly beveled forest-teal and off-white materials, minimal contact shading, and a calm neutral mood. No question mark, X, sad face, crossed document, deleted file, check mark, or implied missing customer data. This represents a search without matches. Square transparent canvas.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 786938,
+        "partially_transparent_pixel_count": 260627,
+        "alpha_nonzero_bbox": [
+          104,
+          261,
+          920,
+          762
+        ]
+      },
+      "size_bytes": 314116,
+      "sha256": "b50f28ea6114fac98a59651668093c57e77336b368d4d8a084a4067f53167bc6",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A08",
+      "filename": "sl-no-pending-work.png",
+      "package_path": "assets/png/sl-no-pending-work.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-no-pending-work.png",
+      "ui_area": "Exceptions and approvals",
+      "show_only_when": "A successful response shows zero pending items in the visible authorized filters; never signals overall system health",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "No items awaiting your review in this view",
+      "brief": "Create a tidy empty desktop in-tray in forest teal with a pale-mint inner surface and one small neutral divider behind it. No papers in the tray. The mood is calm and ready for the next task, without celebration. No check mark, thumbs-up, shield, trophy, confetti, certificate, completed purchase order, or apparent approved action. This only illustrates an empty queue, not guaranteed safety, synchronization, approval, or successful execution. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 721972,
+        "partially_transparent_pixel_count": 325208,
+        "alpha_nonzero_bbox": [
+          104,
+          235,
+          920,
+          789
+        ]
+      },
+      "size_bytes": 300334,
+      "sha256": "168c0c67c92c55c185141e3735cc0ea62f3d96607e3abf8e2c364412a295a186",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A09",
+      "filename": "sl-connection-paused.png",
+      "package_path": "assets/png/sl-connection-paused.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-connection-paused.png",
+      "ui_area": "Recoverable network/service failure",
+      "show_only_when": "A detected connection failure with real retry/recovery UI; draft-restored copy only when restoration is verified",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Connection interrupted",
+      "brief": "Create two simple rounded network connector ends facing one another across a small visible gap, with a single gently curved cable resting beneath them. Use forest teal, mint, off-white, and one tiny muted amber accent #F2B84B. Show no electrical sparks, broken hardware, skull, large warning triangle, cloud check, shield, or recovered-data badge. The subject should feel temporarily disconnected and recoverable rather than damaged. Keep the cable composition compact and centered. Square transparent canvas.",
+      "priority": "first_batch",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 893437,
+        "partially_transparent_pixel_count": 154077,
+        "alpha_nonzero_bbox": [
+          104,
+          380,
+          920,
+          643
+        ]
+      },
+      "size_bytes": 217155,
+      "sha256": "a13006c2eded882d2bfe0fd71e01ace2c0b87ca5067af50acd5470e2658cce5c",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "Inspect the connector gap at target size. Use only with actual recoverable-failure state and a working retry control."
+      ]
+    },
+    {
+      "id": "A10",
+      "filename": "sl-restricted-access.png",
+      "package_path": "assets/png/sl-restricted-access.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-restricted-access.png",
+      "ui_area": "Restricted document or workspace",
+      "show_only_when": "The server has denied access and policy permits this generic message; disclose no restricted metadata",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "You do not have access to this content",
+      "brief": "Create a closed matte forest-teal document folder with a small simple satin-metal padlock positioned in front. The lock is an ordinary access cue, not a security badge. Keep the folder completely blank with no visible contents, key code, document title, seal, shield, check mark, biometric scan, or certification mark. Calm, professional, non-alarming; no barbed wire or caution tape. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 659618,
+        "partially_transparent_pixel_count": 386261,
+        "alpha_nonzero_bbox": [
+          104,
+          232,
+          920,
+          792
+        ]
+      },
+      "size_bytes": 269283,
+      "sha256": "f183e4173fa36bbbfbb3f5c2d49887aea7692dfbda393d419ec9028d13d95deb",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A11",
+      "filename": "sl-empty-integrations.png",
+      "package_path": "assets/png/sl-empty-integrations.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-integrations.png",
+      "ui_area": "Administration / supported connector setup",
+      "show_only_when": "No connectors configured; does not imply an unimplemented provider is supported",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Configure a supported data connection",
+      "brief": "Create a compact modular connection dock with three empty recessed ports and two unconnected cable ends resting nearby. Use a pale-mint dock, forest-teal inner recesses, and restrained neutral-metal tips. All ports are unbranded and geometric. No provider logos, check marks, green online lights, signal bars, live data streams, or visible successful connection. This is preparation for configuring a supported integration, not evidence of an existing one. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 849140,
+        "partially_transparent_pixel_count": 198329,
+        "alpha_nonzero_bbox": [
+          104,
+          332,
+          920,
+          692
+        ]
+      },
+      "size_bytes": 288711,
+      "sha256": "9bec8ba04f591a725b0d3bac99733d7c431a53a54e020b16afe3e946d572e83d",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A12",
+      "filename": "sl-policy-change.png",
+      "package_path": "assets/png/sl-policy-change.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-policy-change.png",
+      "ui_area": "Amendment-impact onboarding and decision-change introduction",
+      "show_only_when": "Small explanatory artwork; actual impact/approval invalidation must be calculated and shown in HTML",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "See how source changes affect decisions",
+      "brief": "Create two nearly aligned blank document plates in a precise comparison holder. On the rear plate, a thin inset strip sits low; on the front plate, the corresponding mint strip is visibly shifted upward. A small transparent inspection lens sits beside the plates. The difference is geometric only, with no writing, price, dates, strike-through, check mark, legal seal, or suggestion that the newer version is automatically correct. No full comparison screen. Square transparent canvas.",
+      "priority": "core_next",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 740881,
+        "partially_transparent_pixel_count": 306425,
+        "alpha_nonzero_bbox": [
+          104,
+          276,
+          920,
+          747
+        ]
+      },
+      "size_bytes": 314926,
+      "sha256": "a184beaace9cacc9955a9066b97fa79fc6fda6383b0a557ab2af5357d747a6e6",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A13",
+      "filename": "sl-empty-suppliers.png",
+      "package_path": "assets/png/sl-empty-suppliers.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-suppliers.png",
+      "ui_area": "Supplier market first-run state",
+      "show_only_when": "No authorized source admitted; filtered zero matches should use A07 instead",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Add a supported supplier data source",
+      "brief": "Create one small generic warehouse form surrounded by three separate unbranded modular supplier blocks. Leave their short connector stubs visibly unjoined. The arrangement hints at a network still to be configured. No map, globe, country borders, flags, real company logos, supplier identities, risk scores, or implication of verified business relationships. Balanced, restrained engineered forms on a square transparent canvas.",
+      "priority": "optional",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "review_brief_deviation_before_use",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 882479,
+        "partially_transparent_pixel_count": 165358,
+        "alpha_nonzero_bbox": [
+          104,
+          339,
+          920,
+          685
+        ]
+      },
+      "size_bytes": 262921,
+      "sha256": "d39d084fac6daa6ccf18edaffacd2ec9232abbe0f9cf7f0df7059ef6caef4e35",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "The supplied preview visibly links the supplier blocks, whereas the source brief requests unjoined connector stubs.",
+        "Do not use this as evidence of configured integrations or real supplier relationships. Review/correct the metaphor before first-run deployment."
+      ]
+    },
+    {
+      "id": "A14",
+      "filename": "sl-empty-research.png",
+      "package_path": "assets/png/sl-empty-research.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-research.png",
+      "ui_area": "Research and model registry first-run state",
+      "show_only_when": "No experiments recorded; failed or invalidated experiments must show their actual status",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "No experiments recorded yet",
+      "brief": "Create a compact modular experiment holder with three identical blank report plates and one small unmarked model cube resting beside it. All plates are empty and equal in height. Use precise forest-teal, mint, and off-white forms. No bar chart, model name, brain, trophy, medal, winner, result numbers, ranking, rising arrow, or completed-test check mark. This illustrates a research workspace before results exist. Square transparent canvas.",
+      "priority": "optional",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 758384,
+        "partially_transparent_pixel_count": 288862,
+        "alpha_nonzero_bbox": [
+          104,
+          287,
+          920,
+          737
+        ]
+      },
+      "size_bytes": 232351,
+      "sha256": "0083a2125d1df7bac5077a0d84d405ce9c873681a679356e98082d1c35e48fc6",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": []
+    },
+    {
+      "id": "A15",
+      "filename": "sl-empty-decision-history.png",
+      "package_path": "assets/png/sl-empty-decision-history.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-decision-history.png",
+      "ui_area": "Decision history and investigation introduction",
+      "show_only_when": "No decision packets in authorized scope; not used in place of an actual audit timeline",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Your decision history will appear here",
+      "brief": "Create a short precision rail with three empty archival holders spaced evenly along it and one blank folded decision packet resting beside the first holder. All positions are visually neutral. The rail suggests a sequence without dates, numbers, arrows, labels, or completed milestones. No clock face, success badges, signatures, data trails, or invented audit evidence. Square transparent canvas.",
+      "priority": "optional",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "review_brief_deviation_before_use",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 851384,
+        "partially_transparent_pixel_count": 195952,
+        "alpha_nonzero_bbox": [
+          104,
+          355,
+          920,
+          668
+        ]
+      },
+      "size_bytes": 237116,
+      "sha256": "3ef3f8ff75ffc5e9b110715396080a056236132fb3d8376183eed97bfa173afa",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "The supplied illustration appears to contain a packet in a holder rather than three completely empty holders with a separate packet.",
+        "Review/correct before claiming exact brief fidelity; never use the artwork as a real decision-history timeline."
+      ]
+    },
+    {
+      "id": "A16",
+      "filename": "sl-empty-value-study.png",
+      "package_path": "assets/png/sl-empty-value-study.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-value-study.png",
+      "ui_area": "Business value first-run state",
+      "show_only_when": "No scenario value comparison; never represents realized savings or financial performance",
+      "suggested_css_size": "120-160px",
+      "example_html_heading": "Compare value under explicit assumptions",
+      "brief": "Create a perfectly balanced minimalist comparison instrument with two identical shallow trays, each holding one identical unbranded carton. Use a restrained forest-teal central support, pale-mint trays, and matte off-white cartons. Equal height, equal visual weight, and no favored side. No currency, coins, banknotes, percentage, growth arrow, trophies, numeric markings, projected savings, or apparent financial outcome. Square transparent canvas.",
+      "priority": "optional",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_actual_application_review",
+      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 858001,
+        "partially_transparent_pixel_count": 189322,
+        "alpha_nonzero_bbox": [
+          104,
+          311,
+          920,
+          712
+        ]
+      },
+      "size_bytes": 279321,
+      "sha256": "932fdc9331aa47893775cbe52e157fa1f2e87e2d22d2d24112b37d4377e651ad",
+      "source_pack_production_claim": "extracted-from-generated-atlas",
+      "sheet_derived": true,
+      "native_source_resolution_verified": false,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "quality_notes": [
+        "The supplied cartons are kraft-colored rather than the matte off-white cartons in the brief. Preserve source and review stylistic consistency."
+      ]
+    }
+  ]
+}

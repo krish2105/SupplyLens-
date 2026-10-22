@@ -14,6 +14,7 @@ from sqlalchemy import text
 from ..authz import Actor, resolve_actor
 from ..config import settings
 from ..db import control_session, tenant_session
+from ..idempotency import current_key
 
 COOKIE = "sl_session"
 SESSION_MAX_AGE = 60 * 60 * 12
@@ -28,6 +29,12 @@ def current_user_id(request: Request) -> uuid.UUID:
         data = serializer.loads(raw, max_age=SESSION_MAX_AGE)
     except BadSignature:
         raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"}) from None
+    if data.get("sid"):
+        # identity-provider session: re-confirmed with the provider periodically (deactivation ends it)
+        from .oidc import confirm_session
+        confirm_session(uuid.UUID(data["sid"]))
+    elif not settings.dev_login_available:
+        raise HTTPException(401, {"code": "session_invalid", "message": "development sessions are not accepted here"})
     return uuid.UUID(data["uid"])
 
 
@@ -89,7 +96,9 @@ def idempotent(a: Actor, key: str | None, route: str, body: Any, fn: Callable[[]
     The key is claimed with a single INSERT ... ON CONFLICT before `fn` runs, so concurrent identical
     requests cannot both execute: the loser gets 409 `idempotency_in_progress` (retry shortly) and a later
     retry replays the stored response. A key reused for a different request is rejected (409). If `fn`
-    raises, the claim is released so the caller can correct the request and retry with the same key."""
+    raises, the claim is released so the caller can correct the request and retry with the same key. Services that
+    commit a durable change also mark the key DONE inside that transaction (`idempotency.record_outcome`), so a crash
+    between the commit and the final update below replays instead of executing twice."""
     if not key or len(key) > 200:
         raise HTTPException(428, {"code": "idempotency_key_required", "message": "Idempotency-Key header required"})
     rhash = hashlib.sha256(json.dumps(body, sort_keys=True, default=str).encode()).hexdigest()
@@ -108,11 +117,14 @@ def idempotent(a: Actor, key: str | None, route: str, body: Any, fn: Callable[[]
                                       "message": "an identical request is still being processed; retry shortly"},
                                 headers={"Retry-After": "1"})
         return row.status_code, {**row.response, "idempotent_replay": True}
+    token = current_key.set(key)       # services record their outcome in their own transaction (audit F05)
     try:
         status, response = fn()
     except BaseException:
         _release(a, key)
         raise
+    finally:
+        current_key.reset(token)
     with tenant_session(a.tenant_id) as s:
         s.execute(text("""UPDATE idempotency_keys SET state='DONE', status_code=:c, response=CAST(:b AS jsonb),
             claimed_until=NULL WHERE key=:k"""), {"c": status, "b": json.dumps(response, default=str), "k": key})

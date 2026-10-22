@@ -5,21 +5,43 @@ import { AlertTriangle } from "lucide-react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { apiPost } from "@/lib/api";
+import { EmptyState } from "@/components/illustration";
+import { apiPost, intentKey } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, int, money, num } from "@/lib/format";
 
-type Inputs = { demand_multiplier: number; supplier_delay_days: number; budget_minor: number; safety_days: number; coverage_days: number };
+type Basis = "leadtime_demand" | "q90_sum" | "q50_plus_safety";
+type Inputs = { demand_multiplier: number; supplier_delay_days: number; budget_minor: number; safety_days: number;
+  coverage_days: number; service_level: number; replenishment_basis: Basis };
 type Result = Schemas["ScenarioResult"];
+/** Decision-context fingerprint (audit S15): a result belongs to the workspace, clocks, dataset and basis it was computed in. */
+type Fingerprint = { ws: string; known: string | null; eff: string | null; dataset: string | null; basis: Basis };
+type Computed = { result: Result; inputs: Inputs; fp: Fingerprint };
+const fpKey = (f: Fingerprint) => `${f.ws}|${f.known}|${f.eff}|${f.dataset}|${f.basis}`;
 
-const CONTROLS: { k: keyof Inputs; label: string; unit: string; min: number; max: number; step: number; scale?: number }[] = [
-  { k: "demand_multiplier", label: "Demand multiplier", unit: "× forecast median", min: 0.5, max: 2, step: 0.05 },
+const BASES: { v: Basis; label: string; help: string }[] = [
+  { v: "leadtime_demand", label: "Lead-time demand (default)", help: "Order up to a service-level quantile of demand over lead time + coverage." },
+  { v: "q90_sum", label: "Summed daily q90", help: "Heuristic: every day at its 90th percentile. Over-covers (study L1)." },
+  { v: "q50_plus_safety", label: "Median + safety days", help: "Median path plus a buffer of mean daily demand. Under-covers (study S1)." },
+];
+
+type NumKey = Exclude<keyof Inputs, "replenishment_basis">;
+const CONTROLS: { k: NumKey; label: string; unit: string; min: number; max: number; step: number; scale?: number; only?: Basis }[] = [
+  { k: "demand_multiplier", label: "Demand multiplier", unit: "× forecast", min: 0.5, max: 2, step: 0.05 },
   { k: "supplier_delay_days", label: "Supplier delay", unit: "days added to every lead time", min: 0, max: 30, step: 1 },
   { k: "budget_minor", label: "Purchasing budget", unit: "per run", min: 0, max: 10_000_000, step: 50_000, scale: 100 },
-  { k: "safety_days", label: "Safety buffer", unit: "days of mean forecast demand", min: 0, max: 30, step: 1 },
+  { k: "service_level", label: "Service level", unit: "probability demand is covered", min: 0.5, max: 0.99, step: 0.01, only: "leadtime_demand" },
+  { k: "safety_days", label: "Safety buffer", unit: "days of mean forecast demand", min: 0, max: 30, step: 1, only: "q50_plus_safety" },
   { k: "coverage_days", label: "Coverage window", unit: "days (forecast horizon is 28)", min: 7, max: 28, step: 1 },
 ];
+
+function body(inp: Inputs) {
+  // Only controls that apply to the basis are sent; the API rejects the others (audit F03).
+  const { safety_days, service_level, ...rest } = inp;
+  return { ...rest, ...(inp.replenishment_basis === "q50_plus_safety" ? { safety_days } : {}),
+    ...(inp.replenishment_basis === "leadtime_demand" ? { service_level } : {}) };
+}
 
 export default function ScenariosPage() {
   const ws = useWs();
@@ -32,23 +54,33 @@ export default function ScenariosPage() {
   const planning = (ov.data?.settings?.planning ?? {}) as Record<string, number>;
   const currency = ov.data?.settings?.currency ?? "GBP";
   const baseline: Inputs = { demand_multiplier: 1, supplier_delay_days: 0, budget_minor: planning.weekly_budget_minor ?? 0,
-    safety_days: planning.safety_days ?? 5, coverage_days: planning.coverage_days ?? 21 };
+    safety_days: planning.safety_days ?? 5, coverage_days: planning.coverage_days ?? 21, service_level: planning.service_level ?? 0.9,
+    replenishment_basis: "leadtime_demand" };
   const [draft, setDraft] = useState<Inputs | null>(null);
   const d = draft ?? baseline;
-  const [results, setResults] = useState<{ base?: Result; draft?: Result; draftInputs?: Inputs }>({});
+  const [results, setResults] = useState<{ base?: Computed; draft?: Computed }>({});
+  const fpNow = (basis: Basis): Fingerprint => ({ ws, known, eff, dataset: ov.data?.dataset?.id ?? null, basis });
 
   const compute = useMutation({
     mutationFn: async (which: "base" | "draft") => {
-      const inp = which === "base" ? baseline : d;
-      const r = await apiPost("/api/v1/scenarios", { body: { name: which === "base" ? "Baseline" : "Draft", knowledge_cutoff: known, effective_date: eff, ...inp } });
-      return { which, r, inp };
+      const inp = which === "base" ? { ...baseline, replenishment_basis: d.replenishment_basis } : d;
+      const fp = fpNow(inp.replenishment_basis);
+      const req = { name: which === "base" ? "Baseline" : "Draft", knowledge_cutoff: known, effective_date: eff, ...body(inp) };
+      const intent = intentKey("scenario", { fp, req });
+      const r = await apiPost("/api/v1/scenarios", { body: req as never, idempotencyKey: intent.key });
+      intent.settle();
+      return { which, r, inp, fp };
     },
-    onSuccess: ({ which, r, inp }) => {
-      setResults((s) => (which === "base" ? { ...s, base: r } : { ...s, draft: r, draftInputs: inp }));
+    onSuccess: ({ which, r, inp, fp }) => {
+      // A response that arrives after the context changed is kept but marked incompatible, never shown as current.
+      setResults((s) => ({ ...s, [which]: { result: r, inputs: inp, fp } }));
       qc.invalidateQueries({ queryKey: [ws, "scenarios"] });
     },
   });
-  const stale = results.draft && results.draftInputs && JSON.stringify(results.draftInputs) !== JSON.stringify(d);
+  const current = fpKey(fpNow(d.replenishment_basis));
+  const incompatible = (c?: Computed) => !!c && fpKey(c.fp) !== current;
+  const stale = !!results.draft && !incompatible(results.draft) && JSON.stringify(results.draft.inputs) !== JSON.stringify(d);
+  const comparable = results.base && results.draft && fpKey(results.base.fp) === fpKey(results.draft.fp);
   const canRun = role === "planner";
 
   if (ov.data && !ov.data.dataset) return (
@@ -65,19 +97,40 @@ export default function ScenariosPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         <Card className="space-y-5 p-5">
           <Eyebrow>Draft inputs</Eyebrow>
+          <fieldset>
+            <legend className="text-sm font-medium">Replenishment basis</legend>
+            <div className="mt-2 space-y-1.5">
+              {BASES.map((b) => (
+                <label key={b.v} className="flex cursor-pointer items-start gap-2 rounded-lg p-1.5 text-sm hover:bg-surface-2">
+                  <input type="radio" name="basis" value={b.v} checked={d.replenishment_basis === b.v} className="mt-1 accent-[var(--accent)]"
+                    onChange={() => setDraft({ ...d, replenishment_basis: b.v })} />
+                  <span><span className="font-medium">{b.label}</span><span className="block text-xs text-muted">{b.help}</span></span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {CONTROLS.map((c) => {
             const v = d[c.k];
             const shown = c.scale ? v / c.scale : v;
+            const off = !!c.only && c.only !== d.replenishment_basis;
+            const set = (n: number) => Number.isFinite(n) && setDraft({ ...d, [c.k]: Math.min(c.max, Math.max(c.min, n)) });
             return (
-              <div key={c.k}>
+              <div key={c.k} data-applicable={!off}>
                 <div className="flex items-baseline justify-between gap-2">
                   <label htmlFor={c.k} className="text-sm font-medium">{c.label}</label>
-                  <span className="num text-sm">{c.k === "budget_minor" ? money(v, currency) : num(shown, c.step < 1 ? 2 : 0)}</span>
+                  <span className="flex items-center gap-1">
+                    <input aria-label={`${c.label} exact value${c.scale ? " in major units" : ""}`} type="number" disabled={off}
+                      min={c.scale ? c.min / c.scale : c.min} max={c.scale ? c.max / c.scale : c.max} step={c.scale ? c.step / c.scale : c.step}
+                      value={shown} onChange={(e) => set(Number(e.target.value) * (c.scale ?? 1))}
+                      className="num w-24 rounded-md border border-line bg-surface px-2 py-0.5 text-right text-sm" />
+                    {c.k === "budget_minor" && <span className="text-xs text-muted">{currency}</span>}
+                  </span>
                 </div>
-                <input id={c.k} type="range" min={c.min} max={c.max} step={c.step} value={v} className="mt-1 w-full accent-[var(--accent)]"
-                  aria-describedby={`${c.k}-help`} onChange={(e) => setDraft({ ...d, [c.k]: Number(e.target.value) })} />
+                <input id={c.k} type="range" min={c.min} max={c.max} step={c.step} value={v} disabled={off} className="mt-1 w-full accent-[var(--accent)]"
+                  aria-describedby={`${c.k}-help`} onChange={(e) => set(Number(e.target.value))} />
                 <p id={`${c.k}-help`} className="flex flex-wrap items-center gap-2 text-xs text-muted">
-                  {c.unit} · baseline {c.k === "budget_minor" ? money(baseline[c.k], currency) : baseline[c.k]} · range {c.k === "budget_minor" ? `${money(c.min, currency)}–${money(c.max, currency)}` : `${c.min}–${c.max}`} <Provenance kind="assumed" />
+                  {off ? <>Not applicable under {BASES.find((b) => b.v === d.replenishment_basis)?.label.toLowerCase()}: this control would not change the result.</>
+                    : <>{c.unit} · baseline {c.k === "budget_minor" ? money(baseline[c.k], currency) : num(baseline[c.k], c.step < 1 ? 2 : 0)} · range {c.k === "budget_minor" ? `${money(c.min, currency)}–${money(c.max, currency)}` : `${c.min}–${c.max}`} <Provenance kind="assumed" /></>}
                 </p>
               </div>
             );
@@ -95,13 +148,28 @@ export default function ScenariosPage() {
               <AlertTriangle className="size-4" aria-hidden /> Inputs changed after the draft was computed. The draft result below is stale until you compute it again.
             </div>
           )}
-          <Compare base={results.base} draft={results.draft} currency={currency} stale={!!stale} />
-          {results.draft && <Lines result={results.draft} currency={currency} />}
+          {(incompatible(results.base) || incompatible(results.draft)) && (
+            <div role="status" className="flex flex-wrap items-center gap-2 rounded-xl bg-risk-soft p-3 text-sm text-risk">
+              <AlertTriangle className="size-4" aria-hidden /> The workspace, clocks, dataset or basis changed since a result was computed. It is hidden here; compute again in this context.
+              <Button size="sm" variant="outline" onClick={() => setResults({})}>Clear old results</Button>
+            </div>
+          )}
+          {results.base && results.draft && !comparable && !incompatible(results.base) && !incompatible(results.draft) && (
+            <p role="status" className="text-sm text-risk">Baseline and draft were computed under different bases; compute the baseline again to compare.</p>
+          )}
+          <Compare base={incompatible(results.base) ? undefined : results.base?.result}
+            draft={incompatible(results.draft) ? undefined : results.draft?.result} currency={currency} stale={stale} />
+          {results.draft && !incompatible(results.draft) && <Lines result={results.draft.result} currency={currency} />}
         </div>
       </div>
       <Card className="p-5">
         <Eyebrow>Saved scenario runs</Eyebrow>
-        <table className="mt-3 w-full text-sm">
+        {saved.data && saved.data.length === 0 && (
+          <div className="mt-3"><EmptyState variant="first_run" art="empty-scenarios" title="Compare your first planning scenario">
+            Compute a baseline and a draft above; every computed scenario is saved here with its inputs.</EmptyState></div>
+        )}
+        {saved.error && <div className="mt-3"><ErrorState error={saved.error} retry={() => saved.refetch()} /></div>}
+        {!!saved.data?.length && <table className="mt-3 w-full text-sm">
           <caption className="sr-only">Previously computed scenarios</caption>
           <thead><tr className="border-b border-line text-left text-xs text-muted">
             <th className="py-2 font-medium">Name</th><th className="font-medium">Computed</th><th className="font-medium">Status</th><th className="font-medium">Spend</th><th className="font-medium">Shortfall</th></tr></thead>
@@ -111,7 +179,7 @@ export default function ScenariosPage() {
                 <td><Status value={s.status} /></td><td className="num">{money(s.metrics?.spend_minor, currency)}</td><td className="num">{int(s.metrics?.shortfall_units)}</td></tr>
             ))}
           </tbody>
-        </table>
+        </table>}
       </Card>
     </div>
   );
@@ -159,6 +227,7 @@ function Compare({ base, draft, currency, stale }: { base?: Result; draft?: Resu
       </table>
       {option && <div className="mt-4"><Chart option={option} height={220} label="Bar chart comparing baseline and draft spend, shortfall and units ordered" /></div>}
       <p className="mt-2 text-xs text-muted">{(draft ?? base)!.metrics.metric_note} A lower simulated cost is not a realised saving.</p>
+      <Controls r={(draft ?? base)!} />
     </Card>
   );
 }
@@ -182,5 +251,22 @@ function Lines({ result, currency }: { result: Result; currency: string }) {
         </table>
       </div>
     </Card>
+  );
+}
+
+
+/** What the server says it applied: basis, which controls changed the result, capacity caps and SKUs left out. */
+function Controls({ r }: { r: Result }) {
+  const notAssessed = Object.entries((r.scope?.not_assessed ?? {}) as Record<string, string>);
+  return (
+    <div className="mt-3 space-y-1 text-xs text-muted">
+      <p>Basis: <span className="font-medium text-ink">{r.controls?.replenishment_basis ?? r.inputs.replenishment_basis}</span>
+        {Object.entries(r.controls ?? {}).filter(([k]) => k !== "replenishment_basis").map(([k, v]) => <span key={k}> · {k.replaceAll("_", " ")}: {v}</span>)}</p>
+      {!!r.metrics.capacity_capped_units && <p className="text-risk">Storage capacity capped {int(r.metrics.capacity_capped_units)} units of demand-driven need; that demand stays unserved.</p>}
+      {notAssessed.length > 0 && (
+        <details><summary className="cursor-pointer">{notAssessed.length} product(s) not assessed</summary>
+          <ul className="mt-1 list-disc pl-5">{notAssessed.slice(0, 20).map(([k, why]) => <li key={k}><Mono>{k}</Mono>: {why}</li>)}</ul></details>
+      )}
+    </div>
   );
 }

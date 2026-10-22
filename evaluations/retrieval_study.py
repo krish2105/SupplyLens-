@@ -126,17 +126,23 @@ def r2():
         path.write_text("\n".join(json.dumps(x) for x in build_r2_tasks()) + "\n")
     tasks = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
     t, other = tenant_id("uci-research"), tenant_id("demo")
+    # 2 x 2 factorial (audit S13): effective-date filtering {off, on} x supersession-aware reranking {off, on}, with
+    # channels, queries, permissions and candidate depth held fixed. Each one-factor contrast differs in that factor only.
+    # The study's first version compared off+no-rerank against on+rerank, which confounded the two; that comparison is
+    # kept below only as a combined-pipeline observation.
     conditions = {
-        "temporal_off_hybrid": dict(mode="known", rerank=False, channels=("lexical", "vector")),
-        "temporal_on_lexical": dict(mode="effective", rerank=True, channels=("lexical",)),
-        "temporal_on_hybrid": dict(mode="effective", rerank=True, channels=("lexical", "vector")),
+        "temporal_off_rerank_off": dict(mode="known", rerank=False, channels=("lexical", "vector")),
+        "temporal_off_rerank_on": dict(mode="known", rerank=True, channels=("lexical", "vector")),
+        "temporal_on_rerank_off": dict(mode="effective", rerank=False, channels=("lexical", "vector")),
+        "temporal_on_rerank_on": dict(mode="effective", rerank=True, channels=("lexical", "vector")),
+        "temporal_on_rerank_on_lexical_only": dict(mode="effective", rerank=True, channels=("lexical",)),
     }
     from supplylens.knowledge.rerank import load_reranker
     reranker = load_reranker()        # None unless SUPPLYLENS_RERANKER_MODEL names a model this machine can load
     if reranker is not None:
         conditions["temporal_on_hybrid_cross_encoder"] = dict(mode="effective", rerank=True, channels=("lexical", "vector"),
                                                               reranker=reranker)
-    results = {}
+    results, per_query = {}, defaultdict(dict)
     for name, cfg in conditions.items():
         per_case = defaultdict(lambda: {"n": 0, "top1": 0, "recall5": 0, "wrong_version_top1": 0, "abstain_ok": 0})
         lat = []
@@ -154,6 +160,7 @@ def r2():
             hits = [(e.version_id, e.section) for e in res["results"]]
             want = (tk["expect_version_id"], tk["expect_section"])
             c["top1"] += int(bool(hits) and hits[0] == want)
+            per_query[tk["id"]][name] = int(bool(hits) and hits[0] == want)
             c["recall5"] += int(want in hits[:5])
             c["wrong_version_top1"] += int(bool(hits) and hits[0][1] == want[1] and hits[0][0] != want[0])
         answerable = [v for k, v in per_case.items() if k != "unknown_product"]
@@ -177,7 +184,24 @@ def r2():
     for tk in tasks[:60]:
         res = search(other, tk["query"], as_of=FAR, role="planner", mode="known", entities=tk["entities"], k=10)
         leaks += sum(e.chunk_id in uci_chunks for e in res["results"])
-    return {"study": "R2", "taskset": str(path.relative_to(REPO_ROOT)), "questions": len(tasks),
+    acc = {n: results[n]["top1_citation_accuracy"] for n in results}
+    on_re, on_no, off_re, off_no = (acc["temporal_on_rerank_on"], acc["temporal_on_rerank_off"],
+                                    acc["temporal_off_rerank_on"], acc["temporal_off_rerank_off"])
+    factorial = {
+        "metric": "top-1 citation accuracy on answerable questions",
+        "temporal_effect_rerank_off": on_no - off_no, "temporal_effect_rerank_on": on_re - off_re,
+        "rerank_effect_temporal_off": off_re - off_no, "rerank_effect_temporal_on": on_re - on_no,
+        "main_effect_temporal": ((on_no - off_no) + (on_re - off_re)) / 2,
+        "main_effect_rerank": ((off_re - off_no) + (on_re - on_no)) / 2,
+        "interaction": (on_re - on_no) - (off_re - off_no),
+        "combined_pipeline_observation": {"off_no_rerank_vs_on_rerank": on_re - off_no,
+                                          "note": "changes two factors at once; not a one-factor ablation"},
+    }
+    qpath = REPO_ROOT / "artifacts" / "reports" / "r2_query_level.jsonl"
+    qpath.parent.mkdir(parents=True, exist_ok=True)
+    qpath.write_text("\n".join(json.dumps({"id": k, **v}) for k, v in sorted(per_query.items())) + "\n")
+    return {"study": "R2", "version": "2.0.0 (2x2 factorial)", "taskset": str(path.relative_to(REPO_ROOT)), "questions": len(tasks),
+            "factorial": factorial, "query_level": str(qpath.relative_to(REPO_ROOT)),
             "generated_from": "UCI workspace supplier_terms (SIMULATED agreements); answer key not used at runtime",
             "human_reviewed": False, "conditions": results,
             "cross_encoder": "run" if reranker is not None else "NOT RUN: no reranker configured or loadable (SUPPLYLENS_RERANKER_MODEL)",

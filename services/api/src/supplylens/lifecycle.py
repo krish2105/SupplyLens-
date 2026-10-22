@@ -236,6 +236,7 @@ def _purge_rows(tenant_id, keep_job_id=None, engine=None) -> dict[str, int]:
         if action_ids:
             deleted["sandbox_erp.purchase_orders"] = s.execute(
                 text("DELETE FROM sandbox_erp.purchase_orders WHERE caller_ref = ANY(:a)"), {"a": action_ids}).rowcount
+        s.execute(text("SELECT set_config('app.purging', 'on', true)"))   # lets published imports be removed
         for t in reversed(tables):
             if t in PRIVILEGED and engine is None:
                 continue

@@ -29,6 +29,7 @@ from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from ..knowledge.retrieve import search
 from ..planning.demand_history import dependence_by_sku
+from ..planning.positions import MAX_SKUS_PER_RUN, bounded_scope, load_positions
 from ..planning.terms_service import applicable_terms
 
 DEFAULT_BUDGET = {"max_tool_calls": 400, "max_seconds": 120, "max_check_loops": 1}
@@ -48,6 +49,7 @@ class RunState(TypedDict, total=False):
     check_loops: int
     settings: dict
     skus: list[str]
+    scope: dict
     needs: dict
     forecast: dict
     terms: dict
@@ -123,7 +125,12 @@ def accept(state):
                          "currency": inp.get("currency") or st.currency.strip(),
                          "dataset_id": str(st.dataset_id) if st.dataset_id else None,
                          "planning": st.planning,
-                         "budget_minor": int(inp.get("budget_minor") or st.planning.get("weekly_budget_minor", 0))}
+                         # None means "use the workspace budget"; an explicit 0 stays 0 (no spend allowed, audit F08)
+                         "budget_minor": int(inp["budget_minor"]) if inp.get("budget_minor") is not None
+                         else int((st.planning or {}).get("weekly_budget_minor", 0)),
+                         "budget_source": "explicit" if inp.get("budget_minor") is not None else "workspace default"}
+    if state["settings"]["budget_minor"] < 0:
+        raise ValueError("budget_minor must not be negative")
     return (f"Accepted {state['mode']} run as of {cutoff:%Y-%m-%d %H:%M} UTC, effective {eff}, "
             f"budget {state['settings']['budget_minor'] / 100:.2f} {state['settings']['currency']}",
             state["settings"])
@@ -137,9 +144,11 @@ def plan_steps(state):
         else:
             skus = [r.sku_id for r in s.execute(text(
                 "SELECT DISTINCT sku_id FROM inventory_positions ORDER BY sku_id"))]
-    state["skus"] = skus[:60]
-    return (f"Investigate {len(state['skus'])} SKU(s): forecast or reorder rule, applicable terms, plan, checks",
-            {"skus": state["skus"]})
+    state["skus"], state["scope"] = bounded_scope(skus, explicit=bool(inp.get("sku_ids")))
+    cut = state["scope"]["truncated"]
+    return (f"Investigate {len(state['skus'])} SKU(s): forecast or reorder rule, applicable terms, plan, checks"
+            + (f" ({cut} more not assessed: per-run limit {state['scope']['limit']})" if cut else ""),
+            {"skus": state["skus"], "scope": state["scope"]})
 
 
 def gather(state):
@@ -149,14 +158,12 @@ def gather(state):
     skus = state["skus"]
     _tool(state)
     with tenant_session(state["tenant_id"]) as s:
-        rows = s.execute(text("""SELECT DISTINCT ON (sku_id) sku_id, on_hand, allocated, on_order, capacity, value_kind,
-            as_of FROM inventory_positions WHERE sku_id = ANY(:k) AND as_of <= :e ORDER BY sku_id, as_of DESC"""),
-            {"k": skus, "e": eff}).mappings().all()
-    positions = {r["sku_id"]: dict(r) for r in rows}
+        positions, not_assessed = load_positions(s, skus, eff)
     forecast = {"available": False}
     if st["dataset_id"]:
         _tool(state)
-        fr = run_forecast(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, cutoff.date(),
+        # origin = earlier of knowledge cutoff and decision date (audit F02); nothing after the cutoff is known
+        fr = run_forecast(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, min(cutoff.date(), eff),
                           horizon=28, created_by=uuid.UUID(state["actor_id"]), allow_baseline_fallback=True)
         forecast = {"available": True, "run_id": str(fr.run_id), "model_version_id": str(fr.model_version_id),
                     "origin": fr.origin.isoformat(), "quality_flags": fr.quality_flags,
@@ -180,12 +187,13 @@ def gather(state):
             c = s.execute(text("""SELECT c.id, c.section, c.body, c.char_start, c.char_end, dv.version_label,
                 dv.valid_from, dv.known_at, dv.sha256, d.title FROM chunks c JOIN document_versions dv ON dv.id=c.version_id
                 JOIN documents d ON d.id = dv.document_id WHERE c.version_id = :v AND c.section = :sec
-                AND dv.known_at <= :cut ORDER BY c.ordinal LIMIT 1"""),
-                {"v": t.document_version_id, "sec": t.section, "cut": cutoff}).mappings().first()
+                AND dv.known_at <= :cut AND :role = ANY(d.allowed_roles) ORDER BY c.ordinal LIMIT 1"""),
+                {"v": t.document_version_id, "sec": t.section, "cut": cutoff, "role": _actor(state).role}).mappings().first()
             if c:
                 citations[t.term_id] = {**{k: str(v) if k == "id" else v for k, v in c.items()},
                                         "document_version_id": t.document_version_id}
-    state["needs"] = {"positions": positions, "missing_positions": [k for k in skus if k not in positions]}
+    state["needs"] = {"positions": {k: {**v, "as_of": v["as_of"].isoformat()} for k, v in positions.items()},
+                      "missing_positions": [k for k in skus if k not in positions], "not_assessed": not_assessed}
     state["forecast"] = forecast
     state["terms"] = {"applicable": [t.model_dump(mode="json") for t in res.applicable],
                       "ignored": [i.model_dump() for i in res.ignored], "conflicts": res.conflicts}
@@ -199,12 +207,12 @@ def gather(state):
                                        "excerpt": e.excerpt[:400], "chunk_id": e.chunk_id} for e in rel["results"]]
     missing = state["needs"]["missing_positions"]
     return (f"Gathered {len(positions)} stock positions"
-            f"{f' ({len(missing)} SKU(s) have no stock record at this date and are not assessed)' if missing else ''}, "
+            f"{f' ({len(missing)} SKU(s) not assessed: no single-location stock record at this date)' if missing else ''}, "
             f"{'forecast run ' + forecast['run_id'][:8] if forecast['available'] else 'no forecast (no sales history)'}, "
             f"{len(res.applicable)} applicable terms ({len(res.ignored)} excluded, {len(res.conflicts)} conflicts), "
             f"{len(upcoming)} upcoming policy changes",
             {"ignored": state["terms"]["ignored"][:20], "conflicts": res.conflicts, "upcoming": upcoming[:10],
-             "retrieval_mode": rel["mode"], "missing_positions": missing})
+             "retrieval_mode": rel["mode"], "missing_positions": missing, "not_assessed": not_assessed})
 
 
 def compute(state):
@@ -221,16 +229,21 @@ def compute(state):
             lead = min([t["lead_time_days"] for t in state["terms"]["applicable"]
                         if t["sku_id"] == sku and t["currency"] == st["currency"]], default=0)
             acf, basis = state["forecast"].get("dependence", {}).get(sku, (None, "assumed default"))
-            a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=sku),
-                       pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
-                       lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
-                       dependence_basis=basis)
+            try:
+                a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=sku),
+                           pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
+                           lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
+                           dependence_basis=basis)
+            except ValueError as e:
+                state["needs"].setdefault("not_assessed", {})[sku] = str(e)
+                continue
             assessments[sku] = a.model_dump(mode="json")
         else:
             # No sales history (demo): reorder-point rule from the fixture; required units only if below it.
             ref = planning.get("reference_case", {})
             if sku == ref.get("sku_id"):
-                req = ref["required_units"]
+                # the fixture's need is net of SupplyLens orders already placed or received since the snapshot (S12)
+                req = max(0, ref["required_units"] - p.get("open_order_units", 0) - p.get("received_since_snapshot", 0))
                 need_by = ref["need_by"]
             else:
                 with tenant_session(state["tenant_id"]) as s:
@@ -260,7 +273,8 @@ def compute(state):
         need_by = min(date.fromisoformat(v["need_by"]) for v in to_buy.values())
     req = PlanRequest(decision_date=eff, need_by=need_by, currency=st["currency"],
                       budget_minor=st["budget_minor"],
-                      needs=[Need(sku_id=k, required_units=v["required_units"]) for k, v in to_buy.items()],
+                      needs=[Need(sku_id=k, required_units=v["required_units"],
+                                  capacity_units=v.get("capacity_headroom_units")) for k, v in to_buy.items()],
                       offers=offers, allow_shortfall=bool(state["input"].get("allow_shortfall", True)),
                       shortage_penalty_minor=int(state["input"].get("shortage_penalty_minor", 500)))
     _tool(state)
@@ -339,7 +353,8 @@ def prepare_action(state):
                            "budget": "assumed"},
         }
         decision = {"knowledge_cutoff": st["knowledge_cutoff"], "effective_date": st["effective_date"],
-                    "plan_input_hash": p["input_hash"], "agent_run_id": state["run_id"]}
+                    "plan_input_hash": p["input_hash"], "agent_run_id": state["run_id"],
+                    "budget_minor": st["budget_minor"]}
         a = actions.prepare(actor, supplier_id=supplier, lines=lines, currency=st["currency"],
                             need_by=max(l.arrival_date for l in lines), decision=decision, evidence=evidence,
                             versions={"forecast_run": state["forecast"].get("run_id"),
@@ -391,6 +406,10 @@ def create_run(actor: Actor, *, mode: str, inp: dict) -> uuid.UUID:
     actor.require("agent.start")
     if mode not in ("observe", "recommend", "draft"):
         raise ValueError("mode must be observe, recommend or draft (execute is gated by approvals)")
+    if len(inp.get("sku_ids") or []) > MAX_SKUS_PER_RUN:
+        raise ValueError(f"{len(inp['sku_ids'])} SKUs requested; one run plans at most {MAX_SKUS_PER_RUN}. Split the request.")
+    if inp.get("budget_minor") is not None and int(inp["budget_minor"]) < 0:
+        raise ValueError("budget_minor must not be negative")
     run_id, job_id = uuid.uuid4(), uuid.uuid4()
     budget = {**DEFAULT_BUDGET, **(inp.get("budget") or {})}
     inp = {**inp, "budget": budget}

@@ -1,15 +1,18 @@
 """Scenario planning: the same snapshot, terms and optimiser with explicit, bounded what-if inputs.
 
-Inputs that change results (demand multiplier, supplier delay, budget, safety days) are
-recorded with the result; every scenario is persisted as an immutable plan run.
+Inputs that change results (demand multiplier, supplier delay, budget, replenishment basis and its own controls) are
+recorded with the result; every scenario is persisted as an immutable plan run. A control that does not apply to the
+selected basis is rejected rather than silently ignored (audit F03): `safety_days` belongs to `q50_plus_safety`,
+`service_level` to `leadtime_demand`. `controls` in the result lists which inputs applied.
 """
 from __future__ import annotations
 
 import json
 import uuid
 from datetime import date, datetime, timedelta
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import text
 
 from supplylens_opt.planner import Need, PlanRequest, plan
@@ -19,6 +22,7 @@ from ..authz import Actor
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from .demand_history import dependence_by_sku
+from .positions import bounded_scope, load_positions
 from .terms_service import applicable_terms
 
 
@@ -36,6 +40,16 @@ class ScenarioInput(BaseModel):
     allow_shortfall: bool = True
     shortage_penalty_minor: int = Field(default=500, ge=0, le=1_000_000)
     currency: str | None = None
+    replenishment_basis: Literal["leadtime_demand", "q90_sum", "q50_plus_safety"] | None = None
+
+    @model_validator(mode="after")
+    def _controls_match_basis(self):
+        basis = self.replenishment_basis or "leadtime_demand"
+        if self.safety_days is not None and basis != "q50_plus_safety":
+            raise ValueError(f"safety_days applies only to the q50_plus_safety basis, not {basis}")
+        if self.service_level is not None and basis != "leadtime_demand":
+            raise ValueError(f"service_level applies only to the leadtime_demand basis, not {basis}")
+        return self
 
 
 def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
@@ -48,41 +62,48 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
         eff = inp.effective_date or cutoff.date()
         skus = inp.sku_ids or [r.sku_id for r in s.execute(text(
             "SELECT DISTINCT sku_id FROM inventory_positions ORDER BY sku_id"))]
-        rows = s.execute(text("""SELECT DISTINCT ON (sku_id) sku_id, on_hand, allocated, on_order, capacity
-            FROM inventory_positions WHERE sku_id = ANY(:k) AND as_of <= :e ORDER BY sku_id, as_of DESC"""),
-            {"k": skus, "e": eff}).mappings().all()
+        skus, scope = bounded_scope(skus, explicit=bool(inp.sku_ids))
+        positions, excluded = load_positions(s, skus, eff)
     planning = st.planning or {}
     currency = inp.currency or st.currency.strip()
     budget = inp.budget_minor if inp.budget_minor is not None else int(planning.get("weekly_budget_minor", 0))
+    basis = inp.replenishment_basis or "leadtime_demand"
     safety = inp.safety_days if inp.safety_days is not None else planning.get("safety_days", 5)
     coverage = inp.coverage_days or planning.get("coverage_days", 21)
     if not st.dataset_id:
         raise ValueError("scenario studio needs a sales history to forecast; this workspace has none")
-    fr = run_forecast(actor.tenant_id, st.dataset_id, skus, cutoff.date(), horizon=28,
+    # The forecast origin is the earlier of the knowledge cutoff and the decision date: nothing after the cutoff is known,
+    # and demand on or before the decision date is not part of the coverage window (audit F02).
+    origin = min(cutoff.date(), eff)
+    fr = run_forecast(actor.tenant_id, st.dataset_id, list(positions), origin, horizon=28,
                       created_by=actor.user_id, allow_baseline_fallback=True)
-    res = applicable_terms(actor.tenant_id, skus, cutoff, eff)
+    res = applicable_terms(actor.tenant_id, list(positions), cutoff, eff)
     offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days})
               for t in res.applicable if t.currency == currency]
     lead_by_sku: dict[str, int] = {}
     for o in offers:                       # protection interval uses the fastest permitted supplier's lead time
         lead_by_sku[o.sku_id] = min(o.lead_time_days, lead_by_sku.get(o.sku_id, o.lead_time_days))
     service_level = inp.service_level or planning.get("service_level", 0.9)
-    dependence = dependence_by_sku(actor.tenant_id, st.dataset_id, [r["sku_id"] for r in rows], eff)
+    dependence = dependence_by_sku(actor.tenant_id, st.dataset_id, list(positions), eff)
     needs = {}
-    for r in rows:
-        pts = fr.points[fr.points["sku_id"] == r["sku_id"]]
+    for sku, r in positions.items():
+        pts = fr.points[fr.points["sku_id"] == sku]
         if pts.empty:
+            excluded[sku] = "no forecast for this SKU"
             continue
         path = [{"day": p.day.date(), "q10": p.q10 * inp.demand_multiplier, "q50": p.q50 * inp.demand_multiplier,
                  "q90": p.q90 * inp.demand_multiplier} for p in pts.itertuples()]
-        acf, basis = dependence.get(r["sku_id"], (None, "assumed default"))
-        needs[r["sku_id"]] = assess(Position(sku_id=r["sku_id"], **{k: r[k] for k in
-                                    ("on_hand", "allocated", "on_order", "capacity")}), path, eff, coverage, safety,
-                                    lead_time_days=lead_by_sku.get(r["sku_id"], 0), service_level=service_level,
-                                    acf=acf, dependence_basis=basis)
+        acf, dep_basis = dependence.get(sku, (None, "assumed default"))
+        try:
+            needs[sku] = assess(Position(sku_id=sku, **{k: r[k] for k in ("on_hand", "allocated", "on_order", "capacity")}),
+                                path, eff, coverage, safety, basis, lead_time_days=lead_by_sku.get(sku, 0),
+                                service_level=service_level, acf=acf, dependence_basis=dep_basis)
+        except ValueError as e:
+            excluded[sku] = str(e)
     to_buy = {k: v for k, v in needs.items() if v.required_units > 0}
     req = PlanRequest(decision_date=eff, need_by=eff + timedelta(days=coverage), currency=currency,
-                      budget_minor=budget, needs=[Need(sku_id=k, required_units=v.required_units)
+                      budget_minor=budget, needs=[Need(sku_id=k, required_units=v.required_units,
+                                                       capacity_units=v.capacity_headroom_units)
                                                   for k, v in to_buy.items()],
                       offers=[o for o in offers if o.sku_id in to_buy], allow_shortfall=inp.allow_shortfall,
                       shortage_penalty_minor=inp.shortage_penalty_minor)
@@ -98,9 +119,16 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
     demand = sum(v.demand_q50 for v in needs.values())
     out = {
         "scenario_id": str(uuid.uuid4()), "name": inp.name,
-        "inputs": {**inp.model_dump(mode="json"), "budget_minor": budget, "safety_days": safety,
-                   "coverage_days": coverage, "service_level": service_level, "currency": currency,
-                   "knowledge_cutoff": cutoff.isoformat(), "effective_date": eff.isoformat()},
+        "inputs": {**inp.model_dump(mode="json"), "budget_minor": budget, "replenishment_basis": basis,
+                   "safety_days": safety if basis == "q50_plus_safety" else None,
+                   "coverage_days": coverage, "service_level": service_level if basis == "leadtime_demand" else None,
+                   "currency": currency, "knowledge_cutoff": cutoff.isoformat(), "effective_date": eff.isoformat(),
+                   "forecast_origin": origin.isoformat()},
+        "controls": {"replenishment_basis": basis,
+                     "safety_days": "applied" if basis == "q50_plus_safety" else f"not applicable under {basis}",
+                     "service_level": "applied" if basis == "leadtime_demand" else f"not applicable under {basis}",
+                     "budget_minor": "explicit" if inp.budget_minor is not None else "workspace default"},
+        "scope": {**scope, "not_assessed": excluded},
         "value_kinds": {"forecast": "forecast", "stock": "simulated", "terms": "simulated", "budget": "assumed",
                         "demand_multiplier": "assumed", "supplier_delay_days": "assumed"},
         "forecast_run_id": str(fr.run_id),
@@ -109,7 +137,9 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
         "terms": {"applicable": len(res.applicable), "ignored": [i.model_dump() for i in res.ignored],
                   "conflicts": res.conflicts},
         "metrics": {
-            "skus_assessed": len(needs), "skus_needing_order": len(to_buy),
+            "skus_assessed": len(needs), "skus_not_assessed": len(excluded), "skus_needing_order": len(to_buy),
+            "uncapped_units": sum(v.uncapped_required_units for v in needs.values()),
+            "capacity_capped_units": sum(v.uncapped_required_units - v.required_units for v in needs.values()),
             "units_ordered": sum(ordered.values()), "spend_minor": result.total_minor if result else 0,
             "shortfall_units": sum(result.shortfall.values()) if result else 0,
             "projected_q50_coverage": round(covered / demand, 4) if demand else None,

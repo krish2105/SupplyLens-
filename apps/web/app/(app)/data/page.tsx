@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Stat, Status } from "@/components/ui";
-import { useApi } from "@/lib/queries";
+import { Onboarding } from "@/components/onboarding";
+import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, int, money } from "@/lib/format";
 
 
@@ -16,6 +17,21 @@ const REASON_COPY: Record<string, string> = {
 };
 
 export default function DataPage() {
+  const ws = useWs();
+  const me = useMe();
+  const admin = me.data?.memberships.find((m) => m.slug === ws)?.role === "tenant_admin";
+  return (
+    <div className="space-y-10">
+      <DatasetView />
+      <section aria-labelledby="onb-h" className="space-y-3">
+        <h2 id="onb-h" className="display text-2xl font-semibold">Onboard data</h2>
+        <Onboarding admin={admin} />
+      </section>
+    </div>
+  );
+}
+
+function DatasetView() {
   const ds = useApi(["datasets"], "/api/v1/datasets");
   const d = ds.data?.[0];
   const [reason, setReason] = useState<string | null>(null);
@@ -26,9 +42,20 @@ export default function DataPage() {
   if (!d) return (
     <>
       <PageHeader eyebrow="Data admission" title="No dataset admitted in this workspace" />
-      <Empty title="This workspace uses fictional fixtures only">
-        Switch to <b>UCI Research</b> to inspect the real dataset, or run <Mono>python scripts/download_datasets.py --dataset online_retail_ii</Mono> and <Mono>uv run python -m supplylens.bootstrap</Mono>.
+      {/* A02 (import illustration) is not published; this state uses text only (DECISIONS D-041). */}
+      <Empty title="Add your first dataset">
+        Administrators import sales, stock and supplier terms below from CSV templates. Until a sales file is published, this workspace has no history to forecast from.
       </Empty>
+    </>
+  );
+  if (!d.report.totals) return (
+    <>
+      <PageHeader eyebrow="Data admission" title={d.name}>Published from a CSV import. The batch below is frozen; its snapshot hash identifies exactly what was loaded.</PageHeader>
+      <Card className="p-5"><KV items={[
+        ["Schema", <Mono key="v">{d.schema_version}</Mono>], ["Snapshot SHA-256", <Mono key="h" className="break-all">{d.sha256}</Mono>],
+        ["Rights", d.license], ["Rows loaded", int((d.report as { rows?: number }).rows)], ["Rows quarantined", int((d.report as { quarantined?: number }).quarantined)],
+        ["Published", dateTime(d.created_at)], ["Status", <Status key="s" value={d.status} />],
+      ]} /></Card>
     </>
   );
   const t = d.report.totals;

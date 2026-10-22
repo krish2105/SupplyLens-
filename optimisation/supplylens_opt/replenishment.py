@@ -9,6 +9,17 @@ models covered only 42-50% of held-out volume). The first answer was `q90_sum`, 
 declared heuristic, not a calibrated window quantile, because it assumes every day is at its 90th percentile at once.
 `leadtime_demand` replaces it as the default; `q90_sum` and `q50_plus_safety` (q50 path + `safety_days` of mean daily
 q50) stay selectable so the three can be compared on the same inputs (evaluations/leadtime_demand_study.py).
+
+Clock rules (audit F02). Only forecast days strictly after the decision date count: the coverage window is
+decision_date < day <= decision_date + coverage_days (plus the lead time under `leadtime_demand`). A forecast that starts
+later than the day after the decision date is rejected (the gap would be silently treated as zero demand). Under
+`leadtime_demand` days beyond the forecast horizon are extrapolated and counted in `extrapolated_days`; the summed bases
+cannot extrapolate, so they reject a forecast that does not cover every window day. The stockout projection walks the
+same window and nothing beyond it.
+
+Controls (audit F03). `safety_days` changes the result only under `q50_plus_safety`; `safety_days_applied` says whether
+it did. Capacity (audit F04): `uncapped_required_units` keeps the demand-driven need visible when storage capacity caps
+`required_units`, and `capacity_headroom_units` is the residual capacity the planner and validator must respect.
 """
 from __future__ import annotations
 
@@ -19,6 +30,8 @@ from datetime import date, timedelta
 from pydantic import BaseModel
 
 from .leadtime_demand import window_demand
+
+BASES = ("leadtime_demand", "q90_sum", "q50_plus_safety")
 
 
 class Position(BaseModel):
@@ -56,6 +69,9 @@ class NeedAssessment(BaseModel):
     dependence_basis: str | None = None
     extrapolated_days: int | None = None
     calibration: str | None = None
+    safety_days_applied: bool = False
+    uncapped_required_units: int = 0
+    capacity_headroom_units: int | None = None
 
 
 CALIBRATION_NOTE = "simulation-checked, not validated on real data"
@@ -65,19 +81,34 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
            safety_days: int, basis: str = "leadtime_demand", *, lead_time_days: int = 0, service_level: float = 0.9,
            acf: Sequence[float] | None = None, dependence_basis: str = "assumed default",
            lead_time_sd_days: float = 0.0) -> NeedAssessment:
-    """forecast: rows with day (date), q10 (leadtime_demand only), q50, q90 starting after decision_date."""
+    """forecast: rows with day (date), q10 (leadtime_demand only), q50, q90; days on or before decision_date are ignored."""
+    if basis not in BASES:
+        raise ValueError(f"unknown replenishment basis {basis!r}; expected one of {', '.join(BASES)}")
+    if coverage_days < 1:
+        raise ValueError("coverage_days must be at least 1")
     available = pos.on_hand - pos.allocated
     position = available + pos.on_order
+    future = sorted((f for f in forecast if f["day"] > decision_date), key=lambda r: r["day"])
+    if not future:
+        raise ValueError(f"the forecast has no days after the decision date {decision_date}")
+    first = decision_date + timedelta(days=1)
+    if future[0]["day"] != first:
+        raise ValueError(f"the forecast starts on {future[0]['day']}, not on {first} (the day after the decision date); "
+                         "regenerate it from an origin on or before the decision date")
     ltd = None
     if basis == "leadtime_demand":
-        ordered = sorted(forecast, key=lambda r: r["day"])
-        if any("q10" not in f for f in ordered):
+        if any("q10" not in f for f in future):
             raise ValueError("the lead-time-demand basis needs q10, q50 and q90 for every forecast day")
         protection = max(coverage_days + max(lead_time_days, 0), 1)
-        ltd = window_demand(ordered, protection, service_level, acf, dependence_basis, lead_time_sd_days)
-        window = ordered[:protection]
+        end = decision_date + timedelta(days=protection)
+        window = [f for f in future if f["day"] <= end]
+        ltd = window_demand(window, protection, service_level, acf, dependence_basis, lead_time_sd_days)
     else:
-        window = [f for f in forecast if f["day"] <= decision_date + timedelta(days=coverage_days)]
+        end = decision_date + timedelta(days=coverage_days)
+        window = [f for f in future if f["day"] <= end]
+        if len({f["day"] for f in window}) < coverage_days:
+            raise ValueError(f"the forecast covers {len(window)} of the {coverage_days} coverage days; the {basis} basis "
+                             "sums daily values and cannot extrapolate, so it needs a forecast for every day")
     q50 = sum(f["q50"] for f in window)
     q90 = sum(f["q90"] for f in window)
     mean_daily = q50 / max(len(window), 1)
@@ -96,10 +127,13 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
         safety = math.ceil(mean_daily * safety_days)
         required = max(0, math.ceil(q50 + safety - position))
         method = "q50 path + assumed safety days"
+    uncapped = required
+    headroom = None
     if pos.capacity is not None:
-        required = min(required, max(pos.capacity - position, 0))
+        headroom = max(pos.capacity - position, 0)
+        required = min(required, headroom)
     stockout, running = None, float(available)
-    for f in sorted(forecast, key=lambda r: r["day"]):
+    for f in window:
         running -= f["q50"]
         if running < 0:
             stockout = f["day"]
@@ -126,4 +160,5 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
                           demand_q90_sum_uncalibrated=round(q90, 2), safety_units=safety,
                           required_units=required, projected_stockout=stockout, need_by=need_by,
                           days_of_cover=round(cover, 1) if cover is not None else None, status=status,
-                          basis=basis, method=method, **extra)
+                          basis=basis, method=method, safety_days_applied=basis == "q50_plus_safety",
+                          uncapped_required_units=uncapped, capacity_headroom_units=headroom, **extra)

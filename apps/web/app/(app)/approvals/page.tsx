@@ -3,9 +3,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import clsx from "clsx";
-import { Bug, Check, Pencil, RefreshCw, RotateCw, X } from "lucide-react";
+import { Bug, Check, PackageCheck, Pencil, RefreshCw, RotateCw, X } from "lucide-react";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
-import { ApiError, apiPost, newKey } from "@/lib/api";
+import { EmptyState } from "@/components/illustration";
+import { ApiError, apiPost, intentKey } from "@/lib/api";
 import { useDraft } from "@/lib/draft";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, int, money, short } from "@/lib/format";
@@ -50,7 +51,11 @@ export default function ApprovalsPage() {
                 </li>
               ))}
             </ul>
-          ) : <Empty title="Nothing in this queue">Start an investigation in Draft mode to prepare purchase-order drafts.</Empty>}
+          ) : tab === "PENDING_APPROVAL" || tab === "" ? (
+            <EmptyState variant="no_pending" title="No items awaiting your review in this view" compact>
+              Drafts appear here when a planner runs an investigation in Draft mode. This says nothing about other queues.
+            </EmptyState>
+          ) : <Empty title="Nothing in this queue" />}
         </Card>
         {actionId ? <ActionView id={actionId} ws={ws} /> : <Card className="p-5"><Empty title="Select a draft to review" /></Card>}
       </div>
@@ -89,7 +94,7 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
   // retries, the very same request (same key, payload hash and row version) is sent again and the server replays the
   // original outcome instead of executing twice.
   type Op = "approve" | "reject" | "edit" | "reconcile" | "retry" | "fault";
-  type Intent = { op: Op; key: string; hash: string; version: number; reason: string; quantities: Record<string, number> };
+  type Intent = { op: Op; key: string; settle?: () => void; hash: string; version: number; reason: string; quantities: Record<string, number> };
   const m = useMutation({
     mutationFn: async (i: Intent) => {
       const path = { action_id: id };
@@ -97,15 +102,18 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
       if (i.op === "approve") return apiPost("/api/v1/actions/{action_id}/approve", { path, idempotencyKey, body: { payload_hash: i.hash, expected_row_version: i.version } });
       if (i.op === "reject") return apiPost("/api/v1/actions/{action_id}/reject", { path, idempotencyKey, body: { reason: i.reason, expected_row_version: i.version } });
       if (i.op === "edit") return apiPost("/api/v1/actions/{action_id}/edit", { path, idempotencyKey, body: { quantities: i.quantities, expected_row_version: i.version } });
-      if (i.op === "fault") return apiPost("/api/v1/sandbox/faults", { body: { action_id: id, mode: "timeout_after_commit" } });
+      if (i.op === "fault") return apiPost("/api/v1/sandbox/faults", { body: { action_id: id, mode: i.reason || "timeout_after_commit" } });
       if (i.op === "retry") return apiPost("/api/v1/actions/{action_id}/retry", { path });
       return apiPost("/api/v1/actions/{action_id}/reconcile", { path });
     },
-    onSuccess: (_, i) => { if (i.op === "edit") clearEditing(); if (i.op === "reject") clearReason(); refresh(); },
+    onSuccess: (_, i) => { i.settle?.(); if (i.op === "edit") clearEditing(); if (i.op === "reject") clearReason(); refresh(); },
   });
-  const act = (op: Op) => {
+  const act = (op: Op, faultMode?: string) => {
     const x = a.data!;
-    m.mutate({ op, key: newKey(), hash: x.payload_hash, version: x.row_version, reason, quantities: editing ?? {} });
+    const fields = { hash: x.payload_hash, version: x.row_version, reason: faultMode ?? reason, quantities: editing ?? {} };
+    // the same intent clicked again after a failure or a lost response reuses its key (audit F05)
+    const { key, settle } = intentKey(`${op}:${id}`, fields);
+    m.mutate({ op, key, settle, ...fields });
   };
   const busy = (op: Op) => m.isPending && m.variables?.op === op;
 
@@ -114,6 +122,8 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
   const x = a.data, p = x.payload, ev = x.evidence;
   const self = me.data?.user.id === x.prepared_by;
   const lastApproval = x.approvals.filter((ap) => ap.decision === "APPROVED").at(-1);
+  // A read-back mismatch keeps its own label: it is never shown as delivered or reconciled (audit S16).
+  const shown = x.status === "CONFIRMED" && (x.status_reason ?? "").startsWith("read-back mismatch") ? "READBACK_MISMATCH" : x.status;
 
   return (
     <div className="space-y-6">
@@ -124,7 +134,7 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
             <h2 className="display mt-1 text-2xl font-semibold">{p.supplier_id} · <span className="num">{money(x.total_minor, x.currency)}</span></h2>
             <p className="text-sm text-muted">Destination <b>{p.destination}</b> ({p.environment}) · need by {day(p.need_by)} · operation {p.operation}</p>
           </div>
-          <div className="text-right"><Status value={x.status} />{x.external_ref && <p className="mt-1"><Mono>{x.external_ref}</Mono></p>}</div>
+          <div className="text-right"><Status value={shown} />{x.external_ref && <p className="mt-1"><Mono>{x.external_ref}</Mono></p>}</div>
         </div>
         {x.status_reason && <p className="mt-3 rounded-lg bg-surface-2 p-2 text-sm">{x.status_reason}</p>}
         <table className="mt-4 w-full text-sm">
@@ -175,9 +185,20 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
             </Button>
           )}
           {isDev && x.status === "PENDING_APPROVAL" && (
-            <Button variant="ghost" size="sm" onClick={() => act("fault")} title="Development only: the sandbox will commit the order and then not reply">
-              <Bug className="size-4" aria-hidden /> Simulate timeout on submit
-            </Button>
+            <label className="flex items-center gap-2 text-xs text-muted">
+              <Bug className="size-4" aria-hidden /> <span>Development fault</span>
+              <select className="rounded-md border border-line bg-surface px-2 py-1 text-xs" defaultValue=""
+                onChange={(e) => { if (e.target.value) act("fault", e.target.value); e.target.value = ""; }}>
+                <option value="">Choose…</option>
+                <option value="timeout_after_commit">Timeout after the order commits</option>
+                <option value="fail_before_commit">Refuse before commit</option>
+                <option value="alter_line_price">Read-back: altered unit price</option>
+                <option value="duplicate_line">Read-back: duplicated line</option>
+                <option value="change_unit">Read-back: changed unit</option>
+                <option value="change_need_by">Read-back: changed need-by date</option>
+                <option value="cancel_after_commit">Read-back: order cancelled</option>
+              </select>
+            </label>
           )}
           {x.status === "PENDING_APPROVAL" && role === "viewer" && <p className="text-sm text-muted">Viewers cannot approve.</p>}
           {x.status === "PENDING_APPROVAL" && role === "tenant_admin" && <p className="text-sm text-muted">Tenant administrators do not hold spend authority.</p>}
@@ -202,7 +223,9 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
             <li key={t.term_id} className="rounded-xl border border-line p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2"><Mono className="font-semibold">{t.term_id}</Mono>
                 <span className="num text-xs text-muted">MOQ {t.moq} · ×{t.order_multiple} · {money(t.unit_cost_minor, t.currency)} · {t.lead_time_days} d · from {day(t.valid_from)}</span></div>
-              {t.citation ? (
+              {t.citation?.withheld ? (
+                <p className="mt-2 rounded-lg bg-surface-2 p-2 text-xs text-muted">Source document withheld: it is restricted for your role. The structured term values above remain visible.</p>
+              ) : t.citation ? (
                 <blockquote className="mt-2 border-l-2 border-accent pl-3 text-[13px]">
                   <p className="whitespace-pre-wrap">{t.citation.body}</p>
                   <footer className="mt-1 text-xs text-muted">{t.citation.title} — {t.citation.version_label} · {t.citation.section} · known {day(t.citation.known_at)} · sha {short(t.citation.sha256, 10)}</footer>
@@ -216,6 +239,8 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
         {ev.upcoming_changes.length ? <p className="mt-3 rounded-lg bg-risk-soft p-2 text-sm text-risk">Policy change ahead: {ev.upcoming_changes.map((u) => `${u.sku_id} MOQ ${u.moq} from ${day(u.valid_from)}`).join("; ")}.</p> : null}
       </Card>
 
+      {x.status === "RECONCILED" && <OpenOrder id={id} canBook={["planner", "approver", "tenant_admin"].includes(role ?? "")} />}
+
       <Card className="p-5">
         <Eyebrow>Lifecycle</Eyebrow>
         <ul className="mt-3 space-y-1 text-sm">
@@ -224,5 +249,54 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
         </ul>
       </Card>
     </div>
+  );
+}
+
+
+/** Open-order ledger for a reconciled order (audit S12): receipts move units from on-order to on-hand once. */
+function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
+  const qc = useQueryClient();
+  const ws = useWs();
+  const lines = useApi(["open-orders"], "/api/v1/open-orders");
+  const mine = (lines.data ?? []).filter((l) => l.action_id === id);
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [on, setOn] = useState<string>(new Date().toISOString().slice(0, 10));
+  const book = useMutation({
+    mutationFn: async ({ sku, n }: { sku: string; n: number }) => {
+      const intent = intentKey(`receipt:${id}`, { sku, n, on });
+      const r = await apiPost("/api/v1/actions/{action_id}/receipts", { path: { action_id: id }, idempotencyKey: intent.key,
+        body: { sku_id: sku, quantity: n, received_on: on } });
+      intent.settle();
+      return r;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [ws] }),
+  });
+  if (lines.isLoading) return <Card className="p-5"><Loading /></Card>;
+  if (!mine.length) return null;
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between"><Eyebrow>Open order and receipts</Eyebrow><Provenance kind="observed" /></div>
+      <p className="mt-1 text-xs text-muted">Open units count as on-order in the next plan; booked receipts move them to on-hand. Business dates, not wall-clock time.</p>
+      <table className="mt-3 w-full text-sm">
+        <caption className="sr-only">Order lines with ordered, received and open units</caption>
+        <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Product</th><th className="font-medium">Ordered</th>
+          <th className="font-medium">Received</th><th className="font-medium">Open</th><th className="font-medium">Status</th>{canBook && <th className="font-medium">Book receipt</th>}</tr></thead>
+        <tbody>{mine.map((l) => (
+          <tr key={l.sku_id} className="border-b border-line/60">
+            <td className="py-2"><Mono>{l.sku_id}</Mono></td><td className="num">{int(l.ordered_units)}</td><td className="num">{int(l.received_units)}</td>
+            <td className="num">{int(l.open_units)}</td><td><Status value={l.status} /></td>
+            {canBook && <td>{l.open_units > 0 && (
+              <span className="flex items-center gap-1">
+                <input type="number" min={1} max={l.open_units} aria-label={`Units received for ${l.sku_id}`} value={qty[l.sku_id] ?? l.open_units}
+                  onChange={(e) => setQty({ ...qty, [l.sku_id]: Number(e.target.value) })} className="num w-20 rounded border border-line bg-surface px-2 py-1" />
+                <Button size="sm" variant="outline" busy={book.isPending} onClick={() => book.mutate({ sku: l.sku_id, n: qty[l.sku_id] ?? l.open_units })}>
+                  <PackageCheck className="size-4" aria-hidden /> Book</Button>
+              </span>)}</td>}
+          </tr>))}</tbody>
+      </table>
+      {canBook && <label className="mt-3 flex items-center gap-2 text-xs text-muted">Received on
+        <input type="date" value={on} onChange={(e) => setOn(e.target.value)} className="rounded border border-line bg-surface px-2 py-1" /></label>}
+      {book.error && <div className="mt-3"><ErrorState error={book.error} /></div>}
+    </Card>
   );
 }

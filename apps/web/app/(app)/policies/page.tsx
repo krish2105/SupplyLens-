@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useWs } from "@/lib/queries";
@@ -67,8 +68,10 @@ export default function PoliciesPage() {
         {res && (
           <div className="mt-5 space-y-4" aria-live="polite">
             <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-              <Status value={res.mode === "hybrid" ? "VERIFIED_LOCALLY" : "DEGRADED"} />
-              <span>{res.mode === "hybrid" ? "Hybrid: lexical full-text + bge-m3 vectors, reciprocal-rank fusion" : res.degraded}</span>
+              {/* Retrieval mode describes how passages were found, not whether a claim is true (audit S16). */}
+              <span className="rounded-md border border-line bg-surface-2 px-2 py-0.5 font-semibold text-ink">Retrieval: {res.mode === "hybrid" ? "hybrid" : res.mode}</span>
+              <span>{res.mode === "hybrid" ? "lexical full-text + bge-m3 vectors, reciprocal-rank fusion" : res.degraded}</span>
+              <span>· {res.answer.abstained ? "no passage supports an answer" : "best passage extracted verbatim; not a verified answer"}</span>
               <span>· {res.reranker}</span>
             </div>
             {res.answer.abstained ? (
@@ -103,7 +106,14 @@ export default function PoliciesPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <Card className="p-5">
           <Eyebrow>Documents and versions</Eyebrow>
-          {docs.isLoading ? <Loading /> : docs.error ? <ErrorState error={docs.error} /> : (
+          {docs.data && docs.data.length > 0 && docs.data.some((d) => d.supersedes_version_id) && (
+            <div className="mt-3"><EmptyState variant="first_run" art="policy-change" title="See how source changes affect decisions" compact>
+              Amendments below supersede earlier versions from their effective date. Drafts approved under an older version go back to review before anything is sent.</EmptyState></div>
+          )}
+          {docs.isLoading ? <Loading /> : docs.error ? <ErrorState error={docs.error} /> : docs.data?.length === 0 ? (
+            <div className="mt-3"><EmptyState variant="empty_scope" art="empty-evidence" title="No source documents you can read here" compact>
+              Agreements and amendments appear here once ingested. Documents restricted for your role are not listed.</EmptyState></div>
+          ) : (
             <ul className="mt-3 max-h-[640px] space-y-3 overflow-auto pr-1" tabIndex={0} aria-label="Documents, scrollable">
               {bySupplier.map((versions) => (
                 <li key={versions[0]!.document_id} className="rounded-xl border border-line p-3">

@@ -49,6 +49,13 @@ class Membership(Out):
     role: str
 
 
+class AuthConfig(Out):
+    environment: str
+    dev_login: bool
+    oidc: bool
+    oidc_login_url: str | None = None
+
+
 class Me(Out):
     user: UserInfo
     memberships: list[Membership]
@@ -241,6 +248,7 @@ class Term(Out):
     valid_to: date | None = None
     known_at: datetime
     supersedes: str | None = None
+    withheld: str | None = None
 
 
 class IgnoredTerm(Out):
@@ -408,7 +416,10 @@ class ModelVersion(Out):
 
 class ScenarioMetrics(Out):
     skus_assessed: int
+    skus_not_assessed: int = 0
     skus_needing_order: int
+    uncapped_units: int = 0
+    capacity_capped_units: int = 0
     units_ordered: int
     spend_minor: int
     shortfall_units: int
@@ -477,9 +488,11 @@ class ScenarioInputs(Out):
     budget_minor: int
     demand_multiplier: float
     supplier_delay_days: int
-    safety_days: int
+    replenishment_basis: str = "leadtime_demand"
+    safety_days: int | None = None
     coverage_days: int
     service_level: float | None = None
+    forecast_origin: str | None = None
     allow_shortfall: bool
     shortage_penalty_minor: int
     currency: str
@@ -502,6 +515,8 @@ class ScenarioResult(Out):
     plan: PlanOutput
     terms: ScenarioTerms
     metrics: ScenarioMetrics
+    controls: dict[str, str] = {}
+    scope: Json = {}
 
 
 class ScenarioRow(Out):
@@ -629,17 +644,20 @@ class PurchaseOrderPayload(Out):
 
 
 class CitedClause(Out):
+    """A cited clause. Document-derived fields are null and `withheld` is set when the reader's role may not see the
+    document (audit S10)."""
     id: str
-    section: str
-    body: str
-    char_start: int
-    char_end: int
-    version_label: str
+    section: str | None = None
+    body: str | None = None
+    char_start: int | None = None
+    char_end: int | None = None
+    version_label: str | None = None
     valid_from: date
     known_at: datetime
-    sha256: str
-    title: str
+    sha256: str | None = None
+    title: str | None = None
     document_version_id: str
+    withheld: str | None = None
 
 
 class EvidenceTerm(Term):
@@ -759,7 +777,35 @@ class SandboxOrder(Out):
     total_minor: int
     currency: str
     status: str
+    need_by: date | None = None
     created_at: datetime
+
+
+class ReceiptResult(Out):
+    status: str
+    po_line_id: str
+    received_units: int | None = None
+    open_units: int | None = None
+    quantity: int | None = None
+
+
+class CancelOpenResult(Out):
+    status: str
+    released_units: int
+
+
+class OpenOrderLine(Out):
+    action_id: UUID
+    external_ref: str
+    supplier_id: str
+    sku_id: str
+    ordered_units: int
+    received_units: int
+    cancelled_units: int
+    open_units: int
+    status: str
+    ordered_on: date
+    expected_on: date | None = None
 
 
 class FaultInjected(Out):
@@ -1049,6 +1095,14 @@ class StudyEnvironment(Out):
     hardware: str
 
 
+class StudyReview(Out):
+    """Reviewed status of the served experiment (evaluations/study_registry.json)."""
+    status: str
+    headline: str | None = None
+    notes: str | None = None
+    superseded: list[Json] = []
+
+
 class ForecastStudyReport(Out):
     """The frozen forecasting study (F1), read from its experiment artifact."""
     available: Literal[True]
@@ -1064,6 +1118,7 @@ class ForecastStudyReport(Out):
     environment: StudyEnvironment
     config: StudyConfig
     dataset_sha256: str
+    review: StudyReview | None = None
 
 
 class StudyMissing(Out):
@@ -1075,6 +1130,7 @@ class Study(Out):
     """Any other study: an open-ended metrics document from its experiment artifact (or a not-available notice)."""
     available: bool
     message: str | None = None
+    review: StudyReview | None = None
 
 
 class MarketYear(Out):
@@ -1175,3 +1231,54 @@ class SupplierDetail(Out):
 class Health(Out):
     status: str
     database: str
+
+
+# ------------------------------------------------------------------------------------------ onboarding (S18)
+class ImportColumn(Out):
+    name: str
+    kind: str
+    required: bool
+    description: str
+    example: str
+
+
+class ImportTemplates(Out):
+    schema_version: str
+    max_bytes: int
+    max_rows: int
+    templates: dict[str, list[ImportColumn]]
+
+
+class ImportBatchRow(Out):
+    id: UUID
+    kind: str
+    status: str
+    file_name: str
+    sha256: str
+    rows_total: int
+    rows_valid: int
+    rows_quarantined: int
+    snapshot_sha256: str | None = None
+    created_at: datetime
+    published_at: datetime | None = None
+
+
+class ImportBatch(ImportBatchRow):
+    header: list[str]
+    mapping: dict[str, str | None]
+    report: Json
+    dataset_id: UUID | None = None
+    columns: list[ImportColumn]
+    quarantined_sample: list[Json]
+    preview: list[Json]
+
+
+class WorkspaceCreated(Out):
+    tenant_id: str
+    slug: str
+    name: str
+
+
+class MembershipChanged(Out):
+    email: str
+    result: str | None = None

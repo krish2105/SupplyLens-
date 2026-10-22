@@ -7,6 +7,7 @@ import clsx from "clsx";
 import { Play } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { apiPost } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useMe, useWs } from "@/lib/queries";
@@ -86,7 +87,8 @@ export default function RunsPage() {
                 </li>
               ))}
             </ul>
-          ) : <div className="mt-2"><Empty title="No runs yet" /></div>}
+          ) : runs.error ? <ErrorState error={runs.error} retry={() => runs.refetch()} /> : <div className="mt-2"><EmptyState variant="first_run" art="empty-decision-history" title="Your decision history will appear here" compact>
+            Each investigation is stored with its steps, evidence and outcome.</EmptyState></div>}
         </Card>
         {runId ? <RunView id={runId} ws={ws} /> : <Card className="p-5"><Empty title="Select or start a run">Its steps stream here as they are persisted.</Empty></Card>}
       </div>

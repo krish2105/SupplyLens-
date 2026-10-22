@@ -5,6 +5,7 @@ import uuid
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from itsdangerous import BadSignature
 from pydantic import BaseModel
 from sqlalchemy import text
 
@@ -15,6 +16,7 @@ from ..integrations import sandbox_erp
 from .deps import COOKIE, SESSION_MAX_AGE, actor, csrf_guard, current_user_id, serializer
 from .schemas import (
     AuditRow,
+    AuthConfig,
     Dataset,
     DevUsers,
     Integration,
@@ -36,7 +38,7 @@ class DevLogin(BaseModel):
 
 @router.get("/auth/dev-users", response_model=DevUsers)
 def dev_users():
-    if not settings.dev_auth:
+    if not settings.dev_login_available:
         raise HTTPException(404, {"code": "disabled", "message": "dev sign-in disabled"})
     with control_session() as s:
         rows = s.execute(text("""SELECT u.email, u.display_name, array_agg(DISTINCT m.role) AS roles
@@ -48,7 +50,7 @@ def dev_users():
 
 @router.post("/auth/dev-login", response_model=Ok)
 def dev_login(body: DevLogin, response: Response):
-    if not settings.dev_auth:
+    if not settings.dev_login_available:
         raise HTTPException(404, {"code": "disabled", "message": "dev sign-in disabled"})
     with control_session() as s:
         uid = s.execute(text("SELECT id FROM users WHERE email=:e AND is_dev_account AND active"),
@@ -56,14 +58,28 @@ def dev_login(body: DevLogin, response: Response):
     if uid is None:
         raise HTTPException(401, {"code": "unknown_user", "message": "unknown development account"})
     response.set_cookie(COOKIE, serializer.dumps({"uid": str(uid)}), max_age=SESSION_MAX_AGE, httponly=True,
-                        samesite="lax", secure=not settings.dev_auth, path="/")
+                        samesite="lax", secure=settings.cookie_secure, path="/")
     return {"ok": True}
 
 
 @router.post("/auth/logout", response_model=Ok)
-def logout(response: Response):
+def logout(request: Request, response: Response):
+    try:
+        data = serializer.loads(request.cookies.get(COOKIE, ""), max_age=SESSION_MAX_AGE)
+    except BadSignature:
+        data = {}
+    if data.get("sid"):
+        from .oidc import revoke
+        revoke(uuid.UUID(data["sid"]), "signed out")
     response.delete_cookie(COOKIE, path="/")
     return {"ok": True}
+
+
+@router.get("/auth/config", response_model=AuthConfig)
+def auth_config():
+    """What the sign-in page may offer. Never reveals secrets."""
+    return {"environment": settings.environment, "dev_login": settings.dev_login_available,
+            "oidc": settings.oidc_enabled, "oidc_login_url": "/api/v1/auth/oidc/login" if settings.oidc_enabled else None}
 
 
 @router.get("/me", response_model=Me)
@@ -243,7 +259,12 @@ def integrations(a: Actor = Depends(actor)):
         {"name": "File import (UCI adapter)", "status": "VERIFIED_LOCALLY", "note": "tests/test_uci_ingest.py"},
         {"name": "Local embeddings (Ollama bge-m3)", "status": "VERIFIED_LOCALLY" if emb else "DEGRADED",
          "note": "Lexical-only retrieval while unavailable" if not emb else "1024-d vectors"},
-        {"name": "Enterprise sign-in (OIDC)", "status": "NOT_CONFIGURED", "note": "Dev accounts only in this build"},
+        {"name": "CSV onboarding (sales, stock, terms)", "status": "VERIFIED_LOCALLY",
+         "note": "upload, map, validate, quarantine, publish an immutable snapshot (tests/test_onboarding.py)"},
+        {"name": "Enterprise sign-in (OIDC)", "status": "CONFIGURED" if settings.oidc_enabled else "NOT_CONFIGURED",
+         "note": ("code flow + PKCE; verified locally against Keycloak 26 (tests/test_oidc_keycloak.py); "
+                  "not qualified against a corporate identity provider") if settings.oidc_enabled
+         else "not configured in this environment; see infra/keycloak/README.md for the local provider"},
         {"name": "Microsoft Business Central", "status": "NOT_IMPLEMENTED", "note": "No credentials or sandbox supplied"},
         {"name": "SAP S/4HANA", "status": "NOT_IMPLEMENTED", "note": "No credentials or sandbox supplied"},
         {"name": "Generative LLM", "status": "DISABLED", "note": "Owner decision: deterministic answers only"},

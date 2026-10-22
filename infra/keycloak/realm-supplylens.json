@@ -1,0 +1,130 @@
+{
+  "realm": "supplylens",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "subComponents": {},
+        "config": {
+          "kc.user.profile.config": [
+            "{\"unmanagedAttributePolicy\":\"ADMIN_EDIT\",\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"email\",\"displayName\":\"${email}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}}]}"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "supplylens-web",
+      "name": "SupplyLens (local)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "supplylens-local-only-client-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:3100/api/v1/auth/oidc/callback",
+        "http://localhost:3101/api/v1/auth/oidc/callback",
+        "http://localhost:8000/api/v1/auth/oidc/callback",
+        "http://testserver/api/v1/auth/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:3100",
+        "http://localhost:3101"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:3100/*##http://localhost:3101/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "supplylens roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "supplylens_roles",
+            "claim.name": "supplylens_roles",
+            "jsonType.label": "String",
+            "multivalued": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "kc.planner",
+      "email": "kc.planner@supplylens.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Kim",
+      "lastName": "Planner",
+      "attributes": {
+        "supplylens_roles": [
+          "uci-research:planner",
+          "demo:planner"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-test-planner-pass",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "kc.approver",
+      "email": "kc.approver@supplylens.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Ari",
+      "lastName": "Approver",
+      "attributes": {
+        "supplylens_roles": [
+          "demo:approver"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-test-approver-pass",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "kc.viewer",
+      "email": "kc.viewer@supplylens.test",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Val",
+      "lastName": "Viewer",
+      "attributes": {
+        "supplylens_roles": [
+          "demo:viewer"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-test-viewer-pass",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

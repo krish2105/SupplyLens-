@@ -101,7 +101,7 @@ test.describe("network interruption", () => {
     await expect(page.getByText(/Connection lost/)).toBeVisible();
     await page.getByRole("button", { name: "Try again" }).click();
     // Wait on THIS action, not on any "RECONCILED" text: the page also lists other actions that are already reconciled.
-    await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/actions/${id}`, "demo")).status, { timeout: 30_000 }).toBe("RECONCILED");
+    await expectReconciled(page, id);
     const a = await getJson<{ approvals: { decision: string }[] }>(page, `/api/v1/actions/${id}`, "demo");
     expect(a.approvals.filter((x) => x.decision === "APPROVED")).toHaveLength(1);
     const orders = await getJson<{ caller_ref: string }[]>(page, "/api/v1/sandbox/orders", "demo");

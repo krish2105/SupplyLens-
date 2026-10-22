@@ -3,7 +3,8 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
 import { baseOption, Chart, token } from "@/components/chart";
-import { Card, Empty, Eyebrow, Mono, PageHeader, Provenance, Skeleton } from "@/components/ui";
+import { Card, Eyebrow, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { useApi, useWs } from "@/lib/queries";
 import { num } from "@/lib/format";
 
@@ -24,14 +25,27 @@ function bars(categories: string[], series: { name: string; data: number[]; colo
     series: series.map((s) => ({ type: "bar", name: s.name, data: s.data, itemStyle: { color: s.color }, barMaxWidth: 28 })) };
 }
 
-function StudyCard({ id, title, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any } }) {
+/** The headline is the reviewed one from evaluations/study_registry.json, never a string fixed in this page (audit S16).
+ *  `fallback` is shown only as the question's topic when no reviewed headline exists. */
+function StudyCard({ id, title: fallback, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any } }) {
+  const review = q.data?.review as { status: string; headline?: string | null; notes?: string | null; superseded?: { experiment_id: string; reason?: string }[] } | undefined;
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><Eyebrow>Study {id}</Eyebrow><h2 className="display mt-1 text-xl font-semibold">{title}</h2><p className="mt-1 text-sm text-muted">{question}</p></div>
-        {q.data?.experiment_id && <Mono className="text-muted">{q.data.experiment_id}</Mono>}
+        <div><Eyebrow>Study {id}</Eyebrow>
+          <h2 className="display mt-1 text-xl font-semibold">{review?.headline ?? (q.data?.available ? `${fallback} — headline not yet reviewed` : fallback)}</h2>
+          <p className="mt-1 text-sm text-muted">{question}</p></div>
+        <div className="flex flex-col items-end gap-1">
+          {review && <Status value={review.status === "current" ? "VERIFIED_LOCALLY" : review.status.toUpperCase()} />}
+          {q.data?.experiment_id && <Mono className="text-muted">{q.data.experiment_id}</Mono>}
+        </div>
       </div>
-      <div className="mt-4">{q.isLoading ? <Skeleton className="h-40" /> : q.data?.available === false ? <Empty title="Not run yet">{q.data?.message}</Empty> : children}</div>
+      {review?.notes && <p className="mt-2 text-xs text-muted">{review.notes}</p>}
+      <div className="mt-4">{q.isLoading ? <Skeleton className="h-40" /> : q.data?.available === false ? <EmptyState variant="first_run" art="empty-research" title="No experiment recorded for this study" compact>{q.data?.message}</EmptyState> : children}</div>
+      {!!review?.superseded?.length && (
+        <details className="mt-3 text-xs text-muted"><summary className="cursor-pointer">{review.superseded.length} superseded run(s) not shown</summary>
+          <ul className="mt-1 list-disc pl-5">{review.superseded.map((x) => <li key={x.experiment_id}><Mono>{x.experiment_id}</Mono>: {x.reason}</li>)}</ul></details>
+      )}
     </Card>
   );
 }

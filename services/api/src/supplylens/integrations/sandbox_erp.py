@@ -3,10 +3,17 @@
 Contract: execute() is idempotent on the caller's idempotency key - a repeated key
 returns the original purchase order. `timeout_after_commit` commits the order and then
 raises AdapterTimeout, reproducing the "unknown outcome" case for reconciliation tests.
+
+Read-back faults make the simulator store an order that differs from the request, the way a real ERP may transform or
+reject parts of an order: `alter_line_price` (first line's unit price +1, stated total unchanged), `duplicate_line`
+(first line repeated, stated total unchanged), `change_unit`, `change_need_by` (+7 days) and `cancel_after_commit`.
+They exist to prove that read-back verification compares the whole order, not just its total.
 """
 from __future__ import annotations
 
+import copy
 import json
+from datetime import date, timedelta
 
 from sqlalchemy import text
 
@@ -57,18 +64,39 @@ def execute(idempotency_key: str, caller_ref: str, payload: dict) -> dict:
         if existing:
             return {"po_number": existing.po_number, "status": existing.status, "duplicate": True}
         po = "SBX-PO-" + str(c.execute(text("SELECT nextval('sandbox_erp.po_seq')")).scalar())
+        lines, need_by, status = _stored_form(payload, fault)
         c.execute(text("INSERT INTO sandbox_erp.purchase_orders (po_number, idempotency_key, caller_ref, "
-                       "supplier_id, lines, total_minor, currency) VALUES (:p,:k,:r,:s,CAST(:l AS jsonb),:t,:c)"),
+                       "supplier_id, lines, total_minor, currency, need_by, status) "
+                       "VALUES (:p,:k,:r,:s,CAST(:l AS jsonb),:t,:c,:n,:st)"),
                   {"p": po, "k": idempotency_key, "r": caller_ref, "s": payload["supplier_id"],
-                   "l": json.dumps(payload["lines"]), "t": payload["total_minor"], "c": payload["currency"]})
+                   "l": json.dumps(lines), "t": payload["total_minor"], "c": payload["currency"], "n": need_by,
+                   "st": status})
     if fault == "timeout_after_commit":
         raise AdapterTimeout("no response from sandbox after submit (injected)")
     return {"po_number": po, "status": "OPEN", "duplicate": False}
 
 
+def _stored_form(payload: dict, fault: str | None) -> tuple[list[dict], date | None, str]:
+    lines = copy.deepcopy(payload["lines"])
+    need_by = date.fromisoformat(payload["need_by"]) if payload.get("need_by") else None
+    status = "OPEN"
+    if fault == "alter_line_price" and lines:
+        lines[0]["unit_cost_minor"] += 1
+        lines[0]["line_minor"] = lines[0]["unit_cost_minor"] * lines[0]["quantity"]
+    elif fault == "duplicate_line" and lines:
+        lines.append(copy.deepcopy(lines[0]))
+    elif fault == "change_unit" and lines:
+        lines[0]["unit"] = "case"
+    elif fault == "change_need_by" and need_by:
+        need_by += timedelta(days=7)
+    elif fault == "cancel_after_commit":
+        status = "CANCELLED"
+    return lines, need_by, status
+
+
 def lookup(idempotency_key: str) -> dict | None:
     with app_engine().connect() as c:
-        r = c.execute(text("SELECT po_number, supplier_id, lines, total_minor, currency, status, created_at "
+        r = c.execute(text("SELECT po_number, supplier_id, lines, total_minor, currency, status, need_by, created_at "
                            "FROM sandbox_erp.purchase_orders WHERE idempotency_key = :k"),
                       {"k": idempotency_key}).mappings().first()
     return dict(r) if r else None

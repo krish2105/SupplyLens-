@@ -6,6 +6,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertOctagon, BellRing, CalendarClock, FileWarning, PackageX, Warehouse } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { apiPost } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, money } from "@/lib/format";
@@ -78,7 +79,9 @@ export default function ExceptionsPage() {
           })}
         </ul>
       )}
-      {!q.isLoading && !items.length && !q.data?.message && <Empty title="No exceptions match this filter" />}
+      {!q.isLoading && !q.error && !items.length && !q.data?.message && (kind === "all"
+        ? <EmptyState variant="no_pending" title="No exceptions in this view" compact>Nothing is predicted or recorded for this workspace at these clocks. This is not a statement about overall system health.</EmptyState>
+        : <EmptyState variant="empty_filtered" title="No exceptions of this type" compact>Choose “All” to see every exception at these clocks.</EmptyState>)}
     </div>
   );
 }

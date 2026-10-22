@@ -1,7 +1,8 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Download, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Download, Trash2, UserPlus } from "lucide-react";
 import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Status } from "@/components/ui";
 import { apiPost } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
@@ -25,22 +26,42 @@ export default function AdminPage() {
       apiPost("/api/v1/models/{model_id}/status", { path: { model_id: id }, body: { status, reason } }),
     onSuccess: () => { setReason(""); qc.invalidateQueries({ queryKey: [ws] }); },
   });
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState("viewer");
+  const setMember = useMutation({
+    mutationFn: (b: { email: string; role: string | null }) => apiPost("/api/v1/admin/members", { body: b }),
+    onSuccess: () => { setNewEmail(""); qc.invalidateQueries({ queryKey: [ws, "admin-members"] }); },
+  });
   if (me.isLoading) return <Loading />;
   if (!admin) return (
     <><PageHeader eyebrow="Administration" title="Administrators only" /><p className="text-sm text-muted">Sign in as Dev Tenant Admin to manage this workspace. Administrators can see members, jobs and model status, but cannot approve spend.</p></>
   );
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Administration" title="Members, jobs, models and audit" actions={
+      <PageHeader eyebrow="Administration" title="Members, jobs, models and audit" actions={<>
+        <Link href={{ pathname: "/data", query: { ws } }} className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink hover:brightness-110">
+          Import data / new workspace</Link>
         <a href={`/api/v1/admin/audit.csv?ws=${ws}`} className="inline-flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium hover:bg-surface-2" download>
-          <Download className="size-4" aria-hidden /> Export audit CSV</a>} />
+          <Download className="size-4" aria-hidden /> Export audit CSV</a></>} />
       <div className="grid gap-6 xl:grid-cols-2">
         <Card className="p-5"><Eyebrow>Members</Eyebrow>
           {members.data ? <>
             <ul className="mt-3 divide-y divide-line text-sm">{members.data.members.map((m) => (
-              <li key={m.email} className="flex items-center justify-between gap-3 py-2"><span>{m.display_name}<span className="block text-xs text-muted">{m.email}{m.is_dev_account ? " · dev account" : ""}</span></span>
-                <span className="flex items-center gap-2"><Mono>{m.role}</Mono><Status value={m.active ? "available" : "DISABLED"} /></span></li>))}</ul>
-            <p className="mt-3 text-xs text-muted">{members.data.note}</p></> : <Loading />}
+              <li key={m.email} className="flex flex-wrap items-center justify-between gap-3 py-2"><span>{m.display_name}<span className="block text-xs text-muted">{m.email}{m.is_dev_account ? " · dev account" : ""}{(m as { source?: string }).source === "oidc" ? " · managed by identity provider" : ""}</span></span>
+                <span className="flex items-center gap-2"><Mono>{m.role}</Mono><Status value={m.active ? "available" : "DISABLED"} />
+                  {(m as { source?: string }).source !== "oidc" && m.email !== me.data?.user.email && (
+                    <Button size="sm" variant="ghost" busy={setMember.isPending && setMember.variables?.email === m.email}
+                      onClick={() => setMember.mutate({ email: m.email, role: null })} aria-label={`Remove ${m.email} from this workspace`}>Remove</Button>)}</span></li>))}</ul>
+            <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={(e) => { e.preventDefault(); setMember.mutate({ email: newEmail, role: newRole }); }}>
+              <label className="min-w-[180px] flex-1 text-xs"><span className="font-medium text-ink">Add or change a member (existing account email)</span>
+                <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)} className="mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm" /></label>
+              <label className="text-xs"><span className="font-medium text-ink">Role</span>
+                <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="mt-1 block rounded-lg border border-line bg-surface px-2 py-2 text-sm">
+                  {["viewer", "planner", "approver", "tenant_admin"].map((r) => <option key={r} value={r}>{r.replace("_", " ")}</option>)}</select></label>
+              <Button type="submit" size="sm" busy={setMember.isPending && setMember.variables?.email === newEmail}><UserPlus className="size-4" aria-hidden /> Save</Button>
+            </form>
+            {setMember.error && <div className="mt-2"><ErrorState error={setMember.error} /></div>}
+            <p className="mt-3 text-xs text-muted">{members.data.note} Every change is audited and takes effect on the member's next request.</p></> : <Loading />}
         </Card>
         <Card className="p-5"><Eyebrow>Permission matrix (enforced server-side)</Eyebrow>
           {members.data && <table className="mt-3 w-full text-sm"><caption className="sr-only">Operations allowed per role</caption>
@@ -75,9 +96,10 @@ export default function AdminPage() {
                 <span className="text-xs text-muted">attempt {j.attempts}/{j.max_attempts} · {dateTime(j.updated_at)}</span><span className="ml-auto"><Status value={j.status} /></span></li>))}</ul></> : <Loading />}
         </Card>
         <Card className="p-5"><Eyebrow>Outbox (external writes)</Eyebrow>
+          <p className="mt-1 text-xs text-muted">DELIVERED means the request reached the sandbox. Whether the order matched the approval is the action's own status (reconciled or read-back mismatch).</p>
           {jobs.data && <ul className="mt-3 max-h-72 divide-y divide-line overflow-auto text-sm" tabIndex={0} aria-label="Outbox, scrollable">{jobs.data.outbox.map((o) => (
             <li key={o.operation_id} className="flex flex-wrap items-center gap-3 py-1.5"><Mono>{short(o.operation_id, 14)}</Mono>
-              <span className="text-xs text-muted">attempts {o.attempts}{o.external_ref ? ` · ${o.external_ref}` : ""}{o.last_error ? ` · ${o.last_error}` : ""}</span><span className="ml-auto"><Status value={o.status === "DELIVERED" ? "RECONCILED" : o.status} /></span></li>))}</ul>}
+              <span className="text-xs text-muted">attempts {o.attempts}{o.external_ref ? ` · ${o.external_ref}` : ""}{o.last_error ? ` · ${o.last_error}` : ""}</span><span className="ml-auto"><Status value={o.status} /></span></li>))}</ul>}
         </Card>
       </div>
 

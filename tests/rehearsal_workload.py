@@ -28,7 +28,9 @@ def counts():
     t = tenant_id("demo")
     with tenant_session(t) as s:
         out = {n: s.execute(text(f"SELECT count(*) FROM {n}")).scalar()
-               for n in ("actions", "approvals", "outbox", "audit_events", "agent_runs", "agent_events")}
+               for n in ("actions", "approvals", "outbox", "audit_events", "agent_runs", "agent_events",
+                         "purchase_order_lines")}
+    out["open_order_lines"] = out.pop("purchase_order_lines")
     with admin_engine().connect() as conn:
         out["sandbox_orders"] = conn.execute(text("SELECT count(*) FROM sandbox_erp.purchase_orders")).scalar()
     return out

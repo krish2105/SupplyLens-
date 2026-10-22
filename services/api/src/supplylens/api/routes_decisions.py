@@ -18,6 +18,7 @@ from ..config import settings
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from ..integrations import sandbox_erp
+from ..knowledge import acl
 from ..knowledge.ingest import read_version_text
 from ..knowledge.retrieve import search
 from ..planning.scenario import ScenarioInput, run_scenario
@@ -28,12 +29,15 @@ from .schemas import (
     ActionDetail,
     ActionResult,
     ActionRow,
+    CancelOpenResult,
     DocumentRow,
     DocumentVersion,
     EvidenceSearch,
     FaultInjected,
     ForecastRun,
     ModelVersion,
+    OpenOrderLine,
+    ReceiptResult,
     RunCreated,
     RunDetail,
     RunEvent,
@@ -114,10 +118,12 @@ def terms(sku_id: str, knowledge_cutoff: datetime | None = None, effective_date:
             LEFT JOIN document_versions dv ON dv.id = st.document_version_id
             LEFT JOIN documents d ON d.id = dv.document_id WHERE st.sku_id = :k ORDER BY st.supplier_id, st.valid_from"""),
             {"k": sku_id}).mappings().all()
-    return {"knowledge_cutoff": cutoff, "effective_date": eff,
-            "applicable": [t.model_dump(mode="json") for t in res.applicable],
-            "ignored": [i.model_dump() for i in res.ignored], "conflicts": res.conflicts,
-            "history": [dict(t) for t in all_terms]}
+        out = {"knowledge_cutoff": cutoff, "effective_date": eff,
+               "applicable": [t.model_dump(mode="json") for t in res.applicable],
+               "ignored": [i.model_dump() for i in res.ignored], "conflicts": res.conflicts,
+               "history": [{**dict(t), "document_version_id": str(t["document_version_id"]) if t["document_version_id"]
+                            else None} for t in all_terms]}
+        return acl.redact(s, a.role, out)
 
 
 @router.get("/documents", response_model=list[DocumentRow])
@@ -137,9 +143,8 @@ def documents(a: Actor = Depends(actor)):
 def document_version(version_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
-        v = s.execute(text("""SELECT dv.*, d.title, d.supplier_id, d.source_kind, d.allowed_roles FROM document_versions dv
-            JOIN documents d ON d.id = dv.document_id WHERE dv.id = :i"""), {"i": version_id}).mappings().first()
-        if not v or a.role not in v["allowed_roles"]:
+        v = acl.require_version(s, a.role, version_id)
+        if v is None:
             raise HTTPException(404, {"code": "not_found", "message": "document not found"})
         chunks = s.execute(text("SELECT id, ordinal, section, char_start, char_end FROM chunks WHERE version_id=:i "
                                 "ORDER BY ordinal"), {"i": version_id}).mappings().all()
@@ -236,24 +241,28 @@ def run_detail(run_id: uuid.UUID, a: Actor = Depends(actor)):
                               "FROM actions WHERE agent_run_id=:i ORDER BY created_at"), {"i": run_id}).mappings().all()
     state = r["state"] or {}
     forecast = {k: v for k, v in (state.get("forecast") or {}).items() if k != "points"}
-    return {"id": r["id"], "status": r["status"], "mode": r["mode"], "input": r["input"], "budget": r["budget"],
+    out = {"id": r["id"], "status": r["status"], "mode": r["mode"], "input": r["input"], "budget": r["budget"],
             "created_at": r["created_at"], "updated_at": r["updated_at"], "settings": state.get("settings"),
             "forecast": forecast or None, "plan": state.get("plan"), "checks": state.get("checks"),
             "terms": state.get("terms"), "upcoming_changes": state.get("upcoming_changes"),
             "needs": (state.get("needs") or {}).get("assessments"), "tool_calls": state.get("tool_calls"),
+            "scope": {**(state.get("scope") or {}), "not_assessed": (state.get("needs") or {}).get("not_assessed")},
             "actions": [dict(x) for x in acts]}
+    with tenant_session(a.tenant_id) as s:
+        return acl.redact(s, a.role, out)
 
 
-def _events(tenant_id, run_id, after: int):
+def _events(tenant_id, run_id, after: int, role: str):
     with tenant_session(tenant_id) as s:
-        return [dict(r) for r in s.execute(text("""SELECT seq, node, kind, summary, data, created_at FROM agent_events
+        rows = [dict(r) for r in s.execute(text("""SELECT seq, node, kind, summary, data, created_at FROM agent_events
             WHERE run_id=:r AND seq > :a ORDER BY seq"""), {"r": run_id, "a": after}).mappings()]
+        return acl.redact(s, role, rows)
 
 
 @router.get("/agent-runs/{run_id}/events", response_model=list[RunEvent])
 def run_events(run_id: uuid.UUID, after: int = 0, a: Actor = Depends(actor)):
     a.require("read")
-    return _events(a.tenant_id, run_id, after)
+    return _events(a.tenant_id, run_id, after, a.role)
 
 
 TERMINAL = {"SUCCEEDED", "FAILED", "CANCELLED", "REVIEW_REQUIRED", "WAITING_FOR_APPROVAL", "COMPLETE",
@@ -277,7 +286,7 @@ async def run_stream(run_id: uuid.UUID, request: Request, a: Actor = Depends(act
             # Re-check membership each poll so revocation takes effect on the open stream.
             if resolve_actor(a.user_id, tenant) is None:
                 break
-            evs = await asyncio.to_thread(_events, tenant, run_id, cursor)
+            evs = await asyncio.to_thread(_events, tenant, run_id, cursor, a.role)
             for e in evs:
                 cursor = e["seq"]
                 yield f"id: {cursor}\nevent: run_event\ndata: {json.dumps(e, default=str)}\n\n"
@@ -307,7 +316,9 @@ def list_actions(status: str | None = None, a: Actor = Depends(actor)):
 
 @router.get("/actions/{action_id}", response_model=ActionDetail)
 def action_detail(action_id: uuid.UUID, a: Actor = Depends(actor)):
-    return actions.get(a, action_id)
+    detail = actions.get(a, action_id)
+    with tenant_session(a.tenant_id) as s:
+        return acl.redact(s, a.role, json.loads(json.dumps(detail, default=str)))
 
 
 class ApproveIn(BaseModel):
@@ -357,7 +368,9 @@ def reject(action_id: uuid.UUID, body: RejectIn, a: Actor = Depends(actor),
 def edit(action_id: uuid.UUID, body: EditIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
     with tenant_session(a.tenant_id) as s:
         st = _settings(s)
-    budget = int((st.planning or {}).get("weekly_budget_minor", 0)) if st else 0
+    # fallback only for drafts whose decision predates the stored budget (edit_quantities prefers the decision's own)
+    planning = (st.planning or {}) if st else {}
+    budget = int(planning["weekly_budget_minor"]) if planning.get("weekly_budget_minor") is not None else None
     code, resp = idempotent(a, idempotency_key, f"edit:{action_id}", body.model_dump(),
                             lambda: (200, _guard(lambda: actions.edit_quantities(
                                 a, action_id, quantities=body.quantities,
@@ -374,6 +387,36 @@ def reconcile(action_id: uuid.UUID, a: Actor = Depends(actor)):
 def retry(action_id: uuid.UUID, a: Actor = Depends(actor)):
     """Re-queue a FAILED dispatch (e.g. after a connector outage) under the same idempotency key."""
     return _guard(lambda: actions.retry_failed(a, action_id))
+
+
+class ReceiptIn(BaseModel):
+    sku_id: str = Field(min_length=1, max_length=64)
+    quantity: int = Field(gt=0, le=1_000_000)
+    received_on: date
+
+
+class CancelOpenIn(BaseModel):
+    sku_id: str = Field(min_length=1, max_length=64)
+    reason: str = Field(min_length=1, max_length=500)
+
+
+@router.post("/actions/{action_id}/receipts", response_model=ReceiptResult)
+def receipt(action_id: uuid.UUID, body: ReceiptIn, a: Actor = Depends(actor), idempotency_key: str | None = Header(None)):
+    """Book units received on a reconciled order line (moves them from on-order to on-hand in the next plan)."""
+    if not idempotency_key:
+        raise HTTPException(428, {"code": "idempotency_key_required", "message": "Idempotency-Key header required"})
+    return _guard(lambda: actions.record_receipt(a, action_id, sku_id=body.sku_id, quantity=body.quantity,
+                                                 received_on=body.received_on, key=idempotency_key))
+
+
+@router.post("/actions/{action_id}/cancel-open", response_model=CancelOpenResult)
+def cancel_open(action_id: uuid.UUID, body: CancelOpenIn, a: Actor = Depends(actor)):
+    return _guard(lambda: actions.cancel_open_units(a, action_id, sku_id=body.sku_id, reason=body.reason))
+
+
+@router.get("/open-orders", response_model=list[OpenOrderLine])
+def list_open_orders(a: Actor = Depends(actor)):
+    return actions.open_orders(a)
 
 
 @router.get("/sandbox/orders", response_model=list[SandboxOrder])
@@ -398,10 +441,11 @@ class FaultIn(BaseModel):
 @router.post("/sandbox/faults", response_model=FaultInjected)
 def sandbox_fault(body: FaultIn, a: Actor = Depends(actor)):
     """Development-only fault injection to demonstrate unknown-outcome reconciliation."""
-    if not settings.dev_auth:
+    if not settings.dev_login_available:
         raise HTTPException(404, {"code": "disabled", "message": "fault injection disabled"})
     a.require("action.reconcile")
-    if body.mode not in ("timeout_after_commit", "fail_before_commit"):
+    if body.mode not in ("timeout_after_commit", "fail_before_commit", "alter_line_price", "duplicate_line",
+                         "change_unit", "change_need_by", "cancel_after_commit"):
         raise HTTPException(422, {"code": "invalid_mode", "message": "unknown fault mode"})
     actions.get(a, body.action_id)  # tenant check
     sandbox_erp.inject_fault(f"po-{body.action_id}", body.mode)

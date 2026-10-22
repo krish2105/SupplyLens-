@@ -7,7 +7,8 @@ import { ArrowDownUp } from "lucide-react";
 import { baseOption, Chart, token } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
-import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { Card, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
 import { useApi, useWs, type InventoryItem } from "@/lib/queries";
@@ -123,7 +124,12 @@ export default function InventoryPage() {
               ))}
             </tbody>
           </table>
-          {!inv.isLoading && !rows.length && <div className="p-4"><Empty title="No products match these filters" /></div>}
+          {!inv.isLoading && !inv.error && !rows.length && <div className="p-4">{items.length ? (
+            <EmptyState variant="empty_filtered" title="No matches for these filters" compact>Clear the search or health filter to see all {items.length} products.</EmptyState>
+          ) : (
+            <EmptyState variant="empty_scope" art="empty-inventory" title="No inventory records in this workspace" compact>
+              No stock snapshot is recorded on or before this date. That is missing data, not zero stock: an administrator can publish a stock file on the Data page.
+            </EmptyState>)}</div>}
         </div>
       </Card>
     </div>

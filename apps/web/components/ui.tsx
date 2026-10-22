@@ -3,6 +3,7 @@ import clsx from "clsx";
 import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { ApiError } from "@/lib/api";
+import { EmptyState } from "./illustration";
 
 export function Button({ variant = "primary", size = "md", busy, className, children, ...rest }:
   ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "ghost" | "outline" | "danger"; size?: "sm" | "md"; busy?: boolean }) {
@@ -76,7 +77,9 @@ const STATUS_TONE: Record<string, string> = {
   UNKNOWN_OUTCOME: "danger", FAILED: "danger", STALE: "danger", INFEASIBLE: "danger", REJECTED: "danger", shortage_risk: "danger",
   REVIEW_REQUIRED: "warn", PARTIAL: "warn", excess: "warn", DEGRADED: "warn", NOT_CONFIGURED: "muted", NOT_IMPLEMENTED: "muted",
   DISABLED: "muted", unavailable: "muted", no_sales_data: "muted", CLOSED_WITHOUT_ORDER: "muted", NO_ACTION: "muted",
-  OPEN: "danger", ACKNOWLEDGED: "warn", RESOLVED: "ok", DELIVERED: "ok", PENDING: "info", NONE: "muted",
+  OPEN: "danger", ACKNOWLEDGED: "warn", RESOLVED: "ok", DELIVERED: "info", PENDING: "info", NONE: "muted",
+  READBACK_MISMATCH: "danger", CONFIRMED: "warn", RECEIVED: "ok", CANCELLED: "muted", VALIDATED: "info", PUBLISHED: "ok",
+  UPLOADED: "muted", LOCAL_CHECK: "info", SUPERSEDED: "muted", CONFIGURED: "info",
 };
 const TONE_CLASS: Record<string, string> = {
   ok: "bg-accent-soft text-accent", warn: "bg-risk-soft text-risk", danger: "bg-danger-soft text-danger",
@@ -127,13 +130,32 @@ export function Empty({ title, children, action }: { title: string; children?: R
   );
 }
 
+/** Request failure: offline, denied and server errors read differently and keep a reference the user can quote. */
 export function ErrorState({ error, retry }: { error: unknown; retry?: () => void }) {
-  const msg = error instanceof ApiError ? `${error.message} (${error.code})` : error instanceof Error ? error.message : "Request failed";
+  const api = error instanceof ApiError ? error : null;
+  const retryBtn = retry && <Button size="sm" variant="outline" onClick={retry}>Try again</Button>;
+  if (api?.offline) {
+    return <EmptyState variant="offline" title="Connection interrupted" action={retryBtn} compact>
+      {api.message} Nothing you entered on this page has been discarded.
+    </EmptyState>;
+  }
+  if (api && (api.status === 403 || api.code === "forbidden")) {
+    return <EmptyState variant="permission_denied" title="You do not have access to this" compact>
+      Your role in this workspace does not allow this view or action. Ask a workspace administrator if you need it.
+    </EmptyState>;
+  }
+  if (api && api.status === 401) {
+    return <EmptyState variant="error" title="Your session has ended" compact
+      action={<a className="text-sm font-medium text-accent underline" href="/login">Sign in again</a>}>
+      Sign in again to continue; unsaved inputs on this page are kept in this browser.
+    </EmptyState>;
+  }
+  const msg = api ? api.message : error instanceof Error ? error.message : "Request failed";
   return (
     <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
       <AlertTriangle className="size-4" aria-hidden />
-      <span className="flex-1">{msg}</span>
-      {retry && <Button size="sm" variant="outline" onClick={retry}>Try again</Button>}
+      <span className="flex-1">{msg}{api && <> <span className="opacity-75">({api.code}{api.reference ? ` · ref ${api.reference.slice(0, 12)}` : ""})</span></>}</span>
+      {retryBtn}
     </div>
   );
 }

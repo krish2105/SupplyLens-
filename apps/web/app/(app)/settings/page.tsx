@@ -2,6 +2,7 @@
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { Card, ErrorState, Eyebrow, Loading, Mono, PageHeader, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { useApi, useMe } from "@/lib/queries";
 import { dateTime } from "@/lib/format";
 
@@ -55,6 +56,11 @@ export default function SettingsPage() {
           </ul>
         )}
         <p className="mt-3 text-xs text-muted">Statuses come from live checks at page load. Nothing is shown as connected without a verified connection.</p>
+        {integ.data && !integ.data.some((i) => /business central|sap/i.test(i.name) && ["VERIFIED_LOCALLY", "CONFIGURED"].includes(i.status)) && (
+          <div className="mt-4"><EmptyState variant="first_run" art="empty-integrations" title="No live ERP connection is configured" compact>
+            Purchase orders go only to the local sandbox. The Business Central and SAP adapters are not implemented; supported ways
+            to bring data in today are the CSV templates on the Data page.</EmptyState></div>
+        )}
       </Card>
       <Card className="p-5">
         <Eyebrow>Audit trail (append-only for the application)</Eyebrow>

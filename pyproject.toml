@@ -27,10 +27,16 @@ dependencies = [
   "opentelemetry-exporter-otlp-proto-http",
   "opentelemetry-instrumentation-fastapi",
   "opentelemetry-instrumentation-httpx",
+  "pyjwt[crypto]>=2.9",
 ]
 
 [dependency-groups]
-dev = ["pytest", "pytest-timeout", "ruff"]
+dev = [
+    "pillow>=13.0.0",
+    "pytest",
+    "pytest-timeout",
+    "ruff",
+]
 
 [build-system]
 requires = ["hatchling"]

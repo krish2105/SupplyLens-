@@ -17,6 +17,12 @@ export async function getJson<T = any>(page: Page, path: string, ws = "uci-resea
 export async function expectReconciled(page: Page, actionId: string, ws = "demo") {
   await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/actions/${actionId}`, ws)).status,
     { timeout: 30_000, message: `action ${actionId} should reach RECONCILED` }).toBe("RECONCILED");
+  // keep the reference case repeatable: release this test order's open units (audited; see global-setup.ts)
+  const lines = await getJson<{ action_id: string; sku_id: string; open_units: number }[]>(page, "/api/v1/open-orders", ws);
+  for (const l of lines.filter((x) => x.action_id === actionId && x.open_units > 0)) {
+    await page.request.post(`/api/v1/actions/${actionId}/cancel-open`, { headers: { "X-SupplyLens-Tenant": ws, "X-Requested-With": "supplylens" },
+      data: { sku_id: l.sku_id, reason: "e2e: release test order" } });
+  }
 }
 
 const REFERENCE_RUN = {

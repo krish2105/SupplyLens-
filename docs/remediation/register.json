@@ -1,0 +1,405 @@
+{
+  "audit_snapshot": "CTO audit of the session-2 snapshot (46/18/12/4 acceptance)",
+  "revalidated_at_commit": "1636381",
+  "revalidated_on": "2026-10-22",
+  "findings": [
+    {
+      "id": "F01",
+      "title": "Seasonal-naive point forecasts step backwards after the first week",
+      "priority": "Block research claims",
+      "audit_evidence": [
+        "ml/supplylens_ml/baselines.py:25-27",
+        "ml/supplylens_ml/models.py:29-31",
+        "tests/test_seasonal_naive.py"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "baselines.py and models.seasonal_naive_panel index k seasons back: history 1..70 gives week 2 = 57..63 (probe run at 1636381).",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F02",
+      "title": "Forecast window admits days before the selected decision date",
+      "priority": "High",
+      "audit_evidence": [
+        "optimisation/supplylens_opt/replenishment.py:43-67",
+        "services/api/src/supplylens/planning/scenario.py:45-69",
+        "services/api/src/supplylens/agent/graph.py:117-118"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "replenishment.assess: leadtime basis takes the first N forecast rows regardless of decision_date; other bases and the stockout loop have no lower bound.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F03",
+      "title": "The Safety buffer slider has no effect under the default policy",
+      "priority": "Medium",
+      "audit_evidence": [
+        "optimisation/supplylens_opt/replenishment.py:51-58",
+        "services/api/src/supplylens/planning/scenario.py:55-69",
+        "apps/web/app/(app)/scenarios/page.tsx:20-25"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "safety_days only affects basis q50_plus_safety; the default is now leadtime_demand (session 3), so the Scenario slider still has no effect by default.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F04",
+      "title": "Physical capacity is dropped before optimization and validation",
+      "priority": "High",
+      "audit_evidence": [
+        "optimisation/supplylens_opt/replenishment.py:59-60",
+        "services/api/src/supplylens/planning/scenario.py:74-78",
+        "services/api/src/supplylens/agent/graph.py:250-254",
+        "optimisation/supplylens_opt/planner.py:39-42,133-134",
+        "optimisation/supplylens_opt/validator.py:42-43"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "scenario.py and agent/graph.py build Need(...) without capacity_units; solver and validator never receive capacity.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F05",
+      "title": "Idempotency receipt is written after the side effect",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/api/deps.py:61-80",
+        "apps/web/lib/api.ts:24"
+      ],
+      "revalidation": "partially corrected",
+      "revalidation_note": "Session 3 added an atomic INSERT..ON CONFLICT claim before fn (DEF-02). Remaining: work committed before the DONE update re-runs after a crash once the claim lease lapses; agent-run/scenario/forecast retries in the web client use a new key per attempt.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F06",
+      "title": "ERP read-back verification does not compare all approved line fields",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/actions/service.py:276-286"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "actions.service.verify compares supplier, total/currency and a SET of (sku, quantity): prices, units and duplicate lines are not compared.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F07",
+      "title": "Expired approval prevents reconciliation of a possibly committed prior attempt",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/actions/service.py:289-321"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "_dispatch checks approval expiry before the lookup-first retry, so a committed prior attempt can be marked STALE without reading the ERP.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "F08",
+      "title": "Explicit zero purchasing budget is replaced by the workspace budget",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/agent/graph.py:119-123",
+        "services/api/src/supplylens/api/routes_decisions.py:176-183"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "agent/graph.py accept(): int(inp.get('budget_minor') or default) turns an explicit 0 into the workspace budget.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S09",
+      "title": "Development authentication and insecure deployment defaults must not be exposed",
+      "priority": "Deployment blocker",
+      "audit_evidence": [
+        "services/api/src/supplylens/config.py:22-23",
+        "services/api/src/supplylens/api/routes_core.py:23-46",
+        "docker-compose.yml"
+      ],
+      "revalidation": "partially corrected",
+      "revalidation_note": "config refuses default secrets only when dev_auth is false; dev_auth defaults to true with no environment profile; compose publishes 8000/3100 on all interfaces.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S10",
+      "title": "Document-level permissions are not consistently enforced on indirect access paths",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/api/routes_ops.py:149-155",
+        "services/api/src/supplylens/knowledge/retrieve.py:21-26",
+        "services/api/src/supplylens/agent/graph.py:169-181",
+        "services/api/migrations/versions/0004_clause_labels.py"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "GET /documents/versions/{id}/labels has no allowed_roles check; agent citation lookup and evidence packets read chunks without a central document-ACL helper.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S11",
+      "title": "Approval freshness is not fully revalidated at dispatch",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/actions/service.py:97-154,261-273,289-321"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "_approval_valid checks payload hash and expiry only; terms, budget and approver permission are not rechecked before a fresh send.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S12",
+      "title": "Reconciled orders are not integrated into the next planning inventory position",
+      "priority": "High",
+      "audit_evidence": [
+        "services/api/src/supplylens/actions/service.py:_confirm",
+        "services/api/src/supplylens/planning/scenario.py:inventory_positions query",
+        "services/api/src/supplylens/agent/graph.py:gather",
+        "services/api/src/supplylens/simulation/uci_ops.py"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "No purchase-order/receipt ledger; _confirm does not change on_order, so the next plan ignores confirmed open supply.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S13",
+      "title": "The temporal RAG ablation changes two factors simultaneously",
+      "priority": "High for research attribution",
+      "audit_evidence": [
+        "evaluations/retrieval_study.py:132-134",
+        "docs/research/results.md:R2"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "retrieval_study R2 temporal_off vs temporal_on changes mode AND rerank at once.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S14",
+      "title": "Model resolution ignores dataset_id and can select retired versions by family",
+      "priority": "High before multi-dataset use",
+      "audit_evidence": [
+        "services/api/src/supplylens/forecasting/service.py:44-72"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "resolve_model(family) ignores dataset_id and status; it can return a RETIRED or other-dataset model.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S15",
+      "title": "Navigation and local state can lose or misrepresent planning context",
+      "priority": "High UI correctness",
+      "audit_evidence": [
+        "apps/web/app/(app)/layout.tsx:sidebar and mobile links",
+        "apps/web/app/(app)/policies/page.tsx:25-40",
+        "apps/web/app/(app)/scenarios/page.tsx:38-54",
+        "apps/web/lib/state.ts"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "No decision-context fingerprint in the web state; scenario baseline/draft compatibility is not checked.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S16",
+      "title": "UI badges and summaries overstate verification",
+      "priority": "Medium/high trust",
+      "audit_evidence": [
+        "apps/web/app/(app)/policies/page.tsx:76-81",
+        "apps/web/app/(app)/admin/page.tsx:outbox status mapping",
+        "apps/web/app/(app)/forecast/page.tsx:Forecast run card",
+        "apps/web/app/(app)/research/page.tsx:67-68",
+        "services/api/src/supplylens/api/routes_decisions.py:forecast interval metadata"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "Policies maps mode=='hybrid' to a VERIFIED_LOCALLY badge; Admin maps outbox DELIVERED to RECONCILED; research headlines are hardcoded strings.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S17",
+      "title": "Chart theme refresh and keyboard/overlay behavior need targeted tests",
+      "priority": "Medium UI/accessibility",
+      "audit_evidence": [
+        "apps/web/components/chart.tsx:baseOption and effects",
+        "apps/web/app/(app)/forecast/page.tsx:StudyPanel useMemo",
+        "apps/web/app/(app)/research/page.tsx:39-59",
+        "apps/web/app/(app)/layout.tsx:ThemeSwitch",
+        "docs/images/forecast-lab.png",
+        "docs/images/overview-light.png"
+      ],
+      "revalidation": "partially corrected",
+      "revalidation_note": "Session 3 added focus/a11y suites; theme radio group still lacks arrow-key navigation; chart theme refresh untested.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S18",
+      "title": "Onboarding and operational administration remain developer-driven",
+      "priority": "Product/enterprise gap",
+      "audit_evidence": [
+        "apps/web/app/(app)/data/page.tsx",
+        "apps/web/app/(app)/admin/page.tsx",
+        "apps/web/app/(app)/settings/page.tsx",
+        "services/api/src/supplylens/api/routes_core.py"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "No upload/map/validate/publish API or UI; data admission is read-only; admin cannot change memberships.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S19",
+      "title": "CI omits browser journeys and acceptance claims require requalification",
+      "priority": "Release gate",
+      "audit_evidence": [
+        ".github/workflows/ci.yml",
+        "PROJECT_STATUS.md",
+        "docs/acceptance/acceptance_register.csv",
+        "artifacts/reports/pytest-final.txt"
+      ],
+      "revalidation": "partially corrected",
+      "revalidation_note": "CI now has lint, secret/dependency scans, backend, contracts, e2e, PITR and compose jobs (session 3). Acceptance claims predating these findings need requalification.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S20",
+      "title": "Forecast and agent evidence is narrower than the intended product claim",
+      "priority": "Research protocol",
+      "audit_evidence": [
+        "docs/research/results.md",
+        "ml/configs/forecast_study_v1.json",
+        "evaluations/simulation_study.py",
+        "services/api/src/supplylens/agent/graph.py:1-10"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "F1 uses one test window and is built on the F01 baseline; S1 policy choices were informed by test results.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S21",
+      "title": "The current planning grain and fixed limits are a pilot slice, not multi-site enterprise planning",
+      "priority": "Scalability/product scope",
+      "audit_evidence": [
+        "services/api/src/supplylens/agent/graph.py:129-137",
+        "services/api/src/supplylens/agent/graph.py:gather inventory query",
+        "services/api/src/supplylens/planning/scenario.py:inventory query",
+        "services/api/src/supplylens/knowledge/retrieve.py:vector query"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "agent/graph.py plan_steps: skus[:60] silently truncates; queries collapse location.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    },
+    {
+      "id": "S22",
+      "title": "Non-JSON API errors and failed session checks are not fully handled",
+      "priority": "Medium reliability",
+      "audit_evidence": [
+        "apps/web/lib/api.ts:26-29",
+        "apps/web/app/(app)/layout.tsx:70-74"
+      ],
+      "revalidation": "confirmed",
+      "revalidation_note": "apps/web/lib/api.ts JSON.parse on a non-JSON body (HTML 502) throws SyntaxError instead of ApiError; no request id surfaced.",
+      "code_status": "open",
+      "verification": "not run",
+      "tests": [],
+      "requirements": [],
+      "resolution": "",
+      "blockers": ""
+    }
+  ]
+}

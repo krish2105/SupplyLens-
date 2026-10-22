@@ -3,6 +3,7 @@ import { defineConfig, devices } from "@playwright/test";
 // Expects the API (8000), worker and web (3100) to be running: see README "Run locally".
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   timeout: 60_000,
   retries: 0,
   reporter: [["list"], ["json", { outputFile: "../../artifacts/reports/e2e-results.json" }]],

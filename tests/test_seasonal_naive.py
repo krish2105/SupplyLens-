@@ -47,3 +47,33 @@ def test_pinball_and_coverage():
     y = np.array([0.0, 10.0])
     assert pinball(y, np.array([0.0, 0.0]), 0.9) == 4.5
     assert coverage(y, np.array([0, 0]), np.array([5, 5])) == 0.5
+
+
+def test_every_horizon_repeats_the_last_observed_week_not_older_weeks():
+    """Audit F01: with changing weekly levels, weeks 2..4 must still repeat the LAST week (64..70), not 57..63 etc."""
+    s = pd.Series(np.arange(1, 71, dtype=float), index=pd.date_range("2011-01-03", periods=70, freq="D"))
+    f = seasonal_naive(s, horizon=28)
+    expected = [64, 65, 66, 67, 68, 69, 70] * 4
+    assert list(f["q50"]) == expected
+
+
+def test_horizon_not_a_multiple_of_season_and_single_season_history():
+    s = pd.Series([1.0, 2, 3, 4, 5, 6, 7], index=pd.date_range("2011-01-03", periods=7, freq="D"))
+    f = seasonal_naive(s, horizon=10)
+    assert list(f["q50"]) == [1, 2, 3, 4, 5, 6, 7, 1, 2, 3]
+
+
+def test_panel_seasonal_naive_matches_the_series_baseline():
+    from supplylens_ml.models import seasonal_naive_panel
+
+    class P:
+        pass
+    y = np.stack([np.arange(1, 71, dtype=float), np.arange(70, 0, -1, dtype=float)], axis=1)
+    panel = P()
+    panel.y = y
+    out = seasonal_naive_panel(panel, i=69, horizon=28)
+    assert list(out[0, :, 1]) == [64, 65, 66, 67, 68, 69, 70] * 4
+    assert list(out[1, :, 1]) == [7, 6, 5, 4, 3, 2, 1] * 4
+    # an earlier origin uses only data up to it
+    out_early = seasonal_naive_panel(panel, i=34, horizon=9)
+    assert list(out_early[0, :, 1]) == [29, 30, 31, 32, 33, 34, 35, 29, 30]

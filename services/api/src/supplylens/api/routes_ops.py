@@ -15,6 +15,7 @@ from sqlalchemy import text
 from ..authz import MATRIX, Actor
 from ..config import REPO_ROOT
 from ..db import control_session, tenant_session
+from ..knowledge import acl
 from .deps import actor, csrf_guard, idempotent
 from .routes_core import INVENTORY_SQL
 from .schemas import ClauseLabel, Exceptions, Jobs, Members, ModelStatusChanged, Value
@@ -82,10 +83,11 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
 def members(a: Actor = Depends(actor)):
     a.require("admin.read")
     with control_session() as s:
-        rows = s.execute(text("""SELECT u.email, u.display_name, u.active, u.is_dev_account, m.role, m.created_at FROM memberships m
+        rows = s.execute(text("""SELECT u.email, u.display_name, u.active, u.is_dev_account, m.role, m.source, m.created_at FROM memberships m
             JOIN users u ON u.id = m.user_id WHERE m.tenant_id = :t ORDER BY m.role, u.email"""), {"t": a.tenant_id}).mappings().all()
     return {"members": [dict(r) for r in rows], "role_matrix": {k: sorted(v) for k, v in MATRIX.items()},
-            "note": "Membership changes are made by the identity integration (not configured) or owner tooling; read-only here."}
+            "note": ("Administrators add, change and remove local memberships here. Memberships marked 'oidc' come from "
+                     "identity-provider role claims and change only in the provider.")}
 
 
 @router.get("/admin/jobs", response_model=Jobs)
@@ -158,6 +160,8 @@ def audit_csv(a: Actor = Depends(actor)):
 def labels(version_id: uuid.UUID, a: Actor = Depends(actor)):
     a.require("read")
     with tenant_session(a.tenant_id) as s:
+        if acl.require_version(s, a.role, version_id) is None:      # labels quote the document (audit S10)
+            raise HTTPException(404, {"code": "not_found", "message": "document not found"})
         rows = s.execute(text("""SELECT category, char_start, char_end, text, source FROM clause_labels WHERE version_id=:v
             ORDER BY category, char_start"""), {"v": version_id}).mappings().all()
     return [dict(r) for r in rows]
