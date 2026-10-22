@@ -11,6 +11,7 @@ from ..authz import Actor
 from ..onboarding import csv_import as ci
 from ..onboarding import service as onb
 from .deps import actor, csrf_guard
+from .ratelimit import limit
 from .schemas import (
     ImportBatch,
     ImportBatchRow,
@@ -51,7 +52,8 @@ def batches(a: Actor = Depends(actor)):
 
 
 @router.post("/onboarding/batches", response_model=ImportBatch, status_code=201)
-async def upload(kind: str = Form(...), rights: str = Form(...), file: UploadFile = File(...), a: Actor = Depends(actor)):
+async def upload(kind: str = Form(...), rights: str = Form(...), file: UploadFile = File(...),
+                 a: Actor = Depends(limit("import_upload", 20))):
     data = await file.read(ci.MAX_BYTES + 1)
     return _guard(lambda: onb.upload(a, kind=kind, file_name=file.filename or "upload.csv", data=data, rights=rights))
 
@@ -66,12 +68,12 @@ class MappingIn(BaseModel):
 
 
 @router.post("/onboarding/batches/{batch_id}/validate", response_model=ImportBatch)
-def validate(batch_id: uuid.UUID, body: MappingIn, a: Actor = Depends(actor)):
+def validate(batch_id: uuid.UUID, body: MappingIn, a: Actor = Depends(limit("import_validate", 30))):
     return _guard(lambda: onb.validate_batch(a, batch_id, body.mapping))
 
 
 @router.post("/onboarding/batches/{batch_id}/publish", response_model=ImportBatch)
-def publish(batch_id: uuid.UUID, a: Actor = Depends(actor)):
+def publish(batch_id: uuid.UUID, a: Actor = Depends(limit("import_publish", 10))):
     return _guard(lambda: onb.publish(a, batch_id))
 
 
@@ -84,7 +86,7 @@ class WorkspaceIn(BaseModel):
 
 
 @router.post("/onboarding/workspaces", response_model=WorkspaceCreated, status_code=201)
-def create_workspace(body: WorkspaceIn, a: Actor = Depends(actor)):
+def create_workspace(body: WorkspaceIn, a: Actor = Depends(limit("workspace_create", 5))):
     return _guard(lambda: onb.create_workspace(a, slug=body.slug, name=body.name, currency=body.currency,
                                                weekly_budget_minor=body.weekly_budget_minor,
                                                coverage_days=body.coverage_days))
@@ -96,6 +98,6 @@ class MemberIn(BaseModel):
 
 
 @router.post("/admin/members", response_model=MembershipChanged)
-def set_member(body: MemberIn, a: Actor = Depends(actor)):
+def set_member(body: MemberIn, a: Actor = Depends(limit("membership", 30))):
     """Add, change (role) or remove (role null) a locally managed membership in this workspace."""
     return _guard(lambda: onb.set_membership(a, email=body.email, role=body.role))

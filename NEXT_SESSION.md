@@ -26,8 +26,8 @@ Keycloak needs about 700 MB of the Docker VM; on a 2 GB Colima VM run it with a 
 5. **Confirmatory forecast test** on data no protocol has seen (D-042).
 
 ## Hosted demo
-https://supplylens-self.vercel.app — rebuild and redeploy steps in `docs/operations/hosted-demo.md`. After code changes:
-`uv run python scripts/vercel/build_api.py --storage build/hosted-storage && vercel deploy --prod`.
+https://supplylens-self.vercel.app — every push to `main` deploys it (Vercel Git integration); schema changes and data
+reloads are in `docs/operations/hosted-demo.md`.
 
 ## Things that are easy to get wrong
 - Never mention any AI assistant in commits or files (owner instruction). Commit as

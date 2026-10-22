@@ -17,8 +17,38 @@ from ..db import control_session, tenant_session
 from ..idempotency import current_key
 
 COOKIE = "sl_session"
-SESSION_MAX_AGE = 60 * 60 * 12
+SESSION_MAX_AGE = 60 * 60 * 12          # absolute lifetime of any session (signed into the cookie)
+DEV_IDLE_SECONDS = 60 * 60 * 2          # a development session unused this long ends (ASVS V3 idle timeout)
+TOUCH_SECONDS = 60                      # how often last use is written back, at most
+DEV_SUBJECT = "development-account"     # auth_sessions.oidc_subject for development sign-ins
 serializer = URLSafeTimedSerializer(settings.session_secret, salt="supplylens-session")
+
+
+def start_dev_session(user_id: uuid.UUID) -> str:
+    """Server-side record for a development sign-in, so sign-out and deactivation end it (Phase 2, SEC-P2-02)."""
+    sid = uuid.uuid4()
+    with control_session() as s:
+        s.execute(text("INSERT INTO auth_sessions (id, user_id, oidc_subject) VALUES (:i, :u, :s)"),
+                  {"i": sid, "u": user_id, "s": DEV_SUBJECT})
+    return serializer.dumps({"uid": str(user_id), "sid": str(sid), "kind": "dev"})
+
+
+def _confirm_dev_session(sid: uuid.UUID, uid: uuid.UUID) -> None:
+    with control_session() as s:
+        row = s.execute(text("""SELECT user_id, revoked_at, now() - checked_at AS idle FROM auth_sessions
+            WHERE id = :i AND oidc_subject = :s"""), {"i": sid, "s": DEV_SUBJECT}).first()
+    if row is None or row.revoked_at is not None or row.user_id != uid:
+        raise HTTPException(401, {"code": "session_revoked", "message": "session ended; sign in again"})
+    idle = row.idle.total_seconds()
+    if idle > DEV_IDLE_SECONDS or idle > TOUCH_SECONDS:
+        with control_session() as s:          # committed before any 401 is raised
+            if idle > DEV_IDLE_SECONDS:
+                s.execute(text("UPDATE auth_sessions SET revoked_at = now(), revoked_reason = 'idle timeout' WHERE id = :i"),
+                          {"i": sid})
+            else:
+                s.execute(text("UPDATE auth_sessions SET checked_at = now() WHERE id = :i"), {"i": sid})
+    if idle > DEV_IDLE_SECONDS:
+        raise HTTPException(401, {"code": "session_expired", "message": "session expired after inactivity; sign in again"})
 
 
 def current_user_id(request: Request) -> uuid.UUID:
@@ -29,12 +59,17 @@ def current_user_id(request: Request) -> uuid.UUID:
         data = serializer.loads(raw, max_age=SESSION_MAX_AGE)
     except BadSignature:
         raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"}) from None
-    if data.get("sid"):
+    if not data.get("sid"):
+        # stateless sessions (before Phase 2) could not be revoked: they are no longer accepted
+        raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"})
+    if data.get("kind") == "dev":
+        if not settings.dev_login_available:
+            raise HTTPException(401, {"code": "session_invalid", "message": "development sessions are not accepted here"})
+        _confirm_dev_session(uuid.UUID(data["sid"]), uuid.UUID(data["uid"]))
+    else:
         # identity-provider session: re-confirmed with the provider periodically (deactivation ends it)
         from .oidc import confirm_session
         confirm_session(uuid.UUID(data["sid"]))
-    elif not settings.dev_login_available:
-        raise HTTPException(401, {"code": "session_invalid", "message": "development sessions are not accepted here"})
     return uuid.UUID(data["uid"])
 
 

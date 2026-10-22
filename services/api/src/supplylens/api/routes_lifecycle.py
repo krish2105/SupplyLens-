@@ -57,6 +57,9 @@ def acknowledge(alert_id: uuid.UUID, body: AckIn, a: Actor = Depends(actor), ide
             n = s.execute(text("UPDATE alerts SET status='ACKNOWLEDGED', acknowledged_by=:u WHERE id=:i AND status='OPEN'"),
                           {"u": a.user_id, "i": alert_id}).rowcount
             if not n:
+                exists = s.execute(text("SELECT 1 FROM alerts WHERE id=:i"), {"i": alert_id}).first()
+                if not exists:      # another workspace's alert looks exactly like a missing one
+                    raise HTTPException(404, {"code": "not_found", "message": "alert not found"})
                 raise HTTPException(409, {"code": "invalid_state", "message": "only an OPEN alert can be acknowledged"})
             s.execute(text("""INSERT INTO audit_events (tenant_id, actor_id, action, entity, entity_id, detail)
                 VALUES (:t,:u,'alert.acknowledged','alert',:e,CAST(:d AS jsonb))"""),

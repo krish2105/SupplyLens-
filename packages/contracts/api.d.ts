@@ -1559,6 +1559,11 @@ export interface components {
         AuthConfig: {
             /** Dev Login */
             dev_login: boolean;
+            /**
+             * Disposable
+             * @default false
+             */
+            disposable: boolean;
             /** Environment */
             environment: string;
             /** Oidc */

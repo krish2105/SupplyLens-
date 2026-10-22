@@ -20,29 +20,33 @@ jobs:
   lint:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - run: uv sync --frozen
       - name: lockfile matches pyproject
         run: uv lock --check
+      - name: hosted API dependency pins match uv.lock
+        run: python3 scripts/vercel/build_api.py --check
       - name: ruff (correctness, imports, bugbear, security rules)
         run: uv run ruff check .
 
   secrets-and-dependencies:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with: { fetch-depth: 0 }          # gitleaks scans history, not only the tip
       - name: secret scan (gitleaks, full history)
         run: |
-          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz gitleaks
+          curl -sSfL -o gitleaks.tar.gz https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz
+          echo "5bc41815076e6ed6ef8fbecc9d9b75bcae31f39029ceb55da08086315316e3ba  gitleaks.tar.gz" | sha256sum -c -   # pinned release checksum
+          tar -xzf gitleaks.tar.gz gitleaks
           ./gitleaks detect --source . --redact --verbose --config .gitleaks.toml
-      - uses: astral-sh/setup-uv@v6
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - name: Python dependency advisories (pip-audit against the locked set)
         run: |
           uv export --frozen --no-hashes --no-emit-project --no-emit-workspace | sed 's/+cpu//' > /tmp/requirements.txt   # torch's local version tag is not a PyPI version
-          uvx pip-audit --requirement /tmp/requirements.txt --no-deps --disable-pip --strict
-      - uses: actions/setup-node@v4
+          uvx pip-audit==2.10.1 --requirement /tmp/requirements.txt --no-deps --disable-pip --strict
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 24 }
       - name: JavaScript dependency advisories (production tree, high and above)
         run: npm --prefix apps/web audit --omit=dev --audit-level=high
@@ -56,8 +60,8 @@ jobs:
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - run: uv sync --frozen
       - name: databases and roles
         run: |
@@ -68,15 +72,15 @@ jobs:
       - name: unit, integration, security-matrix, contract and BUS-020 rehearsal tests
         run: uv run pytest -q --junitxml=artifacts/reports/pytest-junit.xml
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: { name: pytest-junit, path: artifacts/reports/pytest-junit.xml, if-no-files-found: ignore }
 
   contracts-and-web:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 24 }
       - run: uv sync --frozen && npm --prefix apps/web ci
       - name: API schema, generated types and web client agree
@@ -97,10 +101,14 @@ jobs:
       SUPPLYLENS_DATABASE_URL: postgresql+psycopg://supplylens_app:supplylens_app_dev@localhost:5432/supplylens
       SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens
       SUPPLYLENS_MIGRATION_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens
+      # This job's stack is disposable: the browser suite may cancel its own test orders (apps/web/e2e/disposable.ts)
+      SUPPLYLENS_E2E_DISPOSABLE: "true"
+      SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE: "1"
+      SUPPLYLENS_SIGN_IN_PER_MINUTE: "100000"
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 24 }
       - run: uv sync --frozen && npm --prefix apps/web ci
       - name: database, migrations, workspaces and the synthetic browser-test fixture
@@ -123,7 +131,7 @@ jobs:
       - name: end-to-end, resilience, accessibility and Web Vitals suites
         run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-reports
           path: |
@@ -140,8 +148,8 @@ jobs:
   pitr-drill:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
       - run: uv sync --frozen
       - name: PostgreSQL server binaries with pgvector
         run: |
@@ -151,14 +159,14 @@ jobs:
           echo "PGBIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)" >> "$GITHUB_ENV"
       - name: point-in-time recovery drill (ARC-06, BUS-014, BUS-020)
         run: ./scripts/ci_annotate.sh ./scripts/pitr_drill.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: { name: pitr-report, path: artifacts/reports/pitr_drill_*.json, if-no-files-found: ignore }
 
   compose-smoke:
     needs: [backend]
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: build and start the full stack
         run: |
           docker compose up -d --build
@@ -183,17 +191,17 @@ jobs:
     if: always()
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with: { name: pytest-junit, path: artifacts/reports }
         continue-on-error: true
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with: { name: e2e-reports, path: . }
         continue-on-error: true
       - name: link acceptance criteria to this run's results
         run: python3 scripts/acceptance_evidence.py --junit artifacts/reports/pytest-junit.xml --playwright artifacts/reports/e2e-results.json
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: acceptance-evidence
           path: |

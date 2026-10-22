@@ -1,6 +1,7 @@
 """Auth, workspace overview, datasets, inventory, warehouse and sales endpoints."""
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import date
 
@@ -14,7 +15,15 @@ from ..authz import Actor
 from ..config import settings
 from ..db import control_session, tenant_session
 from ..integrations import sandbox_erp
-from .deps import COOKIE, SESSION_MAX_AGE, actor, csrf_guard, current_user_id, serializer
+from .deps import (
+    COOKIE,
+    SESSION_MAX_AGE,
+    actor,
+    csrf_guard,
+    current_user_id,
+    serializer,
+    start_dev_session,
+)
 from .schemas import (
     AuditRow,
     AuthConfig,
@@ -31,6 +40,7 @@ from .schemas import (
 )
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
+log = logging.getLogger("supplylens.api")
 
 
 class DevLogin(BaseModel):
@@ -60,7 +70,7 @@ def dev_login(body: DevLogin, response: Response):
         raise HTTPException(401, {"code": "unknown_user", "message": "unknown development account"})
     if settings.environment == "demo":
         demo.release_stale_orders()          # P0-SEC-01: the next visitor starts from the reference state
-    response.set_cookie(COOKIE, serializer.dumps({"uid": str(uid)}), max_age=SESSION_MAX_AGE, httponly=True,
+    response.set_cookie(COOKIE, start_dev_session(uid), max_age=SESSION_MAX_AGE, httponly=True,
                         samesite="lax", secure=settings.cookie_secure, path="/")
     return {"ok": True}
 
@@ -82,7 +92,8 @@ def logout(request: Request, response: Response):
 def auth_config():
     """What the sign-in page may offer. Never reveals secrets."""
     return {"environment": settings.environment, "dev_login": settings.dev_login_available,
-            "oidc": settings.oidc_enabled, "oidc_login_url": "/api/v1/auth/oidc/login" if settings.oidc_enabled else None}
+            "oidc": settings.oidc_enabled, "oidc_login_url": "/api/v1/auth/oidc/login" if settings.oidc_enabled else None,
+            "disposable": settings.e2e_disposable and settings.environment in ("development", "test")}
 
 
 @router.get("/me", response_model=Me)
@@ -254,8 +265,9 @@ def integrations(a: Actor = Depends(actor)):
     a.require("read")
     try:
         sbx = sandbox_erp.health()
-    except Exception as e:
-        sbx = {"status": "DEGRADED", "error": str(e)}
+    except Exception:
+        log.exception("sandbox ERP health check failed")
+        sbx = {"status": "DEGRADED", "error": "the sandbox ERP is not reachable (details in the server log)"}
     from ..knowledge.embed import embed
     emb = embed(["health check"], timeout=5)
     return [

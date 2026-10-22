@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import uuid
 from datetime import UTC, datetime
 
@@ -17,6 +18,20 @@ class OnboardingError(Exception):
     def __init__(self, code: str, message: str, http: int = 422):
         super().__init__(message)
         self.code, self.http = code, http
+
+
+log = logging.getLogger("supplylens.onboarding")
+
+
+def _refusal(e: Exception, generic: str) -> str:
+    """Text safe to show the caller (Phase 2, SEC-P2-04). Only messages our own SECURITY DEFINER functions raise on purpose
+    (SQLSTATE P0001, RAISE EXCEPTION) are passed through; any other database error is logged and replaced, so constraint
+    names, SQL and driver details never reach the client."""
+    orig = getattr(e, "orig", e)
+    if getattr(orig, "sqlstate", None) == "P0001":
+        return str(orig).split("\n")[0]
+    log.warning("database refused an onboarding change: %s", str(orig).split("\n")[0])
+    return generic
 
 
 def _audit(s, actor: Actor, action: str, entity_id, detail: dict) -> None:
@@ -37,10 +52,9 @@ def create_workspace(actor: Actor, *, slug: str, name: str, currency: str, weekl
         with control_session() as s:
             s.execute(text("SELECT sl_create_workspace(:i, :s, :n, :u)"), {"i": wid, "s": slug, "n": name, "u": actor.user_id})
     except Exception as e:
-        msg = str(getattr(e, "orig", e)).split("\n")[0]
-        if "tenants_slug_key" in msg:
+        if "tenants_slug_key" in str(getattr(e, "orig", e)):
             raise OnboardingError("slug_taken", "a workspace with that address already exists", 409) from e
-        raise OnboardingError("workspace_refused", msg) from e
+        raise OnboardingError("workspace_refused", _refusal(e, "the workspace could not be created")) from e
     with tenant_session(wid) as s:
         s.execute(text("""INSERT INTO tenant_settings (tenant_id, operational_as_of, currency, planning)
             VALUES (:t, now(), :c, CAST(:p AS jsonb))"""),
@@ -63,7 +77,7 @@ def set_membership(actor: Actor, *, email: str, role: str | None) -> dict:
                            "(:t,:a,'membership.changed','user',:e,CAST(:d AS jsonb))"),
                       {"t": actor.tenant_id, "a": actor.user_id, "e": email, "d": json.dumps({"role": role})})
     except Exception as e:
-        raise OnboardingError("membership_refused", str(getattr(e, "orig", e)).split("\n")[0], 409) from e
+        raise OnboardingError("membership_refused", _refusal(e, "the membership could not be changed"), 409) from e
     return {"email": email, "result": out}
 
 

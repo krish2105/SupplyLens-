@@ -30,6 +30,7 @@ from . import (
     routes_research,
     routes_setup,
 )
+from .guards import BodyLimit, SignInThrottle
 from .schemas import Health
 
 log = logging.getLogger("supplylens.api")
@@ -138,3 +139,9 @@ def health():
     with app_engine().connect() as c:
         c.execute(text("SELECT 1"))
     return {"status": "ok", "database": "ok"}
+
+
+# Added last, so they run first: refuse oversized bodies and sign-in bursts before back-pressure accounting, routing,
+# authentication or body parsing (guards.py).
+app.add_middleware(SignInThrottle)
+app.add_middleware(BodyLimit)

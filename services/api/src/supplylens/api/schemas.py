@@ -54,6 +54,7 @@ class AuthConfig(Out):
     dev_login: bool
     oidc: bool
     oidc_login_url: str | None = None
+    disposable: bool = False      # true only on declared disposable test stacks (the browser suite may reset data)
 
 
 class Me(Out):

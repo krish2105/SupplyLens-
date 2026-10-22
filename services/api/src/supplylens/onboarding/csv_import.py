@@ -101,6 +101,16 @@ def template_csv(kind: str) -> str:
     return buf.getvalue()
 
 
+REDACTED = "[removed: looked like personal data]"
+
+
+def _redact(value: str) -> str:
+    """Cells that look like an email address or phone number are replaced BEFORE anything is stored (Phase 2,
+    P2-PRIV-01): these templates carry no personal data, so such a cell is a mistake, and the row is quarantined with
+    the marker instead of the value."""
+    return REDACTED if (EMAIL.search(value) or PHONE.match(value)) else value
+
+
 def parse(data: bytes) -> tuple[list[str], list[dict]]:
     if len(data) > MAX_BYTES:
         raise ImportError_("file_too_large", f"file is {len(data)} bytes; the limit is {MAX_BYTES}")
@@ -108,6 +118,8 @@ def parse(data: bytes) -> tuple[list[str], list[dict]]:
         txt = data.decode("utf-8-sig")
     except UnicodeDecodeError:
         raise ImportError_("not_utf8", "the file is not UTF-8 text; export it as CSV UTF-8") from None
+    if "\x00" in txt:
+        raise ImportError_("binary_content", "the file contains NUL characters; it is not a text CSV") from None
     try:
         dialect = csv.Sniffer().sniff(txt[:4096], delimiters=",;\t")
     except csv.Error:
@@ -119,10 +131,13 @@ def parse(data: bytes) -> tuple[list[str], list[dict]]:
     if len(set(header)) != len(header):
         raise ImportError_("duplicate_header", "two columns have the same name")
     rows = []
-    for i, r in enumerate(reader):
-        if i >= MAX_ROWS:
-            raise ImportError_("too_many_rows", f"more than {MAX_ROWS} rows; split the file")
-        rows.append({(k or "").strip(): (v or "").strip() if isinstance(v, str) else "" for k, v in r.items()})
+    try:
+        for i, r in enumerate(reader):
+            if i >= MAX_ROWS:
+                raise ImportError_("too_many_rows", f"more than {MAX_ROWS} rows; split the file")
+            rows.append({(k or "").strip(): _redact((v or "").strip()) if isinstance(v, str) else "" for k, v in r.items()})
+    except csv.Error as e:          # e.g. a field over the parser's size limit or an unterminated quote
+        raise ImportError_("malformed_csv", f"the file is not well-formed CSV near line {reader.line_num}: {e}") from None
     if not rows:
         raise ImportError_("empty", "the file has a header but no rows")
     return header, rows
@@ -198,7 +213,7 @@ def validate(kind: str, mapping: dict[str, str | None], rows: list[dict]) -> lis
                 norm[c.name] = _value(c.kind, raw)
             except ValueError as e:
                 errors.append(f"{c.name}: {e}")
-        if any(isinstance(v, str) and (EMAIL.search(v) or PHONE.match(v)) for v in r.values()):
+        if any(isinstance(v, str) and (v == REDACTED or EMAIL.search(v) or PHONE.match(v)) for v in r.values()):
             errors.append("a cell looks like personal data (email or phone); these templates carry none")
         if not errors and kind == "terms" and norm["valid_to"] and norm["valid_to"] < norm["valid_from"]:
             errors.append("valid_to is before valid_from")

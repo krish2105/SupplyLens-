@@ -36,6 +36,7 @@ if not os.environ.get("SUPPLYLENS_SETUP_TOKEN"):
     for _k in [k for k in os.environ if k.startswith(OWNER_VARIABLE_PREFIXES)]:
         del os.environ[_k]
 os.environ.setdefault("SUPPLYLENS_INLINE_JOBS", "true")
+os.environ.setdefault("SUPPLYLENS_TRUST_FORWARDED_FOR", "true")     # Vercel's edge sets X-Forwarded-For
 os.environ.setdefault("SUPPLYLENS_DB_POOL_SIZE", "2")
 
 from supplylens.api.app import app  # noqa: E402,F401

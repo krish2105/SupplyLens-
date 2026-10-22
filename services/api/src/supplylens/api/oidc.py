@@ -173,6 +173,11 @@ def confirm_session(sid: uuid.UUID) -> None:
             raise OidcError("no refresh token")
         tokens = _token({"grant_type": "refresh_token", "refresh_token": rt})
         access = _verify(tokens["access_token"])
+    except (httpx.HTTPError, jwt.PyJWKClientConnectionError) as e:
+        # The provider is unreachable: fail closed for this request without ending the session (Phase 2, SEC-P2-08).
+        raise HTTPException(503, {"code": "identity_provider_unavailable",
+                                  "message": "the identity provider cannot be reached; retry shortly"},
+                            headers={"Retry-After": "5"}) from e
     except (OidcError, InvalidToken, jwt.PyJWTError) as e:
         reason = str(e)
         with control_session() as s:

@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     admin_database_url: str | None = None
     # True only for migration, seeding and maintenance commands (e.g. scripts/render/predeploy.sh), never for the API.
     maintenance: bool = False
+    # Declares this stack disposable test infrastructure, so the browser suite may reset business data (cancel test
+    # orders) before it runs. Refused in demo and production; reported by /api/v1/auth/config (Phase 2, SEC-P2-01).
+    e2e_disposable: bool = False
+    # Sign-in attempts per client address and minute (api/guards.py). The client address comes from X-Forwarded-For only
+    # when trust_forwarded_for is set, i.e. behind a platform proxy that overwrites the header (Vercel, Render).
+    sign_in_per_minute: int = 20
+    trust_forwarded_for: bool = False
     storage_dir: Path = Path("storage")
     ollama_url: str = "http://localhost:11434"
     embed_model: str = "bge-m3:567m"
@@ -92,6 +99,8 @@ class Settings(BaseSettings):
                                 "(SUPPLYLENS_ADMIN_DATABASE_URL); run migrations and maintenance separately")
             if not self.cookie_secure:
                 problems.append("SUPPLYLENS_COOKIE_SECURE must be true (cookies only over TLS)")
+            if self.e2e_disposable:
+                problems.append("SUPPLYLENS_E2E_DISPOSABLE marks test infrastructure; it is never allowed here")
             if self.environment == "production" and not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret):
                 problems.append("an OIDC provider (issuer, client id, client secret) must be configured")
             if problems:

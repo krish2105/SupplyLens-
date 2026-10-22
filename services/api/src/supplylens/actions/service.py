@@ -497,7 +497,9 @@ def reconcile(actor: Actor, action_id) -> dict:
     with tenant_session(actor.tenant_id) as s:
         item = s.execute(text("SELECT id, action_id, operation_id, payload, payload_hash, attempts, fencing_token, "
                               "status FROM outbox WHERE action_id=:i FOR UPDATE"), {"i": action_id}).mappings().first()
-        if not item or item["status"] != "UNKNOWN_OUTCOME":
+        if not item:
+            raise ActionError("not_found", "action not found", 404)
+        if item["status"] != "UNKNOWN_OUTCOME":
             raise ActionError("invalid_state", "only an UNKNOWN_OUTCOME operation can be reconciled")
         item = dict(item)
     order = sandbox_erp.lookup(item["operation_id"])

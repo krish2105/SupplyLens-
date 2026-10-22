@@ -836,6 +836,11 @@
             "title": "Dev Login",
             "type": "boolean"
           },
+          "disposable": {
+            "default": false,
+            "title": "Disposable",
+            "type": "boolean"
+          },
           "environment": {
             "title": "Environment",
             "type": "string"
@@ -860,7 +865,8 @@
           "environment",
           "dev_login",
           "oidc",
-          "oidc_login_url"
+          "oidc_login_url",
+          "disposable"
         ],
         "title": "AuthConfig",
         "type": "object"
