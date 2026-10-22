@@ -37,6 +37,8 @@ reloads are in `docs/operations/hosted-demo.md`.
   `design/source-assets/supplylens/`, web derivatives come only from `scripts/optimize_illustrations.py`.
 - The e2e suite releases open Demo orders in `e2e/global-setup.ts`; without that the reference case is already covered
   by earlier test orders (S12 working as intended).
+- A backend-only change does not redeploy the hosted API unless `python3 scripts/vercel/build_api.py --pin` refreshed
+  `deploy/vercel-api/source.sha256` (CI fails otherwise). Hosted migrations run as an owner that bypasses RLS.
 - Run Playwright against a production build (`NEXT_DIST_DIR=.next-build npx next build && npx next start --port 3101`);
   the dev server fails timing checks.
 - The PITR drill on macOS needs `LC_ALL=en_US.UTF-8 TMPDIR=/tmp ./scripts/pitr_drill.sh` (postmaster refuses an unset

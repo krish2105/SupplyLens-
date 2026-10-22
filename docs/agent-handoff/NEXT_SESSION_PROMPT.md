@@ -40,7 +40,10 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      assistant in commits, code or documents (owner instruction in NEXT_SESSION.md).
    - New migrations: bump HEAD in tests/test_rehearsals.py; hosted schema changes need the temporary setup-token
      procedure (DECISIONS PD-009, docs/operations/hosted-demo.md). After changing uv.lock run
-     `python3 scripts/vercel/build_api.py --pin`.
+     `python3 scripts/vercel/build_api.py --pin` — also after any change to API, worker, ML or optimiser code (it
+     refreshes deploy/vercel-api/source.sha256; without it Vercel does not rebuild the api service and CI fails).
+   - Hosted data migrations run as Neon's owner, which bypasses row-level security: scope per-tenant copies with an
+     explicit tenant predicate (see migration 0010 and its rehearsal).
    - Never disable authentication, row-level security, audit logging, approval enforcement, CSRF, rate limits or the
      demo lockdown to make something pass. Never run destructive actions against the hosted demo or any external system.
    - Do not merge Dependabot PRs without reviewing and testing them (PD-013).

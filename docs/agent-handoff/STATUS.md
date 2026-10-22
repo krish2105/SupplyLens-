@@ -9,10 +9,10 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 |---|---|
 | Current phase | **Phase 3 complete** (2026-10-23): performance, scalability and backend reliability (owner brief; PD-014). Next: Phase 4 web robustness (deferred), only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 3: see `git log` (the Phase 3 commit follows `2365f49`); earlier `ec6c208`, `1813f43` |
-| CI | see EVIDENCE P3-E14 for the Phase 3 push (Phase 2: run 39836268410, 8/8) |
-| Deploys | **Every push to `main` now deploys** (Vercel Git integration). `1813f43` is live at https://supplylens-self.vercel.app; session revocation and demo lockdown verified live (P2-E15, P2-E16) |
-| Database schema | migration head **0010** (`chunk_vectors`); hosted migration: EVIDENCE P3-E15 |
+| Code commits | Phase 3: `8a0bb4d` (changes), `66cd20a` (migration fix for RLS-bypassing owners), `542ca72` (source digest so backend-only pushes deploy); the handoff-docs commit follows |
+| CI | `66cd20a` run 39857106309 and `542ca72` run 39858808675: **8/8 success** each (EVIDENCE P3-E20) |
+| Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
+| Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |
 | Local scratch state | DB `supplylens_p0e2e` + `storage_p0e2e/` (git-ignored) for the disposable browser stack (launch config sets `SUPPLYLENS_E2E_DISPOSABLE=true`; run with `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1`). DB `supplylens_load` (1 GB, migrated to 0010) holds the reference load data; `storage_load/` |
 
