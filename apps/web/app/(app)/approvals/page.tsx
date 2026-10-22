@@ -35,9 +35,10 @@ export default function ApprovalsPage() {
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
-        <Card className="p-3">
+        {/* Space is reserved up front and the list scrolls inside the card, so late data never pushes the page down. */}
+        <Card className="min-h-[480px] p-3">
           {list.isLoading ? <Loading /> : list.error ? <ErrorState error={list.error} /> : list.data?.length ? (
-            <ul className="space-y-1">
+            <ul className="max-h-[640px] space-y-1 overflow-auto pr-1" tabIndex={0} aria-label="Drafts, scrollable">
               {list.data.map((a) => (
                 <li key={a.id}>
                   <button onClick={() => setActionId(a.id)} aria-current={a.id === actionId}
@@ -53,11 +54,12 @@ export default function ApprovalsPage() {
         </Card>
         {actionId ? <ActionView id={actionId} ws={ws} /> : <Card className="p-5"><Empty title="Select a draft to review" /></Card>}
       </div>
-      <Card className="p-5">
+      <Card className="min-h-[220px] p-5">
         <div className="flex items-center justify-between"><Eyebrow>Sandbox ERP — orders it holds</Eyebrow><Status value="VERIFIED_LOCALLY" /></div>
         <p className="mt-1 text-xs text-muted">A local simulator standing in for an external purchasing system. Not a real ERP.</p>
-        {orders.data?.length ? (
-          <table className="mt-3 w-full text-sm">
+        {orders.isLoading ? <Loading /> : orders.data?.length ? (
+          <div className="mt-3 max-h-72 overflow-auto" tabIndex={0} role="region" aria-label="Sandbox orders, scrollable">
+          <table className="w-full text-sm">
             <caption className="sr-only">Purchase orders in the sandbox ERP</caption>
             <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">PO</th><th className="font-medium">Supplier</th>
               <th className="font-medium">Lines</th><th className="font-medium">Total</th><th className="font-medium">Idempotency key</th><th className="font-medium">Created</th></tr></thead>
@@ -66,6 +68,7 @@ export default function ApprovalsPage() {
                 <td className="num">{money(o.total_minor, o.currency.trim())}</td><td><Mono className="text-muted">{short(o.idempotency_key, 14)}…</Mono></td><td className="text-xs text-muted">{dateTime(o.created_at)}</td></tr>
             ))}</tbody>
           </table>
+          </div>
         ) : <p className="mt-3 text-sm text-muted">No orders yet.</p>}
       </Card>
     </div>

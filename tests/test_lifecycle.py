@@ -104,6 +104,8 @@ def test_export_is_verified_and_reconciles_with_the_database(customer):
 def test_export_with_vectors_includes_embeddings_when_present(customer):
     c, tid = customer["client"], customer["tid"]
     with tenant_session(tid) as s:
+        # Start from a known state: with a local embedding service running, ingestion already embeds every chunk.
+        s.execute(text("UPDATE chunks SET embedding = NULL"))
         s.execute(text("UPDATE chunks SET embedding = (SELECT array_agg(0.001)::vector(1024) "
                        "FROM generate_series(1, 1024)) WHERE id IN (SELECT id FROM chunks LIMIT 3)"))
     ex = request_export(c, include_vectors=True)

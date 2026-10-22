@@ -67,6 +67,8 @@ test("command palette jumps to a product", async ({ page }) => {
   await page.goto("/?ws=uci-research");
   await page.getByRole("button", { name: "Open command palette" }).click();
   await page.getByRole("combobox", { name: "Search pages, products and commands" }).fill(sku);
+  // Products load when the palette opens; wait for the match like a person would before confirming it.
+  await expect(page.getByRole("option", { name: new RegExp(`^${sku}`) })).toBeVisible();
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(new RegExp(`inventory.*sku=${sku}`));
   await expect(page.locator("#detail-title")).toContainText(sku);

@@ -127,7 +127,7 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
         // Plain DOM overlay (outside the WebGL tree) for the hovered or selected rack.
         const it = placed.find((i) => i.sku_id === (hovered ?? selected));
         return it ? (
-          <div className="pointer-events-none absolute right-3 top-3 max-w-[260px] rounded-lg border border-line bg-surface/95 px-3 py-2 text-xs shadow-lg" aria-live="polite">
+          <div className="pointer-events-none absolute bottom-3 right-3 max-w-[260px] rounded-lg border border-line bg-surface/95 px-3 py-2 text-xs shadow-lg" aria-live="polite">
             <div className="num font-semibold">{it.sku_id} · slot {it.slot_id}</div>
             <div className="truncate text-muted">{it.description}</div>
             <div className="num mt-0.5">{int(it.available)} {it.unit} available · {it.days_of_cover == null ? "no sales data" : `${num(it.days_of_cover)} d cover`}</div>

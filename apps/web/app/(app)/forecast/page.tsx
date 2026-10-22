@@ -38,8 +38,14 @@ export default function ForecastPage() {
   // result is cached but not shown: the chart, run card and score must never mix versions (EXE-006).
   const skuRef = useRef(sku);
   skuRef.current = sku;
+  // A trained model has already seen labels up to its training cutoff, so replaying an earlier origin with it would leak
+  // the future (the API refuses). On "Champion" we fall back to the baseline for such origins and say so.
+  const champion = models.data?.find((m) => m.status === "CHAMPION");
+  const replayBeforeTraining = !family && !!champion && champion.family !== "seasonal_naive" && !!champion.training_cutoff
+    && !!known && known.slice(0, 10) < champion.training_cutoff;
+  const effectiveFamily = replayBeforeTraining ? "seasonal_naive" : family;
   const create = useMutation({
-    mutationFn: (forSku: string) => apiPost("/api/v1/forecasts", { body: { sku_ids: [forSku], origin: known!.slice(0, 10), horizon: 28, ...(family ? { model_family: family } : {}) } }),
+    mutationFn: (forSku: string) => apiPost("/api/v1/forecasts", { body: { sku_ids: [forSku], origin: known!.slice(0, 10), horizon: 28, ...(effectiveFamily ? { model_family: effectiveFamily as never } : {}) } }),
     onSuccess: (r, forSku) => {
       qc.setQueryData([getTenant(), "forecast", r.id], r);
       if (forSku === skuRef.current) setRunId(r.id);
@@ -132,6 +138,12 @@ export default function ForecastPage() {
             {zoom && <p className="mt-1 text-xs text-muted">Zoomed to {num(zoom[0], 0)}–{num(zoom[1], 0)}% of the visible range. Zoom changes the view only, never the data or exports.</p>}
             {!pts.length && history.length > 0 && <p className="mt-2 text-sm text-muted">Run a forecast to overlay the median and interval.</p>}
           </Card>
+          {replayBeforeTraining && (
+            <p role="note" className="rounded-lg bg-surface-2 px-3 py-2 text-sm text-muted">
+              The champion ({champion!.family.replaceAll("_", " ")}) was trained on data up to {day(champion!.training_cutoff)}, so it cannot
+              replay {day(origin)} without seeing the future. This run will use the seasonal-naive baseline instead.
+            </p>
+          )}
           {staleOrigin && (
             <p role="status" className="rounded-lg bg-risk-soft px-3 py-2 text-sm text-risk">
               This run was made from {day(run.data!.origin)}, but the decision clock now reads {day(origin)}. It is not drawn on the chart or scored; run the forecast again.

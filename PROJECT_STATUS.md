@@ -82,3 +82,16 @@ uv run pytest -q                                            # 296 passed
 scripts/loadtest/run_reference.sh                           # docs/operations/load-test.md
 docker compose up -d                                        # artifacts/reports/compose_run_20261022.txt
 ```
+
+## Re-verified on macOS with the real data and trained models (2026-10-22 UTC)
+The integrated code was run on the development machine (real UCI data, registered LightGBM/TCN models, local `bge-m3`),
+against a production web build:
+```
+uv run pytest -q                                            # 296 passed (one test fixed: it assumed no chunk had a vector)
+(cd apps/web && npx playwright test)                        # 103 passed incl. mobile; web-vitals, resilience, accessibility
+uv run python scripts/smoke_investigation.py              # 24 lines, OPTIMAL, 3 drafts, order read back: RECONCILED
+```
+Findings fixed in this pass: Forecast lab now falls back to the baseline when the clock precedes the champion's training
+cutoff (replay guard) and says so; Approvals reserves space and scrolls internally (CLS 0.12–0.17 → within target); the 3D
+hover card no longer covers the toolbar; palette test waits for the option. Against the dev server 16 timing-based
+checks fail; they pass against `next start`, which is what CI uses.
