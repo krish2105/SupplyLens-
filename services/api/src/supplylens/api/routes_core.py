@@ -163,10 +163,10 @@ WITH pos AS (
 )
 SELECT p.sku_id, pr.description, pr.unit, p.location_id, p.zone_id, p.as_of, p.on_hand, p.allocated, p.on_order,
        p.capacity, p.value_kind, (p.on_hand - p.allocated) AS available, r.avg_daily, ws.slot_id, ws.aisle, ws.rack,
-       ws.x, ws.z, ws.is_schematic,
-       (SELECT count(*) FROM supplier_terms st WHERE st.sku_id = p.sku_id) AS term_count
+       ws.x, ws.z, ws.is_schematic, COALESCE(tc.term_count, 0) AS term_count
 FROM pos p JOIN products pr ON pr.sku_id = p.sku_id
 LEFT JOIN recent r ON r.sku_id = p.sku_id
+LEFT JOIN (SELECT sku_id, count(*) AS term_count FROM supplier_terms GROUP BY sku_id) tc ON tc.sku_id = p.sku_id
 LEFT JOIN warehouse_slots ws ON ws.sku_id = p.sku_id
 ORDER BY ws.slot_id NULLS LAST, p.sku_id
 """

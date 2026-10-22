@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { breakWebGL, createDraft, getJson, signIn } from "./helpers";
+import { breakWebGL, createDraft, expectReconciled, getJson, signIn } from "./helpers";
 
 // EXE-010 / UX-009 / BUS-008: the reference workflow stays usable when WebGL fails and when the network drops.
 
@@ -28,7 +28,7 @@ test.describe("WebGL failure", () => {
     await signIn(page, "approver");
     await page.goto(`/approvals?ws=demo&action=${detail.actions[0]!.id}`);
     await page.getByRole("button", { name: "Approve US$180.00" }).click();
-    await expect(page.getByText("RECONCILED").first()).toBeVisible({ timeout: 20_000 });
+    await expectReconciled(page, detail.actions[0]!.id);
   });
 
   test("the renderer fails after the capability check passed: error boundary hands over to the floor plan", async ({ page }) => {
@@ -100,7 +100,8 @@ test.describe("network interruption", () => {
     await page.getByRole("button", { name: /^Approve/ }).click();
     await expect(page.getByText(/Connection lost/)).toBeVisible();
     await page.getByRole("button", { name: "Try again" }).click();
-    await expect(page.getByText("RECONCILED").first()).toBeVisible({ timeout: 20_000 });
+    // Wait on THIS action, not on any "RECONCILED" text: the page also lists other actions that are already reconciled.
+    await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/actions/${id}`, "demo")).status, { timeout: 30_000 }).toBe("RECONCILED");
     const a = await getJson<{ approvals: { decision: string }[] }>(page, `/api/v1/actions/${id}`, "demo");
     expect(a.approvals.filter((x) => x.decision === "APPROVED")).toHaveLength(1);
     const orders = await getJson<{ caller_ref: string }[]>(page, "/api/v1/sandbox/orders", "demo");

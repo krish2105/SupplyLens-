@@ -18,8 +18,15 @@ from .config import settings
 @lru_cache(maxsize=4)
 def engine_for(url: str) -> Engine:
     # All timestamps are handled in UTC; business dates are derived explicitly, never from session TZ.
+    #
+    # plan_cache_mode=force_custom_plan: psycopg prepares a statement after its 5th use on a connection and PostgreSQL
+    # then may switch it to a GENERIC plan. In a generic plan the search term (websearch_to_tsquery($1)) and the query
+    # vector (CAST($1 AS vector)) are no longer constants, so they were re-evaluated for every scanned row: retrieval went
+    # from 0.75 s to 8.2 s per request at the ARC-07 reference size, on the 11th request of a fresh process. Every query in
+    # this application filters on parameter values (tenant, dates, search text), so a plan built for the actual values is
+    # the right plan; the planning cost is small next to the scans it avoids.
     return create_engine(url, pool_pre_ping=True, pool_size=10, max_overflow=10,
-                         connect_args={"options": "-c timezone=UTC"})
+                         connect_args={"options": "-c timezone=UTC -c plan_cache_mode=force_custom_plan"})
 
 
 def app_engine() -> Engine:

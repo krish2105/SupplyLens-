@@ -18,6 +18,7 @@ from supplylens_opt.replenishment import Position, assess
 from ..authz import Actor
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
+from .demand_history import dependence_by_sku
 from .terms_service import applicable_terms
 
 
@@ -31,6 +32,7 @@ class ScenarioInput(BaseModel):
     supplier_delay_days: int = Field(default=0, ge=0, le=60)
     safety_days: int | None = Field(default=None, ge=0, le=60)
     coverage_days: int | None = Field(default=None, ge=7, le=28)
+    service_level: float | None = Field(default=None, ge=0.5, lt=1.0)
     allow_shortfall: bool = True
     shortage_penalty_minor: int = Field(default=500, ge=0, le=1_000_000)
     currency: str | None = None
@@ -58,18 +60,26 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
         raise ValueError("scenario studio needs a sales history to forecast; this workspace has none")
     fr = run_forecast(actor.tenant_id, st.dataset_id, skus, cutoff.date(), horizon=28,
                       created_by=actor.user_id, allow_baseline_fallback=True)
+    res = applicable_terms(actor.tenant_id, skus, cutoff, eff)
+    offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days})
+              for t in res.applicable if t.currency == currency]
+    lead_by_sku: dict[str, int] = {}
+    for o in offers:                       # protection interval uses the fastest permitted supplier's lead time
+        lead_by_sku[o.sku_id] = min(o.lead_time_days, lead_by_sku.get(o.sku_id, o.lead_time_days))
+    service_level = inp.service_level or planning.get("service_level", 0.9)
+    dependence = dependence_by_sku(actor.tenant_id, st.dataset_id, [r["sku_id"] for r in rows], eff)
     needs = {}
     for r in rows:
         pts = fr.points[fr.points["sku_id"] == r["sku_id"]]
         if pts.empty:
             continue
-        path = [{"day": p.day.date(), "q50": p.q50 * inp.demand_multiplier, "q90": p.q90 * inp.demand_multiplier}
-                for p in pts.itertuples()]
+        path = [{"day": p.day.date(), "q10": p.q10 * inp.demand_multiplier, "q50": p.q50 * inp.demand_multiplier,
+                 "q90": p.q90 * inp.demand_multiplier} for p in pts.itertuples()]
+        acf, basis = dependence.get(r["sku_id"], (None, "assumed default"))
         needs[r["sku_id"]] = assess(Position(sku_id=r["sku_id"], **{k: r[k] for k in
-                                    ("on_hand", "allocated", "on_order", "capacity")}), path, eff, coverage, safety)
-    res = applicable_terms(actor.tenant_id, skus, cutoff, eff)
-    offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days})
-              for t in res.applicable if t.currency == currency]
+                                    ("on_hand", "allocated", "on_order", "capacity")}), path, eff, coverage, safety,
+                                    lead_time_days=lead_by_sku.get(r["sku_id"], 0), service_level=service_level,
+                                    acf=acf, dependence_basis=basis)
     to_buy = {k: v for k, v in needs.items() if v.required_units > 0}
     req = PlanRequest(decision_date=eff, need_by=eff + timedelta(days=coverage), currency=currency,
                       budget_minor=budget, needs=[Need(sku_id=k, required_units=v.required_units)
@@ -89,7 +99,7 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
     out = {
         "scenario_id": str(uuid.uuid4()), "name": inp.name,
         "inputs": {**inp.model_dump(mode="json"), "budget_minor": budget, "safety_days": safety,
-                   "coverage_days": coverage, "currency": currency,
+                   "coverage_days": coverage, "service_level": service_level, "currency": currency,
                    "knowledge_cutoff": cutoff.isoformat(), "effective_date": eff.isoformat()},
         "value_kinds": {"forecast": "forecast", "stock": "simulated", "terms": "simulated", "budget": "assumed",
                         "demand_multiplier": "assumed", "supplier_delay_days": "assumed"},

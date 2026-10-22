@@ -1,6 +1,51 @@
 name: ci
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "17 4 * * 1"          # weekly: dependency advisories change without a commit
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PGHOST: localhost
+  PGUSER: postgres
+  PGPASSWORD: postgres
+
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: lockfile matches pyproject
+        run: uv lock --check
+      - name: ruff (correctness, imports, bugbear, security rules)
+        run: uv run ruff check .
+
+  secrets-and-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }          # gitleaks scans history, not only the tip
+      - name: secret scan (gitleaks, full history)
+        run: |
+          curl -sSfL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz | tar -xz gitleaks
+          ./gitleaks detect --source . --redact --verbose --config .gitleaks.toml
+      - uses: astral-sh/setup-uv@v6
+      - name: Python dependency advisories (pip-audit against the locked set)
+        run: |
+          uv export --frozen --no-hashes --no-emit-project --no-emit-workspace | sed 's/+cpu//' > /tmp/requirements.txt   # torch's local version tag is not a PyPI version
+          uvx pip-audit --requirement /tmp/requirements.txt --no-deps --disable-pip --strict
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - name: JavaScript dependency advisories (production tree, high and above)
+        run: npm --prefix apps/web audit --omit=dev --audit-level=high
+
   backend:
     runs-on: ubuntu-latest
     services:
@@ -9,7 +54,6 @@ jobs:
         env: { POSTGRES_PASSWORD: postgres }
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 20
-    env: { PGHOST: localhost, PGUSER: postgres, PGPASSWORD: postgres }
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -20,7 +64,9 @@ jobs:
           psql -c "CREATE DATABASE supplylens_test OWNER supplylens_owner"
           psql -d supplylens_test -c "CREATE EXTENSION vector" -c "GRANT CONNECT ON DATABASE supplylens_test TO supplylens_app"
           SUPPLYLENS_MIGRATION_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens_test uv run alembic -c services/api/alembic.ini upgrade head
-      - run: uv run pytest -q
+      - name: unit, integration, security-matrix, contract and BUS-020 rehearsal tests
+        run: uv run pytest -q
+
   contracts-and-web:
     runs-on: ubuntu-latest
     steps:
@@ -29,6 +75,99 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24 }
       - run: uv sync --frozen && npm --prefix apps/web ci
-      - run: ./scripts/check_contracts.sh
+      - name: API schema, generated types and web client agree
+        run: ./scripts/check_contracts.sh
       - run: npm --prefix apps/web run typecheck
       - run: cd apps/web && NEXT_DIST_DIR=.next-build npx next build
+
+  e2e:
+    needs: [backend, contracts-and-web]
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env: { POSTGRES_PASSWORD: postgres }
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 20
+    env:
+      SUPPLYLENS_DATABASE_URL: postgresql+psycopg://supplylens_app:supplylens_app_dev@localhost:5432/supplylens
+      SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens
+      SUPPLYLENS_MIGRATION_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with: { node-version: 24 }
+      - run: uv sync --frozen && npm --prefix apps/web ci
+      - name: database, migrations, workspaces and the synthetic browser-test fixture
+        run: |
+          psql -c "CREATE ROLE supplylens_owner LOGIN PASSWORD 'supplylens_owner_dev'" -c "CREATE ROLE supplylens_app LOGIN PASSWORD 'supplylens_app_dev' NOBYPASSRLS"
+          psql -c "CREATE DATABASE supplylens OWNER supplylens_owner"
+          psql -d supplylens -c "CREATE EXTENSION vector" -c "GRANT CONNECT ON DATABASE supplylens TO supplylens_app"
+          uv run alembic -c services/api/alembic.ini upgrade head
+          uv run python -m supplylens.seed
+          uv run python scripts/seed_e2e_fixture.py
+      - name: start API, worker and web
+        run: |
+          nohup uv run uvicorn supplylens.api.app:app --port 8000 > api.log 2>&1 &
+          nohup uv run python -m supplylens_worker.main > worker.log 2>&1 &
+          (cd apps/web && NEXT_DIST_DIR=.next-build npx next build && NEXT_DIST_DIR=.next-build nohup npx next start --port 3100 > ../../web.log 2>&1 &)
+          for i in $(seq 1 60); do curl -fsS http://localhost:3100/login >/dev/null && curl -fsS http://localhost:8000/api/v1/auth/dev-users >/dev/null && exit 0; sleep 2; done
+          cat api.log web.log; exit 1
+      - name: browser (Chromium)
+        run: cd apps/web && npx playwright install --with-deps chromium
+      - name: end-to-end, resilience, accessibility and Web Vitals suites
+        run: cd apps/web && npx playwright test
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports
+          path: |
+            apps/web/playwright-report
+            apps/web/test-results
+            artifacts/reports/webvitals
+            artifacts/reports/a11y-tree
+            api.log
+            worker.log
+            web.log
+          if-no-files-found: ignore
+
+  pitr-drill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: uv sync --frozen
+      - name: PostgreSQL server binaries with pgvector
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql postgresql-contrib postgresql-16-pgvector
+          sudo systemctl stop postgresql
+          echo "PGBIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)" >> "$GITHUB_ENV"
+      - name: point-in-time recovery drill (ARC-06, BUS-014, BUS-020)
+        run: ./scripts/pitr_drill.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: pitr-report, path: artifacts/reports/pitr_drill_*.json, if-no-files-found: ignore }
+
+  compose-smoke:
+    needs: [backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: build and start the full stack
+        run: |
+          docker compose up -d --build
+          for i in $(seq 1 120); do
+            curl -fsS http://localhost:8000/api/v1/auth/dev-users >/dev/null 2>&1 && curl -fsSL -o /dev/null http://localhost:3100/login 2>&1 && exit 0
+            sleep 5
+          done
+          docker compose ps; exit 1
+      - name: sign in and read through the API
+        run: |
+          curl -fsS http://localhost:8000/api/v1/auth/dev-users
+          curl -fsS -c /tmp/cj -H 'Content-Type: application/json' -H 'X-Requested-With: supplylens' -X POST http://localhost:8000/api/v1/auth/dev-login -d '{"email":"approver@dev.supplylens.local"}'
+          curl -fsS -b /tmp/cj -H 'X-SupplyLens-Tenant: demo' http://localhost:8000/api/v1/overview
+      - if: failure()
+        run: docker compose logs --no-color | tail -n 300
+      - if: always()
+        run: docker compose down -v

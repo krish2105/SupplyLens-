@@ -14,8 +14,10 @@ from typing import Literal
 from sqlalchemy import text
 
 from .. import telemetry
+from ..config import settings
 from ..db import tenant_session
 from .embed import embed, to_pgvector
+from .rerank import Reranker, load_reranker, rerank_results
 
 RRF_K = 60
 
@@ -26,6 +28,12 @@ BASE_FILTER = """
   AND (CAST(:supplier AS text) IS NULL OR d.supplier_id = :supplier)
   AND (CAST(:doc AS uuid) IS NULL OR d.id = CAST(:doc AS uuid))
 """
+
+# The query vector must be parsed ONCE per statement. As a bare CAST(:qv AS vector) it is constant-folded only while
+# PostgreSQL uses a custom plan; once the driver's prepared statement switches to a generic plan the cast ran once per
+# scanned row (100,000 text->vector parses, 5.5 s instead of 0.4 s at the ARC-07 reference size). The scalar subquery is an
+# InitPlan in both plan kinds.
+QV = "(SELECT CAST(:qv AS vector))"
 
 SELECT_COLS = """c.id, c.version_id, c.section, c.body, c.char_start, c.char_end, d.id AS document_id,
   d.title, d.doc_type, d.supplier_id, d.source_kind, dv.version_label, dv.valid_from, dv.valid_to,
@@ -65,16 +73,17 @@ def search(tenant_id, query: str, *, as_of: datetime, role: str, effective_date:
            mode: Literal["effective", "known"] = "effective", supplier_id: str | None = None,
            entities: list[str] | None = None, k: int = 8, use_vectors: bool = True,
            channels: tuple[str, ...] = ("lexical", "vector"), rerank: bool = True, n_candidates: int = 30,
-           document_id: str | None = None) -> dict:
-    """`channels` and `rerank` exist for controlled ablations (R1/R2); the product uses the defaults."""
+           document_id: str | None = None, reranker: Reranker | None = None) -> dict:
+    """`channels` and `rerank` exist for controlled ablations (R1/R2); the product uses the defaults. `reranker` overrides
+    the configured cross-encoder (tests, studies); with none configured only the rule-based reranker runs."""
     with telemetry.span("retrieval.search", **{"tenant.id": str(tenant_id), "retrieval.role": role, "retrieval.k": k}):
         return _search(tenant_id, query, as_of=as_of, role=role, effective_date=effective_date, mode=mode,
                        supplier_id=supplier_id, entities=entities, k=k, use_vectors=use_vectors, channels=channels,
-                       rerank=rerank, n_candidates=n_candidates, document_id=document_id)
+                       rerank=rerank, n_candidates=n_candidates, document_id=document_id, reranker=reranker)
 
 
 def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id, entities, k, use_vectors, channels,
-            rerank, n_candidates, document_id) -> dict:
+            rerank, n_candidates, document_id, reranker=None) -> dict:
     eff = effective_date or as_of.date()
     use_vectors = use_vectors and "vector" in channels
     params = {"as_of": as_of, "eff": eff, "mode": mode, "role": role, "supplier": supplier_id, "q": query, "doc": document_id,
@@ -99,10 +108,10 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
         semantic = []
         if vectors:
             semantic = s.execute(text(f"""
-                SELECT {SELECT_COLS}, 1 - (c.embedding <=> CAST(:qv AS vector)) AS rank
+                SELECT {SELECT_COLS}, 1 - (c.embedding <=> {QV}) AS rank
                 FROM chunks c JOIN document_versions dv ON dv.id = c.version_id JOIN documents d ON d.id = dv.document_id
                 WHERE c.embedding IS NOT NULL AND {BASE_FILTER}
-                ORDER BY c.embedding <=> CAST(:qv AS vector), c.id LIMIT :n"""),
+                ORDER BY c.embedding <=> {QV}, c.id LIMIT :n"""),
                 {**params, "qv": to_pgvector(vectors[0])}).all()
     fused: dict[str, dict] = {}
     for name, rows in (("lexical", lexical), ("vector", semantic)):
@@ -128,14 +137,22 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
         sig["rrf"] = round(e["rrf"], 6)
         results.append(_row_to_evidence(r, e["rrf"] + bonus, sig))
     results.sort(key=lambda ev: (-ev.score, ev.chunk_id))
+    reranker = (reranker or load_reranker()) if rerank else None
+    rerank_note = None
+    if reranker is not None:
+        results, rerank_note = rerank_results(query, results, reranker, settings.reranker_candidates)
+    elif rerank and settings.reranker_model:
+        rerank_note = f"reranker {settings.reranker_model} could not be loaded; rule-based order used"
     # Abstain when the question names identifiers (e.g. product codes) that no permitted result contains.
     abstain = bool(ents) and not any(any(x in ev.excerpt.lower() for x in ents) for ev in results[:k])
     return {
         "abstain": abstain,
         "results": results[:k],
         "mode": "hybrid" if vectors else "lexical_only",
-        "degraded": None if vectors or not use_vectors else "embedding service unavailable; lexical only",
+        "degraded": "; ".join(x for x in (None if vectors or not use_vectors else "embedding service unavailable; lexical only",
+                                          rerank_note) if x) or None,
         "filters": {"as_of": as_of.isoformat(), "effective_date": eff.isoformat(), "mode": mode, "role": role,
                     "supplier_id": supplier_id},
-        "reranker": "rule-based (entity match, supersession demotion) over reciprocal-rank fusion",
+        "reranker": (f"{reranker.name} over reciprocal-rank fusion; supersession forced last" if reranker is not None and rerank_note is None else
+                     "rule-based (entity match, supersession demotion) over reciprocal-rank fusion"),
     }

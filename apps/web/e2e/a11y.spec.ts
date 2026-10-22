@@ -97,7 +97,7 @@ test("keyboard: command palette opens with Ctrl+K, traps focus, closes with Esca
 });
 
 test("keyboard: the approval decision can be made without a mouse", async ({ page }) => {
-  const { createDraft } = await import("./helpers");
+  const { createDraft, expectReconciled } = await import("./helpers");
   const id = await createDraft(page);
   await signIn(page, "approver");
   await page.goto(`/approvals?ws=demo&action=${id}`);
@@ -105,7 +105,7 @@ test("keyboard: the approval decision can be made without a mouse", async ({ pag
   await approve.focus();
   await expect(approve).toBeFocused();
   await page.keyboard.press("Enter");
-  await expect(page.getByText("RECONCILED").first()).toBeVisible({ timeout: 20_000 });
+  await expectReconciled(page, id);
 });
 
 test("status changes are announced: run progress and errors use live regions or alerts", async ({ page }) => {

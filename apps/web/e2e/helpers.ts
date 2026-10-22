@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export async function signIn(page: Page, role: "viewer" | "planner" | "approver" | "tenant_admin") {
   await page.request.post("/api/v1/auth/dev-login", {
@@ -11,6 +11,12 @@ export async function getJson<T = any>(page: Page, path: string, ws = "uci-resea
   const r = await page.request.get(path, { headers: { "X-SupplyLens-Tenant": ws } });
   if (!r.ok()) throw new Error(`${path}: ${r.status()}`);
   return r.json() as Promise<T>;
+}
+
+/** Wait until THIS action is reconciled. Not `getByText("RECONCILED")`: approvals lists other, already reconciled actions. */
+export async function expectReconciled(page: Page, actionId: string, ws = "demo") {
+  await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/actions/${actionId}`, ws)).status,
+    { timeout: 30_000, message: `action ${actionId} should reach RECONCILED` }).toBe("RECONCILED");
 }
 
 const REFERENCE_RUN = {

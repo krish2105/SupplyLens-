@@ -112,14 +112,14 @@ def scratch():
 
 
 def broken_scripts(tmp: Path) -> Path:
-    """A copy of the migrations plus a 0006 that makes visible changes and then fails."""
+    """A copy of the migrations plus a 0007 that makes visible changes and then fails."""
     shutil.copytree(MIGRATIONS, tmp / "migrations")
-    (tmp / "migrations" / "versions" / "0006_broken.py").write_text(textwrap.dedent('''
+    (tmp / "migrations" / "versions" / "0007_broken.py").write_text(textwrap.dedent('''
         """Rehearsal-only migration: changes data and schema, then fails midway."""
         from alembic import op
 
-        revision = "0006"
-        down_revision = "0005"
+        revision = "0007"
+        down_revision = "0006"
 
 
         def upgrade():
@@ -149,7 +149,7 @@ def test_failed_migration_leaves_schema_data_orders_and_audit_untouched(scratch)
         script_dir = broken_scripts(Path(td))
         r = scratch.alembic("upgrade", "head", script_dir=script_dir)
     assert r.returncode != 0 and "division by zero" in r.stderr
-    assert scratch.version() == "0005"                                              # version pointer did not move
+    assert scratch.version() == "0006"                                              # version pointer did not move
     assert scratch.sql("SELECT count(*) FROM information_schema.columns "
                        "WHERE table_name='actions' AND column_name='rehearsal_flag'")[0][0] == 0     # DDL rolled back
     assert scratch.sql("SELECT to_regclass('rehearsal_partial')")[0][0] is None
@@ -161,13 +161,14 @@ def test_failed_migration_leaves_schema_data_orders_and_audit_untouched(scratch)
 def test_rollback_to_previous_release_keeps_operational_records_and_audit(scratch):
     before = scratch.workload()
     assert before["counts"]["audit_events"] > 0
-    r = scratch.alembic("downgrade", "0004")
-    assert r.returncode == 0, r.stderr[-800:]
-    assert scratch.version() == "0004"
-    assert scratch.counts() == before["counts"]               # orders, approvals, outbox and audit trail intact
-    r = scratch.alembic("upgrade", "head")                    # roll forward again
-    assert r.returncode == 0, r.stderr[-800:]
-    assert scratch.version() == "0005" and scratch.counts() == before["counts"]
+    for previous in ("0005", "0004"):                          # one release back, then two
+        r = scratch.alembic("downgrade", previous)
+        assert r.returncode == 0, r.stderr[-800:]
+        assert scratch.version() == previous
+        assert scratch.counts() == before["counts"]           # orders, approvals, outbox and audit trail intact
+        r = scratch.alembic("upgrade", "head")                # roll forward again
+        assert r.returncode == 0, r.stderr[-800:]
+        assert scratch.version() == "0006" and scratch.counts() == before["counts"]
     # the app role is still unable to rewrite history after the round trip
     from sqlalchemy import create_engine
     eng = create_engine(scratch.app_url)
@@ -183,8 +184,50 @@ def test_rollback_refuses_to_destroy_deletion_certificates(scratch):
         WHERE t.slug = 'gone' LIMIT 1""")
     r = scratch.alembic("downgrade", "0004")
     assert r.returncode != 0 and "deletion certificates" in r.stderr
-    assert scratch.version() == "0005"
+    assert scratch.version() == "0006"                        # the whole downgrade rolled back, including 0006's part
     assert scratch.sql("SELECT count(*) FROM tenant_deletions")[0][0] == 1
+
+
+def test_migration_0006_moves_existing_vectors_inline_and_changes_no_value(scratch):
+    """Rewrites happen under row-level security, per tenant, and the vector values are bit-for-bit unchanged."""
+    import psycopg
+    from sqlalchemy import create_engine
+    assert scratch.alembic("downgrade", "0005").returncode == 0
+    tid, doc, ver = tenant_id("demo"), uuid.uuid4(), uuid.uuid4()
+    scratch.sql("INSERT INTO tenants (id, slug, name, kind) VALUES (:i, 'demo', 'Demo', 'customer') ON CONFLICT DO NOTHING", i=tid)
+    rng_vecs = [[((i * 7919 + j * 104729) % 2000 - 1000) / 997.0 for j in range(1024)] for i in range(40)]
+    with create_engine(scratch.owner_url).begin() as c:
+        c.execute(text("SELECT set_config('app.tenant_id', :t, true)"), {"t": str(tid)})
+        c.execute(text("INSERT INTO documents (id, tenant_id, title, doc_type, source_kind) VALUES (:d,:t,'x','contract','generated')"),
+                  {"d": doc, "t": tid})
+        c.execute(text("""INSERT INTO document_versions (id, tenant_id, document_id, version_label, file_name, sha256, storage_key,
+            known_at, valid_from, parser_version) VALUES (:v,:t,:d,'v1','f',:h,'k',now(),'2011-01-01','p')"""),
+                  {"v": ver, "t": tid, "d": doc, "h": uuid.uuid4().hex})
+        for i, vec in enumerate(rng_vecs):
+            c.execute(text("INSERT INTO chunks (id, tenant_id, version_id, ordinal, section, char_start, char_end, body, embedding) "
+                           "VALUES (gen_random_uuid(), :t, :v, :o, 's', 0, 1, 'body', CAST(:e AS vector))"),
+                      {"t": tid, "v": ver, "o": i, "e": "[" + ",".join(f"{x:.6f}" for x in vec) + "]"})
+
+    def snapshot():
+        with create_engine(scratch.owner_url).begin() as c:
+            c.execute(text("SELECT set_config('app.tenant_id', :t, true)"), {"t": str(tid)})
+            return c.execute(text("SELECT md5(string_agg(embedding::text, '|' ORDER BY ordinal)), count(*) FROM chunks")).one()
+
+    def toast_rows():
+        with psycopg.connect(dbname=scratch.name, autocommit=True) as c:
+            toast = c.execute("SELECT reltoastrelid::regclass::text FROM pg_class WHERE oid = 'chunks'::regclass").fetchone()[0]
+            return c.execute(f"SELECT count(*) FROM {toast}").fetchone()[0]
+
+    before, toasted_before = snapshot(), toast_rows()
+    assert before[1] == 40 and toasted_before > 0                         # at 0005 the vectors live in TOAST
+    r = scratch.alembic("upgrade", "head")
+    assert r.returncode == 0, r.stderr[-800:]
+    assert snapshot() == before                                           # identical values, none lost
+    assert toast_rows() == 0                                              # all inline now
+    storage = dict(scratch.sql("SELECT attname, attstorage::text FROM pg_attribute WHERE attrelid='chunks'::regclass "
+                               "AND attname IN ('embedding','body','tsv')"))
+    assert storage == {"embedding": "p", "body": "m", "tsv": "m"}
+    assert scratch.sql("SELECT count(*) FROM pg_indexes WHERE indexname IN ('sales_daily_tenant_day','supplier_terms_tenant_sku')")[0][0] == 2
 
 
 # ----------------------------------------------------------------------------- shared invariants

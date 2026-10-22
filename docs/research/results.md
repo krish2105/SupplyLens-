@@ -62,8 +62,7 @@ outcomes. Daily UCI sales are heavy-tailed; summed q50 of LightGBM/TCN covered a
 volume versus 87% for seasonal naive, so median-based ordering under-stocks. Changing the *policy* to a q90
 order-up-to target reduced simulated cost by about £21k for every forecaster, and differences between
 forecasters became small (naive was cheapest by about £0.6k). The product's replenishment basis was changed to the
-q90 sum on this evidence (DECISIONS D-024). Summing daily quantiles is not a calibrated lead-time quantile;
-a directly trained lead-time-demand model is future work. The perfect-foresight reference is not an upper
+q90 sum on this evidence (DECISIONS D-024) and has since been replaced by the lead-time-demand model (L1 below, D-032). The perfect-foresight reference is not an upper
 bound with lead times (it only covers each review window).
 
 ## R2 — time-aware supplier terms (`R2-20261021T191153Z`)
@@ -150,3 +149,37 @@ uv run python evaluations/retrieval_study.py
 uv run python evaluations/inventorybench_study.py
 uv run python evaluations/agent_study.py
 ```
+
+
+## L1 — lead-time demand model (simulated; `evaluations/leadtime_demand_study.py`, `artifacts/reports/leadtime_demand_study.json`)
+
+**Question.** The summed-daily-q90 heuristic is not a window quantile. Does a model that combines the forecast's daily
+quantiles with the measured day-to-day dependence of the SKU's sales order up to the service level it is asked for, and at
+what stock?
+
+**Method.** Simulated demand with *known* dependence: negative-binomial daily demand around a weekday pattern and an AR(1)
+latent level (persistence 0, 0.5, 0.9). 150 series × about 30 windows per setting; a daily-calibrated but state-blind
+forecaster supplies q10/q50/q90; 28-day protection interval (7 days lead time + 21 days coverage). Dependence is measured
+from each series' first 180 days (model "estimated") or taken as the declared fallback AR(1) 0.3 ("default").
+"Coverage" is the share of windows whose realised demand stayed at or below the order-up-to level.
+
+| Persistence | Target | Model, dependence estimated: coverage / mean stock | Summed q90: coverage / stock | Summed q50: coverage / stock |
+|---|---:|---|---|---|
+| 0.0 | 90 % | 88.2 % / 554 | 100 % / 895 | 14 % / 404 |
+| 0.5 | 90 % | 86.9 % / 539 | 100 % / 852 | 18 % / 383 |
+| 0.9 | 90 % | 84.6 % / 560 | 99.7 % / 835 | 32 % / 375 |
+
+**Findings.**
+1. The summed-q90 heuristic covers essentially every window (99.7–100 %) at 49–61 % more stock than the model's 90 % level:
+   it is over-conservative, not calibrated. Summed medians cover 14–32 %.
+2. The model lands 2–5 points *under* its target at 90 % (and similarly at 80 % and 95 %), worse with persistent demand.
+   The remaining gap is partly the skew of the daily distribution and partly the gamma approximation; an oracle that knew
+   the true dependence still sat about 3 points under. It is a calibration shortfall to be corrected on real data.
+3. Without history the declared default dependence (0.3) over-covers independent demand (92.6 %) and under-covers
+   persistent demand (80.9 %); the output labels which one was used.
+4. An earlier version that fitted only lag-1 autocorrelation (AR(1)) under-covered persistent demand by more; measuring
+   the autocorrelation curve over 14 lags with an initial-positive-sequence cut-off fixed part of that.
+
+**Limits.** Simulation, one data-generating process, an idealised forecaster. **Not validated on real retail history**
+(the licensed UCI/M5 files are needed for the equivalent study on real windows, which has not been run). The product
+labels every need with `calibration: "simulation-checked, not validated on real data"`.

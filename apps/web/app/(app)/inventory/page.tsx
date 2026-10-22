@@ -30,7 +30,7 @@ export default function InventoryPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: "days_of_cover", dir: 1 });
-  useEffect(() => { const ok = webglAvailable(); setGl(ok); if (!ok || window.innerWidth < 768) setView("2d"); }, []);
+  useEffect(() => { const ok = webglAvailable(); setGl(ok); setView(!ok || window.innerWidth < 768 ? "2d" : "3d"); }, []);
 
   const items = inv.data?.items ?? [];
   const rows = useMemo(() => {

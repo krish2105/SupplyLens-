@@ -1,9 +1,222 @@
 {
-  "measured_at": "2026-10-21T21:13:08.839Z",
-  "targets": {
-    "lcp": 2500,
-    "inp": 200,
+  "targets_field_p75": {
+    "lcp_ms": 2500,
+    "inp_ms": 200,
     "cls": 0.1
   },
-  "results": []
+  "kind": "laboratory measurement, not field data",
+  "conditions": {
+    "desktop": "Chromium headless 1440x900, no throttling, loopback network, production build, one run per page",
+    "mobile": "Chromium headless phone viewport, 4x CPU slowdown, 150 ms RTT, 1.6 Mbps down / 750 kbps up (Lighthouse-style slow 4G), production build, one run per page"
+  },
+  "results": [
+    {
+      "path": "/approvals",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:36.767Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 276,
+      "cls": 0.0041,
+      "inp_ms": 80
+    },
+    {
+      "path": "/exceptions",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:28.607Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 220,
+      "cls": 0.0063,
+      "inp_ms": 72
+    },
+    {
+      "path": "/forecast",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:34.427Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 328,
+      "cls": 0.0494,
+      "inp_ms": 152
+    },
+    {
+      "path": "/inventory",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:31.393Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 228,
+      "cls": 0.0012,
+      "inp_ms": 112
+    },
+    {
+      "path": "/",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:26.246Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 1388,
+      "cls": 0.0884,
+      "inp_ms": 128
+    },
+    {
+      "path": "/policies",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:41.593Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 268,
+      "cls": 0.0001,
+      "inp_ms": 72
+    },
+    {
+      "path": "/runs",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:39.318Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 320,
+      "cls": 0.0012,
+      "inp_ms": 64
+    },
+    {
+      "path": "/scenarios",
+      "profile": "desktop",
+      "measured_at": "2026-10-21T21:32:44.156Z",
+      "targets": {
+        "lcp": 2500,
+        "inp": 200,
+        "cls": 0.1
+      },
+      "lcp_ms": 288,
+      "cls": 0.0001,
+      "inp_ms": 96
+    },
+    {
+      "path": "/approvals",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:51.944Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 2860,
+      "cls": 0.0161,
+      "inp_ms": 120
+    },
+    {
+      "path": "/exceptions",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:34.291Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 3008,
+      "cls": 0.0098,
+      "inp_ms": 144
+    },
+    {
+      "path": "/forecast",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:46.091Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 2980,
+      "cls": 0.0006,
+      "inp_ms": 136
+    },
+    {
+      "path": "/inventory",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:40.017Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 3156,
+      "cls": 0.0057,
+      "inp_ms": 208
+    },
+    {
+      "path": "/",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:28.982Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 3816,
+      "cls": 0.0053,
+      "inp_ms": 120
+    },
+    {
+      "path": "/policies",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:33:02.463Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 2836,
+      "cls": 0.0006,
+      "inp_ms": 96
+    },
+    {
+      "path": "/runs",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:32:56.621Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 3044,
+      "cls": 0,
+      "inp_ms": 120
+    },
+    {
+      "path": "/scenarios",
+      "profile": "mobile",
+      "measured_at": "2026-10-21T21:33:08.287Z",
+      "targets": {
+        "lcp": 4500,
+        "inp": 750,
+        "cls": 0.1
+      },
+      "lcp_ms": 2812,
+      "cls": 0.001,
+      "inp_ms": 120
+    }
+  ]
 }

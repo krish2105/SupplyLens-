@@ -93,7 +93,7 @@ export default function ResearchPage() {
               <li><Provenance kind="simulated" /> {s1.data.products} products, {s1.data.window.join(" → ")}, lead time {s1.data.assumptions.lead_time_days} days, weekly review.</li>
               <li>With a median-based policy, trained models fill {pct(s1.data.results[s1.data.base_case].tcn.fill_rate)} (TCN) vs {pct(s1.data.results[s1.data.base_case].seasonal_naive.fill_rate)} (naive).</li>
               <li>Why: {s1.data.caveats.at(-1)}</li>
-              <li>With the q90 order-up-to policy all three reach ≈{pct(s1.data.results[s1.data.base_case].tcn__sum_q90.fill_rate, 0)} fill; the product now uses this basis.</li>
+              <li>With the q90 order-up-to policy all three reach ≈{pct(s1.data.results[s1.data.base_case].tcn__sum_q90.fill_rate, 0)} fill. The product used this heuristic until the lead-time-demand model replaced it (D-032); it is kept for comparison.</li>
             </ul>
           </div>
         )}

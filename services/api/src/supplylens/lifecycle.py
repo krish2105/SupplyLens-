@@ -49,7 +49,8 @@ def tenant_tables(conn) -> list[str]:
         SELECT c.relname FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
         JOIN pg_attribute a ON a.attrelid = c.oid AND a.attname = 'tenant_id' AND NOT a.attisdropped
         WHERE n.nspname = 'public' AND c.relkind = 'r' AND c.relrowsecurity ORDER BY c.relname"""))]
-    assert all(_IDENT.match(n) for n in names), names
+    if not all(_IDENT.match(n) for n in names):      # guards the identifiers interpolated into SQL below; must survive python -O
+        raise RuntimeError(f"unexpected table name in the tenant catalog: {names}")
     edges = conn.execute(text("""
         SELECT conrelid::regclass::text, confrelid::regclass::text FROM pg_constraint
         WHERE contype = 'f' AND connamespace = 'public'::regnamespace""")).all()

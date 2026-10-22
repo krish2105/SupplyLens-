@@ -5982,6 +5982,19 @@
             ],
             "title": "Safety Days"
           },
+          "service_level": {
+            "anyOf": [
+              {
+                "exclusiveMaximum": 1.0,
+                "minimum": 0.5,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Level"
+          },
           "shortage_penalty_minor": {
             "default": 500,
             "maximum": 1000000.0,
@@ -6053,6 +6066,17 @@
             "title": "Safety Days",
             "type": "integer"
           },
+          "service_level": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service Level"
+          },
           "shortage_penalty_minor": {
             "title": "Shortage Penalty Minor",
             "type": "integer"
@@ -6085,6 +6109,7 @@
           "supplier_delay_days",
           "safety_days",
           "coverage_days",
+          "service_level",
           "allow_shortfall",
           "shortage_penalty_minor",
           "currency",
@@ -8693,6 +8718,7 @@
             "name": "run_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Run Id",
               "type": "string"
             }
@@ -8764,6 +8790,7 @@
             "name": "run_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Run Id",
               "type": "string"
             }
@@ -8850,6 +8877,7 @@
             "name": "run_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Run Id",
               "type": "string"
             }
@@ -9391,6 +9419,7 @@
             "name": "dataset_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Dataset Id",
               "type": "string"
             }
@@ -9605,6 +9634,7 @@
             "name": "version_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Version Id",
               "type": "string"
             }
@@ -10045,6 +10075,7 @@
             "name": "run_id",
             "required": true,
             "schema": {
+              "format": "uuid",
               "title": "Run Id",
               "type": "string"
             }

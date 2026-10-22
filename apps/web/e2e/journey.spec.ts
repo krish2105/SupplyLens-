@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { getJson, signIn } from "./helpers";
+import { expectReconciled, getJson, signIn } from "./helpers";
 
 // P0 journey on the spec's reference case: investigate -> prepare draft -> approve -> sandbox order reconciled.
 test("reference case: planner drafts, approver approves, sandbox order reconciles", async ({ page }) => {
@@ -24,7 +24,8 @@ test("reference case: planner drafts, approver approves, sandbox order reconcile
   await page.goto(`/approvals?ws=demo&action=${actionId}`);
   await expect(page.getByRole("cell", { name: "30 unit" })).toBeVisible();
   await page.getByRole("button", { name: "Approve US$180.00" }).click();
-  await expect(page.getByText("RECONCILED").first()).toBeVisible({ timeout: 20_000 });
+  await expectReconciled(page, actionId);
+  await expect(page.getByText("RECONCILED").first()).toBeVisible();
   await expect(page.getByText("sandbox order read back and matched payload")).toBeVisible();
 });
 

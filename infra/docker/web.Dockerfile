@@ -1,7 +1,8 @@
 FROM node:24-slim AS base
+# Extra root certificates (TLS-inspecting proxy) are handed to Node directly: node:slim has no update-ca-certificates.
 COPY infra/docker/ca/ /usr/local/share/ca-certificates/extra/
-RUN if ls /usr/local/share/ca-certificates/extra/*.crt >/dev/null 2>&1; then update-ca-certificates; fi
-ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+RUN if ls /usr/local/share/ca-certificates/extra/*.crt >/dev/null 2>&1; then cat /usr/local/share/ca-certificates/extra/*.crt > /etc/extra-ca.pem; else : > /etc/extra-ca.pem; fi
+ENV NODE_EXTRA_CA_CERTS=/etc/extra-ca.pem
 
 FROM base AS deps
 WORKDIR /web

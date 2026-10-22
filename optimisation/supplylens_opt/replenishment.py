@@ -1,17 +1,24 @@
 """Turn a sales forecast and a stock position into a replenishment need.
 
-Default basis `q90_sum`: order up to the sum of daily q90 over the coverage window. Study S1
-showed that median-based targets under-stock heavily on heavy-tailed daily sales (summed q50 of
-the trained models covered only 42-50% of held-out volume). Summing daily quantiles is NOT a
-calibrated lead-time quantile (temporal dependence); it is a declared heuristic chosen on
-simulated evidence. `q50_plus_safety` (q50 path + `safety_days` of mean daily q50) remains available.
+Default basis `leadtime_demand`: order up to the `service_level` quantile of demand over the protection interval
+(supplier lead time + coverage days), from the lead-time-demand model in `leadtime_demand.py` (daily moments from the
+forecast quantiles, day-to-day dependence measured from the SKU's own history, gamma window distribution).
+
+Study S1 showed that median-based targets under-stock heavily on heavy-tailed daily sales (summed q50 of the trained
+models covered only 42-50% of held-out volume). The first answer was `q90_sum`, the sum of daily q90 over the window: a
+declared heuristic, not a calibrated window quantile, because it assumes every day is at its 90th percentile at once.
+`leadtime_demand` replaces it as the default; `q90_sum` and `q50_plus_safety` (q50 path + `safety_days` of mean daily
+q50) stay selectable so the three can be compared on the same inputs (evaluations/leadtime_demand_study.py).
 """
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 from datetime import date, timedelta
 
 from pydantic import BaseModel
+
+from .leadtime_demand import window_demand
 
 
 class Position(BaseModel):
@@ -35,20 +42,53 @@ class NeedAssessment(BaseModel):
     need_by: date
     days_of_cover: float | None
     status: str
-    basis: str = "q90_sum"
+    basis: str = "leadtime_demand"
     method: str = ""
+    # lead-time-demand model outputs (None under the older bases)
+    service_level: float | None = None
+    protection_days: int | None = None
+    lead_time_days: int | None = None
+    demand_mean: float | None = None
+    demand_sd: float | None = None
+    demand_quantile: float | None = None
+    variance_inflation: float | None = None
+    dependence_lag1: float | None = None
+    dependence_basis: str | None = None
+    extrapolated_days: int | None = None
+    calibration: str | None = None
+
+
+CALIBRATION_NOTE = "simulation-checked, not validated on real data"
 
 
 def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_days: int,
-           safety_days: int, basis: str = "q90_sum") -> NeedAssessment:
-    """forecast: rows with day (date), q50, q90 starting after decision_date."""
+           safety_days: int, basis: str = "leadtime_demand", *, lead_time_days: int = 0, service_level: float = 0.9,
+           acf: Sequence[float] | None = None, dependence_basis: str = "assumed default",
+           lead_time_sd_days: float = 0.0) -> NeedAssessment:
+    """forecast: rows with day (date), q10 (leadtime_demand only), q50, q90 starting after decision_date."""
     available = pos.on_hand - pos.allocated
     position = available + pos.on_order
-    window = [f for f in forecast if f["day"] <= decision_date + timedelta(days=coverage_days)]
+    ltd = None
+    if basis == "leadtime_demand":
+        ordered = sorted(forecast, key=lambda r: r["day"])
+        if any("q10" not in f for f in ordered):
+            raise ValueError("the lead-time-demand basis needs q10, q50 and q90 for every forecast day")
+        protection = max(coverage_days + max(lead_time_days, 0), 1)
+        ltd = window_demand(ordered, protection, service_level, acf, dependence_basis, lead_time_sd_days)
+        window = ordered[:protection]
+    else:
+        window = [f for f in forecast if f["day"] <= decision_date + timedelta(days=coverage_days)]
     q50 = sum(f["q50"] for f in window)
     q90 = sum(f["q90"] for f in window)
     mean_daily = q50 / max(len(window), 1)
-    if basis == "q90_sum":
+    if ltd is not None:
+        safety = math.ceil(max(ltd.quantile - ltd.mean, 0))
+        required = max(0, math.ceil(ltd.quantile - position))
+        method = (f"order up to the {ltd.service_level:.0%} quantile of demand over {ltd.protection_days} days "
+                  f"(lead time {max(lead_time_days, 0)} + coverage {coverage_days}); day-to-day dependence "
+                  f"inflates the variance x{ltd.variance_inflation:.2f} ({ltd.dependence_basis}); lead-time variability "
+                  f"{'modelled' if lead_time_sd_days > 0 else 'not modelled (terms carry point lead times)'}")
+    elif basis == "q90_sum":
         safety = math.ceil(max(q90 - q50, 0))
         required = max(0, math.ceil(q90 - position))
         method = "order up to sum of daily q90 over the window (heuristic, not a calibrated quantile; see study S1)"
@@ -74,9 +114,16 @@ def assess(pos: Position, forecast: list[dict], decision_date: date, coverage_da
         status = "excess"
     else:
         status = "healthy"
+    extra = {}
+    if ltd is not None:
+        extra = dict(service_level=ltd.service_level, protection_days=ltd.protection_days, lead_time_days=max(lead_time_days, 0),
+                     demand_mean=round(ltd.mean, 2), demand_sd=round(ltd.sd, 2), demand_quantile=round(ltd.quantile, 2),
+                     variance_inflation=round(ltd.variance_inflation, 3), dependence_lag1=round(ltd.lag1, 3),
+                     dependence_basis=ltd.dependence_basis, extrapolated_days=ltd.extrapolated_days,
+                     calibration=CALIBRATION_NOTE)
     return NeedAssessment(sku_id=pos.sku_id, available=available, inventory_position=position,
                           coverage_days=coverage_days, demand_q50=round(q50, 2),
                           demand_q90_sum_uncalibrated=round(q90, 2), safety_units=safety,
                           required_units=required, projected_stockout=stockout, need_by=need_by,
                           days_of_cover=round(cover, 1) if cover is not None else None, status=status,
-                          basis=basis, method=method)
+                          basis=basis, method=method, **extra)

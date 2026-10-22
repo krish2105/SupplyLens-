@@ -1,7 +1,7 @@
 # SupplyLens operations runbook (local / controlled environment)
 
 Scope: a single-host development or demonstration installation. Nothing here qualifies a production
-deployment (no enterprise identity, no off-host backups, no monitoring stack).
+deployment (no enterprise identity, no off-host backups, no managed monitoring).
 
 ## Processes
 
@@ -13,8 +13,9 @@ deployment (no enterprise identity, no off-host backups, no monitoring stack).
 | Web | `npm --prefix apps/web run dev` (or `start` after build) | 3100 | page loads |
 | Embeddings (optional) | Ollama with `bge-m3:567m` | 11434 | Settings → Connections |
 
-Containers: `docker compose up --build` starts db, migrate (+bootstrap), api, worker and web. The API image build is
-recorded in EVIDENCE_INDEX; the full stack has not been run under Compose on this host (colima VM: 2 CPU / 2 GB).
+Containers: `docker compose up -d --build` starts db (WAL archiving on), migrate (+bootstrap), api, worker and web.
+`--profile observability` adds Jaeger (set `SUPPLYLENS_OTEL_ENDPOINT=http://jaeger:4318` to send traces to it).
+CI builds and starts the whole stack on every push (`compose-smoke` job); see EVIDENCE_INDEX for what was run where.
 
 ## First install
 
@@ -40,6 +41,10 @@ Re-run the ingest commands and the forecast study afterwards. Destructive for th
 
 ## Backup and restore
 
+Two independent mechanisms. Use the first for a portable copy, the second to recover to a point in time.
+
+### 1. Logical dump (portable, daily-grade RPO)
+
 ```bash
 ./scripts/backup_restore_drill.sh
 ```
@@ -53,8 +58,34 @@ Restore to a new host: create roles (`scripts/dev_db.sh`), **create the `vector`
 --role=supplylens_owner -L <list without EXTENSION entries>`. Copy `storage/` (document bytes) and `artifacts/`
 (model weights) alongside the dump; embeddings are rebuilt from documents but documents and approvals are not.
 
-Measured on 2026-10-21: 70 MB dump, backup 6.2 s, restore 6.6 s. This is a local rehearsal, not point-in-time
-recovery; the live-write RPO requirement (no lost orders) needs continuous WAL archiving, which is not configured.
+Measured on 2026-10-21: 70 MB dump, backup 6.2 s, restore 6.6 s. A dump alone cannot recover orders placed after it
+was taken (see 2).
+
+### 2. Continuous WAL archiving + base backups (point-in-time recovery, BUS-014 / ARC-06)
+
+The compose database runs with `wal_level=replica`, `archive_mode=on`, `archive_timeout=60`; each completed WAL segment is
+copied to the `walarchive` volume, and `archive_timeout` bounds how much recent work a lost primary disk can lose
+(**RPO ≤ archive_timeout for the unarchived tail, plus whatever the archive volume itself loses; keep it on separate storage**).
+
+```bash
+./scripts/base_backup.sh                 # physical base backup into the `basebackups` volume (take one daily)
+./scripts/pitr_drill.sh                  # rehearsal on a scratch cluster, never touches your data
+```
+
+`pitr_drill.sh` builds a scratch cluster with archiving, creates real orders through the application, takes a base backup,
+creates one more order that exists only in archived WAL, simulates an operator error (truncates the order tables and the
+sandbox ERP orders), restores the backup, replays WAL to a recovery target just before the error, promotes, and verifies
+that every count equals its value at the target and every sandbox order maps to exactly one action. It writes
+`artifacts/reports/pitr_drill_*.json` (PostgreSQL version, restored size, RTO, RPO bound). The measured RTO is for the
+tiny drill database only and grows with backup size and WAL volume.
+
+Real recovery from the compose stack: stop the stack, restore the newest base backup into an empty `pgdata` volume
+(`tar -xzf base.tar.gz`; unpack `pg_wal.tar.gz` into `pg_wal`), set `restore_command = 'cp /wal_archive/%f %p'` and
+`recovery_target_time = '<UTC time just before the incident>'` in `postgresql.auto.conf`, `touch recovery.signal`, start
+PostgreSQL, wait for promotion, then **reconcile every order whose outcome is not RECONCILED against the ERP** (Unknown order
+outcome, below). A restore that predates a tenant deletion brings the deleted tenant back: re-apply the deletion with
+`uv run python -m supplylens.lifecycle reapply-deletions [<tenant-id> ...]`, passing the tenant ids from the deletion
+certificates you keep outside the database (a backup older than the deletion does not contain its certificate).
 
 ## Unknown order outcome
 
@@ -73,14 +104,71 @@ Run `uv run python evaluations/forecast_study.py`. Registry status follows the f
 administrator can change status in Administration with a reason (audited); a model can only become champion if it
 has a recorded evaluation. Trained models refuse forecast origins earlier than their training cutoff.
 
+## Alerts (BUS-018)
+
+Four alert kinds open in the **Exceptions** inbox (the operational queue) and optionally go to a webhook:
+`stale_data`, `failed_reconciliation`, `budget_exhausted`, `model_unavailable`. Identical open alerts are de-duplicated
+(occurrence count increases); an alert resolves itself when its cause clears (for example, a failed order is re-queued and
+reconciled). Planners, approvers and administrators acknowledge alerts.
+
+Webhook: set `SUPPLYLENS_ALERT_WEBHOOK_URL` and `SUPPLYLENS_ALERT_WEBHOOK_SECRET`. Each delivery is a JSON POST with
+`X-SupplyLens-Timestamp` (Unix seconds), `X-SupplyLens-Signature` = `sha256=` + HMAC-SHA256(secret, `"<timestamp>.<body>"`) and
+`Idempotency-Key: alert-<id>`. Receivers must verify the signature, reject timestamps older than a few minutes, and
+de-duplicate on the idempotency key. Failed deliveries retry with backoff (2^n s, at most 5 min) and give up after
+`MAX_DELIVERY_ATTEMPTS`; the alert stays in the queue either way.
+
+## Tracing (OpenTelemetry)
+
+Set `SUPPLYLENS_OTEL_ENDPOINT` to an OTLP/HTTP collector (for example `http://jaeger:4318`). Spans: HTTP requests, SQL
+statements, agent-graph nodes, retrieval, forecasting and ERP dispatch. The trace context is stored in each queued job so a
+worker's spans continue the request that caused them. Unset = tracing off; every response still carries `x-trace-id`.
+
+## Tenant export and deletion (BUS-023)
+
+Administration → *Export*: a consistent snapshot (one `REPEATABLE READ` transaction) of every tenant table as NDJSON, the
+document bytes, optionally the embedding vectors, and a manifest with row counts and SHA-256s; the archive is re-read and
+verified before it is marked READY and the verification result is part of the manifest. Deletion needs the typed workspace
+slug, a verified export that has been downloaded, and a reason; it removes tenant rows in foreign-key order, deletes document
+files, writes a deletion certificate, and purges the append-only audit rows in one narrow SECURITY DEFINER step that refuses
+any other tenant or a non-customer workspace. **Backups taken before a deletion still contain the tenant's data**: delete or
+expire them under the retention policy the owner sets (not defined in this build). Restoring such a backup brings the tenant back until
+`reapply-deletions` is run (see Backup and restore).
+
+## Performance settings that matter (ARC-07)
+
+Measured on the reference data set (100,000 chunks, ~1,000,000 sales rows); details in `docs/operations/load-test.md`.
+
+* The application opens connections with `plan_cache_mode=force_custom_plan`. Without it, a prepared statement's sixth use
+  can switch to a generic plan and retrieval slows ten-fold. Do not put a pooler in front that drops startup options without
+  setting the same parameter on the database role.
+* For the database role used by the API, `max_parallel_workers_per_gather = 0` gave steadier retrieval latency under
+  concurrent users than the default (the compose file sets it). Revisit if the host has many idle cores.
+* Full-text search runs a sequential scan of the tenant's chunks under row-level security (the GIN index cannot be used
+  there), so retrieval cost grows linearly with a tenant's chunk count: about 0.7 core-seconds per request at 100,000.
+
+## Rehearsals (BUS-020)
+
+`uv run pytest tests/test_rehearsals.py` (needs a PostgreSQL superuser through `PGHOST/PGUSER/PGPASSWORD`) runs on scratch
+databases: a failed migration (schema, data, orders and audit untouched), rollback to the previous release and roll-forward,
+rollback refusing to destroy deletion certificates, ERP connector outage then recovery (exactly one order), refusal to retry
+when the remote order exists, and embedding-service outage (retrieval degrades and says so, the workflow completes). The
+pass criterion in each is no unaccounted order and no lost audit evidence.
+
 ## Contracts and CI
 
 `./scripts/check_contracts.sh` regenerates `packages/contracts/openapi.json` and `api.d.ts` and fails on drift.
-`.github/workflows/ci.yml` runs pytest against pgvector, the contract check, typecheck and `next build`. The workflow
-has not run on GitHub (no remote configured).
+`.github/workflows/ci.yml` runs on every push, pull request and weekly: ruff (correctness, imports, bugbear, security rules),
+lockfile check, gitleaks over full history, pip-audit and `npm audit`, pytest against pgvector (including the BUS-020
+rehearsals), the contract check, typecheck, `next build`, the Playwright suites (journeys, consistency, resilience,
+accessibility, Web Vitals) against a real API and database seeded with the synthetic fixture, the PITR drill, and a full
+`docker compose` build-and-smoke.
 
 ## Known limitations
 
-- Rate limits are in-process token buckets (valid for a single API instance only).
 - Session cookies are dev-only; OIDC is not configured. Do not expose this installation to a network.
-- No OpenTelemetry exporter; requests carry `x-trace-id` and are logged with timings.
+- Logout does not revoke a captured session cookie before it expires (security review F-06).
+- Search has no tenant-wide request ceiling, only a per-user one (F-05).
+- Lexical search reads every chunk of the tenant (see Performance settings); a vector index (HNSW) would cut the vector
+  half of the cost but needs real embeddings to validate recall, which this build cannot produce.
+- Recovery objectives were rehearsed on a toy database; RTO for a real data volume is unmeasured.
+- Mobile LCP is above the field target in the throttled lab profile (`docs/operations/web-vitals.md`).

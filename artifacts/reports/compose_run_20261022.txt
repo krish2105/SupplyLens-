@@ -1,0 +1,42 @@
+docker compose run, 2026-10-22 (UTC), sandbox host: 4 vCPU, Linux 6.18, Docker with overlayfs, no iptables
+Images were built with the sandbox-only override (host networking through the egress proxy; python:3.12 base, apt skipped, torch from PyPI because download.pytorch.org is blocked). The repository's compose file and Dockerfiles are unchanged by that override.
+
+$ docker compose ps -a
+SERVICE   IMAGE                    STATUS                          PORTS
+api       supplylens-api           Up 2 minutes (healthy)          0.0.0.0:8000->8000/tcp
+db        pgvector/pgvector:pg17   Up 3 minutes (healthy)          5432/tcp
+migrate   supplylens-migrate       Exited (0) About a minute ago   
+walinit   pgvector/pgvector:pg17   Exited (0) About a minute ago   
+web       supplylens-web           Up 2 minutes                    0.0.0.0:3100->3100/tcp
+worker    supplylens-worker        Up About a minute (healthy)     8000/tcp
+
+$ migrate service log (tail)
+migrate-1  | {
+migrate-1  |   "uci_ingest": "SKIPPED: raw file missing; run scripts/download_datasets.py --dataset online_retail_ii",
+migrate-1  |   "demo": {
+migrate-1  |     "reused": true
+migrate-1  |   }
+migrate-1  | }
+migrate-1  | {
+migrate-1  |   "uci_ingest": "SKIPPED: raw file missing; run scripts/download_datasets.py --dataset online_retail_ii",
+migrate-1  |   "demo": {
+migrate-1  |     "reused": true
+migrate-1  |   }
+migrate-1  | }
+
+$ reference journey through the containers (planner run -> approver approve -> sandbox ERP)
+run WAITING_FOR_APPROVAL actions 1
+action RECONCILED external_ref SBX-PO-100002
+sandbox orders for this tenant: 2
+
+$ WAL archiving
+archive_mode=on wal_level=replica max_parallel_workers_per_gather=0
+archived=5 failed=0 last=000000010000000000000004
+
+$ scripts/base_backup.sh
+base backup written to /basebackups/base_20261022T000713Z
+total 4396
+drwx------ 2 postgres postgres    4096 Oct 22 00:07 .
+drwx------ 4 postgres postgres    4096 Oct 22 00:07 ..
+-rw------- 1 postgres postgres  209535 Oct 22 00:07 backup_manifest
+-rw------- 1 postgres postgres 4279307 Oct 22 00:07 base.tar.gz

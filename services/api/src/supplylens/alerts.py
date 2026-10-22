@@ -14,6 +14,7 @@ import hashlib
 import hmac
 import json
 import logging
+import time
 import uuid
 from datetime import UTC, datetime
 
@@ -33,7 +34,8 @@ MAX_DELIVERY_ATTEMPTS = 6
 def raise_alert(tenant_id, kind: str, dedupe_key: str, title: str, detail: dict | None = None,
                 severity: str = "medium") -> dict:
     """Open an alert, or bump the open one with the same dedupe key. Never raises into the caller's workflow."""
-    assert kind in KINDS, kind
+    if kind not in KINDS:
+        raise ValueError(f"unknown alert kind {kind!r}")
     try:
         with tenant_session(tenant_id) as s:
             row = s.execute(text("""
@@ -164,8 +166,9 @@ def _model_problems(tenant_id):
 
 
 # --------------------------------------------------------------------------------- webhook route
-def _sign(body: bytes) -> str:
-    return "sha256=" + hmac.new(settings.alert_webhook_secret.encode(), body, hashlib.sha256).hexdigest()
+def _sign(body: bytes, timestamp: str) -> str:
+    """HMAC-SHA256 over "<unix seconds>.<body>". The timestamp is signed, so a receiver can reject stale or replayed deliveries."""
+    return "sha256=" + hmac.new(settings.alert_webhook_secret.encode(), timestamp.encode() + b"." + body, hashlib.sha256).hexdigest()
 
 
 def deliver_pending(tenant_id, *, client: httpx.Client | None = None, limit: int = 20) -> dict:
@@ -187,9 +190,10 @@ def deliver_pending(tenant_id, *, client: httpx.Client | None = None, limit: int
                                    "first_seen": r["first_seen"].isoformat()}, default=str).encode()
                 err = None
                 try:
+                    ts = str(int(time.time()))
                     resp = client.post(settings.alert_webhook_url, content=body, headers={
-                        "Content-Type": "application/json", "X-SupplyLens-Signature": _sign(body),
-                        "Idempotency-Key": f"alert-{r['id']}"})
+                        "Content-Type": "application/json", "X-SupplyLens-Timestamp": ts,
+                        "X-SupplyLens-Signature": _sign(body, ts), "Idempotency-Key": f"alert-{r['id']}"})
                     if resp.status_code >= 300:
                         err = f"HTTP {resp.status_code}"
                 except httpx.HTTPError as e:

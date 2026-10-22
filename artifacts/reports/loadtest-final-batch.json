@@ -1,0 +1,99 @@
+{
+  "generated_at": "2026-10-21T23:17:38.445896+00:00",
+  "phase": "batch",
+  "condition": "warm, one user",
+  "host": {
+    "vcpus": 4,
+    "cpu_model": "Intel(R) Xeon(R) Processor @ 2.10GHz",
+    "mem_total": "16479424 kB",
+    "kernel": "6.18.44-fc-v139",
+    "python": "3.12.3",
+    "note": "API, worker, PostgreSQL and this driver all run on the same machine"
+  },
+  "result": {
+    "forecast_200_skus_seasonal_naive": {
+      "n": 5,
+      "failed": 0,
+      "status_codes": {
+        "200": 5
+      },
+      "p50_ms": 2582.269205000557,
+      "p95_ms": 2681.4098504004505,
+      "p99_ms": 2681.4241124805267,
+      "max_ms": 2681.4276780005457,
+      "mean_ms": 2587.4994810001226
+    },
+    "batch_forecast_all_2000_skus": {
+      "seconds": 25.3,
+      "requests": 10,
+      "status_codes": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ]
+    },
+    "scenario_200_skus_forecast_plus_cpsat": {
+      "n": 3,
+      "failed": 0,
+      "status_codes": {
+        "200": 3
+      },
+      "p50_ms": 11077.744210999299,
+      "p95_ms": 12872.82828230018,
+      "p99_ms": 13032.391310860257,
+      "max_ms": 13072.282068000277,
+      "mean_ms": 9055.984331666574
+    },
+    "scenario_full_catalogue_10_runs_of_200": {
+      "seconds": 97.5,
+      "n": 10,
+      "failed": 0,
+      "status_codes": {
+        "200": 10
+      },
+      "p50_ms": 12223.375216500244,
+      "p95_ms": 13156.046273449647,
+      "p99_ms": 13159.250985889412,
+      "max_ms": 13160.052163999353,
+      "mean_ms": 9752.20725149993
+    },
+    "scenario_without_sku_list_on_2000_skus": {
+      "status_code": 422,
+      "message": "select between 1 and 200 SKUs"
+    },
+    "agent_run_50_skus_end_to_end": [
+      {
+        "status": "WAITING_FOR_APPROVAL",
+        "seconds": 2.6
+      },
+      {
+        "status": "WAITING_FOR_APPROVAL",
+        "seconds": 3.7
+      }
+    ],
+    "resources": {
+      "api": {
+        "cpu_cores_mean": 0.9,
+        "cpu_cores_max": 1.01,
+        "rss_mb_max": 396
+      },
+      "postgres": {
+        "cpu_cores_mean": 0.07,
+        "cpu_cores_max": 0.98,
+        "rss_mb_max": 2428
+      },
+      "driver": {
+        "cpu_cores_mean": 0.01,
+        "cpu_cores_max": 0.02,
+        "rss_mb_max": 53
+      }
+    }
+  }
+}

@@ -20,6 +20,11 @@ from ortools.sat.python import cp_model
 from pydantic import BaseModel, Field
 
 SOLVER_SETTINGS = {"num_workers": 1, "random_seed": 0, "max_time_s": 10.0}
+INT_LIMIT = 2 ** 62          # CP-SAT works in 64-bit integers; stay well inside so sums cannot overflow
+
+
+class ScaleError(ValueError):
+    """Prices and quantities are too large to model exactly in 64-bit integers."""
 
 
 class Offer(BaseModel):
@@ -113,13 +118,37 @@ def _eligible(req: PlanRequest, ignore: set[str] = frozenset()) -> tuple[list[Of
     return keep, excluded
 
 
+def _upper_bounds(req: PlanRequest, offers: list[Offer]) -> list[int]:
+    """Most units one offer can usefully carry: ordering more than max(MOQ, need), rounded up to the order multiple, only
+    costs more (unit costs are positive), so no optimal plan exceeds it. Tight bounds keep the arithmetic exact."""
+    need = {n.sku_id: n.required_units for n in req.needs}
+    out = []
+    for o in offers:
+        useful = max(o.moq, need.get(o.sku_id, 0))
+        out.append(min(req.max_units_per_line, -(-useful // o.order_multiple) * o.order_multiple))
+    return out
+
+
+def _scale(req: PlanRequest, offers: list[Offer], ub: list[int]) -> int:
+    """Weight W of the primary objective so that cost differences always outrank the secondary terms (fewer units, then
+    supplier order). Raises ScaleError when the largest possible objective does not fit in 64-bit integers."""
+    secondary = 100 * sum(ub) + len({o.supplier_id for o in offers}) ** 2 + 1
+    w = 10 ** len(str(secondary))
+    purchase_max = sum(o.unit_cost_minor * u for o, u in zip(offers, ub, strict=True))
+    penalty_max = req.shortage_penalty_minor * sum(n.required_units for n in req.needs)
+    if (purchase_max + penalty_max) * w + secondary > INT_LIMIT or max(purchase_max, req.budget_minor) > INT_LIMIT:
+        raise ScaleError(f"largest possible spend {purchase_max + penalty_max} (minor units) is too large for exact integer "
+                         "arithmetic; quote prices in larger units or plan fewer SKUs per run")
+    return w
+
+
 def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
     m = cp_model.CpModel()
-    big = req.max_units_per_line
+    ub = _upper_bounds(req, offers)
     qty, use = {}, {}
     for i, o in enumerate(offers):
-        k = m.NewIntVar(0, big // o.order_multiple, f"k{i}")
-        q = m.NewIntVar(0, big, f"q{i}")
+        k = m.NewIntVar(0, ub[i] // o.order_multiple, f"k{i}")
+        q = m.NewIntVar(0, ub[i], f"q{i}")
         u = m.NewBoolVar(f"u{i}")
         m.Add(q == o.order_multiple * k)
         m.Add(q >= (1 if "moq" in relax else o.moq)).OnlyEnforceIf(u)
@@ -148,7 +177,7 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
     rank = {sid: r for r, sid in enumerate(sorted({o.supplier_id for o in offers}))}
     tiebreak = sum(rank[o.supplier_id] * use[i] for i, o in enumerate(offers)) if offers else 0
     units = sum(qty.values()) if qty else 0
-    m.Minimize((purchase + penalty) * 1_000_000 + units * 100 + tiebreak)
+    m.Minimize((purchase + penalty) * _scale(req, offers, ub) + units * 100 + tiebreak)
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = SOLVER_SETTINGS["num_workers"]
     solver.parameters.random_seed = SOLVER_SETTINGS["random_seed"]
@@ -166,7 +195,10 @@ def plan(req: PlanRequest) -> PlanResult:
     solver_info = {"name": "OR-Tools CP-SAT", "version": ortools.__version__, **SOLVER_SETTINGS}
     base = dict(currency=req.currency, excluded_offers=excluded, input_hash=input_hash(req),
                 solver=solver_info)
-    solver, status, qty, use, shortage = _solve(req, offers, set())
+    try:
+        solver, status, qty, use, shortage = _solve(req, offers, set())
+    except ScaleError as e:
+        return PlanResult(status="MODEL_INVALID", explanation=[str(e)], **base)
     name = STATUS[status]
     if name not in ("OPTIMAL", "FEASIBLE"):
         return PlanResult(status=name, explanation=explain_infeasible(req), **base)

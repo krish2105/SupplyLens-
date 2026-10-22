@@ -479,6 +479,7 @@ class ScenarioInputs(Out):
     supplier_delay_days: int
     safety_days: int
     coverage_days: int
+    service_level: float | None = None
     allow_shortfall: bool
     shortage_penalty_minor: int
     currency: str

@@ -7,10 +7,13 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import socket
+import tempfile
 import threading
 import time
 import uuid
+from pathlib import Path
 
 from sqlalchemy import text
 
@@ -21,6 +24,7 @@ from supplylens.db import tenant_session
 
 log = logging.getLogger("supplylens.worker")
 WORKER_ID = f"{socket.gethostname()}:{uuid.uuid4().hex[:6]}"
+HEARTBEAT = Path(os.environ.get("SUPPLYLENS_WORKER_HEARTBEAT") or Path(tempfile.gettempdir()) / "supplylens-worker.heartbeat")
 
 
 def refresh_runs(tenant_id) -> None:
@@ -114,7 +118,15 @@ def main() -> None:
     telemetry.setup(service_name="supplylens-worker")
     log.info("worker %s started", WORKER_ID)
     while True:
-        n = tick()
+        try:
+            n = tick()
+            HEARTBEAT.touch()          # a container health check reads this file's age
+        except Exception:
+            if ns.once:
+                raise
+            log.exception("worker tick failed; retrying")      # a database blip must not end the process
+            n = 0
+            time.sleep(min(30.0, ns.interval * 5))
         if ns.once:
             break
         if not n:

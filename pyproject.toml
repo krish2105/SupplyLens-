@@ -52,17 +52,29 @@ timeout = 300
 line-length = 100
 
 [tool.ruff.lint]
-# Correctness (E4/E7/E9/F), import order, modern syntax, likely bugs, unused noqa. Style-only rules stay off:
-# E501 (long lines) is not enforced. B008 is ignored because FastAPI declares dependencies as call defaults.
-select = ["E4", "E7", "E9", "F", "I", "UP", "B", "RUF100"]
-ignore = ["B008", "E741", "E702"]   # E741/E702: existing cosmetic style (single-letter loop names, one-line pairs)
+# Correctness (E4/E7/E9/F), import order, modern syntax, likely bugs, security (S, bandit rules), unused noqa.
+# Style-only rules stay off: E501 (long lines) is not enforced. B008 is ignored because FastAPI declares dependencies
+# as call defaults. S101 (assert) is ignored: tests use it by design, and the four uses in shipped code are internal
+# invariants (the one that guards SQL identifiers was changed to an explicit raise in the BUS-021 review).
+select = ["E4", "E7", "E9", "F", "I", "UP", "B", "S", "RUF100"]
+ignore = ["B008", "E741", "E702", "S101"]   # E741/E702: existing cosmetic style (single-letter loop names, one-line pairs)
 
 [tool.ruff.lint.isort]
 known-first-party = ["supplylens", "supplylens_ml", "supplylens_opt", "supplylens_worker"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["B017", "E402"]
-"evaluations/*" = ["E402"]
+"tests/*" = ["B017", "E402", "S105", "S106", "S108", "S311", "S603", "S607", "S608"]
+"evaluations/*" = ["E402", "S311", "S603", "S607"]
+"scripts/*" = ["S108", "S310", "S311", "S603", "S607", "S608"]      # developer tooling run by an engineer, never by a request
+# Reviewed 2026-10 (docs/security/security_review.md): in these files every interpolated SQL fragment is a module constant
+# or a catalog identifier checked against a strict pattern; every value is a bound parameter.
+"services/api/src/supplylens/actions/service.py" = ["S608"]
+"services/api/src/supplylens/api/routes_market.py" = ["S608"]
+"services/api/src/supplylens/forecasting/service.py" = ["S608", "S603"]   # S603: argv list, fixed interpreter, hash-verified artifact
+"services/api/src/supplylens/ingest/world_bank.py" = ["S608"]
+"services/api/src/supplylens/knowledge/retrieve.py" = ["S608"]
+"services/api/src/supplylens/lifecycle.py" = ["S608"]
+"services/api/src/supplylens/config.py" = ["S105"]                   # published development defaults; refused when dev auth is off
 
 # Containers run on Linux CPU: use PyTorch's CPU wheels there (no CUDA libraries); macOS keeps the default wheel (MPS).
 [tool.uv.sources]

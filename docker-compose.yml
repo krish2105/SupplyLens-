@@ -1,39 +1,92 @@
-# Local container stack: postgres (pgvector), one-shot migrate+seed, api, worker, web.
+# Local container stack: postgres (pgvector, WAL archiving on), one-shot migrate+seed, api, worker, web.
 # Embeddings need Ollama on the host (OLLAMA_URL); without it retrieval runs lexical-only and says so.
+#
+#   docker compose up -d --build                         the application
+#   docker compose --profile observability up -d        + Jaeger (traces at http://localhost:16686)
+#   scripts/base_backup.sh                               a physical base backup (to the basebackups volume)
+#
+# WAL archiving: every completed WAL segment is copied to the `walarchive` volume (archive_timeout bounds how much recent
+# work an incident can lose). A base backup plus that archive is what scripts/pitr_drill.sh restores from; the steps are
+# in docs/operations/runbook.md. Both volumes should live on storage separate from `pgdata` in any real deployment.
 name: supplylens
+x-app-env: &env
+  SUPPLYLENS_DATABASE_URL: postgresql+psycopg://supplylens_app:supplylens_app_dev@db:5432/supplylens
+  SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@db:5432/supplylens
+  SUPPLYLENS_OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+  SUPPLYLENS_STORAGE_DIR: /app/storage
+  SUPPLYLENS_SESSION_SECRET: ${SUPPLYLENS_SESSION_SECRET:-dev-only-change-me}
+  # OpenTelemetry: empty = tracing off. With the observability profile: SUPPLYLENS_OTEL_ENDPOINT=http://jaeger:4318
+  SUPPLYLENS_OTEL_ENDPOINT: ${SUPPLYLENS_OTEL_ENDPOINT:-}
+  SUPPLYLENS_ALERT_WEBHOOK_URL: ${SUPPLYLENS_ALERT_WEBHOOK_URL:-}
+  SUPPLYLENS_ALERT_WEBHOOK_SECRET: ${SUPPLYLENS_ALERT_WEBHOOK_SECRET:-dev-only-change-me}
+x-api-build: &api-build
+  context: .
+  dockerfile: infra/docker/api.Dockerfile
+  # Overridable for networks that cannot reach the defaults (see the Dockerfile header).
+  args:
+    BASE_IMAGE: ${BASE_IMAGE:-python:3.12-slim}
+    APT_PACKAGES: ${APT_PACKAGES-ca-certificates libgomp1 postgresql-client}
+    TORCH_INDEX: ${TORCH_INDEX:-https://download.pytorch.org/whl/cpu}
 services:
+  walinit:
+    image: pgvector/pgvector:pg17
+    user: root
+    command: ["sh", "-c", "mkdir -p /wal_archive /basebackups && chown postgres:postgres /wal_archive /basebackups && chmod 700 /wal_archive /basebackups"]
+    volumes: [walarchive:/wal_archive, basebackups:/basebackups]
   db:
     image: pgvector/pgvector:pg17
     environment:
       POSTGRES_PASSWORD: postgres_dev_only
+    command:
+      - postgres
+      - -c
+      - wal_level=replica
+      - -c
+      - archive_mode=on
+      - -c
+      - archive_timeout=60
+      # Steadier retrieval latency under concurrent users than the default (docs/operations/load-test.md).
+      - -c
+      - max_parallel_workers_per_gather=0
+      - -c
+      - archive_command=test ! -f /wal_archive/%f && cp %p /wal_archive/%f
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - walarchive:/wal_archive
+      - basebackups:/basebackups
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    depends_on: { walinit: { condition: service_completed_successfully } }
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d supplylens"]
       interval: 5s
       retries: 20
+  jaeger:
+    profiles: [observability]
+    image: jaegertracing/all-in-one:1.62.0
+    environment: { COLLECTOR_OTLP_ENABLED: "true" }
+    ports: ["16686:16686"]
   migrate:
-    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
-    environment: &env
-      SUPPLYLENS_DATABASE_URL: postgresql+psycopg://supplylens_app:supplylens_app_dev@db:5432/supplylens
-      SUPPLYLENS_ADMIN_DATABASE_URL: postgresql+psycopg://supplylens_owner:supplylens_owner_dev@db:5432/supplylens
-      SUPPLYLENS_OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
-      SUPPLYLENS_STORAGE_DIR: /app/storage
-      SUPPLYLENS_SESSION_SECRET: ${SUPPLYLENS_SESSION_SECRET:-dev-only-change-me}
+    build: *api-build
+    environment: *env
     command: ["sh", "-c", "alembic -c services/api/alembic.ini upgrade head && python -m supplylens.bootstrap"]
     volumes: [storage:/app/storage, ./data/raw:/app/data/raw:ro, ./artifacts:/app/artifacts]
     depends_on: { db: { condition: service_healthy } }
   api:
-    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
+    build: *api-build
     environment: *env
     volumes: [storage:/app/storage, ./artifacts:/app/artifacts:ro]
     depends_on: { migrate: { condition: service_completed_successfully } }
     ports: ["8000:8000"]
   worker:
-    build: { context: ., dockerfile: infra/docker/api.Dockerfile }
+    build: *api-build
     environment: *env
     command: ["python", "-m", "supplylens_worker.main"]
+    # The image's health check probes the API port, which the worker does not serve; check the worker's own heartbeat file.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import os,sys,time; sys.exit(0 if time.time()-os.path.getmtime('/tmp/supplylens-worker.heartbeat') < 120 else 1)"]
+      interval: 20s
+      start_period: 30s
+      retries: 3
     volumes: [storage:/app/storage, ./artifacts:/app/artifacts:ro]
     depends_on: { migrate: { condition: service_completed_successfully } }
   web:
@@ -43,3 +96,5 @@ services:
 volumes:
   pgdata: {}
   storage: {}
+  walarchive: {}
+  basebackups: {}

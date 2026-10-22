@@ -110,11 +110,13 @@ echo "== 7. verify"
 appenv "$RPORT"
 RESTORED="$(uv run --no-sync python tests/rehearsal_workload.py --counts 2>/dev/null | tail -1)"
 echo "   restored counts: $RESTORED"
+PGVER="$(psql "${HOSTARGS[@]}" -p "$RPORT" -d postgres -Atc 'SHOW server_version')"
+DBBYTES="$(psql "${HOSTARGS[@]}" -p "$RPORT" -d postgres -Atc "SELECT pg_database_size('supplylens')")"
 REPORT="artifacts/reports/pitr_drill_$(date -u +%Y%m%dT%H%M%SZ).json"
 mkdir -p artifacts/reports
-python3 - "$EXPECTED" "$AFTER" "$RESTORED" "$TARGET" "$REPORT" "$ARCHIVED" "$T_BACKUP_START" "$T_BACKUP_END" "$T_DISASTER" "$T_RESTORE_START" "$T_RESTORE_END" <<'PY'
+python3 - "$EXPECTED" "$AFTER" "$RESTORED" "$TARGET" "$REPORT" "$ARCHIVED" "$T_BACKUP_START" "$T_BACKUP_END" "$T_DISASTER" "$T_RESTORE_START" "$T_RESTORE_END" "$PGVER" "$DBBYTES" <<'PY'
 import json, sys, platform
-exp, after, got, target, report, archived, b0, b1, dis, r0, r1 = sys.argv[1:]
+exp, after, got, target, report, archived, b0, b1, dis, r0, r1, pgver, dbbytes = sys.argv[1:]
 exp, after, got = json.loads(exp), json.loads(after), json.loads(got)
 ok = got == exp and after != exp and exp["sandbox_orders"] == exp["actions"] > 0
 out = {"drill": "point-in-time recovery", "ok": ok, "target_time_utc": target,
@@ -122,7 +124,10 @@ out = {"drill": "point-in-time recovery", "ok": ok, "target_time_utc": target,
        "orders_accounted": got["sandbox_orders"] == got["actions"],
        "wal_segments_archived": int(archived), "archive_timeout_s": 30,
        "backup_seconds": round(float(b1) - float(b0), 1), "restore_seconds_rto": round(float(r1) - float(r0), 1),
-       "postgres": platform.node(), "notes": "scratch cluster; data are Demo-workspace fictional orders"}
+       "rpo_bound_s": 30,    # a lost primary disk loses at most the WAL not yet archived: archive_timeout bounds it
+       "postgres_server_version": pgver, "database_bytes_restored": int(dbbytes), "host": platform.node(),
+       "notes": "scratch cluster on one machine; data are Demo-workspace fictional orders. RTO here is for a database of "
+                "this size only: restore time grows with base-backup size and WAL to replay"}
 open(report, "w").write(json.dumps(out, indent=2))
 print(json.dumps(out, indent=2))
 sys.exit(0 if ok else 1)

@@ -20,6 +20,9 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     embed_model: str = "bge-m3:567m"
     embed_dim: int = 1024
+    # Optional cross-encoder reranker: a local model directory or hub id. Unset = rule-based reranking only.
+    reranker_model: str | None = None
+    reranker_candidates: int = 20
     session_secret: str = "dev-only-change-me"
     dev_auth: bool = True
     approval_ttl_minutes: int = 60 * 24

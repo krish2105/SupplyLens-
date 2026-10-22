@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 import uuid
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 from sqlalchemy import text
@@ -82,7 +82,7 @@ def load() -> dict:
                            "SELECT x.t::uuid, x.d::uuid, x.k, 'WH-SYN', x.day::date, x.u FROM jsonb_to_recordset(CAST(:r AS jsonb)) "
                            "AS x(t text, d text, k text, day text, u int)"), {"r": json.dumps(rows[k:k + 2000])})
         s.execute(text("INSERT INTO tenant_settings VALUES (:t,:a,'GBP',:d,NULL,CAST(:p AS jsonb)) ON CONFLICT (tenant_id) DO NOTHING"),
-                  {"t": t, "a": datetime(2011, 12, 8, 23, 59, tzinfo=timezone.utc), "d": did,
+                  {"t": t, "a": datetime(2011, 12, 8, 23, 59, tzinfo=UTC), "d": did,
                    "p": json.dumps({"weekly_budget_minor": 2_000_000, "coverage_days": 21, "safety_days": 5})})
     return {"reused": False, "products": N_SKU, "sales_rows": len(rows), "units": total_units}
 

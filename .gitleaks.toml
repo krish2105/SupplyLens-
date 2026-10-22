@@ -1,0 +1,16 @@
+title = "supplylens gitleaks config"
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Published development-only credentials. They are documented in README and refused by config when SUPPLYLENS_DEV_AUTH=false."
+regexes = [
+  '''supplylens_(owner|app)_dev''',
+  '''dev-only-change-me''',
+  '''postgres_dev_only''',
+]
+paths = [
+  '''uv\.lock''',
+  '''package-lock\.json''',
+  '''.*\.(svg|png|webp)$''',
+]

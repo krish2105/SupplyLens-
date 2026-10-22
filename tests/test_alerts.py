@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import threading
+import time
 from datetime import UTC, datetime
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
@@ -222,8 +223,12 @@ def test_webhook_delivery_is_signed_retried_and_recorded(world, monkeypatch):
         s.execute(text("UPDATE alerts SET next_delivery_at = now()"))
     assert alerts.deliver_pending(t)["delivered"] == 1
     headers, body = _Sink.received[0]
-    expected = "sha256=" + hmac.new(settings.alert_webhook_secret.encode(), body, hashlib.sha256).hexdigest()
+    ts = headers["X-SupplyLens-Timestamp"]
+    expected = "sha256=" + hmac.new(settings.alert_webhook_secret.encode(), ts.encode() + b"." + body, hashlib.sha256).hexdigest()
     assert headers["X-SupplyLens-Signature"] == expected and headers["Idempotency-Key"] == f"alert-{a['id']}"
+    assert abs(int(ts) - time.time()) < 60                                              # the signed timestamp is current
+    assert headers["X-SupplyLens-Signature"] != "sha256=" + hmac.new(settings.alert_webhook_secret.encode(), body,
+                                                                       hashlib.sha256).hexdigest()   # body alone no longer verifies
     assert json.loads(body)["kind"] == "failed_reconciliation"
     assert alerts.deliver_pending(t)["delivered"] == 0                                  # delivered once only
     srv.shutdown()

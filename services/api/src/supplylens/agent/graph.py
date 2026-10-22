@@ -28,6 +28,7 @@ from ..authz import Actor, resolve_actor
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from ..knowledge.retrieve import search
+from ..planning.demand_history import dependence_by_sku
 from ..planning.terms_service import applicable_terms
 
 DEFAULT_BUDGET = {"max_tool_calls": 400, "max_seconds": 120, "max_check_loops": 1}
@@ -159,8 +160,11 @@ def gather(state):
                           horizon=28, created_by=uuid.UUID(state["actor_id"]), allow_baseline_fallback=True)
         forecast = {"available": True, "run_id": str(fr.run_id), "model_version_id": str(fr.model_version_id),
                     "origin": fr.origin.isoformat(), "quality_flags": fr.quality_flags,
-                    "points": {sku: [{"day": r.day.date().isoformat(), "q50": r.q50, "q90": r.q90}
+                    "points": {sku: [{"day": r.day.date().isoformat(), "q10": r.q10, "q50": r.q50, "q90": r.q90}
                                      for r in g.itertuples()] for sku, g in fr.points.groupby("sku_id")}}
+        _tool(state)
+        forecast["dependence"] = {k: list(v) for k, v in
+                                  dependence_by_sku(uuid.UUID(state["tenant_id"]), uuid.UUID(st["dataset_id"]), skus, eff).items()}
     _tool(state)
     res = applicable_terms(uuid.UUID(state["tenant_id"]), skus, cutoff, eff)
     # Upcoming policy changes: known now, effective later. Surfaced, not applied.
@@ -210,12 +214,17 @@ def compute(state):
     assessments = {}
     for sku, p in state["needs"]["positions"].items():
         if state["forecast"]["available"]:
-            pts = [{"day": date.fromisoformat(x["day"]), "q50": x["q50"], "q90": x["q90"]}
+            pts = [{"day": date.fromisoformat(x["day"]), "q10": x["q10"], "q50": x["q50"], "q90": x["q90"]}
                    for x in state["forecast"]["points"].get(sku, [])]
             if not pts:
                 continue
+            lead = min([t["lead_time_days"] for t in state["terms"]["applicable"]
+                        if t["sku_id"] == sku and t["currency"] == st["currency"]], default=0)
+            acf, basis = state["forecast"].get("dependence", {}).get(sku, (None, "assumed default"))
             a = assess(Position(**{k: p[k] for k in ("on_hand", "allocated", "on_order", "capacity")}, sku_id=sku),
-                       pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5))
+                       pts, eff, planning.get("coverage_days", 21), planning.get("safety_days", 5),
+                       lead_time_days=lead, service_level=planning.get("service_level", 0.9), acf=acf,
+                       dependence_basis=basis)
             assessments[sku] = a.model_dump(mode="json")
         else:
             # No sales history (demo): reorder-point rule from the fixture; required units only if below it.

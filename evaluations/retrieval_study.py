@@ -131,6 +131,11 @@ def r2():
         "temporal_on_lexical": dict(mode="effective", rerank=True, channels=("lexical",)),
         "temporal_on_hybrid": dict(mode="effective", rerank=True, channels=("lexical", "vector")),
     }
+    from supplylens.knowledge.rerank import load_reranker
+    reranker = load_reranker()        # None unless SUPPLYLENS_RERANKER_MODEL names a model this machine can load
+    if reranker is not None:
+        conditions["temporal_on_hybrid_cross_encoder"] = dict(mode="effective", rerank=True, channels=("lexical", "vector"),
+                                                              reranker=reranker)
     results = {}
     for name, cfg in conditions.items():
         per_case = defaultdict(lambda: {"n": 0, "top1": 0, "recall5": 0, "wrong_version_top1": 0, "abstain_ok": 0})
@@ -154,7 +159,7 @@ def r2():
         answerable = [v for k, v in per_case.items() if k != "unknown_product"]
         n = sum(v["n"] for v in answerable)
         results[name] = {
-            "config": {k: list(v) if isinstance(v, tuple) else v for k, v in cfg.items()},
+            "config": {k: list(v) if isinstance(v, tuple) else getattr(v, "name", v) for k, v in cfg.items()},
             "answerable_questions": n,
             "top1_citation_accuracy": sum(v["top1"] for v in answerable) / n,
             "recall@5": sum(v["recall5"] for v in answerable) / n,
@@ -175,6 +180,7 @@ def r2():
     return {"study": "R2", "taskset": str(path.relative_to(REPO_ROOT)), "questions": len(tasks),
             "generated_from": "UCI workspace supplier_terms (SIMULATED agreements); answer key not used at runtime",
             "human_reviewed": False, "conditions": results,
+            "cross_encoder": "run" if reranker is not None else "NOT RUN: no reranker configured or loadable (SUPPLYLENS_RERANKER_MODEL)",
             "cross_tenant_probes": {"queries": 60, "leaked_chunks": leaks}}
 
 

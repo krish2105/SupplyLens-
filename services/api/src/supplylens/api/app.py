@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import time
 import uuid
 
@@ -41,7 +42,9 @@ telemetry.setup(app)
 
 @app.middleware("http")
 async def trace(request: Request, call_next):
-    trace_id = telemetry.current_trace_id() or request.headers.get("x-trace-id") or uuid.uuid4().hex
+    supplied = request.headers.get("x-trace-id", "")
+    # A caller-supplied id is echoed in the response and written to logs: accept only a plain hex/dash token.
+    trace_id = telemetry.current_trace_id() or (supplied if re.fullmatch(r"[0-9A-Fa-f-]{8,64}", supplied) else uuid.uuid4().hex)
     start = time.perf_counter()
     response = await call_next(request)
     response.headers["x-trace-id"] = trace_id

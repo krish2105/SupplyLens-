@@ -3301,6 +3301,8 @@ export interface components {
             name?: string;
             /** Safety Days */
             safety_days?: number | null;
+            /** Service Level */
+            service_level?: number | null;
             /**
              * Shortage Penalty Minor
              * @default 500
@@ -3334,6 +3336,8 @@ export interface components {
             name: string;
             /** Safety Days */
             safety_days: number;
+            /** Service Level */
+            service_level: number | null;
             /** Shortage Penalty Minor */
             shortage_penalty_minor: number;
             /** Sku Ids */
