@@ -1,0 +1,12 @@
+# Vercel builds only the web app (Root Directory = apps/web), which imports the API contract from packages/contracts.
+# Upload nothing else: no data, models, artifacts, storage, local packs or Python sources.
+/*
+!/apps
+/apps/*
+!/apps/web
+!/packages
+/apps/web/node_modules
+/apps/web/.next
+/apps/web/.next-build
+/apps/web/test-results
+/apps/web/tsconfig.tsbuildinfo

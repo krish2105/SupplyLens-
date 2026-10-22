@@ -68,3 +68,5 @@ infra/docker/ca/*.crt
 apps/web/test-results/
 apps/web/.next-build/
 /SupplyLens_Updated_Pack_With_Images/
+.vercel
+.env*
