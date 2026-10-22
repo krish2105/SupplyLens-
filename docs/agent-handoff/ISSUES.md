@@ -1,0 +1,282 @@
+# Agent handoff — issue register
+
+Opened in Phase 0 (2026-10-22, commit `9fcbedb`). Severity scale: see DECISIONS.md PD-005.
+**Label:** VERIFIED = the auditing session re-read the cited code (and, where noted, ran a probe or command);
+PLAUSIBLE = reasoning from code that was not reproduced; needs investigation before fixing. **Status:** `open`
+unless a later phase changes it — update the status column and add the evidence ID; never delete a row.
+
+The 22 earlier CTO-audit findings (F01–F08, S09–S22) are tracked in `docs/remediation/REGISTER.md` and are not
+repeated. Where a Phase 0 finding is a residual of one of them it says so.
+
+## Summary
+
+| ID | P | Area | Title | Label | Status |
+|---|---|---|---|---|---|
+| P0-SEC-01 | P0 | Hosted demo / authz | Public passwordless `tenant_admin` can alter the shared live demo (memberships, workspaces, imports) | VERIFIED (code + live account list) | open |
+| P0-PLAN-01 | P0 | Planning | Default `allow_shortfall=True` with 500-minor penalty makes "order nothing" optimal for any unit cost ≥ 5.00 | VERIFIED (code + solver probe) | open |
+| P1-PLAN-02 | P1 | Planning | Lead-time demand sized with the *fastest* supplier's lead time; optimiser then buys from slower one | VERIFIED (code + probe) | open |
+| P1-ACT-01 | P1 | Actions | An action that went STALE at dispatch cannot be re-approved (outbox UNIQUE violation → 500) | VERIFIED (code + schema) | open |
+| P1-ACT-02 | P1 | Actions / planning | Orders not yet RECONCILED (QUEUED, SUBMITTED, UNKNOWN_OUTCOME, CONFIRMED-mismatch) are invisible to planning → duplicate purchasing; CONFIRMED has no exit | VERIFIED (code) | open |
+| P1-SEC-02 | P1 | Hosted demo / secrets | Hosted API function derives and holds the Neon **owner** DSN at runtime | VERIFIED (code) | open |
+| P1-FE-01 | P1 | Web | Workspace defaults to `uci-research` and is never reconciled with the user's memberships | VERIFIED (code); user impact INFERRED | open |
+| P1-FE-02 | P1 | Web | Receipt quantities keyed by `sku_id` on SKU@location rows → booking against the wrong location | VERIFIED (code) | open |
+| P1-IAM-01 | P1 | Identity / SaaS | One platform-wide IdP, roles from a `<slug>:<role>` claim, link-by-email, no SCIM; not qualified against a corporate IdP | VERIFIED (code); qualification = external | open |
+| P1-OPS-01 | P1 | Platform | No production deployment architecture: no IaC, no staging, no secret manager, single uvicorn process, no SLOs/dashboards/on-call | VERIFIED (absence) | open |
+| P1-SAAS-01 | P1 | SaaS | No self-serve signup, billing, plans, usage metering or tenant provisioning outside an existing admin | VERIFIED (absence, grep) | open |
+| P1-PROC-01 | P1 | Process | `main` is unprotected (no required checks/reviews) on a public repo; work pushed directly (D-037) | VERIFIED (`gh api …/protection` 404) | open |
+| P2-REL-01 | P2 | Worker | Job whose lease expires on its last attempt stays `RUNNING` forever | VERIFIED (probe P0-E16) | open |
+| P2-REL-02 | P2 | Worker | Agent-run execution is not fenced; heartbeat thread dies silently on a DB error → possible double execution / duplicate drafts | PLAUSIBLE | open |
+| P2-REL-03 | P2 | Worker | Single-threaded worker processes tenants serially, one job per tenant per tick; outbox re-claim has no attempt cap or heartbeat | VERIFIED (code); impact PLAUSIBLE | open |
+| P2-PLAN-03 | P2 | Planning / temporal | Replays with `effective_date` > `knowledge_cutoff` read stock, open orders, shares, dependence and capacity dated after the cutoff | VERIFIED (code) | open |
+| P2-PLAN-04 | P2 | Planning | Dependence (ACF) computed on recorded days as if consecutive calendar days → variance understated | VERIFIED (probe by reviewer; code re-read) | open |
+| P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | open |
+| P2-ML-01 | P2 | Forecasting | No test of a successful trained-model forecast through the service; missing artifacts raise `artifact_missing` without baseline fallback | VERIFIED (tests); fallback gap PLAUSIBLE | open |
+| P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | open |
+| P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | open |
+| P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | open |
+| P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | open |
+| P2-FE-04 | P2 | Web | No `error.tsx` / `global-error.tsx` / `not-found.tsx`; render errors white-screen the app | VERIFIED (absence) | open |
+| P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | open |
+| P2-FE-06 | P2 | Web | Query errors rendered as endless loading or as empty states on several screens | VERIFIED (code, per reviewer list) | open |
+| P2-FE-07 | P2 | Web | Onboarding mapping state stale when switching batch; unhandled rejections (onboarding, sign-out) | VERIFIED (code) | open |
+| P2-FE-08 | P2 | Web | Web Vitals reporter re-registers observers on every route change → duplicated, mislabelled vitals | VERIFIED (code) | open |
+| P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | open |
+| P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED in repo docs; not re-run | open |
+| P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | open |
+| P3-DOC-02 | P3 | Docs | Contradictory statements (no deployments vs D-050; "current task: session 3"; OIDC "outstanding") | VERIFIED | open |
+| P3-PLAN-06 | P3 | Planning | Smaller planner issues (ScaleError escapes explainer; UNKNOWN timeouts trigger extra solves; weekly budget on 21-day plan; stale docstrings) | VERIFIED (reviewer probes; code re-read for budget) | open |
+| P3-ML-02 | P3 | Forecasting | Model file hashed then re-read by path (TOCTOU); `simulation_study.py` loads models without hash check | VERIFIED (code) | open |
+| P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | open |
+| P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | open |
+| P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | open |
+| P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | open |
+
+## External blockers (cannot be closed by code alone)
+
+| ID | Blocker | Blocks | Owner |
+|---|---|---|---|
+| EXT-01 | Corporate identity provider to qualify OIDC/SCIM | BUS-012, BUS-022, P1-IAM-01 acceptance | Owner / customer IT |
+| EXT-02 | Real ERP sandbox + credentials (only `integrations/sandbox_erp.py`, a local simulator, exists) | BUS-013, EXE-013 | Customer |
+| EXT-03 | Pilot business users | BUS-016, BUS-017, Real-MVP score | Owner |
+| EXT-04 | Declared 8 vCPU / 32 GiB load profile | ARC-07 | Owner (hardware) |
+| EXT-05 | Manual screen-reader pass | UX-010 | A person with NVDA/VoiceOver |
+| EXT-06 | Human review of 50 R2 questions | ARC-04 | Reviewer |
+| EXT-07 | Independent penetration test | BUS-021 completeness | Third party |
+| EXT-08 | Generative LLM disabled (D-041) | ML-006 agent ablations | Owner decision |
+| EXT-09 | M5 / ContractNLI licence acceptance | DAT-004 extension | Owner |
+| EXT-10 | Pricing, SLAs, support model | BUS-024, BUS-025, EXE-014 | Owner |
+
+---
+
+## Details
+
+### P0-SEC-01 — Public `tenant_admin` can alter the shared live demo
+- **Files:** `services/api/src/supplylens/config.py` (`dev_login_available` true for `demo`), `api/routes_core.py:39-62`
+  (passwordless `dev-login` by email), `authz.py:11-19` (`tenant_admin` ⇒ `admin.write`),
+  `onboarding/service.py:30-67` (`create_workspace`, `set_membership`), `migrations/versions/0007_…:198-225`
+  (`sl_set_membership` deletes any non-OIDC membership except the caller's own).
+- **Reproduction (do not run on the live site):** `GET https://supplylens-self.vercel.app/api/v1/auth/dev-users`
+  lists `tenant_admin@dev.supplylens.local` (P0-E20). `POST /api/v1/auth/dev-login {"email":"tenant_admin@…"}`, then
+  `POST /api/v1/admin/members {"email":"approver@dev.supplylens.local","role":null}` with
+  `X-SupplyLens-Tenant: demo` removes the approver from Demo for every visitor. `POST /api/v1/onboarding/workspaces`
+  and `/onboarding/batches` are not rate-limited.
+- **Impact:** any anonymous visitor can break or deface the public demo, create unbounded workspaces/imports on the
+  Neon free tier, and remove roles; there is no reset. Reputational and availability risk on the owner's public URL.
+- **Acceptance:** (1) in `environment=demo`, `admin.write`, membership changes, workspace creation, imports, tenant
+  export/deletion are refused (403) for dev accounts, or every visitor gets an isolated, expiring sandbox tenant;
+  (2) shared demo state is reset on a schedule or per session; (3) dev-login and mutation routes are rate-limited
+  per client; (4) pytest covers each refused route under `environment=demo`; (5) verified against the hosted URL
+  after redeploy with a read-only probe (expect 403).
+
+### P0-PLAN-01 — Default shortfall makes "order nothing" optimal
+- **Files:** `optimisation/supplylens_opt/planner.py:164-180` (objective `(purchase + penalty) * W + units*100 + tiebreak`);
+  defaults `allow_shortfall=True`, `shortage_penalty_minor=500` in `agent/graph.py:284-285`,
+  `planning/scenario.py:41-42`, `api/routes_decisions.py:208`; `AgentRunIn` has no penalty field.
+- **Reproduction:** reviewer probe — need 100, unit cost 640, budget 1e8 → `OPTIMAL`, no lines, shortfall 100; the
+  spec reference case (30 units at 500) with `allow_shortfall=True` → `OPTIMAL`, no lines, 30 short. Tests and the UI
+  pass `allow_shortfall:false`, hiding it (`apps/web/app/(app)/runs/page.tsx:41`, `tests/test_agent_graph.py:34`).
+- **Impact:** for any SKU whose unit cost ≥ the assumed penalty (22 of 37 demo terms), default scenario and agent runs
+  recommend buying nothing while reporting `OPTIMAL`; `check()` does not flag shortfall. Silent stockouts — the core
+  recommendation is wrong by default.
+- **Acceptance:** shortfall is opt-in or its penalty is derived from margin/stockout cost and always exceeds unit
+  cost; any plan with shortfall > 0 is surfaced as a flagged issue in agent `check()` and scenario output; tests cover
+  penalty ≤ unit cost, = unit cost and > unit cost on both scenario and agent paths.
+
+### P1-PLAN-02 — Protection interval uses the fastest supplier
+- **Files:** `planning/scenario.py:86-88`, `agent/graph.py:232-235`; planner `planner.py:101-118` only checks arrival ≤ need-by.
+- **Reproduction:** reviewer probe — flat q50 = 10/day, coverage 21: 273 units required at 2-day lead vs 482 at
+  21-day; planner picks the 21-day supplier for 273 units (~43% under-order). UCI simulated primaries are cheaper and
+  slower (`simulation/uci_ops.py:35-36`).
+- **Acceptance:** required units depend on the chosen offer's lead time (per-offer requirement in CP-SAT, or plan per
+  supplier lead-time class); golden test with two suppliers of different lead times asserts the slower choice orders
+  the larger quantity.
+
+### P1-ACT-01 — STALE actions cannot be re-approved
+- **Files:** `actions/service.py:415-422` (STALE leaves outbox row `FAILED`), `:212-216` (edit accepts STALE),
+  `:166-174` (approve inserts outbox without conflict handling); `migrations/versions/0001_core_schema.py:375-376`
+  `UNIQUE (tenant_id, operation_id)`, `UNIQUE (tenant_id, action_id)`. No `DELETE FROM outbox` exists.
+- **Reproduction:** approve → let approval expire or amend terms → dispatch (STALE) → edit → approve ⇒ UniqueViolation ⇒ 500.
+- **Acceptance:** re-approval after STALE reuses/resets the outbox row (new operation id or reset row) without
+  duplicate external sends; pytest walks STALE → edit → approve → dispatch → RECONCILED.
+
+### P1-ACT-02 — Unreconciled orders invisible to planning; CONFIRMED dead-end
+- **Files:** `planning/positions.py:60-78` (reads only `purchase_order_lines`), `actions/service.py:296-298`
+  (ledger written only on RECONCILED), `:444-450` (mismatch ⇒ CONFIRMED), retry/reconcile accept only FAILED /
+  UNKNOWN_OUTCOME; `services/worker/src/supplylens_worker/main.py:38` (CONFIRMED not terminal). An alert is raised
+  for CONFIRMED (`service.py:301-306`) but no state transition resolves it.
+- **Impact:** next run re-plans the same need while an order is queued/in flight/mismatched → double purchasing; runs
+  stay WAITING_FOR_APPROVAL forever after a mismatch.
+- **Acceptance:** planning subtracts committed-but-unreconciled quantities (approved/queued/submitted/unknown/confirmed)
+  or blocks re-planning that SKU with a reason; an explicit, audited resolution path exists for CONFIRMED mismatches;
+  tests for each state.
+
+### P1-SEC-02 — Owner credentials inside the hosted API runtime
+- **Files:** `scripts/vercel/build_api.py:36-44` (generated `index.py` sets `SUPPLYLENS_ADMIN_DATABASE_URL` from
+  `DATABASE_URL_UNPOOLED`); used at runtime only by `hosting/setup.py`. `config.py::_fail_closed` checks the two URLs
+  differ, not that the owner URL is absent.
+- **Impact:** any code-execution or SSRF-to-env bug in the public API yields an owner connection that bypasses RLS.
+- **Acceptance:** the serving function has no owner DSN in its environment (setup moved to a separate, token-gated,
+  short-lived deployment or a CI job); demo/production profile refuses to start if an owner DSN is present; verified
+  by a startup test.
+
+### P1-FE-01 — Workspace not reconciled with memberships
+- **Files:** `apps/web/lib/state.ts:6` (`withDefault("uci-research")`), `lib/api.ts:15`, `app/login/page.tsx:27`
+  (`router.replace("/")`), `app/(app)/layout.tsx:94-96` (fallback membership used only for display).
+- **Impact (INFERRED):** a user without `uci-research` membership (OIDC user, new customer workspace) gets 404
+  `tenant_not_found` on every query while the UI shows another workspace and its role.
+- **Acceptance:** after sign-in and on any `ws` the user is not a member of, the app switches to a permitted
+  workspace (or shows a chooser); e2e test signs in as a user with only a customer workspace.
+
+### P1-FE-02 — Receipt quantity keyed by SKU, not SKU@location
+- **Files:** `apps/web/app/(app)/approvals/page.tsx:264-296`; related single-location assumptions in
+  `inventory/page.tsx:47,108`, `components/warehouse3d.tsx:115`, `components/floorplan.tsx:23`.
+- **Acceptance:** state keyed by `(sku_id, location_id)`; React keys unique; e2e books a receipt for one of two
+  locations of the same SKU and asserts only that location changes.
+
+### P1-IAM-01 — Identity model is not multi-tenant SaaS grade
+- **Files:** `services/api/src/supplylens/api/oidc.py` (single issuer from settings; roles from claim
+  `supplylens_roles` as `<slug>:<role>`; access token verified without audience), `sl_upsert_oidc_user` links by
+  subject, else verified email (migration 0007).
+- **Acceptance:** per-tenant IdP configuration (or an explicit single-IdP decision recorded in DECISIONS), tenant
+  claims constrained to tenants bound to that IdP, SCIM or equivalent deprovisioning, account-linking policy tested,
+  qualification against one real corporate IdP (EXT-01).
+
+### P1-OPS-01 — No production deployment architecture
+- **Evidence:** `infra/` holds only Dockerfiles, Keycloak realm and PG init; no Terraform/Helm/K8s; deployments are
+  `docker-compose.yml` (local, dev profile), `render.yaml` (unused alternative), Vercel demo. API runs one uvicorn
+  process (`api.Dockerfile` CMD). OTel export optional; no metrics, dashboards, SLOs or paging.
+- **Acceptance:** one documented, reproducible staging + production environment from code (IaC), secrets from a
+  manager, ≥2 API replicas + worker, health/readiness probes, dashboards and alert routes for the defined SLOs,
+  restore drill run against that environment.
+
+### P1-SAAS-01 — No SaaS commercial plumbing
+- **Evidence:** no billing/subscription/signup code (`grep -ril "billing|stripe|subscription|signup"` over
+  `services`, `apps/web` source: no hits). Workspaces can only be created by an existing `tenant_admin`.
+- **Acceptance:** owner decision on SaaS scope recorded; then self-serve or sales-led provisioning flow, plan limits,
+  metering of the cost drivers (retrieval, forecasts, storage), billing integration — each with tests.
+
+### P1-PROC-01 — Unprotected `main`
+- **Evidence:** `gh api repos/krish2105/SupplyLens-/branches/main/protection` → 404 "Branch not protected"; repo is
+  public; D-037 pushes to `main`. CI runs after the fact (4 of the last 7 pushes failed CI, P0-E17).
+- **Acceptance:** branch protection with required CI checks; changes land via PR.
+
+### P2-REL-01 — Exhausted jobs stuck in RUNNING
+- **Files:** `services/api/src/supplylens/jobs.py:21-33`; no other transition (grep `max_attempts`).
+- **Reproduction:** P0-E16 probe.
+- **Acceptance:** exhausted, lease-expired jobs become FAILED with a reason, the run is marked failed, an alert is
+  raised; pytest covers claim/lease/fencing/exhaustion.
+
+### P2-REL-02 — Unfenced agent-run execution (PLAUSIBLE)
+- **Files:** `jobs.py:36-43` (heartbeat has no exception handling), `worker/main.py:56-62`, `agent/graph.py:346-352`
+  (check-then-insert draft across transactions; no unique constraint per run+supplier).
+- **Acceptance:** heartbeat failures stop the job; draft creation is idempotent at the schema level; test kills the
+  heartbeat and asserts one draft.
+
+### P2-REL-03 — Worker throughput and outbox re-claim
+- **Files:** `worker/main.py:96-108` (serial loop over all tenants), `actions/service.py:264-277` (IN_FLIGHT
+  re-claimed after 45 s, no attempts cap, no heartbeat; sandbox IntegrityError aborts the tick).
+- **Acceptance:** concurrent workers/threads with bounded per-tenant fairness; outbox lease heartbeat and attempt cap;
+  load test with N tenants.
+
+### P2-PLAN-03 — Post-cutoff operational data in replays
+- **Files:** `planning/scenario.py:62-68` (`load_positions(s, skus, eff)`, `demand_shares(…, eff)`), `:90`
+  (dependence at `eff`), `agent/graph.py:162-176`, `:255-257` (capacity without `as_of <= eff`). Only the forecast
+  origin is clamped (`scenario.py:80`). CSV-imported terms carry user-supplied `known_at` with no system recorded-at.
+- **Acceptance:** all operational reads bounded by `min(cutoff, eff)` (or `eff > cutoff` rejected); README "two
+  clocks" claim scoped accurately; tests with post-cutoff stock rows.
+
+### P2-PLAN-04 — Dependence on gappy calendars
+- **Files:** `planning/demand_history.py:22-30`, `optimisation/supplylens_opt/leadtime_demand.py:160-167`.
+- **Acceptance:** history zero-filled to calendar days (or lags computed on dates); test with missing days.
+
+### P2-PLAN-05 — Scenarios plan through conflicts
+- **Files:** `planning/scenario.py:84-85` vs `knowledge/terms.py:7`; agent blocks (`graph.py:314`).
+- **Acceptance:** conflicting SKUs excluded or flagged as review-required in scenario output; test.
+
+### P2-ML-01 — Trained-model path untested; no fallback for missing artifacts
+- **Files:** `tests/test_forecast_service.py` (refusal + fallback only); `forecasting/service.py:108-150,168`.
+- **Acceptance:** a test trains a tiny LightGBM artifact, registers it, and forecasts through the service; missing
+  artifact falls back to the baseline with a labelled reason (or fails loudly by decision).
+
+### P2-KNOW-01 — Weak abstention
+- **Files:** `knowledge/retrieve.py:110-115,147`; `api/routes_decisions.py:157-181`.
+- **Acceptance:** similarity/score floor and an out-of-scope test set (not only fake product codes); report abstention
+  precision/recall in the R-study.
+
+### P2-PRIV-01 — Quarantined personal data retained and exposed
+- **Files:** `onboarding/csv_import.py:198-202`, `onboarding/service.py:93-95,102-108,204-206`.
+- **Acceptance:** cells flagged as personal data are redacted before storage; viewers never see raw rejected rows;
+  documented retention; test.
+
+### P2-API-01 — No body-size limit before parsing (PLAUSIBLE)
+- **Files:** `api/routes_onboarding.py:53-56`, `api/app.py` (no size middleware), no proxy limits in `infra/`.
+- **Acceptance:** request body limit enforced before multipart parsing (ASGI middleware or proxy); test with an
+  oversized unauthenticated POST → 413.
+
+### P2-FE-03 … P2-FE-08 — Web robustness
+- P2-FE-03: no ESLint config/binary (`apps/web/package.json`); `eslint-disable` comments reference rules that never
+  run; no vitest/jest; `tsconfig.json` excludes `e2e`. Acceptance: ESLint (incl. react-hooks) + unit test runner in CI.
+- P2-FE-04: `find apps/web/app -name error.tsx -o -name global-error.tsx -o -name not-found.tsx` → none.
+  Acceptance: route-level and global error boundaries with tests forcing a render error.
+- P2-FE-05: `app/(app)/runs/page.tsx:37-40` posts `/agent-runs` without `idempotencyKey`; same for forecasts, exports,
+  deletion, onboarding, alert ack; `approvals/page.tsx:106-107` retry/reconcile ignore the intent key.
+  Acceptance: every mutating call uses one key per user intent; e2e double-click test creates one run.
+- P2-FE-06: error → endless `<Loading/>` or empty state (`admin/page.tsx:48,64,92,96`; `approvals/page.tsx:65,77`;
+  `forecast/page.tsx:227-228`; `research/page.tsx:44`; `settings/page.tsx:73`; `(app)/page.tsx:167-179`).
+  Acceptance: shared error state component used on every query.
+- P2-FE-07: `components/onboarding.tsx:90,103,120`; `app/(app)/layout.tsx:165`. Acceptance: keyed component, error UI.
+- P2-FE-08: `components/vitals-reporter.tsx:9-21`. Acceptance: observers registered once; route attached at report time.
+
+### P2-QA-01 — Order-dependent E2E
+- **Evidence:** P0-E12 (fail under 6 workers) and P0-E13 (pass alone); `apps/web/e2e/helpers.ts:30-46`; five specs use
+  the reference case; `playwright.config.ts` sets no `workers`, `retries: 0`. Fixed sleeps in `consistency.spec.ts:12,19`,
+  `resilience.spec.ts:118`, `vitals.spec.ts:52,73`; position selectors (`tbody tr.first()`).
+- **Acceptance:** per-test isolated SKU/tenant or serial project for stateful specs; three consecutive full local runs
+  with default workers pass.
+
+### P2-PERF-01 — Throughput and mobile LCP (recorded, not re-run)
+- Sources: `docs/operations/load-test.md`, `docs/operations/web-vitals.md`, D-035. Acceptance: ARC-07 met on the
+  declared profile (EXT-04); overview mobile LCP ≤ 2.5 s throttled.
+
+### P3-DOC-01 — Numeric drift (VERIFIED)
+| Claim | README | PROJECT_STATUS / TASKS | Measured (Phase 0) |
+|---|---|---|---|
+| Backend tests | 296 | 330 passed + 6 skipped | 336 passed, 6 skipped (P0-E04) |
+| Browser tests | 102 | 107 passed, 1 skipped | 116 collected (P0-E12) |
+| Forced-RLS tables | 34 | 30 | 38 (P0-E14) |
+| CI jobs | — | "all 7 jobs" | 8 jobs (P0-E17) |
+Acceptance: numbers generated from CI artifacts or removed from prose.
+
+### P3-DOC-02 — Contradictions (VERIFIED)
+- Root `DECISIONS.md` "Authorisation scope recorded: No deployments …" vs D-050 (Vercel deployment).
+- `PROJECT_STATUS.md` "Current task: Session 3 complete" after session-4 sections.
+- README "Not production-ready: enterprise sign-in (OIDC) … outstanding" vs local Keycloak OIDC verified (D-039).
+- `optimisation/supplylens_opt/leadtime_demand.py:30-31`, `docs/research/results.md:198-199` say real-data validation
+  needs licensed files although UCI is ingested (PLAUSIBLE drift).
+Acceptance: single source of truth; contradictions removed.
+
+### P3-PLAN-06, P3-ML-02, P3-ONB-01, P3-SEC-03, P3-CI-01, P3-FE-09
+See summary rows; file references: `planner.py:203-204,246-248`; `scenario.py:72`; `replenishment.py:7-8,138-144`;
+`forecasting/service.py:129-130`; `ml/supplylens_ml/tcn.py:125-128`; `evaluations/simulation_study.py:50,59`;
+`onboarding/csv_import.py:121-125`; `onboarding/service.py:36-52,139-150,212-250`; `api/oidc.py:93-99,163-187`;
+`api/routes_decisions.py:288-290`; `.github/workflows/ci.yml` (`uses: …@v4/@v6`); `infra/docker/*.Dockerfile`.
