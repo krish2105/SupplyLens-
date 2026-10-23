@@ -60,6 +60,8 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      PHASE-04B.md §8.
    - Generative inference stays disabled (D-041) unless the owner says otherwise. Purchasing stays deterministic and
      approval-gated; model monitoring recommends, it never promotes, rolls back or orders by itself.
+   - CI has no embedding model: before pushing retrieval changes also run `SUPPLYLENS_OLLAMA_URL=http://127.0.0.1:9 uv run pytest -q`
+     (lexical only), as a local Ollama hides differences (QA-P5-02).
    - Never import torch in the pytest process (D-023); run torch code in a child process as tests/test_phase5_ml.py does.
    - Research results: label every number by kind (historical backtest, simulation, offline evaluation with generated
      labels, real outcome — there are none yet). Do not re-tune on a test half; superseded runs go to

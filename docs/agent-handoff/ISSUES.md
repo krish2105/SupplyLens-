@@ -97,6 +97,7 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | PLAN-P5-01 | P2 | Planning | Under a binding budget, coverage-first rationing maximises units covered, not margin or service (S2) | VERIFIED (S2, simulated) | open: owner decision on the rationing objective |
 | FE-P5-01 | P2 | Web / layout | On a phone, study cards with tables (Research) and the Forecast lab columns were 460–520 px wide on a 375 px screen: grid items default to `min-width: auto` and grew to their tables | VERIFIED (measured card widths) | fixed: `min-w-0` on the grid items (P5-E13) |
 | QA-P5-01 | P2 | Tests | The overflow checks compared `scrollWidth` with `innerWidth`; under phone emulation the browser widens `innerWidth` to the content, so the check could not fail | VERIFIED | fixed: compared with the configured viewport width; caught FE-P5-01 on `/forecast` (P5-E13) |
+| QA-P5-02 | P3 | Tests | A Phase 5 retrieval test passed locally (embedding model running) but failed in CI (lexical only): it asserted an embedder-only detail | VERIFIED (CI run 40007061655) | fixed: asserts the right reason in each mode; run the suite with `SUPPLYLENS_OLLAMA_URL=http://127.0.0.1:9` before pushing retrieval changes (P5-E15) |
 
 ## External blockers (cannot be closed by code alone)
 

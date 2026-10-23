@@ -289,8 +289,11 @@ def test_P2_KNOW_01_the_search_route_does_not_answer_an_out_of_scope_question(cl
     r = c.get("/api/v1/evidence/search", params={"q": "warranty period and liability cap", "supplier_id": "DEMO-REF-A",
                                                   "knowledge_cutoff": "2026-10-19T09:00:00Z", "effective_date": "2026-10-19"},
               headers={**H, "X-SupplyLens-Tenant": "demo"}).json()
-    assert r["answer"]["abstained"] and not r["answer"]["claims"] and "warranti" in r["answer"]["support"]["unsupported_terms"]
-    assert r["results"]                                              # related passages are still listed
+    assert r["answer"]["abstained"] and not r["answer"]["claims"]
+    if r["results"]:                    # with the embedder, related passages are listed and the missing terms named
+        assert "warranti" in r["answer"]["support"]["unsupported_terms"]
+    else:                               # lexical only (CI, hosted demo): no passage matches at all
+        assert r["answer"]["support"]["reason"] == "no permitted passage"
 
 
 def test_settings_unchanged_by_phase5_tests():
