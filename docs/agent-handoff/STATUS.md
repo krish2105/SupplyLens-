@@ -7,14 +7,14 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 3 complete** (2026-10-23): performance, scalability and backend reliability (owner brief; PD-014). Next: Phase 4 web robustness (deferred), only on the owner's instruction. |
+| Current phase | **Phase 4 complete** (2026-10-23): frontend, UX and end-to-end journeys (owner brief, PD-017); all 12 journeys pass (PHASE-04 §1). Next: Phase 5, only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 3: `8a0bb4d` (changes), `66cd20a` (migration fix for RLS-bypassing owners), `542ca72` (source digest so backend-only pushes deploy); the handoff-docs commit follows |
-| CI | `66cd20a` run 39857106309 and `542ca72` run 39858808675: **8/8 success** each (EVIDENCE P3-E20) |
+| Code commits | Phase 4: see `git log` after `55e0b1c`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| CI | Phase 4 push: EVIDENCE P4-E12. Phase 3: runs 39857106309 and 39858808675, 8/8 |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
 | Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |
-| Local scratch state | DB `supplylens_p0e2e` + `storage_p0e2e/` (git-ignored) for the disposable browser stack (launch config sets `SUPPLYLENS_E2E_DISPOSABLE=true`; run with `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1`). DB `supplylens_load` (1 GB, migrated to 0010) holds the reference load data; `storage_load/` |
+| Local scratch state | DB `supplylens_p0e2e` + `storage_p0e2e/` (git-ignored) for the disposable browser stack (launch config sets `SUPPLYLENS_E2E_DISPOSABLE=true`; run with `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1`). DB `supplylens_load` (1 GB, migrated to 0010) holds the reference load data; `storage_load/`. **Browser stack now `supplylens_p4ci`** (launch configs `p4-api`, `p4-worker`, `p0-web`; PD-018); `supplylens_p0e2e` keeps polluted reference data, `supplylens_p4e2e` is scratch with real UCI data |
 
 ## Phase log
 | Phase | Dates (UTC) | Outcome | Record |
@@ -23,18 +23,19 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 | 1 | 2026-10-22/23 | Both P0s and five P1s fixed; demo lockdown live; pytest 374/6; Playwright 114/2 ×2; CI 8/8 | `phases/PHASE-01.md` |
 | 2 | 2026-10-23 | Git pushes deploy (P3-OPS-02). Security: 10 findings fixed (fixture safety, revocable sessions, body cap and sign-in throttle, error disclosure, PII redaction, supply-chain pins, IdP outage, parser 500s, 404 consistency); 3 new open (retrieval ceiling, audit tamper-evidence, retention). pytest 398/6; Playwright 114/2; no certification claimed | `phases/PHASE-02.md` |
 | 3 | 2026-10-23 | Performance (owner brief): historical 5 req/s collapse not reproducible on the M4 Pro; vectors moved to `chunk_vectors` (0010), admission classes/queue/workspace share, statement and pool timeouts → 503, bounded listings, `/metrics`, outbox dead letter, worker isolation. Same machine before → after: retrieval p95 256 → 157 ms at 5/s; 16/s fully served (p95 442 ms) vs ~8/s before. pytest 414/6; Playwright 116/2. Laptop, stubbed embedder: not the declared profile | `phases/PHASE-03.md` |
+| 4 | 2026-10-23 | Frontend/UX/E2E (owner brief): 12 journeys pass; document upload added (journey 4); P1-FE-01/02, P2-FE-03…08, P2-QA-01/02, P3-FE-10 fixed; ESLint + Vitest + typed e2e in CI; Firefox/WebKit/iPhone projects. pytest 419/6; Playwright 174/4 locally (Firefox CI-only) | `phases/PHASE-04.md` |
 
-## Open P0/P1 after Phase 3
+## Open P0/P1 after Phase 4
 - P0: none open. (Phase 3 changed no P0/P1 status; P2-PERF-01, P2-REL-03 partially fixed, SEC-P2-11 fixed per process.)
-- P1 open: P1-FE-01, P1-FE-02 remainder, P1-IAM-01 (needs EXT-01), P1-OPS-01, P1-SAAS-01, P1-PROC-01 remainder,
+- P1 open: P1-IAM-01 (needs EXT-01), P1-OPS-01, P1-SAAS-01, P1-PROC-01 remainder,
   P1-SEC-02 residual (owner must scope the Neon integration variables).
 
 ## Blockers
 - External: EXT-01 … EXT-10 unchanged; corporate IdP qualification and penetration test remain **not performed**.
 - Local: Docker daemon (colima) not running — no local compose smoke, image scan or Keycloak tests.
 
-## Next actions (Phase 4 proposal — awaiting owner go-ahead)
-1. Web robustness and QA (deferred from Phase 3, PD-014): P1-FE-01, P1-FE-02 rest, P2-FE-03…08, P2-QA-01/02, P3-FE-09/10.
+## Next actions (Phase 5 proposal — awaiting owner go-ahead)
+1. Data protection and retrieval quality (P2-KNOW-01, SEC-P2-11…13, PERF-P3-09); FE-P4-08; propose `e2e` as a required check.
 2. Remaining security checkpoint items (distributed sign-in throttle, retention jobs, tamper-evident audit, nonce CSP,
    Docker digests).
 3. Performance follow-ups: PERF-P3-08 (compute isolation), PERF-P3-09 (ANN/halfvec with study re-run), the declared

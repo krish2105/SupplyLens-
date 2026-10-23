@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { createDraft, signIn } from "./helpers";
 
 // Session-4 remediation journeys in the running app (docs/remediation/REGISTER.md).

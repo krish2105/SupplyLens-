@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, lockReferenceCase, test } from "./fixtures";
 import { breakWebGL, createDraft, expectReconciled, getJson, signIn } from "./helpers";
 
 // EXE-010 / UX-009 / BUS-008: the reference workflow stays usable when WebGL fails and when the network drops.
@@ -19,6 +19,7 @@ test.describe("WebGL failure", () => {
   test("the reference workflow completes with WebGL unavailable", async ({ page }) => {
     await breakWebGL(page);
     await signIn(page, "planner");
+    await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
     await page.goto("/runs?ws=demo&known=2026-10-20T09:00:00.000Z&eff=2026-10-20");
     await page.getByRole("button", { name: "Start investigation" }).click();
     await expect(page).toHaveURL(/run=/);
@@ -112,6 +113,7 @@ test.describe("network interruption", () => {
 
   test("an investigation keeps its state through a dropped connection", async ({ page, context }) => {
     await signIn(page, "planner");
+    await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
     await page.goto("/runs?ws=demo&known=2026-10-20T09:00:00.000Z&eff=2026-10-20");
     await page.getByRole("button", { name: "Start investigation" }).click();
     await context.setOffline(true);

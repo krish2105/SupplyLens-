@@ -1,12 +1,13 @@
 "use client";
 import { useMemo, useState } from "react";
-import { Search, ShieldAlert } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { FilePlus2, Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
-import { apiGet } from "@/lib/api";
+import { api, apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
-import { useApi, useWs } from "@/lib/queries";
+import { useApi, useDemoLockdown, useMe, useWs } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
 import { atOrBefore, dateTime, day, short } from "@/lib/format";
 
@@ -143,23 +144,24 @@ export default function PoliciesPage() {
           )}
         </Card>
         <div className="space-y-6">
-          {compare ? <CompareVersions ids={compare} ws={ws} onClose={() => setCompare(null)} /> :
-            open ? <Viewer id={open.version} highlight={open.highlight} ws={ws} /> :
+          {compare ? <CompareVersions ids={compare} onClose={() => setCompare(null)} /> :
+            open ? <Viewer id={open.version} highlight={open.highlight} /> :
               <Card className="p-5"><Empty title="Open a document version">Pick a version or a search result to read it with the cited passage highlighted.</Empty></Card>}
         </div>
       </div>
+      <AddDocument versions={docs.data ?? []} onAdded={(version) => { setCompare(null); setOpen({ version }); }} />
     </div>
   );
 }
 
-function useVersion(id: string, _ws: string) {
+function useVersion(id: string) {
   return useApi(["version", id], "/api/v1/documents/versions/{version_id}", { path: { version_id: id } });
 }
 
 type Label = Schemas["ClauseLabel"];
 
-function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: string }) {
-  const v = useVersion(id, ws);
+function Viewer({ id, highlight }: { id: string; highlight?: string }) {
+  const v = useVersion(id);
   const labels = useApi(["labels", id], "/api/v1/documents/versions/{version_id}/labels", { path: { version_id: id } });
   const [label, setLabel] = useState<Label | null>(null);
   if (v.isLoading) return <Card className="p-5"><Loading /></Card>;
@@ -167,7 +169,19 @@ function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: str
   const hc = v.data.chunks.find((c) => c.id === highlight);
   const h = label ? { char_start: label.char_start, char_end: label.char_end } : hc;
   const t = v.data.text;
-  const cats = Array.from(new Set((labels.data ?? []).map((l) => l.category))).filter((c) => !["Document Name", "Parties"].includes(c));
+  // Expert clause labels (CUAD): one button per category; pressing it marks that clause in the text, pressing it again moves
+  // to the category's next occurrence. Document name and parties are bookkeeping, not clauses.
+  const byCat = new Map<string, Label[]>();
+  for (const l of labels.data ?? []) {
+    if (["Document Name", "Parties"].includes(l.category)) continue;
+    byCat.set(l.category, [...(byCat.get(l.category) ?? []), l]);
+  }
+  const cats = Array.from(byCat.keys()).sort();
+  const pick = (c: string) => {
+    const xs = byCat.get(c)!;
+    const at = label && label.category === c ? xs.indexOf(label) : -1;
+    setLabel(xs[(at + 1) % xs.length]!);
+  };
   return (
     <Card className="p-5">
       <Eyebrow>{v.data.title} — {v.data.version_label}</Eyebrow>
@@ -177,6 +191,26 @@ function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: str
         ["Supersedes", v.data.supersedes_version_id ? <Mono key="s">{short(v.data.supersedes_version_id)}</Mono> : "—"],
         ["Embeddings", v.data.embed_model ?? "none (lexical only)"],
       ]} /></div>
+      {labels.error ? <QueryError q={labels} what="expert clause labels" /> : cats.length > 0 && (
+        <section aria-labelledby={`labels-${id}`} className="mt-4" data-testid="clause-labels">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 id={`labels-${id}`} className="text-sm font-semibold">Expert clause labels <span className="font-normal text-muted">({labels.data!.length} from {labels.data![0]!.source})</span></h3>
+            {label && <Button size="sm" variant="ghost" onClick={() => setLabel(null)}>Clear highlight</Button>}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {cats.map((c) => {
+              const n = byCat.get(c)!.length;
+              const on = label?.category === c;
+              return (
+                <button key={c} onClick={() => pick(c)} aria-pressed={on}
+                  className={`rounded-full border px-2.5 py-1 text-xs ${on ? "border-accent bg-accent-soft text-accent" : "border-line hover:bg-surface-2"}`}>
+                  {c}{n > 1 && <span className="num ml-1 text-muted">{on ? `${byCat.get(c)!.indexOf(label!) + 1}/${n}` : n}</span>}
+                </button>);
+            })}
+          </div>
+          {label && <p role="status" className="mt-2 text-xs text-muted">Highlighted: <b className="text-ink">{label.category}</b>, characters {label.char_start}–{label.char_end}.</p>}
+        </section>
+      )}
       <pre tabIndex={0} aria-label="Document text, scrollable" className="mt-4 max-h-[460px] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-[13px] leading-relaxed">
         {h ? <>{t.slice(0, h.char_start)}<mark ref={(el) => { const pre = el?.closest("pre"); if (el && pre) pre.scrollTop = el.offsetTop - pre.offsetTop - 80; }} className="rounded bg-risk-soft px-0.5 text-ink">{t.slice(h.char_start, h.char_end)}</mark>{t.slice(h.char_end)}</> : t}
       </pre>
@@ -184,8 +218,8 @@ function Viewer({ id, highlight, ws }: { id: string; highlight?: string; ws: str
   );
 }
 
-function CompareVersions({ ids, ws, onClose }: { ids: [string, string]; ws: string; onClose: () => void }) {
-  const a = useVersion(ids[0], ws), b = useVersion(ids[1], ws);
+function CompareVersions({ ids, onClose }: { ids: [string, string]; onClose: () => void }) {
+  const a = useVersion(ids[0]), b = useVersion(ids[1]);
   if (a.isLoading || b.isLoading) return <Card className="p-5"><Loading /></Card>;
   if (!a.data || !b.data) return <Card className="p-5"><ErrorState error={a.error ?? b.error} /></Card>;
   const bLines = new Set(b.data.text.split("\n").map((l) => l.trim()));
@@ -207,6 +241,81 @@ function CompareVersions({ ids, ws, onClose }: { ids: [string, string]; ws: stri
         ))}
       </div>
       <p className="mt-2 text-xs text-muted">Highlighted lines differ between versions. An amendment applies only from its own effective date.</p>
+    </Card>
+  );
+}
+
+type Uploaded = Schemas["DocumentUploaded"];
+
+/** Journey 4: a workspace administrator adds a supplier document or a new version of one (plain text). It is known from
+ *  the moment it is uploaded; the user says when it is in force. An amendment joins its document's history. */
+function AddDocument({ versions, onAdded }: { versions: Doc[]; onAdded: (versionId: string) => void }) {
+  const ws = useWs();
+  const qc = useQueryClient();
+  const me = useMe();
+  const locked = useDemoLockdown();
+  const admin = me.data?.memberships.find((m) => m.slug === ws)?.role === "tenant_admin";
+  const [file, setFile] = useState<File | null>(null);
+  const [f, setF] = useState({ title: "", doc_type: "contract", version_label: "v1", valid_from: "", valid_to: "", supplier_id: "", supersedes_version_id: "" });
+  const [done, setDone] = useState<Uploaded | null>(null);
+  const add = useMutation({
+    mutationFn: () => {
+      const body = new FormData();
+      for (const [k, v] of Object.entries(f)) if (v) body.append(k, v);
+      body.append("file", file!);
+      return api<Uploaded>("/api/v1/documents", { method: "POST", body });
+    },
+    onSuccess: (r) => {
+      setDone(r); setFile(null);
+      setF({ title: "", doc_type: "contract", version_label: "v1", valid_from: "", valid_to: "", supplier_id: "", supersedes_version_id: "" });
+      qc.invalidateQueries({ queryKey: [ws, "documents"] });
+      onAdded(r.version_id);
+    },
+  });
+  if (!admin) return null;
+  const amends = versions.find((v) => v.version_id === f.supersedes_version_id);
+  const input = "mt-1 w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm";
+  return (
+    <Card className="p-5" aria-labelledby="add-doc">
+      <h2 id="add-doc" className="flex items-center gap-2 text-sm font-semibold"><FilePlus2 className="size-4" aria-hidden /> Add a document or a new version</h2>
+      <p className="mt-1 text-sm text-muted">Plain text (.txt or .md, up to 1 MB). It is known from the moment you add it — earlier replays never cite it —
+        and in force from the date you give. Sections start at lines beginning with “#”, “Section”, “Clause” or “Schedule”.</p>
+      {locked ? <p role="note" className="mt-3 text-sm text-muted">Adding documents is disabled in the public demo.</p> : (
+        <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setDone(null); add.mutate(); }}>
+          <label className="text-sm md:col-span-2"><span className="font-medium">Amends an existing version (optional)</span>
+            <select value={f.supersedes_version_id} className={input}
+              onChange={(e) => {
+                const v = versions.find((x) => x.version_id === e.target.value);
+                setF({ ...f, supersedes_version_id: e.target.value, title: v ? v.title : f.title, doc_type: v ? "amendment" : "contract",
+                  supplier_id: v?.supplier_id ?? f.supplier_id });
+              }}>
+              <option value="">No — a new document</option>
+              {versions.map((v) => <option key={v.version_id} value={v.version_id}>{v.title} — {v.version_label} (from {day(v.valid_from)})</option>)}
+            </select></label>
+          <label className="text-sm"><span className="font-medium">Title</span>
+            <input required maxLength={300} value={f.title} disabled={!!amends} onChange={(e) => setF({ ...f, title: e.target.value })} className={input} /></label>
+          <label className="text-sm"><span className="font-medium">Version label</span>
+            <input required maxLength={50} value={f.version_label} onChange={(e) => setF({ ...f, version_label: e.target.value })} className={input} /></label>
+          <label className="text-sm"><span className="font-medium">Type</span>
+            <select value={f.doc_type} onChange={(e) => setF({ ...f, doc_type: e.target.value })} className={input}>
+              <option value="contract">Contract</option><option value="amendment">Amendment</option><option value="policy">Policy</option></select></label>
+          <label className="text-sm"><span className="font-medium">Supplier id (optional)</span>
+            <input value={f.supplier_id} disabled={!!amends} onChange={(e) => setF({ ...f, supplier_id: e.target.value })} className={input} /></label>
+          <label className="text-sm"><span className="font-medium">In force from</span>
+            <input type="date" required min={amends?.valid_from} value={f.valid_from} onChange={(e) => setF({ ...f, valid_from: e.target.value })} className={input} /></label>
+          <label className="text-sm"><span className="font-medium">In force until (optional)</span>
+            <input type="date" min={f.valid_from || undefined} value={f.valid_to} onChange={(e) => setF({ ...f, valid_to: e.target.value })} className={input} /></label>
+          <label className="text-sm md:col-span-2"><span className="font-medium">Text file</span>
+            <input type="file" required accept=".txt,.md,text/plain,text/markdown" onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+              className="mt-1 block w-full text-sm file:mr-3 file:rounded-md file:border file:border-line file:bg-surface-2 file:px-3 file:py-1.5" /></label>
+          <div className="md:col-span-2">
+            <Button type="submit" busy={add.isPending} disabled={!file}>Add {amends ? "amendment" : "document"}</Button>
+          </div>
+        </form>
+      )}
+      {add.error != null && <div className="mt-3"><ErrorState error={add.error} /></div>}
+      {done && <p role="status" className="mt-3 text-sm" data-testid="document-added">Added: {done.chunks} passages, known from {dateTime(done.known_at)}
+        {done.embedded ? "" : " (lexical search only: the embedding service did not answer)"}. It is open above.</p>}
     </Card>
   );
 }

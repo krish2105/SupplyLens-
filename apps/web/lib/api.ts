@@ -64,7 +64,20 @@ export async function api<T = unknown>(path: string, init: RequestInit & { idemp
   headers.set("X-Requested-With", "supplylens");
   headers.set("X-SupplyLens-Tenant", init.tenant ?? tenantSlug);
   if (init.body && !(init.body instanceof FormData) && !headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  if (method !== "GET" && !path.startsWith("/api/v1/auth")) headers.set("Idempotency-Key", init.idempotencyKey ?? newKey());
+  // Every mutation carries one key per user intent (P2-FE-05): without an explicit key, the intent is this workspace, method,
+  // path and body, so a double click or a retry after a lost response is the same request to the server (replayed, never
+  // executed twice). The key is released once the intent succeeds; a later deliberate repeat is a new intent.
+  let settle: (() => void) | undefined;
+  if (method !== "GET" && !path.startsWith("/api/v1/auth")) {
+    let key = init.idempotencyKey;
+    if (!key && (init.body == null || typeof init.body === "string")) {
+      const intent = intentKey(`${init.tenant ?? tenantSlug} ${method} ${path}`, init.body ?? null);
+      key = intent.key;
+      settle = intent.settle;
+    }
+    key ??= newKey();             // a file upload is identified by its bytes, not its form: one key per request
+    headers.set("Idempotency-Key", key);
+  }
   let res: Response;
   try {
     res = await fetch(path, { ...init, method, headers, credentials: "same-origin" });
@@ -92,6 +105,7 @@ export async function api<T = unknown>(path: string, init: RequestInit & { idemp
   }
   if (text && !isJson) throw new ApiError(res.status, "unexpected_response", "The server sent a response SupplyLens cannot read.", undefined, reference);
   if (text && isJson && body === null) throw new ApiError(res.status, "malformed_response", "The server sent a malformed response.", undefined, reference);
+  settle?.();
   return body as T;
 }
 

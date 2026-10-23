@@ -1,7 +1,7 @@
 "use client";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Card, ErrorState, Eyebrow, Loading, Mono, PageHeader, Status } from "@/components/ui";
+import { Card, ErrorState, Eyebrow, Loading, Mono, PageHeader, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { useApi, useMe } from "@/lib/queries";
 import { dateTime } from "@/lib/format";
@@ -10,7 +10,7 @@ import { dateTime } from "@/lib/format";
 export default function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => setMounted(true), []); // eslint-disable-line react-hooks/set-state-in-effect -- the theme is known only after mount
   const me = useMe();
   const integ = useApi(["integrations"], "/api/v1/integrations");
   const audit = useApi(["audit"], "/api/v1/audit", { query: { limit: 60 } });
@@ -64,6 +64,7 @@ export default function SettingsPage() {
       </Card>
       <Card className="p-5">
         <Eyebrow>Audit trail (append-only for the application)</Eyebrow>
+        <QueryError q={audit} what="the audit trail" />
         <div className="mt-3 max-h-[480px] overflow-auto" tabIndex={0} role="region" aria-label="Audit events, scrollable">
           <table className="w-full text-sm">
             <caption className="sr-only">Recent audit events</caption>

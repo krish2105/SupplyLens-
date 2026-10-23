@@ -5,7 +5,7 @@ import clsx from "clsx";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertOctagon, BellRing, CalendarClock, FileWarning, PackageX, Warehouse } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Status, TabList, TabPanel } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
@@ -34,14 +34,11 @@ export default function ExceptionsPage() {
       <AlertQueue />
       {q.error && <ErrorState error={q.error} retry={() => q.refetch()} />}
       {q.data?.message && <Empty title="No operational exceptions here">{q.data.message}</Empty>}
-      <div role="tablist" aria-label="Exception type" className="flex flex-wrap gap-1">
-        {["all", ...Object.keys(q.data?.counts ?? {})].map((k) => (
-          <button key={k} role="tab" aria-selected={kind === k} onClick={() => setKind(k)}
-            className={clsx("rounded-lg px-3 py-1.5 text-sm", kind === k ? "bg-ink text-bg" : "text-muted hover:bg-surface-2")}>
-            {k === "all" ? `All (${q.data?.items.length ?? 0})` : `${KIND[k]?.label ?? k} (${q.data?.counts[k]})`}
-          </button>
-        ))}
-      </div>
+      <TabList id="exc" label="Exception type" value={kind} onChange={setKind} className="flex flex-wrap gap-1"
+        tabClassName={(on) => clsx("rounded-lg px-3 py-1.5 text-sm", on ? "bg-ink text-bg" : "text-muted hover:bg-surface-2")}
+        tabs={["all", ...Object.keys(q.data?.counts ?? {})].map((k) => ({ key: k,
+          label: k === "all" ? `All (${q.data?.items.length ?? 0})` : `${KIND[k]?.label ?? k} (${q.data?.counts[k]})` }))} />
+      <TabPanel id="exc" value={kind} className="space-y-3">
       {q.isLoading ? <Loading /> : (
         <ul className="grid gap-3 lg:grid-cols-2">
           {items.map((i, n) => {
@@ -82,6 +79,7 @@ export default function ExceptionsPage() {
       {!q.isLoading && !q.error && !items.length && !q.data?.message && (kind === "all"
         ? <EmptyState variant="no_pending" title="No exceptions in this view" compact>Nothing is predicted or recorded for this workspace at these clocks. This is not a statement about overall system health.</EmptyState>
         : <EmptyState variant="empty_filtered" title="No exceptions of this type" compact>Choose “All” to see every exception at these clocks.</EmptyState>)}
+      </TabPanel>
     </div>
   );
 }

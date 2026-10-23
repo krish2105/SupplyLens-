@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import { parseAsString, useQueryState } from "nuqs";
 import clsx from "clsx";
 import { Bug, Check, PackageCheck, Pencil, RefreshCw, RotateCw, X } from "lucide-react";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status, TabList, TabPanel } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { ApiError, apiPost, intentKey } from "@/lib/api";
 import { useDraft } from "@/lib/draft";
@@ -29,15 +29,12 @@ export default function ApprovalsPage() {
         An approval binds this exact payload hash, its source versions, the spend and an expiry. Any edit or change in supplier terms requires a fresh approval.
         Orders go only to the local <b>sandbox ERP</b>.
       </PageHeader>
-      <div role="tablist" aria-label="Action status" className="flex flex-wrap gap-1">
-        {TABS.map((t) => (
-          <button key={t.k} role="tab" aria-selected={tab === t.k} onClick={() => setTab(t.k)}
-            className={clsx("rounded-lg px-3 py-1.5 text-sm", tab === t.k ? "bg-ink text-bg" : "text-muted hover:bg-surface-2")}>{t.l}</button>
-        ))}
-      </div>
+      <TabList id="act" label="Action status" value={tab} onChange={setTab} className="flex flex-wrap gap-1"
+        tabs={TABS.map((t) => ({ key: t.k, label: t.l }))}
+        tabClassName={(on) => clsx("rounded-lg px-3 py-1.5 text-sm", on ? "bg-ink text-bg" : "text-muted hover:bg-surface-2")} />
       <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         {/* Space is reserved up front and the list scrolls inside the card, so late data never pushes the page down. */}
-        <Card className="min-h-[480px] p-3">
+        <Card className="min-h-[480px] p-3"><TabPanel id="act" value={tab}>
           {list.isLoading ? <Loading /> : list.error ? <ErrorState error={list.error} /> : list.data?.length ? (
             <ul className="max-h-[640px] space-y-1 overflow-auto pr-1" tabIndex={0} aria-label="Drafts, scrollable">
               {list.data.map((a) => (
@@ -56,13 +53,13 @@ export default function ApprovalsPage() {
               Drafts appear here when a planner runs an investigation in Draft mode. This says nothing about other queues.
             </EmptyState>
           ) : <Empty title="Nothing in this queue" />}
-        </Card>
+        </TabPanel></Card>
         {actionId ? <ActionView id={actionId} ws={ws} /> : <Card className="p-5"><Empty title="Select a draft to review" /></Card>}
       </div>
       <Card className="min-h-[220px] p-5">
         <div className="flex items-center justify-between"><Eyebrow>Sandbox ERP — orders it holds</Eyebrow><Status value="VERIFIED_LOCALLY" /></div>
         <p className="mt-1 text-xs text-muted">A local simulator standing in for an external purchasing system. Not a real ERP.</p>
-        {orders.isLoading ? <Loading /> : orders.data?.length ? (
+        {orders.isLoading ? <Loading /> : orders.error ? <QueryError q={orders} what="sandbox orders" /> : orders.data?.length ? (
           <div className="mt-3 max-h-72 overflow-auto" tabIndex={0} role="region" aria-label="Sandbox orders, scrollable">
           <table className="w-full text-sm">
             <caption className="sr-only">Purchase orders in the sandbox ERP</caption>
@@ -293,6 +290,8 @@ function OpenOrder({ id, canBook }: { id: string; canBook: boolean }) {
     onSuccess: () => qc.invalidateQueries({ queryKey: [ws] }),
   });
   if (lines.isLoading) return <Card className="p-5"><Loading /></Card>;
+  // A failed request must not hide the receipts card (P2-FE-06): say so, with a retry.
+  if (lines.error) return <Card className="p-5"><Eyebrow>Open order and receipts</Eyebrow><QueryError q={lines} what="open order lines" /></Card>;
   if (!mine.length) return null;
   return (
     <Card className="p-5">

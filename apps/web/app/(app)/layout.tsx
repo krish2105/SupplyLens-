@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Suspense, useEffect, type ReactNode } from "react";
+import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
 import clsx from "clsx";
@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { ClockRail } from "@/components/clock-rail";
+import { SafeBoundary } from "@/components/safe-boundary";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { VitalsReporter } from "@/components/vitals-reporter";
 import { ErrorState, Loading } from "@/components/ui";
@@ -74,8 +75,33 @@ function AppShell({ children }: { children: ReactNode }) {
   setTenant(ctx.ws);
 
   useEffect(() => {
-    if (me.error instanceof ApiError && me.error.status === 401) router.replace("/login");
+    if (me.error instanceof ApiError && me.error.status === 401) router.replace(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
   }, [me.error, router]);
+
+  // The URL's workspace must be one the user belongs to (P1-FE-01). The default (uci-research) or a link from someone else
+  // may name a workspace this account cannot open: every request would then fail with "unknown workspace". Move to the
+  // first membership instead, clearing selections that belonged to the other workspace.
+  const memberships = me.data?.memberships ?? [];
+  const member = memberships.some((m) => m.slug === ctx.ws);
+  const fallback = me.data && !member ? memberships[0]?.slug : undefined;
+  useEffect(() => {
+    if (!fallback) return;
+    qc.cancelQueries();
+    setTenant(fallback);
+    setCtx({ ws: fallback, sku: null, known: null, eff: null, action: null, run: null });
+  }, [fallback, qc, setCtx]);
+  const [signOutError, setSignOutError] = useState<unknown>(null);
+  const signOut = async () => {
+    setSignOutError(null);
+    try {
+      await apiPost("/api/v1/auth/logout", {});
+    } catch (e) {
+      // Already signed out (401) is success; anything else must be said, or the user believes they left (P2-FE-07).
+      if (!(e instanceof ApiError && e.status === 401)) { setSignOutError(e); return; }
+    }
+    qc.clear();
+    router.replace("/login");
+  };
 
   // A failed session check is never an endless spinner (audit S22): 401 goes to sign-in (effect above); any other failure
   // (service down, gateway error, no API behind this deployment) says so and offers a retry.
@@ -91,8 +117,19 @@ function AppShell({ children }: { children: ReactNode }) {
   // The shell and the page render while the session check is in flight, so the page's own data requests start in
   // parallel with /me instead of after it (UX-011: one round trip less before the main content). A 401 still sends the
   // user to sign-in (effect above); role-dependent controls wait for the role.
-  const memberships = me.data?.memberships ?? [];
-  const membership = memberships.find((m) => m.slug === ctx.ws) ?? memberships[0];
+  if (me.data && !memberships.length) return (
+    <main className="flex min-h-screen items-center justify-center bg-bg p-4">
+      <div className="w-full max-w-xl space-y-3 text-sm" data-testid="no-workspace">
+        <h1 className="display text-2xl font-semibold">No workspace yet</h1>
+        <p className="text-muted">You are signed in as {me.data.user.email}, but this account is not a member of any workspace. Ask a
+          workspace administrator to add you, then reload.</p>
+        <p><button className="font-medium text-accent underline" onClick={signOut}>Sign out</button></p>
+      </div>
+    </main>
+  );
+  // Until a mismatched workspace has been replaced (effect above), render nothing that would request it.
+  if (fallback) return <Loading label="Opening your workspace" className="min-h-screen justify-center" />;
+  const membership = memberships.find((m) => m.slug === ctx.ws);
   const role = membership?.role;
 
   return (
@@ -158,17 +195,22 @@ function AppShell({ children }: { children: ReactNode }) {
                 ))}
               </nav>
               <div className="ml-auto flex items-center gap-2">
-                <CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} />
+                <SafeBoundary name="command palette"><CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} /></SafeBoundary>
                 <ThemeSwitch />
                 <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
                   aria-label="Sign out" title="Sign out"
-                  onClick={async () => { await apiPost("/api/v1/auth/logout", {}); qc.clear(); router.replace("/login"); }}>
+                  onClick={signOut}>
                   <LogOut className="size-4" aria-hidden />
                 </button>
               </div>
             </div>
             <ConnectionBanner />
-            <ClockRail />
+            {signOutError != null && (
+              <div className="border-b border-line bg-surface px-4 py-2 md:px-6" data-testid="sign-out-error">
+                <p className="mb-2 text-sm font-medium">You are still signed in: sign-out did not reach the service.</p>
+                <ErrorState error={signOutError} retry={signOut} />
+              </div>)}
+            <SafeBoundary name="decision clock"><ClockRail /></SafeBoundary>
           </div>
           <VitalsReporter />
           <main id="main" className="mx-auto max-w-[1440px] px-4 py-6 md:px-6 md:py-8">{children}</main>

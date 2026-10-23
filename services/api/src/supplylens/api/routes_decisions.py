@@ -6,7 +6,18 @@ import json
 import uuid
 from datetime import UTC, date, datetime
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    Header,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
@@ -20,6 +31,7 @@ from ..forecasting.service import run_forecast
 from ..inline_jobs import drain
 from ..integrations import sandbox_erp
 from ..knowledge import acl
+from ..knowledge import upload as doc_upload
 from ..knowledge.ingest import read_version_text
 from ..knowledge.retrieve import search
 from ..planning.scenario import ScenarioInput, run_scenario
@@ -32,6 +44,7 @@ from .schemas import (
     ActionRow,
     CancelOpenResult,
     DocumentRow,
+    DocumentUploaded,
     DocumentVersion,
     EvidenceSearch,
     FaultInjected,
@@ -147,6 +160,22 @@ def documents(response: Response, limit: int | None = Query(None, ge=1), offset:
             "WHERE :role = ANY(d.allowed_roles)"), {"role": a.role}).scalar())
     response.headers["X-Total-Count"] = str(total)
     return [{k: v for k, v in r.items() if k != "_total"} for r in rows]
+
+
+@router.post("/documents", response_model=DocumentUploaded, status_code=201)
+async def upload_document(file: UploadFile = File(...), title: str = Form(...), doc_type: str = Form("contract"),
+                          version_label: str = Form(...), valid_from: date = Form(...), valid_to: date | None = Form(None),
+                          supplier_id: str | None = Form(None), supersedes_version_id: uuid.UUID | None = Form(None),
+                          a: Actor = Depends(limit("document_upload", 20))):
+    """Add a supplier document or a new version of one (plain text). Known from now; in force from valid_from."""
+    data = await file.read(doc_upload.MAX_BYTES + 1)
+    try:
+        return doc_upload.upload_document(a, file_name=file.filename or "document.txt", data=data, title=title,
+                                          doc_type=doc_type, version_label=version_label, valid_from=valid_from,
+                                          valid_to=valid_to, supplier_id=supplier_id,
+                                          supersedes_version_id=supersedes_version_id)
+    except doc_upload.UploadError as e:
+        raise HTTPException(e.http, {"code": e.code, "message": str(e)}) from e
 
 
 @router.get("/documents/versions/{version_id}", response_model=DocumentVersion)

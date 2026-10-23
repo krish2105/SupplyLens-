@@ -184,21 +184,35 @@ def quarantine(dataset_id: uuid.UUID, reason: str | None = None, after: int = 0,
             "next_cursor": rows[-1]["id"] if len(rows) == limit else None}
 
 
+# One row per product AND location (P1-FE-02): the latest snapshot of each SKU@location on or before the date.
+# DISTINCT ON (sku_id) used to keep one location per SKU and drop the others' stock. Recent sales: the location's own when
+# it has any; a SKU stocked at a single location keeps all of its sales (unchanged behaviour where sales and stock are
+# recorded under different location codes).
 INVENTORY_SQL = """
-WITH pos AS (
-  SELECT DISTINCT ON (sku_id) * FROM inventory_positions WHERE as_of <= :eff ORDER BY sku_id, as_of DESC
+WITH latest AS (
+  SELECT DISTINCT ON (sku_id, location_id) * FROM inventory_positions WHERE as_of <= :eff
+  ORDER BY sku_id, location_id, as_of DESC
+), pos AS (
+  SELECT latest.*, count(*) OVER (PARTITION BY sku_id) AS n_locations FROM latest
+), recent_loc AS (      -- one scan of the 28 days; the per-SKU totals are summed from these few rows, not the raw sales
+  SELECT sku_id, location_id, sum(units)::float / 28 AS avg_daily FROM sales_daily
+  WHERE day > CAST(:eff AS date) - 28 AND day <= :eff GROUP BY sku_id, location_id
+), recent_sku AS (
+  SELECT sku_id, sum(avg_daily) AS avg_daily FROM recent_loc GROUP BY sku_id
 ), recent AS (
-  SELECT sku_id, sum(units)::float / 28 AS avg_daily FROM sales_daily
-  WHERE day > CAST(:eff AS date) - 28 AND day <= :eff GROUP BY sku_id
+  SELECT p.sku_id, p.location_id,
+         COALESCE(rl.avg_daily, CASE WHEN p.n_locations = 1 THEN rs.avg_daily END) AS avg_daily
+  FROM pos p LEFT JOIN recent_loc rl ON rl.sku_id = p.sku_id AND rl.location_id = p.location_id
+  LEFT JOIN recent_sku rs ON rs.sku_id = p.sku_id
 )
 SELECT p.sku_id, pr.description, pr.unit, p.location_id, p.zone_id, p.as_of, p.on_hand, p.allocated, p.on_order,
        p.capacity, p.value_kind, (p.on_hand - p.allocated) AS available, r.avg_daily, ws.slot_id, ws.aisle, ws.rack,
        ws.x, ws.z, ws.is_schematic, COALESCE(tc.term_count, 0) AS term_count
 FROM pos p JOIN products pr ON pr.sku_id = p.sku_id
-LEFT JOIN recent r ON r.sku_id = p.sku_id
+LEFT JOIN recent r ON r.sku_id = p.sku_id AND r.location_id = p.location_id
 LEFT JOIN (SELECT sku_id, count(*) AS term_count FROM supplier_terms GROUP BY sku_id) tc ON tc.sku_id = p.sku_id
 LEFT JOIN warehouse_slots ws ON ws.sku_id = p.sku_id
-ORDER BY ws.slot_id NULLS LAST, p.sku_id
+ORDER BY ws.slot_id NULLS LAST, p.sku_id, p.location_id
 """
 # Static compositions of the constant above (no user input): one page with the full count, and the count alone.
 INVENTORY_PAGE_SQL = "SELECT q.*, count(*) OVER () AS _total FROM (" + INVENTORY_SQL + ") q LIMIT :lim OFFSET :off"  # noqa: S608

@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { signIn } from "./helpers";
 
 for (const path of ["/", "/inventory", "/approvals", "/policies", "/data", "/exceptions", "/research", "/value", "/forecast", "/runs", "/scenarios"]) {
@@ -9,21 +9,23 @@ for (const path of ["/", "/inventory", "/approvals", "/policies", "/data", "/exc
     await page.waitForLoadState("networkidle");
     const [sw, iw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
     expect(sw).toBeLessThanOrEqual(iw + 1);
-    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).exclude("canvas").analyze();
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).exclude("canvas").analyze();
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     await info.attach("axe", { body: JSON.stringify(results.violations.map((v) => ({ id: v.id, impact: v.impact, n: v.nodes.length })), null, 2), contentType: "application/json" });
     expect(serious.map((v) => `${v.id} (${v.nodes.length})`)).toEqual([]);
   });
 }
 
-for (const [ws, path, role] of [["contract-research", "/market", "viewer"], ["contract-research", "/", "viewer"], ["uci-research", "/admin", "tenant_admin"]] as const) {
+for (const [ws, path, role] of [["contract-research", "/market", "viewer"], ["contract-research", "/", "viewer"], ["uci-research", "/admin", "tenant_admin"],
+  // Phase 4: the document upload form (administrators), settings and the not-found page
+  ["demo", "/policies", "tenant_admin"], ["uci-research", "/settings", "viewer"], ["uci-research", "/no-such-page", "viewer"]] as const) {
   test(`axe and overflow: ${ws} ${path}`, async ({ page }) => {
     await signIn(page, role);
     await page.goto(`${path}?ws=${ws}`);
     await page.waitForLoadState("networkidle");
     const [sw, iw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
     expect(sw).toBeLessThanOrEqual(iw + 1);
-    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag22aa"]).exclude("canvas").analyze();
+    const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).exclude("canvas").analyze();
     expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id} (${v.nodes.length})`)).toEqual([]);
   });
 }

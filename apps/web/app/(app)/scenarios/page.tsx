@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, intentKey } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
@@ -90,6 +90,7 @@ export default function ScenariosPage() {
 
   return (
     <div className="space-y-6">
+      <QueryError q={ov} what="this workspace&apos;s planning settings" className="mb-4" />
       <PageHeader eyebrow="Scenario studio" title="Compare a draft scenario against the baseline">
         Both run the same forecast, stock snapshot, supplier terms and optimiser. Only the inputs you change differ. Results are simulated.
       </PageHeader>
@@ -204,7 +205,7 @@ function Compare({ base, draft, currency, stale }: { base?: Result; draft?: Resu
         { type: "bar", name: "Baseline", itemStyle: { color: token("--muted") }, data: [base.metrics.spend_minor / 100_000, base.metrics.shortfall_units / 1000, base.metrics.units_ordered / 1000] },
         { type: "bar", name: "Draft", itemStyle: { color: token("--accent") }, data: [draft.metrics.spend_minor / 100_000, draft.metrics.shortfall_units / 1000, draft.metrics.units_ordered / 1000] },
       ] };
-  }, [base, draft, chartTheme]);
+  }, [base, draft, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
   if (!base && !draft) return <Card className="p-5"><Empty title="Nothing computed yet">Compute the baseline, then a draft with changed inputs to compare them.</Empty></Card>;
   return (
     <Card className="p-5">

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, lockReferenceCase, test } from "./fixtures";
 import { createDraft, getJson, signIn } from "./helpers";
 
 // EXE-006: selection, filters and clock changes propagate across chart, table, floor plan, evidence and the action
@@ -69,6 +69,7 @@ test("the action drawer and its evidence describe the same version of the same p
 
 test("starting a second investigation replaces the first one's timeline instead of mixing them", async ({ page }) => {
   await signIn(page, "planner");
+  await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
   await page.goto("/runs?ws=demo&known=2026-10-20T09:00:00.000Z&eff=2026-10-20");
   await page.getByRole("button", { name: "Start investigation" }).click();
   await expect(page).toHaveURL(/run=/);

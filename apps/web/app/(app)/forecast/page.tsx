@@ -1,10 +1,10 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, QueryError, Skeleton, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, getTenant } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
@@ -17,6 +17,8 @@ const PLANNED = [
   { family: "tcn_quantile", note: "Compact causal dilated TCN with a direct 28×3 quantile head, 3 seeds." },
 ];
 const FAMILY_LABEL: Record<string, string> = { seasonal_naive: "Seasonal naive", lightgbm_quantile: "LightGBM quantile", tcn_quantile: "Quantile TCN" };
+
+type ZoomEvent = { start?: number; end?: number; batch?: { start?: number; end?: number }[] };
 
 export default function ForecastPage() {
   const ws = useWs();
@@ -38,7 +40,7 @@ export default function ForecastPage() {
   // A run belongs to the product and origin it was made for. If the user has moved on by the time it returns, the
   // result is cached but not shown: the chart, run card and score must never mix versions (EXE-006).
   const skuRef = useRef(sku);
-  skuRef.current = sku;
+  useEffect(() => { skuRef.current = sku; }, [sku]);
   // A trained model has already seen labels up to its training cutoff, so replaying an earlier origin with it would leak
   // the future (the API refuses). On "Champion" we fall back to the baseline for such origins and say so.
   const champion = models.data?.find((m) => m.status === "CHAMPION");
@@ -92,10 +94,10 @@ export default function ForecastPage() {
         ...(backtest ? [{ type: "scatter", name: "Actual after origin", data: actualsAfter.slice(0, 28).map((d) => [d.day, d.units]), symbolSize: 5, itemStyle: { color: token("--risk") } }] : []),
       ],
     };
-  }, [history, pts, origin, backtest, actualsAfter, chartTheme]);
+  }, [history, pts, origin, backtest, actualsAfter, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   const onEvents = useMemo(() => ({
-    datazoom: (e: any) => { const b = e.batch?.[0] ?? e; setZoom([b.start ?? 0, b.end ?? 100]); },
+    datazoom: (raw: unknown) => { const e = raw as ZoomEvent; const b = e.batch?.[0] ?? e; setZoom([b.start ?? 0, b.end ?? 100]); },
   }), []);
 
   return (
@@ -105,7 +107,7 @@ export default function ForecastPage() {
           <select value={family} onChange={(e) => setFamily(e.target.value)} className="rounded-lg border border-line bg-surface px-2 py-2 text-sm">
             <option value="">Champion ({FAMILY_LABEL[models.data?.find((m) => m.status === "CHAMPION")?.family ?? "seasonal_naive"]})</option>
             {models.data?.map((m) => <option key={m.id} value={m.family}>{FAMILY_LABEL[m.family] ?? m.family} · {m.status.toLowerCase()}</option>)}
-          </select></label><Button onClick={() => create.mutate(sku!)} busy={create.isPending} disabled={!sku || !known || role === "viewer" || role === "approver" || role === "tenant_admin"}
+          </select></label><Button onClick={() => create.mutate(sku!)} busy={create.isPending} disabled={!sku || !known || role !== "planner"}
           title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button></>}>
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
@@ -113,9 +115,10 @@ export default function ForecastPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]">
         <Card className="p-4">
           <Eyebrow>Product</Eyebrow>
-          {inv.isLoading ? <Skeleton className="mt-2 h-60" /> : (
+          {inv.isLoading ? <Skeleton className="mt-2 h-60" /> : inv.error ? <QueryError q={inv} what="products" /> : (
             <ul className="mt-2 max-h-[460px] space-y-0.5 overflow-auto" aria-label="Products">
-              {inv.data?.items.map((i) => (
+              {/* one entry per product: inventory has a row per SKU and location (P1-FE-02) */}
+              {inv.data?.items.filter((i, n, all) => all.findIndex((x) => x.sku_id === i.sku_id) === n).map((i) => (
                 <li key={i.sku_id}>
                   <button aria-current={i.sku_id === sku} onClick={() => { setCtx({ sku: i.sku_id }); setRunId(null); }}
                     className={`w-full rounded-md px-2 py-1.5 text-left text-sm ${i.sku_id === sku ? "bg-accent-soft text-accent" : "hover:bg-surface-2"}`}>
@@ -133,11 +136,12 @@ export default function ForecastPage() {
               <Eyebrow>{sku ? `${sku} — history and 28-day forecast` : "Select a product"}</Eyebrow>
               <span className="flex gap-2"><Provenance kind="observed" /><Provenance kind="forecast" /></span>
             </div>
-            {sales.isLoading ? <Skeleton className="mt-3 h-80" /> : history.length ? (
+            {sales.isLoading ? <Skeleton className="mt-3 h-80" /> : sales.error ? <QueryError q={sales} what="sales history" /> : history.length ? (
               <Chart option={option} height={360} onEvents={onEvents}
                 label={`Daily unit sales for ${sku} up to ${origin}${pts.length ? ", with a 28-day median forecast and 10 to 90 percent interval" : ""}`} />
             ) : <Empty title="No sales history before this origin" />}
             {zoom && <p className="mt-1 text-xs text-muted">Zoomed to {num(zoom[0], 0)}–{num(zoom[1], 0)}% of the visible range. Zoom changes the view only, never the data or exports.</p>}
+            <QueryError q={run} what="this forecast run" />
             {!pts.length && history.length > 0 && <div className="mt-3"><EmptyState variant="first_run" art="forecast-setup" title="Create a forecast for this product" compact>
               No forecast run exists for this product, origin and model yet. Run one to overlay the median and the 10–90% interval.</EmptyState></div>}
           </Card>
@@ -179,6 +183,7 @@ export default function ForecastPage() {
           )}
           <Card className="p-5">
             <Eyebrow>Model registry</Eyebrow>
+            <QueryError q={models} what="the model registry" />
             <table className="mt-3 w-full text-sm">
               <caption className="sr-only">Registered forecasting models</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Model</th><th className="font-medium">Status</th><th className="font-medium">Evaluation</th></tr></thead>
@@ -223,8 +228,9 @@ function StudyPanel() {
     return { ...b, xAxis: { ...(b.xAxis as object), type: "category", name: "horizon (days)", data: Array.from({ length: 28 }, (_, i) => i + 1) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "median pinball" },
       series: fams.map((f) => ({ type: "line", name: STUDY_NAME[f], data: d.pinball_by_horizon[f]!.q50, symbol: "none", lineStyle: { color: colors[f], width: 2 }, itemStyle: { color: colors[f] } })) };
-  }, [st.data, chartTheme]);
+  }, [st.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
   if (st.isLoading) return <Card className="p-5"><Skeleton className="h-40" /></Card>;
+  if (st.error) return <Card className="p-5"><Eyebrow>Model comparison study</Eyebrow><QueryError q={st} what="the model comparison study" /></Card>;
   if (!st.data?.available) return <Card className="p-5"><Eyebrow>Model comparison study</Eyebrow><p className="mt-2 text-sm text-muted">{st.data?.message}</p></Card>;
   const d = st.data;
   const fams = (["seasonal_naive", "lightgbm", "tcn"] as const).filter((f) => d.summary[f]);

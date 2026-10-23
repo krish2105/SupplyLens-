@@ -1,15 +1,19 @@
-import { expect, test } from "@playwright/test";
+import { expect, lockReferenceCase, test } from "./fixtures";
 import { expectReconciled, getJson, signIn } from "./helpers";
 
 // P0 journey on the spec's reference case: investigate -> prepare draft -> approve -> sandbox order reconciled.
 test("reference case: planner drafts, approver approves, sandbox order reconciles", async ({ page }) => {
   await signIn(page, "planner");
+  await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
   await page.goto("/runs?ws=demo&known=2026-10-20T09:00:00.000Z&eff=2026-10-20");
   await page.getByRole("button", { name: "Start investigation" }).click();
-  await expect(page.getByText("WAITING FOR APPROVAL").first()).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText(/Planned 1 SKU need\(s\): OPTIMAL, 1 line\(s\), total 180.00 USD/)).toBeVisible();
-  const runUrl = new URL(page.url());
-  const runId = runUrl.searchParams.get("run")!;
+  // This run, not an earlier one in the history list (which also shows WAITING FOR APPROVAL): wait for its id in the URL,
+  // then for its own status and its own timeline.
+  await expect(page).toHaveURL(/run=/);
+  const runId = new URL(page.url()).searchParams.get("run")!;
+  await expect.poll(async () => (await getJson<{ status: string }>(page, `/api/v1/agent-runs/${runId}`, "demo")).status,
+    { timeout: 20_000 }).toBe("WAITING_FOR_APPROVAL");
+  await expect(page.getByText(/Planned 1 SKU need\(s\): OPTIMAL, 1 line\(s\), total 180.00 USD/)).toBeVisible({ timeout: 20_000 });
   const detail = await (await page.request.get(`/api/v1/agent-runs/${runId}`, { headers: { "X-SupplyLens-Tenant": "demo" } })).json();
   const actionId = detail.actions[0].id as string;
   expect(detail.actions[0].supplier_id).toBe("DEMO-REF-B");
@@ -31,6 +35,7 @@ test("reference case: planner drafts, approver approves, sandbox order reconcile
 
 test("amendment known before 20 Oct changes the decision (A on 19 Oct)", async ({ page }) => {
   await signIn(page, "planner");
+  await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
   await page.goto("/runs?ws=demo&known=2026-10-19T09:00:00.000Z&eff=2026-10-19");
   await page.getByRole("button", { name: "Start investigation" }).click();
   await expect(page.getByText(/total 150.00 USD/)).toBeVisible({ timeout: 20_000 });

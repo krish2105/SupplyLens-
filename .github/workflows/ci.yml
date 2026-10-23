@@ -85,7 +85,12 @@ jobs:
       - run: uv sync --frozen && npm --prefix apps/web ci
       - name: API schema, generated types and web client agree
         run: ./scripts/check_contracts.sh
-      - run: npm --prefix apps/web run typecheck
+      - name: typecheck (app and browser tests)
+        run: npm --prefix apps/web run typecheck
+      - name: ESLint (Next.js core web vitals, React hooks, TypeScript; zero warnings)
+        run: npm --prefix apps/web run lint
+      - name: unit and component tests (Vitest)
+        run: npm --prefix apps/web test
       - run: cd apps/web && NEXT_DIST_DIR=.next-build npx next build
 
   e2e:
@@ -126,9 +131,9 @@ jobs:
           (cd apps/web && NEXT_DIST_DIR=.next-build npx next build && NEXT_DIST_DIR=.next-build nohup npx next start --port 3100 > ../../web.log 2>&1 &)
           for i in $(seq 1 60); do curl -fsS http://localhost:3100/login >/dev/null && curl -fsS http://localhost:8000/api/v1/auth/dev-users >/dev/null && exit 0; sleep 2; done
           cat api.log web.log; exit 1
-      - name: browser (Chromium)
-        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright install --with-deps chromium
-      - name: end-to-end, resilience, accessibility and Web Vitals suites
+      - name: browsers (Chromium, Firefox, WebKit)
+        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright install --with-deps chromium firefox webkit
+      - name: end-to-end, resilience, accessibility and Web Vitals suites (Chromium desktop and mobile; journeys on Firefox, WebKit, iPhone-sized WebKit)
         run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

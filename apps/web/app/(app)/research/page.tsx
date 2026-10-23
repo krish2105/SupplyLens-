@@ -3,12 +3,13 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
-import { Card, Eyebrow, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { Card, Eyebrow, Mono, PageHeader, Provenance, QueryError, Skeleton, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { useApi, useWs } from "@/lib/queries";
 import { num } from "@/lib/format";
 
-type Any = Record<string, any>;
+// Study results are JSON documents whose shape differs per study; the cards read named fields from them.
+type Any = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- untyped study JSON (see the comment above)
 const pct = (v: number | null | undefined, d = 1) => (v == null ? "—" : `${num(v * 100, d)}%`);
 
 function useStudy(id: string) {
@@ -27,7 +28,7 @@ function bars(categories: string[], series: { name: string; data: number[]; colo
 
 /** The headline is the reviewed one from evaluations/study_registry.json, never a string fixed in this page (audit S16).
  *  `fallback` is shown only as the question's topic when no reviewed headline exists. */
-function StudyCard({ id, title: fallback, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any } }) {
+function StudyCard({ id, title: fallback, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any; error: unknown; refetch: () => unknown } }) {
   const review = q.data?.review as { status: string; headline?: string | null; notes?: string | null; superseded?: { experiment_id: string; reason?: string }[] } | undefined;
   return (
     <Card className="p-5">
@@ -41,7 +42,7 @@ function StudyCard({ id, title: fallback, question, children, q }: { id: string;
         </div>
       </div>
       {review?.notes && <p className="mt-2 text-xs text-muted">{review.notes}</p>}
-      <div className="mt-4">{q.isLoading ? <Skeleton className="h-40" /> : q.data?.available === false ? <EmptyState variant="first_run" art="empty-research" title="No experiment recorded for this study" compact>{q.data?.message}</EmptyState> : children}</div>
+      <div className="mt-4">{q.isLoading ? <Skeleton className="h-40" /> : q.error ? <QueryError q={q} what="this study" /> : q.data?.available === false ? <EmptyState variant="first_run" art="empty-research" title="No experiment recorded for this study" compact>{q.data?.message}</EmptyState> : children}</div>
       {!!review?.superseded?.length && (
         <details className="mt-3 text-xs text-muted"><summary className="cursor-pointer">{review.superseded.length} superseded run(s) not shown</summary>
           <ul className="mt-1 list-disc pl-5">{review.superseded.map((x) => <li key={x.experiment_id}><Mono>{x.experiment_id}</Mono>: {x.reason}</li>)}</ul></details>
@@ -64,7 +65,7 @@ export default function ResearchPage() {
       { name: "LightGBM", color: token("--accent"), data: [d.summary.lightgbm.mae, d.summary.lightgbm.pinball_mean, d.summary.lightgbm.mase * 10] },
       { name: "TCN", color: token("--forecast"), data: [d.summary.tcn.mae, d.summary.tcn.pinball_mean, d.summary.tcn.mase * 10] },
     ].filter((_, i) => fams[i]), "lower is better");
-  }, [f1.data, chartTheme]);
+  }, [f1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   const s1Opt = useMemo(() => {
     const d = s1.data;
@@ -75,7 +76,7 @@ export default function ResearchPage() {
       { name: "Median + safety policy", color: token("--muted"), data: keys.map((k) => Math.round(b[k].total_cost)) },
       { name: "q90 order-up-to policy", color: token("--accent"), data: keys.map((k) => Math.round(b[`${k}__sum_q90`].total_cost)) },
     ], "simulated £ cost (28 days)");
-  }, [s1.data, chartTheme]);
+  }, [s1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   return (
     <div className="space-y-6">
@@ -123,7 +124,7 @@ export default function ResearchPage() {
           {r2.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">R2 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Condition</th><th className="font-medium">Top-1 correct</th><th className="font-medium">Wrong version</th><th className="font-medium">Abstain on unknown</th></tr></thead>
-              <tbody>{Object.entries(r2.data.conditions).map(([k, v]: [string, any]) => (
+              <tbody>{Object.entries(r2.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{pct(v.top1_citation_accuracy)}</td>
                   <td className="num">{pct(v.wrong_version_top1_rate)}</td><td className="num">{pct(v.abstention_accuracy_unknown, 0)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{r2.data.questions} questions generated from simulated agreements (not human-reviewed). Cross-tenant probes: {r2.data.cross_tenant_probes.leaked_chunks} leaked chunks in {r2.data.cross_tenant_probes.queries} queries.</td></tr></tfoot>
@@ -135,7 +136,7 @@ export default function ResearchPage() {
           {c1.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">C1 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Retrieval</th><th className="font-medium">Hit@1</th><th className="font-medium">Hit@3</th><th className="font-medium">Hit@5</th></tr></thead>
-              <tbody>{Object.entries(c1.data.conditions).map(([k, v]: [string, any]) => (
+              <tbody>{Object.entries(c1.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{pct(v["hit@1"])}</td><td className="num">{pct(v["hit@3"])}</td><td className="num">{pct(v["hit@5"])}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{c1.data.conditions.hybrid_rrf.items} contract × category items; public data, CC BY 4.0.</td></tr></tfoot>
             </table>
@@ -146,7 +147,7 @@ export default function ResearchPage() {
           {r1.data?.conditions && (
             <table className="w-full text-sm"><caption className="sr-only">R1 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Retrieval</th><th className="font-medium">nDCG@10</th><th className="font-medium">Recall@10</th><th className="font-medium">MRR@10</th><th className="font-medium">p95 ms</th></tr></thead>
-              <tbody>{Object.entries(r1.data.conditions).map(([k, v]: [string, any]) => (
+              <tbody>{Object.entries(r1.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{num(v["ndcg@10"], 3)}</td><td className="num">{num(v["recall@10_rel>=2_capped"], 3)}</td><td className="num">{num(v["mrr@10"], 3)}</td><td className="num">{num(v.latency_ms_p95, 0)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={5} className="pt-2 text-xs text-muted">Keyword = PostgreSQL full-text ranking (not BM25). Short category queries favour semantic matching.</td></tr></tfoot>
             </table>
@@ -157,7 +158,7 @@ export default function ResearchPage() {
           {ib.data?.policies && (
             <table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Policy</th><th className="font-medium">Mean normalised reward</th></tr></thead>
-              <tbody>{Object.entries(ib.data.policies).map(([k, v]: [string, any]) => (
+              <tbody>{Object.entries(ib.data.policies as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{num(v.overall_score, 3)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={2} className="pt-2 text-xs text-muted">No LLM in any policy. Real trajectories derive from H&amp;M data; upstream terms not cleared for redistribution.</td></tr></tfoot>
             </table>

@@ -1,13 +1,26 @@
 "use client";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MutationCache, QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useState, type ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 
+let leaving = false;
+function toSignIn(error: unknown) {
+  if (!(error instanceof ApiError) || error.status !== 401 || leaving || window.location.pathname.startsWith("/login")) return;
+  leaving = true;
+  // A full navigation on purpose: it discards every cached response of the ended session.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.assign(`/login?next=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const [client] = useState(() => new QueryClient({
+    // Any request answered 401 means the session has ended (signed out elsewhere, revoked, idle too long): go to sign-in and
+    // come back to this screen afterwards, instead of leaving "session ended" boxes on a screen that no longer works.
+    queryCache: new QueryCache({ onError: toSignIn }),
+    mutationCache: new MutationCache({ onError: toSignIn }),
     defaultOptions: {
       queries: {
         staleTime: 15_000,

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Stat, Status } from "@/components/ui";
+import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Stat, Status } from "@/components/ui";
 import { Onboarding } from "@/components/onboarding";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, int, money } from "@/lib/format";
@@ -131,6 +131,7 @@ function DatasetView() {
             </button>
           ))}
         </div>
+        <QueryError q={q} what="quarantined rows" />
         {q.isLoading ? <Loading /> : q.data && (
           <div className="mt-4 overflow-x-auto" tabIndex={0} role="region" aria-label="Quarantined rows, scrollable">
             <table className="w-full text-sm">

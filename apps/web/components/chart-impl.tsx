@@ -17,7 +17,7 @@ echarts.use([LineChart, BarChart, ScatterChart, GridComponent, TooltipComponent,
   MarkLineComponent, MarkAreaComponent, AriaComponent, CanvasRenderer]);
 
 export default function ChartImpl({ option, onEvents }: {
-  option: EChartsCoreOption; onEvents?: Record<string, (params: any) => void>;
+  option: EChartsCoreOption; onEvents?: Record<string, (params: unknown) => void>;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const inst = useRef<echarts.ECharts | null>(null);

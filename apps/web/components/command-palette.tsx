@@ -28,12 +28,11 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setOpen((o) => !o); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setIdx(0); setOpen((o) => !o); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
-  useEffect(() => { setIdx(0); }, [q, open]);
 
   const cmds = useMemo<Cmd[]>(() => {
     const go = (pathname: string, query: Record<string, string> = {}) => () => {
@@ -45,7 +44,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
         id: `ws:${m.slug}`, label: `Switch to ${m.name}`, hint: "Workspace",
         run: () => { qc.cancelQueries(); setTenant(m.slug); setCtx({ ws: m.slug, sku: null, known: null, eff: null, action: null, run: null }); setOpen(false); } })),
       ...["light", "dark", "system"].map((t) => ({ id: `theme:${t}`, label: `Theme: ${t}`, hint: "Appearance", run: () => { setTheme(t); setOpen(false); } })),
-      ...(inv.data?.items ?? []).map((i) => ({ id: `sku:${i.sku_id}`, label: `${i.sku_id} — ${i.description}`, hint: "Product · open in inventory",
+      ...(inv.data?.items ?? []).filter((i, n, all) => all.findIndex((x) => x.sku_id === i.sku_id) === n).map((i) => ({ id: `sku:${i.sku_id}`, label: `${i.sku_id} — ${i.description}`, hint: "Product · open in inventory",
         run: go("/inventory", { sku: i.sku_id }) })),
     ];
     const s = q.trim().toLowerCase();
@@ -53,10 +52,12 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
   }, [nav, me.data, ctx.ws, inv.data, q, router, setCtx, setTheme, qc]);
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={(o) => { setIdx(0); setOpen(o); }}>
       <Dialog.Trigger asChild>
-        <button className="hidden items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-muted hover:text-ink md:inline-flex" aria-label="Open command palette">
-          <Search className="size-3.5" aria-hidden /> Search or jump to… <kbd className="num rounded border border-line px-1 text-[10px]">⌘K</kbd>
+        {/* An icon on phones (no keyboard shortcut there), the full search box from tablet width up. */}
+        <button className="inline-flex size-8 items-center justify-center gap-2 rounded-lg border border-line bg-surface text-sm text-muted hover:text-ink md:size-auto md:px-3 md:py-1.5" aria-label="Open command palette">
+          <Search className="size-3.5" aria-hidden /> <span className="hidden md:inline">Search or jump to…</span>
+          <kbd className="num hidden rounded border border-line px-1 text-[10px] md:inline">⌘K</kbd>
         </button>
       </Dialog.Trigger>
       <Dialog.Portal>
@@ -71,7 +72,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
           <Dialog.Description className="sr-only">Type to filter pages, products, workspaces and themes. Use arrow keys and Enter.</Dialog.Description>
           <div className="flex items-center gap-2 border-b border-line px-4">
             <Search className="size-4 text-muted" aria-hidden />
-            <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="Type a page, product code or command"
+            <input autoFocus value={q} onChange={(e) => { setQ(e.target.value); setIdx(0); }} placeholder="Type a page, product code or command"
               role="combobox" aria-label="Search pages, products and commands" aria-expanded aria-controls="cmd-list" aria-activedescendant={cmds[idx] ? `cmd-${idx}` : undefined}
               className="h-12 flex-1 bg-transparent text-sm outline-none" />
           </div>
@@ -83,6 +84,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
                 <span className="truncate">{c.label}</span><span className="shrink-0 text-xs text-muted">{c.hint}</span>
               </li>
             ))}
+            {inv.error && <li role="option" aria-selected={false} aria-disabled className="px-3 py-2 text-sm text-danger">Products could not be loaded; pages and commands still work.</li>}
             {!cmds.length && <li className="px-3 py-6 text-center text-sm text-muted">Nothing matches “{q}”.</li>}
           </ul>
         </Dialog.Content>

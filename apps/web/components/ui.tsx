@@ -1,7 +1,7 @@
 "use client";
 import clsx from "clsx";
 import { AlertTriangle, Inbox, Loader2 } from "lucide-react";
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { ButtonHTMLAttributes, KeyboardEvent, ReactNode } from "react";
 import { ApiError } from "@/lib/api";
 import { EmptyState } from "./illustration";
 
@@ -160,6 +160,18 @@ export function ErrorState({ error, retry }: { error: unknown; retry?: () => voi
   );
 }
 
+/** The error of a query, or nothing (P2-FE-06): put it before any empty state so a failed request never reads as "no data"
+ *  or spins forever. `what` names the data for the message, e.g. "members". */
+export function QueryError({ q, what, className }: { q: { error: unknown; refetch: () => unknown }; what?: string; className?: string }) {
+  if (!q.error) return null;
+  return (
+    <div className={clsx("mt-3", className)} data-testid="query-error">
+      {what && <p className="mb-2 text-sm text-muted">Could not load {what}.</p>}
+      <ErrorState error={q.error} retry={() => { q.refetch(); }} />
+    </div>
+  );
+}
+
 export function KV({ items }: { items: [string, ReactNode][] }) {
   return (
     <dl className="grid grid-cols-[minmax(110px,auto)_1fr] gap-x-4 gap-y-1.5 text-sm">
@@ -175,4 +187,36 @@ export function KV({ items }: { items: [string, ReactNode][] }) {
 
 export function Mono({ children, className }: { children: ReactNode; className?: string }) {
   return <span className={clsx("num text-[12px]", className)}>{children}</span>;
+}
+
+/** WAI-ARIA tabs (P3-FE-09): each tab names the panel it controls; Arrow keys, Home and End move between enabled tabs and
+ *  select them; only the selected tab is in the Tab order. Pair with <TabPanel id={id} value={value} />. */
+export function TabList<T extends string>({ id, label, tabs, value, onChange, className, tabClassName }: {
+  id: string; label: string; tabs: { key: T; label: ReactNode; disabled?: boolean; title?: string }[]; value: T | null;
+  onChange: (key: T) => void; className?: string; tabClassName: (selected: boolean) => string;
+}) {
+  const enabled = tabs.filter((t) => !t.disabled);
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const at = enabled.findIndex((t) => t.key === value);
+    const next = e.key === "ArrowRight" || e.key === "ArrowDown" ? enabled[(at + 1) % enabled.length]
+      : e.key === "ArrowLeft" || e.key === "ArrowUp" ? enabled[(at - 1 + enabled.length) % enabled.length]
+      : e.key === "Home" ? enabled[0] : e.key === "End" ? enabled[enabled.length - 1] : undefined;
+    if (!next) return;
+    e.preventDefault();
+    onChange(next.key);
+    document.getElementById(`${id}-tab-${next.key}`)?.focus();
+  };
+  return (
+    <div role="tablist" aria-label={label} className={className} onKeyDown={onKey}>
+      {tabs.map((t) => (
+        <button key={t.key} id={`${id}-tab-${t.key}`} role="tab" type="button" aria-selected={value === t.key} aria-controls={`${id}-panel`}
+          tabIndex={value === t.key || (value == null && t === enabled[0]) ? 0 : -1} disabled={t.disabled} title={t.title}
+          onClick={() => onChange(t.key)} className={tabClassName(value === t.key)}>{t.label}</button>
+      ))}
+    </div>
+  );
+}
+
+export function TabPanel({ id, value, children, className }: { id: string; value: string | null; children: ReactNode; className?: string }) {
+  return <div role="tabpanel" id={`${id}-panel`} aria-labelledby={value ? `${id}-tab-${value}` : undefined} className={className}>{children}</div>;
 }

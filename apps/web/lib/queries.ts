@@ -11,6 +11,13 @@ export type Action = Schemas["ActionDetail"];
 
 export const useMe = () => useQuery({ queryKey: ["me"], queryFn: () => apiGet("/api/v1/me"), retry: false });
 
+/** Server profile (environment, sign-in methods). In the public demo profile administration is read-only for everyone
+ *  (D-051); screens say so before a click instead of after a refusal (P3-FE-10). */
+export const useAuthConfig = () => useQuery({ queryKey: ["auth-config"], queryFn: () => apiGet("/api/v1/auth/config"), staleTime: Infinity });
+export function useDemoLockdown() {
+  return useAuthConfig().data?.environment === "demo";
+}
+
 /** Every tenant-scoped query key starts with the workspace so switching cancels and refetches. */
 export function useWs() {
   const [ctx] = usePlanningContext();

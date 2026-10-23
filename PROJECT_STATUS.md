@@ -9,7 +9,15 @@ fictional and public data; `docs/operations/hosted-demo.md`). Still open: field 
 throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
 profile, a corporate identity provider and an ERP sandbox.
 
-## Current state (production-readiness Phase 3, 2026-10-23)
+## Current state (production-readiness Phase 4, 2026-10-23)
+Phase 4 (frontend, UX and end-to-end journeys) is recorded in `docs/agent-handoff/phases/PHASE-04.md`: all twelve user
+journeys pass in the browser (sign-in to receipts and replanning), including a new document upload with amendment history.
+The web app reconciles the workspace with the user's memberships, shows inventory per SKU and location, contains render
+errors, shows request errors with retry, sends one idempotency key per user intent, and returns to the same screen after a
+session ends. ESLint, unit tests and typed browser tests run in CI; journeys run on Chromium, WebKit (desktop and iPhone
+emulation) and Firefox (CI). pytest 419 passed / 6 skipped; Playwright 174 passed / 4 skipped on four local projects.
+
+## Phase 3 state (2026-10-23)
 Phase 3 (performance, scalability and backend reliability) is recorded in `docs/agent-handoff/phases/PHASE-03.md`:
 embeddings moved to their own table (migration 0010), admission control with separate retrieval and compute caps, a
 bounded queue and per-workspace shares, statement and pool timeouts answering 503, bounded inventory/document listings,

@@ -20,9 +20,9 @@ export function FloorPlan({ items, selected, onSelect }: { items: InventoryItem[
           <legend className="px-1 text-xs font-semibold text-muted">{z.replace("DEMO-", "").replace("-", " ")}</legend>
           <div className="grid grid-cols-4 gap-1.5">
             {items.filter((i) => i.zone_id === z).sort((a, b) => (a.slot_id ?? "").localeCompare(b.slot_id ?? "")).map((i) => (
-              <button key={i.sku_id} onClick={() => onSelect(i.sku_id === selected ? null : i.sku_id)}
+              <button key={`${i.sku_id}@${i.location_id}`} onClick={() => onSelect(i.sku_id === selected ? null : i.sku_id)}
                 aria-pressed={i.sku_id === selected}
-                aria-label={`${i.sku_id}, slot ${i.slot_id}, ${i.health.replace("_", " ")}, ${i.days_of_cover == null ? "no sales data" : num(i.days_of_cover) + " days of cover"}`}
+                aria-label={`${i.sku_id}, slot ${i.slot_id} at ${i.location_id}, ${i.health.replace("_", " ")}, ${i.days_of_cover == null ? "no sales data" : num(i.days_of_cover) + " days of cover"}`}
                 className={clsx("rounded-md border px-1.5 py-1 text-left", TONE[i.health] ?? TONE.no_sales_data,
                   i.sku_id === selected && "ring-2 ring-accent ring-offset-2 ring-offset-surface")}>
                 <span className="num block truncate text-[11px] font-semibold">{i.sku_id}</span>

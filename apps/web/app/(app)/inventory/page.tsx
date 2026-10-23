@@ -7,7 +7,7 @@ import { ArrowDownUp } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
-import { Card, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Skeleton, Status } from "@/components/ui";
+import { Card, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TabList, TabPanel } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
@@ -31,9 +31,13 @@ export default function InventoryPage() {
   const [filter, setFilter] = useState("all");
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ k: SortKey; dir: 1 | -1 }>({ k: "days_of_cover", dir: 1 });
-  useEffect(() => { const ok = webglAvailable(); setGl(ok); setView(!ok || window.innerWidth < 768 ? "2d" : "3d"); }, []);
+  useEffect(() => {
+    const ok = webglAvailable();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- device capability exists only in the browser, after mount
+    setGl(ok); setView(!ok || window.innerWidth < 768 ? "2d" : "3d");
+  }, []);
 
-  const items = inv.data?.items ?? [];
+  const items = useMemo(() => inv.data?.items ?? [], [inv.data]);
   const rows = useMemo(() => {
     const s = search.trim().toLowerCase();
     return items
@@ -62,25 +66,23 @@ export default function InventoryPage() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">
-            <div role="tablist" aria-label="Layout view" className="inline-flex rounded-lg border border-line p-0.5">
-              {(["3d", "2d"] as const).map((v) => (
-                <button key={v} role="tab" aria-selected={view === v} disabled={v === "3d" && (!gl || glFailed)}
-                  title={v === "3d" && (!gl || glFailed) ? "WebGL is unavailable in this browser" : undefined}
-                  onClick={() => setView(v)}
-                  className={clsx("rounded-md px-3 py-1 text-sm disabled:opacity-40", view === v ? "bg-accent text-accent-ink" : "text-muted")}>
-                  {v === "3d" ? "3D schematic" : "2D floor plan"}
-                </button>
-              ))}
-            </div>
-            <span className="text-xs text-muted">Snapshot {day(items[0]?.as_of)} · <Provenance kind={items[0]?.value_kind} /></span>
+            <TabList id="layout" label="Layout view" value={view} onChange={setView} className="inline-flex rounded-lg border border-line p-0.5"
+              tabs={(["3d", "2d"] as const).map((v) => ({ key: v, label: v === "3d" ? "3D schematic" : "2D floor plan",
+                disabled: v === "3d" && (!gl || glFailed), title: v === "3d" && (!gl || glFailed) ? "WebGL is unavailable in this browser" : undefined }))}
+              tabClassName={(on) => clsx("rounded-md px-3 py-1 text-sm disabled:opacity-40", on ? "bg-accent text-accent-ink" : "text-muted")} />
+            {/* Space reserved before the data arrives: on phones the label has its own line at the chip's height, so the loaded
+                text never wraps differently from the placeholder and pushes the scene down (CLS). */}
+            <span className="inline-flex min-h-5 w-full items-center gap-1 text-xs text-muted sm:w-auto">Snapshot {day(items[0]?.as_of)} · <Provenance kind={items[0]?.value_kind} /></span>
           </div>
+          <TabPanel id="layout" value={view}>
           {inv.isLoading || view === null ? <Skeleton className="h-[420px]" /> : view === "3d" && gl && !glFailed ? (
             <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
               <Warehouse3D items={items} selected={ctx.sku} onSelect={select} height={420} onFail={() => setGlFailed(true)} />
             </GLBoundary>
           ) : <>{glFailed && <GLNotice />}<div className="p-4"><FloorPlan items={items} selected={ctx.sku} onSelect={select} /></div></>}
+          </TabPanel>
         </Card>
-        <Detail item={sel} known={known} eff={eff} ws={ws} />
+        <Detail item={sel} locations={items.filter((i) => i.sku_id === ctx.sku)} known={known} eff={eff} ws={ws} />
       </div>
 
       <Card className="p-0">
@@ -112,13 +114,13 @@ export default function InventoryPage() {
             </thead>
             <tbody>
               {rows.map((i) => (
-                <tr key={i.sku_id} aria-selected={i.sku_id === ctx.sku}
+                <tr key={`${i.sku_id}@${i.location_id}`} aria-selected={i.sku_id === ctx.sku}
                   className={clsx("cursor-pointer border-b border-line/60 hover:bg-surface-2", i.sku_id === ctx.sku && "bg-accent-soft")}
                   onClick={() => select(i.sku_id)}>
                   <td className="px-4 py-2">
                     <button className="text-left" onClick={(e) => { e.stopPropagation(); select(i.sku_id); }}>
                       <span className="num font-semibold">{i.sku_id}</span>
-                      <span className="block max-w-[320px] truncate text-xs text-muted">{i.description}</span>
+                      <span className="block max-w-[320px] truncate text-xs text-muted">{i.description} · {i.location_id}</span>
                     </button>
                   </td>
                   <td className="num px-4">{int(i.available)}</td>
@@ -142,7 +144,7 @@ export default function InventoryPage() {
   );
 }
 
-function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: string | null; eff: string | null; ws: string }) {
+function Detail({ item, locations, known, eff, ws }: { item: InventoryItem | null; locations: InventoryItem[]; known: string | null; eff: string | null; ws: string }) {
   const terms = useApi(["terms", item?.sku_id, known, eff], item && known && eff ? "/api/v1/terms" : null,
     { query: { sku_id: item?.sku_id ?? "", knowledge_cutoff: known, effective_date: eff } });
   const sales = useApi(["sales", item?.sku_id], item ? "/api/v1/products/{sku_id}/sales" : null, { path: { sku_id: item?.sku_id ?? "" } });
@@ -153,7 +155,7 @@ function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: s
     return { ...b, grid: { left: 40, right: 12, top: 16, bottom: 28 }, legend: { show: false },
       xAxis: { ...(b.xAxis as object), type: "time" }, yAxis: { ...(b.yAxis as object), type: "value", name: "units" },
       series: [{ type: "bar", name: "Units sold", data: pts.map((p) => [p.day, p.units]), itemStyle: { color: token("--accent") }, barMaxWidth: 6 }] };
-  }, [sales.data, eff, chartTheme]);
+  }, [sales.data, eff, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   if (!item) return (
     <Card className="p-5"><Eyebrow>Selection</Eyebrow>
@@ -166,7 +168,21 @@ function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: s
         <h2 id="detail-title" className="display mt-1 text-2xl font-semibold"><span className="num">{item.sku_id}</span></h2>
         <p className="text-sm text-muted">{item.description}</p>
       </div>
+      {locations.length > 1 && (
+        <div data-testid="stock-by-location">
+          <Eyebrow>Stock by location</Eyebrow>
+          <table className="mt-2 w-full text-sm"><caption className="sr-only">Stock of {item.sku_id} at each location</caption>
+            <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-1 font-medium">Location</th>
+              <th className="font-medium">Available</th><th className="font-medium">Days of cover</th><th className="font-medium">Status</th></tr></thead>
+            <tbody>{locations.map((l) => (
+              <tr key={l.location_id} className="border-b border-line/60"><td className="py-1"><Mono>{l.location_id}</Mono></td>
+                <td className="num">{int(l.available)}</td><td className="num">{l.days_of_cover == null ? "—" : num(l.days_of_cover)}</td>
+                <td><Status value={l.health} /></td></tr>))}</tbody></table>
+          <p className="mt-1 text-xs text-muted">Figures below are for {item.location_id}; each location is planned and received separately.</p>
+        </div>
+      )}
       <KV items={[
+        ["Location", <Mono key="l">{item.location_id}</Mono>],
         ["On hand", <span key="a" className="num">{int(item.on_hand)} {item.unit} <Provenance kind={item.value_kind} /></span>],
         ["Allocated", <span key="b" className="num">{int(item.allocated)}</span>],
         ["On order", <span key="c" className="num">{int(item.on_order)}</span>],
@@ -177,7 +193,7 @@ function Detail({ item, known, eff, ws }: { item: InventoryItem | null; known: s
       ]} />
       <div>
         <Eyebrow>Recorded unit sales, last 120 days to {day(eff)}</Eyebrow>
-        {sales.isLoading ? <Skeleton className="mt-2 h-40" /> : sales.data?.daily.length ?
+        {sales.isLoading ? <Skeleton className="mt-2 h-40" /> : sales.error ? <QueryError q={sales} what="sales history" /> : sales.data?.daily.length ?
           <Chart option={option} height={170} label={`Daily units sold for ${item.sku_id}`} /> :
           <p className="mt-2 text-sm text-muted">No sales history for this product.</p>}
       </div>

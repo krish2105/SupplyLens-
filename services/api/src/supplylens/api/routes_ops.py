@@ -45,7 +45,7 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
             if cover < 7:
                 short_units = avg * 7 - avail
                 items.append({"kind": "shortage_risk", "basis": "predicted", "sku_id": r["sku_id"], "title": f"{r['sku_id']} covers {cover:.1f} days",
-                              "detail": f"{avail} available vs {avg:.1f}/day recent unit sales", "severity": "high" if cover < 2 else "medium",
+                              "detail": f"{avail} available at {r['location_id']} vs {avg:.1f}/day recent unit sales", "severity": "high" if cover < 2 else "medium",
                               "materiality_minor": int(short_units * price.get(r["sku_id"], 0)), "materiality_basis": "7-day shortfall x median selling price (revenue at risk, not margin)",
                               "deadline": str(eff + timedelta(days=max(int(cover), 0))), "value_kind": "derived"})
             elif cover > 90:

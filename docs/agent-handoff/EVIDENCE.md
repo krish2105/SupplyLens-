@@ -145,3 +145,26 @@ macOS 27; PostgreSQL 17.11 (Homebrew, default settings), pgvector 0.8.6; Python 
 Declared 8 vCPU / 32 GiB profile (EXT-04); real embedding latency (stub); several API processes, a pooler or replicas;
 a multi-tenant load (fairness is unit-tested only); sustained load beyond 3 minutes; batch phase (`--phase batch`);
 Keycloak tests; local Docker compose; any load against the hosted demo.
+
+## Phase 4 — frontend, UX and end-to-end journeys (2026-10-23, UTC)
+
+**Starting point:** `main` @ `55e0b1c` (CI 39859732196). Same machine as Phase 3 (Apple M4 Pro, macOS 27, Node 26.10,
+Playwright 1.64.1 with Chromium 1248, WebKit 2370, Firefox 1555). Disposable browser stack: `supplylens_p4ci` (PD-018).
+
+| ID | Check | Command | Result | Notes |
+|---|---|---|---|---|
+| P4-E01 | Frontend inventory before changes | `npx eslint .` (new config) ; query-error scan (script over `useApi` uses) | 22 errors, 14 warnings; 24 queries whose errors were never rendered | Lint findings included real defects: inert clause labels, a draft that followed the user, an effect-based palette reset |
+| P4-E02 | Lint and types after | `npm --prefix apps/web run lint` ; `npm --prefix apps/web run typecheck` (app + `tsconfig.e2e.json`) | 0 errors, 0 warnings; typecheck clean including browser tests | Intentional patterns carry a one-line reason (browser-only reads after mount, theme-driven chart recolour) |
+| P4-E03 | Backend tests for Phase 4 API | `uv run pytest -q tests/test_phase4_web_api.py` | **5 passed** | Inventory per SKU@location incl. single-location sales fallback and per-site shortage; document upload: amendment history, server known-at, in-force citation, role refusal, type/size/UTF-8/NUL/date/supplier/duplicate/unknown-version checks, cross-workspace isolation |
+| P4-E04 | Unit and component tests | `npm --prefix apps/web test` | **19 passed**; the idempotency-key and draft tests **fail on the previous code** (verified by swapping in the committed files) | api keys per intent, capacity refusals, gateway errors, offline, safe return path (8 cases incl. `//host`, `/\host`), drafts, QueryError, ErrorState variants, tabs keyboard |
+| P4-E05 | Full backend suite | `uv run ruff check .` ; `uv lock --check` ; `uv run pytest -q -p no:cacheprovider` | pass; pass; **419 passed, 6 skipped** (111 s) | Skips = Keycloak |
+| P4-E06 | Contracts / hosted pins / advisories | `./scripts/check_contracts.sh` ; `python3 scripts/vercel/build_api.py --check` (failed stale, then `--pin`) ; `npm audit --omit=dev --audit-level=high` | match; digest current; 0 vulnerabilities | New `DocumentUploaded`, `POST /documents` |
+| P4-E07 | Browser journeys (new spec) | `e2e/workflows.spec.ts` on desktop Chromium | 20 tests; first run 16/4 — 3 test faults (racing a background 401, a second alert from the Next.js announcer, a cached broken response) and one wrong assumption (unknown workspace lands on contract-research, which has no stock); all fixed | J11 first draft polluted the reference case (QA-P4-01) → rewritten on an onboarded workspace |
+| P4-E08 | Full browser suite, three consecutive runs | `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1 npx playwright test --project desktop --project mobile --project webkit --project mobile-safari` ×3 | **168 passed, 4 skipped** each run (before the six extra axe tests were added) | P2-QA-01 acceptance (3 consecutive full runs, default workers). Skips: forecast-replay test needs the licensed study's trained champion |
+| P4-E09 | Mobile CLS regression and fix | layout-shift source probe (Pixel 7, 4× CPU, slow network) ; vitals spec ×3 | before fix 0.1361 / 0.1659 / 0.1659; after 0.0695 / 0.0397 / 0.0397 (target 0.1) | Cause: snapshot label wrapping after data load (FE-P4-07) |
+| P4-E10 | Lab vitals, median of 3 | `npx playwright test e2e/vitals.spec.ts --project desktop --project mobile` | **18 passed** | Reports now hold every sample and the median |
+| P4-E11 | Final full browser run | same four projects after all changes | **174 passed, 4 skipped, 0 failed** (2.0 min) | Firefox: launch blocked locally (ENV-P4-01); runs in CI |
+| P4-E13 | Screenshots | Playwright script against the local stack | `docs/screenshots/phase4-*.png` (7) | Clause labels and stock-by-location use mocked data for illustration; labelled as such in PHASE-04 |
+
+### Not run in Phase 4
+Firefox locally (blocked), physical devices, a manual screen-reader pass (EXT-05), Keycloak sign-in, Docker compose.

@@ -112,7 +112,7 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
         </mesh>
         <gridHelper args={[80, 40, colors.grid, colors.grid]} position={[center[0], 0, center[2]]} />
         {placed.map((it) => (
-          <Rack key={it.sku_id} item={it} selected={it.sku_id === selected} hover={it.sku_id === hovered} onSelect={onSelect}
+          <Rack key={`${it.sku_id}@${it.location_id}`} item={it} selected={it.sku_id === selected} hover={it.sku_id === hovered} onSelect={onSelect}
             onHover={setHovered} colors={colors} />
         ))}
         <OrbitControls ref={controls as never} target={center} makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.15}

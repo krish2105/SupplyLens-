@@ -16,5 +16,10 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|vitals|a11y)\.spec/ },
+    // Other engines (Phase 4): the user journeys on Firefox and WebKit, and the purchase journey on an iPhone-sized WebKit.
+    // Emulation only: no physical device is involved.
+    { name: "firefox", use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 } }, testMatch: /(journey|workflows)\.spec/ },
+    { name: "webkit", use: { ...devices["Desktop Safari"], viewport: { width: 1440, height: 900 } }, testMatch: /(journey|workflows)\.spec/ },
+    { name: "mobile-safari", use: { ...devices["iPhone 13"] }, testMatch: /journey\.spec/ },
   ],
 });

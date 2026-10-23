@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CalendarClock, FileWarning } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
-import { Card, ErrorState, Eyebrow, Provenance, Skeleton, Stat, Status } from "@/components/ui";
+import { Card, ErrorState, Eyebrow, Provenance, QueryError, Skeleton, Stat, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
@@ -29,7 +29,7 @@ export default function OverviewPage() {
   const [gl, setGl] = useState<boolean | null>(null);
   const [glFailed, setGlFailed] = useState(false);
   // Constrained devices default to the 2D floor plan (UX-005); WebGL failure always does.
-  useEffect(() => setGl(webglAvailable() && window.innerWidth >= 768), []);
+  useEffect(() => setGl(webglAvailable() && window.innerWidth >= 768), []); // eslint-disable-line react-hooks/set-state-in-effect -- browser capability, after mount
 
   if (ov.error) return <ErrorState error={ov.error} retry={() => ov.refetch()} />;
   if (ov.data && !ov.data.settings) return <ResearchHome o={ov.data} ws={ws} docs={docs.data?.length ?? 0} />;
@@ -142,7 +142,7 @@ export default function OverviewPage() {
 
         <Card className="p-5">
           <Eyebrow>Policy changes on the horizon</Eyebrow>
-          {upcoming.length ? (
+          {docs.error ? <QueryError q={docs} what="documents" /> : upcoming.length ? (
             <ul className="mt-3 space-y-3">
               {upcoming.map((d) => (
                 <li key={d.version_id} className="flex gap-3 text-sm">
@@ -164,7 +164,7 @@ export default function OverviewPage() {
           <Eyebrow>Recent investigations</Eyebrow>
           <Link href={{ pathname: "/runs", query: { ws } }} className="text-sm text-accent underline-offset-2 hover:underline">All runs</Link>
         </div>
-        {runs.data?.length ? (
+        {runs.error ? <QueryError q={runs} what="investigations" /> : runs.data?.length ? (
           <ul className="mt-3 divide-y divide-line">
             {runs.data.slice(0, 5).map((r) => (
               <li key={r.id} className="flex flex-wrap items-center gap-4 py-2.5 text-sm">

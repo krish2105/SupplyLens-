@@ -319,6 +319,14 @@ class DocumentVersion(Out):
     untrusted_content: bool
 
 
+class DocumentUploaded(Out):
+    document_id: str
+    version_id: str
+    chunks: int
+    embedded: bool
+    known_at: datetime
+
+
 class ClauseLabel(Out):
     category: str
     char_start: int

@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, lockReferenceCase, test } from "./fixtures";
 import { signIn } from "./helpers";
 
 // UX-010 (automated part): semantic structure and keyboard behaviour that a screen reader relies on, checked on every
@@ -110,6 +111,7 @@ test("keyboard: the approval decision can be made without a mouse", async ({ pag
 
 test("status changes are announced: run progress and errors use live regions or alerts", async ({ page }) => {
   await signIn(page, "planner");
+  await lockReferenceCase();          // shares the Demo reference case (P2-QA-01)
   await page.goto("/runs?ws=demo&known=2026-10-20T09:00:00.000Z&eff=2026-10-20");
   await page.getByRole("button", { name: "Start investigation" }).click();
   await expect(page.locator("ol[aria-live=polite]")).toHaveCount(1);                       // the event timeline

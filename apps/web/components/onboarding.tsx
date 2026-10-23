@@ -25,6 +25,12 @@ export function Onboarding({ admin }: { admin: boolean }) {
   const qc = useQueryClient();
   const batches = useApi(["import-batches"], "/api/v1/onboarding/batches");
   const [batch, setBatch] = useState<Batch | null>(null);
+  const [openError, setOpenError] = useState<unknown>(null);
+  // Opening an earlier batch is a request like any other: a failure is shown, not an unhandled rejection (P2-FE-07).
+  const openBatch = async (id: string) => {
+    setOpenError(null);
+    try { setBatch(await api<Batch>(`/api/v1/onboarding/batches/${id}`)); } catch (e) { setOpenError(e); }
+  };
   const [kind, setKind] = useState<Kind>("sales");
   const [rights, setRights] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -87,12 +93,14 @@ export function Onboarding({ admin }: { admin: boolean }) {
         {upload.error && <div className="mt-3"><ErrorState error={upload.error} /></div>}
       </Card>
 
-      {batch && <BatchSteps batch={batch} admin={admin} onValidate={(m) => validate.mutate(m)} onPublish={() => publish.mutate()}
+      {/* keyed by batch: opening another batch starts from that batch's own mapping, never the previous one's (P2-FE-07) */}
+      {batch && <BatchSteps key={batch.id} batch={batch} admin={admin} onValidate={(m) => validate.mutate(m)} onPublish={() => publish.mutate()}
         busy={{ validate: validate.isPending, publish: publish.isPending }} error={validate.error ?? publish.error} />}
 
       <Card className="p-5">
         <Eyebrow>Import history</Eyebrow>
         {batches.error && <ErrorState error={batches.error} retry={() => batches.refetch()} />}
+        {openError != null && <div className="mt-2"><ErrorState error={openError} /></div>}
         {batches.data && batches.data.length === 0 && <p className="mt-2 text-sm text-muted">No files imported into this workspace yet.</p>}
         {!!batches.data?.length && (
           <table className="mt-3 w-full text-sm"><caption className="sr-only">Import batches</caption>
@@ -100,7 +108,7 @@ export function Onboarding({ admin }: { admin: boolean }) {
               <th className="font-medium">Status</th><th className="font-medium">Valid / quarantined</th><th className="font-medium">Snapshot</th><th className="font-medium">Uploaded</th></tr></thead>
             <tbody>{batches.data.map((b) => (
               <tr key={b.id} className="border-b border-line/60">
-                <td className="py-2"><button className="text-left text-accent hover:underline" onClick={async () => setBatch(await api<Batch>(`/api/v1/onboarding/batches/${b.id}`))}>{b.file_name}</button></td>
+                <td className="py-2"><button className="text-left text-accent hover:underline" onClick={() => openBatch(b.id)}>{b.file_name}</button></td>
                 <td className="capitalize">{b.kind}</td><td><Status value={b.status} /></td>
                 <td className="num">{int(b.rows_valid)} / {int(b.rows_quarantined)}</td>
                 <td><Mono className="text-muted">{b.snapshot_sha256 ? `${short(b.snapshot_sha256, 12)}…` : "—"}</Mono></td>

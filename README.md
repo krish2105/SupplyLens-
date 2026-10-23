@@ -9,7 +9,7 @@ approval-bound purchase orders that are reconciled before they count as done.
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![FastAPI](https://img.shields.io/badge/FastAPI-0.158-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-336791)
-![Tests](https://img.shields.io/badge/tests-414%20backend%20%C2%B7%20118%20browser-0F6B55)
+![Tests](https://img.shields.io/badge/tests-419%20backend%20%C2%B7%20205%20browser-0F6B55)
 
 <img src="docs/images/overview-dark.png" alt="SupplyLens overview with linked 3D warehouse" width="900" />
 
@@ -114,8 +114,9 @@ Full setup, backup/restore and operating procedures: [`docs/operations/runbook.m
 ## Testing
 
 ```bash
-uv run pytest -q                       # 414 passed, 6 skipped (Keycloak) against real PostgreSQL, incl. migration/rollback/outage rehearsals
-(cd apps/web && npx playwright test)   # 118 browser tests (116 pass, 2 skip): journeys, resilience, accessibility, Web Vitals, layout
+uv run pytest -q                       # 419 passed, 6 skipped (Keycloak) against real PostgreSQL, incl. migration/rollback/outage rehearsals
+(cd apps/web && npx playwright test)   # 205 browser tests: 12 user journeys, resilience, a11y, Web Vitals, layout; Chromium, WebKit, Firefox
+(cd apps/web && npm run lint && npm test)   # ESLint (zero warnings) and 19 unit/component tests
 uv run ruff check .                    # correctness, imports, bugbear and security rules
 ./scripts/check_contracts.sh           # API contract drift (the web client is typed from it)
 ./scripts/backup_restore_drill.sh      # logical restore rehearsal with hash verification

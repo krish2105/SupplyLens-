@@ -1,6 +1,6 @@
 # Agent handoff — progress across phases
 
-Consolidated view of Phases 0–3 (2026-10-22/23, UTC). Detail lives in `ISSUES.md` (register with acceptance criteria),
+Consolidated view of Phases 0–4 (2026-10-22/23, UTC). Detail lives in `ISSUES.md` (register with acceptance criteria),
 `EVIDENCE.md` (every command and result), `DECISIONS.md` and `phases/PHASE-0N.md`. This file is a map, not proof: verify
 anything you rely on.
 
@@ -12,9 +12,10 @@ anything you rely on.
 | Git deploys | `ec6c208` | Pushes to `main` deploy the hosted demo (committed `deploy/vercel-api`, build step, lock-pinned dependencies) | P2-E01, P2-E02 |
 | 2 — security hardening | `1813f43`, `550b427` | Fixture safety guards; revocable server-side sessions; body cap and sign-in throttle; sanitised DB errors; PII redaction on upload; SHA-pinned CI and Dependabot; IdP-outage 503; 404 consistency | P2-E01…E16; CI 8/8 on `1813f43` |
 | 3 — performance and backend reliability (owner brief) | see `git log` after `2365f49` | `chunk_vectors` (0010); admission classes, queue, workspace share; statement/pool timeouts → 503; bounded listings; `/metrics`; outbox dead letter; worker isolation; busy banner in the web app | P3-E01…; before/after load matrix on an M4 Pro laptop |
+| 4 — frontend, UX and journeys (owner brief) | see `git log` after `55e0b1c` | 12 journeys end to end; document upload; workspace reconciliation; inventory per SKU@location; error boundaries and states; per-intent keys; 401 → sign-in and back; lint/unit/typed e2e in CI; Firefox/WebKit/iPhone projects; reference-case lock | P4-E01… |
 
-Test counts over time: pytest 336 → 374 → 398 → **414 passed, 6 skipped** (Keycloak). Playwright 113 (+1 order-dependent
-failure) → 114 → **116 passed, 2 skipped** (Phase 3, twice).
+Test counts over time: pytest 336 → 374 → 398 → 414 → **419 passed, 6 skipped** (Keycloak). Playwright 113 (+1 order-dependent
+failure) → 114 → 116 → **174 passed, 4 skipped** on four local projects (Phase 4; Firefox in CI). Web unit tests: 19 (new).
 
 ## Issue status (as of `550b427`; Phase 3 changes below)
 **Fixed (19):** P0-SEC-01, P0-PLAN-01, P1-PLAN-02, P1-ACT-01, P1-ACT-02, P2-REL-01, P2-REL-02, P2-PLAN-03, P2-PLAN-04,
@@ -57,7 +58,7 @@ SEC-P2-11 fixed per process; P2-PERF-01 and P2-REL-03 partially fixed; new PERF-
 (see ISSUES.md "Phase 3 resolution notes").
 
 ## Recommended order for the remaining work
-1. **Phase 4 — web robustness and QA** (deferred from Phase 3 by PD-014): P1-FE-01, rest of P1-FE-02, P2-FE-03 (ESLint + unit tests in CI first),
+1. **Phase 4 — done** (frontend, UX, journeys; PHASE-04). Formerly: P1-FE-01, rest of P1-FE-02, P2-FE-03 (ESLint + unit tests in CI first),
    P2-FE-04/05/06/07/08, P2-QA-01/02 (then require `e2e` in branch protection), P3-FE-09/10.
 2. **Phase 5 — data protection and retrieval quality** (+ PERF-P3-09 with the retrieval study re-run): P2-KNOW-01, SEC-P2-11, SEC-P2-12, SEC-P2-13, P3-SEC-03 (nonce
    CSP), P2-PRIV-01 backfill, P3-ONB-01 rest, D-056 approval-time duplicate warning.

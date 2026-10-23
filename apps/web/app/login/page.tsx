@@ -1,5 +1,6 @@
 "use client";
 import { useRouter } from "next/navigation";
+import { safeNext } from "@/lib/nav";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { KeyRound, ShieldAlert } from "lucide-react";
@@ -24,7 +25,7 @@ export default function Login() {
 
   async function signIn(email: string) {
     setBusy(email); setErr(null);
-    try { await apiPost("/api/v1/auth/dev-login", { body: { email } }); router.replace("/"); }
+    try { await apiPost("/api/v1/auth/dev-login", { body: { email } }); router.replace(safeNext(new URLSearchParams(window.location.search).get("next"))); }
     catch (e) { setErr(e); setBusy(null); }
   }
 

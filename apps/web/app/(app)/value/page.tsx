@@ -23,7 +23,7 @@ export default function ValuePage() {
         { type: "bar", name: "q90 order-up-to policy", data: cases.map((c) => Math.round(v.data!.sensitivity![c]![`${model}__sum_q90`]!.total_cost)), itemStyle: { color: token("--accent") } },
         { type: "line", name: "Perfect-foresight reference", data: cases.map((c) => Math.round(v.data!.sensitivity![c]!.perfect_foresight_reference!.total_cost)), lineStyle: { color: token("--risk"), type: "dashed" }, itemStyle: { color: token("--risk") } },
       ] };
-  }, [v.data, model, chartTheme]);
+  }, [v.data, model, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
   if (v.isLoading) return <Loading />;
   if (v.error) return <ErrorState error={v.error} />;
   const d = v.data!;

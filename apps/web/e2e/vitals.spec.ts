@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 import { getJson, signIn } from "./helpers";
 
 // UX-011: measurable performance targets. Lab measurement of the production build (LCP, CLS and an INP proxy over real
@@ -40,21 +40,29 @@ for (const p of PAGES) {
         window.__v.inp = Math.max(0, ...Object.values(byInteraction));
       }).observe({ type: "event", durationThreshold: 16, buffered: true } as PerformanceObserverInit);
     });
-    await page.goto(`${p}?ws=uci-research`);
-    await page.waitForLoadState("networkidle");
-    // Real interactions: theme switch, command palette, a table row if there is one.
-    await page.getByRole("radio", { name: "Dark theme" }).click();
-    await page.getByRole("radio", { name: "Light theme" }).click();
-    await page.keyboard.press("Control+k");
-    await page.keyboard.press("Escape");
-    const row = page.locator("tbody tr").first();
-    if (await row.count()) await row.click();
-    await page.waitForTimeout(600);
-    const v = await page.evaluate(() => window.__v);
+    // Three loads, judged by the median of each metric against the unchanged targets (P2-QA-02): one sample on a shared
+    // CI runner is noise-bound (one desktop INP proxy read 224 ms on a docs-only commit). Every sample is recorded.
+    const samples: { lcp: number; cls: number; inp: number }[] = [];
+    for (let n = 0; n < 3; n++) {
+      await page.goto(`${p}?ws=uci-research`);
+      await page.waitForLoadState("networkidle");
+      // Real interactions: theme switch, command palette, a table row if there is one.
+      await page.getByRole("radio", { name: "Dark theme" }).click();
+      await page.getByRole("radio", { name: "Light theme" }).click();
+      await page.keyboard.press("Control+k");
+      await page.keyboard.press("Escape");
+      const row = page.locator("tbody tr").first();
+      if (await row.count()) await row.click();
+      await page.waitForTimeout(600);         // let the last interaction's event timing entry arrive
+      samples.push(await page.evaluate(() => window.__v));
+    }
+    const median = (k: "lcp" | "cls" | "inp") => samples.map((x) => x[k]).sort((a, b) => a - b)[1]!;
+    const v = { lcp: median("lcp"), cls: median("cls"), inp: median("inp") };
     fs.mkdirSync(OUT, { recursive: true });       // one file per test: workers run in parallel
     fs.writeFileSync(path.join(OUT, `${info.project.name}${p === "/" ? "-overview" : p.replaceAll("/", "-")}.json`), JSON.stringify({
       path: p, profile: info.project.name, measured_at: new Date().toISOString(), targets: mobile ? STRESS_BUDGET : TARGET,
-      lcp_ms: Math.round(v.lcp), cls: +v.cls.toFixed(4), inp_ms: Math.round(v.inp) }));
+      lcp_ms: Math.round(v.lcp), cls: +v.cls.toFixed(4), inp_ms: Math.round(v.inp), statistic: "median of 3 loads",
+      samples: samples.map((x) => ({ lcp_ms: Math.round(x.lcp), cls: +x.cls.toFixed(4), inp_ms: Math.round(x.inp) })) }));
     const limit = mobile ? STRESS_BUDGET : TARGET;
     expect.soft(v.lcp, `LCP ${p} (${info.project.name})`).toBeLessThanOrEqual(limit.lcp);
     expect.soft(v.cls, `CLS ${p} (${info.project.name})`).toBeLessThanOrEqual(limit.cls);

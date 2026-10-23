@@ -18,8 +18,8 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P1-ACT-01 | P1 | Actions | An action that went STALE at dispatch cannot be re-approved (outbox UNIQUE violation → 500) | VERIFIED (code + schema) | fixed (P1-E03) |
 | P1-ACT-02 | P1 | Actions / planning | Orders not yet RECONCILED (QUEUED, SUBMITTED, UNKNOWN_OUTCOME, CONFIRMED-mismatch) are invisible to planning → duplicate purchasing; CONFIRMED has no exit | VERIFIED (code) | fixed (P1-E03, P1-E10) |
 | P1-SEC-02 | P1 | Hosted demo / secrets | Hosted API function derives and holds the Neon **owner** DSN at runtime | VERIFIED (code) | fixed in code; residual: platform still injects owner vars (P1-E13) |
-| P1-FE-01 | P1 | Web | Workspace defaults to `uci-research` and is never reconciled with the user's memberships | VERIFIED (code); user impact INFERRED | open |
-| P1-FE-02 | P1 | Web | Receipt quantities keyed by `sku_id` on SKU@location rows → booking against the wrong location | VERIFIED (code) | fixed in approvals receipts; inventory/3D single-location keys PENDING |
+| P1-FE-01 | P1 | Web | Workspace defaults to `uci-research` and is never reconciled with the user's memberships | VERIFIED (code); user impact INFERRED | fixed: the shell moves to a workspace the user belongs to; no-workspace screen (P4-E05, P4-E07) |
+| P1-FE-02 | P1 | Web | Receipt quantities keyed by `sku_id` on SKU@location rows → booking against the wrong location | VERIFIED (code) | fixed: inventory API one row per SKU@location, UI keyed by SKU@location, stock by location (P4-E03, P4-E07) |
 | P1-IAM-01 | P1 | Identity / SaaS | One platform-wide IdP, roles from a `<slug>:<role>` claim, link-by-email, no SCIM; not qualified against a corporate IdP | VERIFIED (code); qualification = external | open |
 | P1-OPS-01 | P1 | Platform | No production deployment architecture: no IaC, no staging, no secret manager, single uvicorn process, no SLOs/dashboards/on-call | VERIFIED (absence) | open |
 | P1-SAAS-01 | P1 | SaaS | No self-serve signup, billing, plans, usage metering or tenant provisioning outside an existing admin | VERIFIED (absence, grep) | open |
@@ -34,15 +34,15 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | open |
 | P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | fixed for new uploads (SEC-P2-07); old rows not rewritten |
 | P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | fixed (SEC-P2-03, P2-E03) |
-| P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | open |
-| P2-FE-04 | P2 | Web | No `error.tsx` / `global-error.tsx` / `not-found.tsx`; render errors white-screen the app | VERIFIED (absence) | open |
-| P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | partially fixed: agent-run start, retry, reconcile |
-| P2-FE-06 | P2 | Web | Query errors rendered as endless loading or as empty states on several screens | VERIFIED (code, per reviewer list) | open |
-| P2-FE-07 | P2 | Web | Onboarding mapping state stale when switching batch; unhandled rejections (onboarding, sign-out) | VERIFIED (code) | open |
-| P2-FE-08 | P2 | Web | Web Vitals reporter re-registers observers on every route change → duplicated, mislabelled vitals | VERIFIED (code) | open |
-| P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | open |
+| P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | fixed: ESLint zero warnings, Vitest (19 tests), e2e typechecked, all in CI (P4-E02, P4-E04) |
+| P2-FE-04 | P2 | Web | No `error.tsx` / `global-error.tsx` / `not-found.tsx`; render errors white-screen the app | VERIFIED (absence) | fixed: route, root and global error boundaries, not-found page, shell widget boundaries (P4-E07) |
+| P2-FE-05 | P2 | Web | Agent-run start, forecasts, exports, deletion, onboarding, alert ack, retry/reconcile send fresh idempotency keys per click | VERIFIED (code) | fixed: one key per user intent for every mutation by default (P4-E04, P4-E07 double-click tests) |
+| P2-FE-06 | P2 | Web | Query errors rendered as endless loading or as empty states on several screens | VERIFIED (code, per reviewer list) | fixed: QueryError on all 24 unhandled queries (P4-E04, P4-E07) |
+| P2-FE-07 | P2 | Web | Onboarding mapping state stale when switching batch; unhandled rejections (onboarding, sign-out) | VERIFIED (code) | fixed: batch steps keyed, batch-open and sign-out errors shown, drafts no longer follow the user (P4-E04) |
+| P2-FE-08 | P2 | Web | Web Vitals reporter re-registers observers on every route change → duplicated, mislabelled vitals | VERIFIED (code) | fixed: observers registered once, route read at report time |
+| P2-QA-01 | P2 | Tests | E2E specs share the Demo reference SKU and run in parallel → order-dependent failure | VERIFIED (P0-E12/E13) | fixed: cross-worker reference-case lock; 3 consecutive full runs clean (P4-E08) |
 | P2-PERF-01 | P2 | Performance | Retrieval cost linear in tenant chunks under RLS; declared 5 req/s target not met (4 req/s on 4 vCPU); mobile overview LCP 2.76 s | RECORDED; re-run in Phase 3 on different hardware | partially fixed: per-search cost cut (0010), overload predictable; ARC-07 met on an M4 Pro laptop (P3-E06, P3-E07), **not** on the declared 8 vCPU profile (EXT-04); mobile LCP not addressed |
-| P2-QA-02 | P2 | Tests / CI | Lab Web-Vitals thresholds fail on shared CI runners (desktop INP proxy 224 ms > 200 ms on a docs-only commit) | VERIFIED (CI run 39827354915) | open |
+| P2-QA-02 | P2 | Tests / CI | Lab Web-Vitals thresholds fail on shared CI runners (desktop INP proxy 224 ms > 200 ms on a docs-only commit) | VERIFIED (CI run 39827354915) | fixed locally: median of 3 loads, unchanged targets; CI confirmation in P4-E12 |
 | SEC-P2-01 | P1 | Test safety | Destructive fixtures (pytest TRUNCATE, Playwright order cancellation) ran against any configured target | VERIFIED | fixed (P2-E03, P2-E07) |
 | SEC-P2-02 | P2 | Sessions | Development sessions were stateless: no revocation on sign-out, no idle timeout | VERIFIED | fixed, verified live (P2-E15) |
 | SEC-P2-03 | P2 | Resource limits | No body cap before parsing/auth; unlimited sign-in attempts and admin writes | VERIFIED | fixed; throttle per process (residual) |
@@ -62,9 +62,9 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | partially fixed: parser errors (SEC-P2-10); publish re-check and atomic workspace creation open |
 | P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | partially fixed: dev sessions revocable, IdP outage 503; CSP unsafe-inline and stream role open |
 | P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | partially fixed: actions SHA-pinned, hosted deps pinned (SEC-P2-06); Docker images open |
-| P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | open |
+| P3-FE-09 | P3 | Web | Minor UI issues (forecast Run enabled while role loading; dev copy shown to all; no return path on login; unguarded `JSON.parse` in SSE; tabs without tabpanels; 617–760 KB first-load JS per route; all pages client components) | VERIFIED (reviewer; spot-checked) | partially fixed: Run disabled until the role is known, admin copy, sign-in return path, guarded stream parsing, WAI-ARIA tabs; first-load JS size and client-only pages open |
 | P3-OPS-02 | P3 | Deployment | Git-triggered Vercel production builds fail within seconds on every push (the API service's `build/vercel-api` is generated locally, not in git); only CLI deploys succeed | VERIFIED (`vercel ls`, P1-E12) | fixed (P2-E02) |
-| P3-FE-10 | P3 | Web | Admin screens do not explain the demo lockdown before a click (the 403 message does) | VERIFIED (code) | open |
+| P3-FE-10 | P3 | Web | Admin screens do not explain the demo lockdown before a click (the 403 message does) | VERIFIED (code) | fixed: demo lockdown notice and disabled controls before any click |
 | PERF-P3-01 | P2 | Retrieval / schema | Inline 4 KB vectors made each chunk row fill an 8 KB page: the full-text scan (no index under RLS, D-035) read 782 MB of vectors per search | VERIFIED (EXPLAIN BUFFERS, P3-E03) | fixed: `chunk_vectors` (migration 0010); chunks heap 131 MB (P3-E05) |
 | PERF-P3-02 | P3 | Retrieval | Vector query computed the distance twice per row and carried full chunk rows through the sort | VERIFIED (plan) | fixed: rank on the narrow table, fetch top 30 (P3-E05) |
 | PERF-P3-03 | P2 | API | Admission allowed 64 in flight but sync routes ran on 40 threads (hidden queue); pool waits lasted 30 s and ended in 500 | VERIFIED (code) | fixed: thread pool sized to the cap, 5 s pool timeout → 503 Retry-After (P3-E08) |
@@ -76,6 +76,16 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | PERF-P3-09 | P3 | Retrieval | A 1024-d float vector plus tuple overhead exceeds half a page, so the exact vector scan still reads 781 MB per search at 100,000 chunks (≈113 ms) | VERIFIED (relation size) | open: halfvec or an HNSW index change ranking and need the retrieval studies re-run (Phase 4/5) |
 | P3-OPS-03 | P2 | Deployment | A push changing only backend code (`services/`, `ml/`, `optimisation/`) did not deploy: Vercel rebuilds a service only when files under its root (`deploy/vercel-api/`) change, and the API code is staged at build time | VERIFIED (66cd20a: CI success, no Vercel status or deployment); cause INFERRED from the service-root rule | fixed: committed `deploy/vercel-api/source.sha256`, re-pinned with `build_api.py --pin`, checked in CI (P3-E16) |
 | PERF-P3-10 | P3 | Platform | Admission caps, the sign-in throttle and metrics are per process; N instances admit N × cap | VERIFIED (design, D-069) | open by design; cluster-wide limits belong with P1-OPS-01 |
+| FE-P4-01 | P2 | Web | Expert clause labels were fetched and never shown (no control could select one) | VERIFIED (code, git history) | fixed: label viewer (P4-E07 J4) |
+| FE-P4-02 | P2 | Web | A draft input (rejection reason) followed the user to the next draft when that one had none saved | VERIFIED (unit test fails on old code) | fixed (P4-E04) |
+| FE-P4-03 | P2 | Web | If open order lines failed to load, the receipts card disappeared silently | VERIFIED (code) | fixed |
+| FE-P4-04 | P2 | Web / mobile | Command palette trigger hidden below tablet width: no search or jump on phones | VERIFIED (mobile-safari run) | fixed |
+| FE-P4-05 | P2 | Web | A session ended elsewhere left "session ended" boxes instead of going to sign-in | VERIFIED (J1) | fixed (D-073) |
+| FE-P4-06 | P1 | Product | Documents could be ingested only by bootstrap/CLI: journey 4 had no product path | VERIFIED (route list) | fixed: `POST /api/v1/documents` + Policies form (D-076, P4-E03, P4-E07) |
+| FE-P4-07 | P3 | Web / performance | Mobile CLS on /inventory rose to 0.14-0.17 after a Phase 4 change (snapshot label wrapping) | VERIFIED (layout-shift sources) | fixed: 0.04-0.07 (P4-E09) |
+| FE-P4-08 | P3 | Web / a11y | Under heavy parallel CPU load focus was lost right after page load in ~1 of 10 runs; not reproducible single-threaded; the app has no focus-moving code | OBSERVED; cause UNVERIFIED | open: test acts after load; investigate with a trace on CI |
+| QA-P4-01 | P2 | Tests | A first draft of the receipts journey booked receipts on the shared reference SKU, permanently changing the local `supplylens_p0e2e` reference case | VERIFIED | fixed: isolated onboarded workspace (PD-019); polluted DB left in place (PD-018) |
+| ENV-P4-01 | — | Environment | Bundled Firefox does not start on macOS 27 here | VERIFIED | CI only (PD-020) |
 
 ## External blockers (cannot be closed by code alone)
 
@@ -360,3 +370,18 @@ Evidence P3-E.. in EVIDENCE.md; full record in phases/PHASE-03.md; product decis
 - **PERF-P3-07** — `metrics.py`, `GET /metrics` (token), `deps.actor` records the authorised workspace.
 - **P2-REL-03** — `actions/service.py` (`OUTBOX_MAX_ATTEMPTS` dead letter), `supplylens_worker/main.py`
   (`tenant_tick`, per-workspace isolation, `DISPATCH_PER_TICK`, worker statement timeout off).
+
+---
+
+## Phase 4 resolution notes (2026-10-23) — frontend, UX and end-to-end journeys
+Evidence P4-E.. in EVIDENCE.md; record in phases/PHASE-04.md; product decisions D-073 … D-077.
+- Shell: `app/(app)/layout.tsx` (workspace reconciliation, no-workspace screen, sign-out errors, shell boundaries),
+  `app/providers.tsx` (401 → sign-in with return path; busy retries), `lib/nav.ts` (safe return path), `app/login/page.tsx`.
+- Boundaries: `app/error.tsx`, `app/(app)/error.tsx`, `app/global-error.tsx`, `app/not-found.tsx`, `components/crash.tsx`,
+  `components/safe-boundary.tsx`.
+- Data states: `components/ui.tsx` (`QueryError`, `TabList`, `TabPanel`) used across all screens.
+- Mutations: `lib/api.ts` default per-intent keys. Drafts: `lib/draft.ts`. Vitals: `components/vitals-reporter.tsx`.
+- Inventory per location: `routes_core.py` INVENTORY_SQL, `routes_ops.py` detail text, inventory/floor plan/3D/forecast/palette.
+- Documents: `knowledge/upload.py`, `POST /api/v1/documents`, Policies "Add a document" and clause-label viewer.
+- Tests: `tests/test_phase4_web_api.py` (5), `apps/web/{lib,components}/*.test.ts(x)` (19), `e2e/workflows.spec.ts` (20),
+  `e2e/fixtures.ts` (reference-case lock), cross-browser projects in `playwright.config.ts`, CI lint/unit/browsers.

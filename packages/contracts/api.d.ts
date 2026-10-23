@@ -632,7 +632,11 @@ export interface paths {
          */
         get: operations["documents_api_v1_documents_get"];
         put?: never;
-        post?: never;
+        /**
+         * Upload Document
+         * @description Add a supplier document or a new version of one (plain text). Known from now; in force from valid_from.
+         */
+        post: operations["upload_document_api_v1_documents_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1590,6 +1594,31 @@ export interface components {
             /** Rights */
             rights: string;
         };
+        /** Body_upload_document_api_v1_documents_post */
+        Body_upload_document_api_v1_documents_post: {
+            /**
+             * Doc Type
+             * @default contract
+             */
+            doc_type?: string;
+            /** File */
+            file: string;
+            /** Supersedes Version Id */
+            supersedes_version_id?: string | null;
+            /** Supplier Id */
+            supplier_id?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Valid From
+             * Format: date
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to?: string | null;
+            /** Version Label */
+            version_label: string;
+        };
         /** CancelOpenIn */
         CancelOpenIn: {
             /** Location Id */
@@ -1950,6 +1979,24 @@ export interface components {
             version_id: string;
             /** Version Label */
             version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** DocumentUploaded */
+        DocumentUploaded: {
+            /** Chunks */
+            chunks: number;
+            /** Document Id */
+            document_id: string;
+            /** Embedded */
+            embedded: boolean;
+            /**
+             * Known At
+             * Format: date-time
+             */
+            known_at: string;
+            /** Version Id */
+            version_id: string;
         } & {
             [key: string]: unknown;
         };
@@ -5739,6 +5786,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentRow"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_document_api_v1_documents_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_document_api_v1_documents_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DocumentUploaded"];
                 };
             };
             /** @description Validation Error */

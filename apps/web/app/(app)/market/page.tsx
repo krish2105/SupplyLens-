@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
-import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Skeleton, Stat } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Stat } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useWs } from "@/lib/queries";
@@ -25,7 +25,7 @@ export default function MarketPage() {
     return { ...b, legend: { show: false }, xAxis: { ...(b.xAxis as object), type: "category", data: s.data.by_year.map((r) => `FY${r.fiscal_year}`) },
       yAxis: { ...(b.yAxis as object), type: "value", name: "USD bn", axisLabel: { formatter: (v: number) => v.toFixed(0) } },
       series: [{ type: "bar", name: "Award value (USD bn)", data: s.data.by_year.map((r) => +((r.usd ?? 0) / 1e9).toFixed(2)), itemStyle: { color: token("--accent") } }] };
-  }, [s.data, chartTheme]);
+  }, [s.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
   async function find(e: React.FormEvent) {
     e.preventDefault(); setErr(null);
     try { setHits(await apiGet("/api/v1/market/suppliers", { query: { q }, tenant: ws })); } catch (x) { setErr(x); }

@@ -6,7 +6,7 @@ import { parseAsString, useQueryState } from "nuqs";
 import clsx from "clsx";
 import { Play } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, intentKey } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
@@ -52,6 +52,7 @@ export default function RunsPage() {
 
   return (
     <div className="space-y-6">
+      <QueryError q={ov} what="this workspace&apos;s settings" className="mb-4" />
       <PageHeader eyebrow="Investigations" title="Forecast, plan and prepare drafts — with every step on record">
         The investigator is deterministic: each step calls a typed tool (forecast, terms, retrieval, optimiser, validator). No language model writes numbers or decisions.
       </PageHeader>
@@ -111,11 +112,12 @@ function RunView({ id, ws }: { id: string; ws: string }) {
   const last = useRef(0);
 
   useEffect(() => {
-    setEvents([]); last.current = 0;
+    setEvents([]); last.current = 0; // eslint-disable-line react-hooks/set-state-in-effect -- a new run's stream starts from an empty timeline
     const es = new EventSource(`/api/v1/agent-runs/${id}/stream?ws=${encodeURIComponent(ws)}`);
     setLive(true);
     es.addEventListener("run_event", (m) => {
-      const e = JSON.parse((m as MessageEvent).data) as Event;
+      let e: Event;
+      try { e = JSON.parse((m as MessageEvent).data) as Event; } catch { return; }    // a malformed frame is skipped; the run detail is authoritative
       if (e.seq <= last.current) return;
       last.current = e.seq;
       setEvents((xs) => [...xs, e]);
