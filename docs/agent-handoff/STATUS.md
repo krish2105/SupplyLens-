@@ -9,8 +9,8 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 |---|---|
 | Current phase | **Phase 4 complete** (2026-10-23): frontend, UX and end-to-end journeys (owner brief, PD-017); all 12 journeys pass (PHASE-04 §1). Next: Phase 5, only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 4: see `git log` after `55e0b1c`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
-| CI | Phase 4 push: EVIDENCE P4-E12. Phase 3: runs 39857106309 and 39858808675, 8/8 |
+| Code commits | Phase 4: `bf2c757` (changes), `1f914a8` (digest and Firefox locator fixes); handoff commit follows. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| CI | `1f914a8` run 39897951198: **8/8 success**, browser suite 200 passed / 5 skipped on five projects incl. Firefox (P4-E15); `bf2c757` run 39894389197 failed 6/8, fixed (P4-E12) |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
 | Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |

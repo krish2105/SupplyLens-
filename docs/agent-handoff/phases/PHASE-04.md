@@ -24,7 +24,8 @@ screen-reader pass (EXT-05), no Keycloak sign-in. Data: a disposable CI-equivale
 | 11 | Order status, receipts, reconciliation, replanning | **PASS** | workflows J11 (own workspace: reconciled → replanning orders nothing → partial receipt → open units → still nothing) |
 | 12 | Reporting, filtering, export, audit, error recovery | **PASS** | workflows J12 ×3 (filters/search/sort, render error contained, not-found), journey (audit CSV), resilience (offline, WebGL loss, 503) |
 
-Run counts: desktop 99, mobile 45, WebKit 27, iPhone WebKit 7, Firefox 27 (CI). Locally, three consecutive full runs:
+Run counts: desktop 99, mobile 45, WebKit 27, iPhone WebKit 7, Firefox 27. CI run 39897951198: 200 passed / 5 skipped
+across all five projects (P4-E15); the first push failed 6/8 (digest flaw, one Firefox locator) and was fixed (P4-E12). Locally, three consecutive full runs:
 168 passed / 4 skipped each; final run after all changes 174 passed / 4 skipped / 0 failed (P4-E08, P4-E11).
 
 ## 2. Defects found and fixed
@@ -72,5 +73,5 @@ INP 200 ms / CLS 0.1 on desktop and within the mobile stress budget. **Not done:
 - Local `supplylens_p0e2e` keeps polluted reference data (left in place by the no-drop rule).
 
 ## 6. Next actions
-Phase 5 (data protection and retrieval quality, PERF-P3-09); investigate FE-P4-08 with a CI trace; propose adding `e2e`
-to required checks once two consecutive CI runs are green on all browsers (owner changes branch protection).
+Phase 5 (data protection and retrieval quality, PERF-P3-09); investigate FE-P4-08 with a CI trace. **Proposal to the
+owner:** add `e2e` to the required checks after one more green run on all browsers (branch protection is the owner's setting).
