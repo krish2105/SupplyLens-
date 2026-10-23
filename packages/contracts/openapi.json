@@ -649,6 +649,16 @@
             ],
             "title": "Message"
           },
+          "support": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerSupport"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "type": {
             "title": "Type",
             "type": "string"
@@ -658,9 +668,71 @@
           "type",
           "claims",
           "abstained",
-          "message"
+          "message",
+          "support"
         ],
         "title": "Answer",
+        "type": "object"
+      },
+      "AnswerSupport": {
+        "additionalProperties": true,
+        "description": "Why the best passage was or was not offered as an answer (knowledge/retrieve.py answer_support).",
+        "properties": {
+          "ambiguous": {
+            "default": false,
+            "title": "Ambiguous",
+            "type": "boolean"
+          },
+          "candidate_suppliers": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Candidate Suppliers",
+            "type": "array"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "number"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "supported": {
+            "title": "Supported",
+            "type": "boolean"
+          },
+          "top_similarity": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Top Similarity"
+          },
+          "unsupported_terms": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unsupported Terms",
+            "type": "array"
+          }
+        },
+        "required": [
+          "supported",
+          "ambiguous",
+          "reason",
+          "coverage",
+          "top_similarity",
+          "unsupported_terms",
+          "candidate_suppliers"
+        ],
+        "title": "AnswerSupport",
         "type": "object"
       },
       "Approval": {
@@ -2318,10 +2390,21 @@
             },
             "title": "Results",
             "type": "array"
+          },
+          "support": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnswerSupport"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
           "abstain",
+          "support",
           "results",
           "mode",
           "degraded",
@@ -4868,6 +4951,80 @@
           "result"
         ],
         "title": "MembershipChanged",
+        "type": "object"
+      },
+      "ModelMonitoring": {
+        "additionalProperties": true,
+        "description": "Realized forecast accuracy, shadow seasonal-naive comparison, calibration and demand drift (forecasting/monitor.py).",
+        "properties": {
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "champion": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Champion"
+          },
+          "drift": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drift"
+          },
+          "lookback_days": {
+            "title": "Lookback Days",
+            "type": "integer"
+          },
+          "models": {
+            "additionalProperties": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "default": {},
+            "title": "Models",
+            "type": "object"
+          },
+          "notes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Notes",
+            "type": "array"
+          },
+          "recommendations": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommendations",
+            "type": "array"
+          }
+        },
+        "required": [
+          "as_of",
+          "lookback_days",
+          "champion",
+          "models",
+          "drift",
+          "recommendations",
+          "notes"
+        ],
+        "title": "ModelMonitoring",
         "type": "object"
       },
       "ModelStatusChanged": {
@@ -12376,6 +12533,86 @@
           }
         },
         "summary": "Models"
+      }
+    },
+    "/api/v1/models/monitoring": {
+      "get": {
+        "description": "Realized accuracy of stored forecasts against sales, a shadow seasonal-naive comparison on the same points,\ninterval calibration and demand drift. Recommends; never changes the champion (monitor.py).",
+        "operationId": "model_monitoring_api_v1_models_monitoring_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "as_of",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "As Of"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelMonitoring"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Model Monitoring"
       }
     },
     "/api/v1/models/{model_id}/status": {

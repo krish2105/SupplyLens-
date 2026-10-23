@@ -1,0 +1,284 @@
+{
+  "experiment_id": "R3-20261023T181121Z",
+  "status": "current",
+  "commit": "36f4f9d35a2359fb419924ca084bb65c7bcf5fdd",
+  "taskset": "evaluations/tasksets/r3_answer_support_v1.jsonl",
+  "taskset_sha256": "2fbf706e50218129ec12ab3d7bea7abc078d1a0942e95492fa1f3f5aa60271a6",
+  "tasks": 535,
+  "counts": {
+    "test": {
+      "answerable": 45,
+      "paraphrase": 172,
+      "unknown_product": 5,
+      "out_of_scope": 26,
+      "named_supplier": 4,
+      "ambiguous": 4
+    },
+    "dev": {
+      "paraphrase": 180,
+      "answerable": 63,
+      "unknown_product": 5,
+      "out_of_scope": 22,
+      "named_supplier": 4,
+      "ambiguous": 5
+    }
+  },
+  "grid": {
+    "min_coverage": [
+      0.4,
+      0.5,
+      0.6,
+      0.67,
+      0.75,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "min_similarity": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      1.01
+    ],
+    "ambiguity_margin": [
+      0.0,
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ]
+  },
+  "chosen_on_dev": {
+    "min_coverage": 0.4,
+    "min_similarity": 0.5,
+    "ambiguity_margin": 0.05
+  },
+  "constants_in_code_at_run": {
+    "min_coverage": 0.4,
+    "min_similarity": 0.5,
+    "ambiguity_margin": 0.05
+  },
+  "constants_match_choice": true,
+  "results": {
+    "dev": {
+      "baseline_hybrid": {
+        "macro_accuracy": 0.6666666666666666,
+        "categories": {
+          "ambiguous": {
+            "correct": 0,
+            "n": 5,
+            "rate": 0.0
+          },
+          "answerable": {
+            "correct": 63,
+            "n": 63,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 4,
+            "n": 4,
+            "rate": 1.0
+          },
+          "out_of_scope": {
+            "correct": 0,
+            "n": 22,
+            "rate": 0.0
+          },
+          "paraphrase": {
+            "correct": 180,
+            "n": 180,
+            "rate": 1.0
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      },
+      "chosen_hybrid": {
+        "macro_accuracy": 0.7361952861952862,
+        "categories": {
+          "ambiguous": {
+            "correct": 3,
+            "n": 5,
+            "rate": 0.6
+          },
+          "answerable": {
+            "correct": 63,
+            "n": 63,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 3,
+            "n": 4,
+            "rate": 0.75
+          },
+          "out_of_scope": {
+            "correct": 6,
+            "n": 22,
+            "rate": 0.2727272727272727
+          },
+          "paraphrase": {
+            "correct": 143,
+            "n": 180,
+            "rate": 0.7944444444444444
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      }
+    },
+    "test": {
+      "baseline_hybrid": {
+        "macro_accuracy": 0.6666666666666666,
+        "categories": {
+          "ambiguous": {
+            "correct": 0,
+            "n": 4,
+            "rate": 0.0
+          },
+          "answerable": {
+            "correct": 45,
+            "n": 45,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 4,
+            "n": 4,
+            "rate": 1.0
+          },
+          "out_of_scope": {
+            "correct": 0,
+            "n": 26,
+            "rate": 0.0
+          },
+          "paraphrase": {
+            "correct": 172,
+            "n": 172,
+            "rate": 1.0
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      },
+      "chosen_hybrid": {
+        "macro_accuracy": 0.7646839594514013,
+        "categories": {
+          "ambiguous": {
+            "correct": 3,
+            "n": 4,
+            "rate": 0.75
+          },
+          "answerable": {
+            "correct": 45,
+            "n": 45,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 3,
+            "n": 4,
+            "rate": 0.75
+          },
+          "out_of_scope": {
+            "correct": 10,
+            "n": 26,
+            "rate": 0.38461538461538464
+          },
+          "paraphrase": {
+            "correct": 121,
+            "n": 172,
+            "rate": 0.7034883720930233
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      },
+      "baseline_lexical_only": {
+        "macro_accuracy": 0.6666666666666666,
+        "categories": {
+          "ambiguous": {
+            "correct": 0,
+            "n": 4,
+            "rate": 0.0
+          },
+          "answerable": {
+            "correct": 45,
+            "n": 45,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 4,
+            "n": 4,
+            "rate": 1.0
+          },
+          "out_of_scope": {
+            "correct": 0,
+            "n": 26,
+            "rate": 0.0
+          },
+          "paraphrase": {
+            "correct": 172,
+            "n": 172,
+            "rate": 1.0
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      },
+      "chosen_lexical_only": {
+        "macro_accuracy": 0.6813506261180681,
+        "categories": {
+          "ambiguous": {
+            "correct": 4,
+            "n": 4,
+            "rate": 1.0
+          },
+          "answerable": {
+            "correct": 45,
+            "n": 45,
+            "rate": 1.0
+          },
+          "named_supplier": {
+            "correct": 0,
+            "n": 4,
+            "rate": 0.0
+          },
+          "out_of_scope": {
+            "correct": 10,
+            "n": 26,
+            "rate": 0.38461538461538464
+          },
+          "paraphrase": {
+            "correct": 121,
+            "n": 172,
+            "rate": 0.7034883720930233
+          },
+          "unknown_product": {
+            "correct": 5,
+            "n": 5,
+            "rate": 1.0
+          }
+        }
+      }
+    }
+  },
+  "labels": "by construction from simulated and fictional documents; not human-reviewed"
+}

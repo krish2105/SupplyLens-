@@ -24,21 +24,26 @@
 | InventoryBench @62b1f11 | MIT code; H&M-derived data, terms unreviewed | Policy benchmark IB | 1,320 instances |
 | Execution-pack fixtures | Fictional | Demo workspace, tests | — |
 
-## Model card — quantile TCN (`tcn_quantile` 1.0.0, champion by validation)
+## Model card — quantile TCN (`tcn_quantile` 2.1.0, champion by validation)
 
 - **Task:** 28-day daily unit-sales quantiles (0.1/0.5/0.9) per product, UCI Online Retail II.
-- **Architecture:** 1×1 input projection to 32 channels, 5 causal dilated residual blocks (dilations 1–16, kernel 3,
-  GELU, dropout 0.1, receptive field 125 days ≥ 56-day window), direct 28×3 head with origin weekday; 39,380 parameters.
+- **Architecture:** 1×1 input projection to 64 channels (selected configuration; 32 in the smaller grid point), 5 causal
+  dilated residual blocks (dilations 1–16, kernel 3, GELU, dropout 0.2, receptive field 125 days ≥ 56-day window), direct 28×3 head with origin weekday; 134,228 parameters (39,380 at 32 channels).
 - **Inputs:** last 56 days scaled by their mean (floor 0.1), log scale, weekday one-hots. No future covariates.
+  **Versions before 2.1.0 received a constant weekday** (panel dates reloaded in the wrong unit, ML-P5-01); 2.0.0 is retired.
 - **Training:** pinball loss, AdamW lr 2e-3, cosine schedule, 12 epochs, batch 512, origins every 2 days with labels ≤ cutoff
   (2011-11-10), MPS. Seeds 0/1/2; seed 0 served.
-- **Evaluation:** see `docs/research/results.md` F1. Statistically tied with LightGBM; under-forecasts aggregate volume
-  on heavy-tailed series (S1).
-- **Serving:** separate process (OpenMP conflict with LightGBM), artifact SHA-256 verified before load; refuses origins
-  before 2011-11-10 to prevent replay leakage.
+- **Evaluation:** see `docs/research/results.md` F1 2.1.0, F2, S2. Not clearly different from LightGBM; medians sum to
+  about 42% of realised volume (F2); through the product's ordering logic, not cheaper than seasonal naive or a
+  no-forecast base-stock rule without a budget limit (S2, simulated).
+- **Serving:** separate process (OpenMP conflict with LightGBM), built from the SHA-256-verified bytes; refuses origins
+  before 2011-11-10 to prevent replay leakage; a missing or untrusted artifact falls back to seasonal naive with a
+  high-severity alert; products younger than the 56-day window get the baseline, flagged. Promotion requires the
+  evaluation gate (`forecasting/governance.py`); realised accuracy, a shadow baseline and drift are reported by
+  `GET /api/v1/models/monitoring`.
 - **Not for:** other retailers without re-evaluation; unconstrained demand; lead-time aggregate quantiles.
 
-## Model card — LightGBM quantile (`lightgbm_quantile` 1.0.0, evaluated)
+## Model card — LightGBM quantile (`lightgbm_quantile` 2.1.0, evaluated; files identical to 2.0.0)
 
 Three global boosters (α = 0.1/0.5/0.9), 31 leaves, 400 rounds, feature fraction 0.8, bagging 0.8, L2 1.0. Features:
 horizon, target weekday/month/day, days to Christmas, log scale, product age, lags 1–7, rolling means 7/14/28/56,

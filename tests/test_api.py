@@ -117,7 +117,12 @@ def test_document_and_evidence_endpoints(client):
                     "knowledge_cutoff": "2026-10-19T09:00:00Z", "effective_date": "2026-10-19"}, headers=H).json()
     labels = {(r["supplier_id"], r["version_label"]) for r in ev["results"]}
     assert ("DEMO-REF-A", "amendment v2") not in labels   # known but not yet effective
-    assert ev["answer"]["claims"][0]["citation"]["version_id"]
+    # two suppliers offer this product on different terms with near-equal scores: no single answer (Phase 5, R3)
+    assert ev["answer"]["abstained"] and ev["answer"]["support"]["ambiguous"]
+    assert ev["answer"]["support"]["candidate_suppliers"] == ["DEMO-REF-A", "DEMO-REF-B"] and not ev["answer"]["claims"]
+    scoped = client.get("/api/v1/evidence/search", params={"q": "minimum order quantity DEMO-REF-SKU", "supplier_id": "DEMO-REF-B",
+                        "knowledge_cutoff": "2026-10-19T09:00:00Z", "effective_date": "2026-10-19"}, headers=H).json()
+    assert scoped["answer"]["claims"][0]["citation"]["version_id"] and scoped["results"][0]["supplier_id"] == "DEMO-REF-B"
 
 
 def _clear_buckets():

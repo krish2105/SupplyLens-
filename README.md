@@ -59,8 +59,9 @@ All figures come from experiment artifacts in `artifacts/experiments/` (status o
 
 | Study | Result |
 |---|---|
-| Forecasting (protocol 2.0.0, 503 products, two rolling 28-day test origins) | Pooled MAE: seasonal naive 21.35 → LightGBM 14.52 → quantile TCN 14.26; trained models beat the corrected baseline (95% CI excludes 0); TCN ahead of LightGBM on average (−0.27, CI −0.52 to −0.06) but on only 44% of products. Protocol 1.0.0 is superseded: its baseline was wrong beyond day 7 |
-| Inventory simulation (simulated costs, exploratory) | Lower forecast error did not lower simulated cost under a median policy; a q90 order-up-to policy brought fill to ≈95% for every model (policy chosen after seeing results) |
+| Forecasting (protocol 2.1.0, 503 products, two rolling 28-day test origins) | Pooled MAE: seasonal naive 21.35 → LightGBM 14.52 → quantile TCN 14.32; trained models beat the baseline (95% CI excludes 0); TCN and LightGBM not clearly different (−0.20, CI −0.46 to +0.03). 2.0.0 is superseded (its TCN never saw weekdays), 1.0.0 too (baseline wrong beyond day 7) |
+| Decisions through the product's ordering logic (simulated, exploratory) | Without a budget limit a no-forecast base-stock rule was cheapest; TCN not clearly different from seasonal naive; LightGBM clearly more expensive despite lower MAE. Better accuracy did not mean better simulated decisions |
+| Answer support (535 generated questions) | Ambiguous multi-supplier questions are no longer answered with one clause; ~40% of out-of-scope questions declined; 30% of reworded questions now listed as related passages instead of answered |
 | Time-aware retrieval (118 synthetic questions, 2×2) | Top-1 citation accuracy 92.6% with neither mechanism → 100% with effective-date filtering and supersession reranking; each contributes (+3.2 and +4.2 points) |
 | Clause localisation (73 CUAD contracts) | Hybrid hit@3 76.7% vs vector 72.2% vs lexical 66.8% |
 | InventoryBench (official evaluator, 1,320 instances) | SupplyLens policy 0.482 vs base-stock 0.433 |

@@ -7,8 +7,9 @@ for (const path of ["/", "/inventory", "/approvals", "/policies", "/data", "/exc
     await signIn(page, "planner");
     await page.goto(`${path}?ws=uci-research`);
     await page.waitForLoadState("networkidle");
-    const [sw, iw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
-    expect(sw).toBeLessThanOrEqual(iw + 1);
+    // the configured viewport, not innerWidth: a phone browser widens innerWidth to fit content that overflows
+    const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(sw).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).exclude("canvas").analyze();
     const serious = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
     await info.attach("axe", { body: JSON.stringify(results.violations.map((v) => ({ id: v.id, impact: v.impact, n: v.nodes.length })), null, 2), contentType: "application/json" });
@@ -23,8 +24,9 @@ for (const [ws, path, role] of [["contract-research", "/market", "viewer"], ["co
     await signIn(page, role);
     await page.goto(`${path}?ws=${ws}`);
     await page.waitForLoadState("networkidle");
-    const [sw, iw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
-    expect(sw).toBeLessThanOrEqual(iw + 1);
+    // the configured viewport, not innerWidth: a phone browser widens innerWidth to fit content that overflows
+    const sw = await page.evaluate(() => document.documentElement.scrollWidth);
+    expect(sw).toBeLessThanOrEqual(page.viewportSize()!.width + 1);
     const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa"]).exclude("canvas").analyze();
     expect(results.violations.filter((v) => v.impact === "serious" || v.impact === "critical").map((v) => `${v.id} (${v.nodes.length})`)).toEqual([]);
   });

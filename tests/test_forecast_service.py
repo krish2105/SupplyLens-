@@ -69,4 +69,5 @@ def test_untrusted_artifact_is_refused(dataset, tenant_a):
                    "a": _json.dumps([{"file": f"lightgbm_q{q}.txt", "sha256": "deadbeef"} for q in (10, 50, 90)])})
     with pytest.raises(ForecastError) as e:
         run_forecast(tenant_a, dataset, ["S1"], date(2011, 3, 10), horizon=7)
-    assert e.value.code == "artifact_untrusted"
+    # the registered files are not on this host: named as missing (a tampered file is "artifact_untrusted", test_phase5_ml)
+    assert e.value.code == "artifact_missing"

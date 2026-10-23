@@ -3,10 +3,10 @@
 Paste everything inside the fence into a new session that has this repository checked out (or can clone it).
 
 ```text
-SUPPLYLENS — CONTINUE THE PRODUCTION-READINESS PROGRAM FROM PHASE 5
+SUPPLYLENS — CONTINUE THE PRODUCTION-READINESS PROGRAM FROM PHASE 6
 Repository: https://github.com/krish2105/SupplyLens-  (branch main)
-Last hand-over commit: 1090e8e "Phase 4B handoff: screenshot regression enforced in CI" (Phases 0–4 and 4B are complete
-for their delivered scope; CI 8/8 green on it).
+Last hand-over: the Phase 5 commits after 36f4f9d (Phases 0–5 and 4B are complete for their delivered scope; check the
+latest CI run on main before trusting this).
 
 Act as a Principal Software Engineer and QA lead. You are continuing a multi-phase program; previous sessions left a
 durable record in docs/agent-handoff/. Do not rely on any chat history: the repository is the only source of truth.
@@ -15,7 +15,7 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
    - Verify: git rev-parse HEAD; git status; git log --oneline -12; gh run list --workflow ci.yml --branch main --limit 3;
      gh pr list (Dependabot PRs are expected and unmerged).
    - Read in this order: docs/agent-handoff/STATUS.md, PROGRESS.md, ISSUES.md, DECISIONS.md, EVIDENCE.md,
-     phases/PHASE-00.md … PHASE-04.md and PHASE-04B.md; then root NEXT_SESSION.md, PROJECT_STATUS.md, DECISIONS.md (D-001…D-080),
+     phases/PHASE-00.md … PHASE-05.md and PHASE-04B.md; then root NEXT_SESSION.md, PROJECT_STATUS.md, DECISIONS.md (D-001…D-087),
      README.md, docs/operations/hosted-demo.md.
    - Treat every recorded claim as a lead, not proof. Re-check in code what you will rely on. Label statements VERIFIED,
      INFERRED or UNVERIFIED where it matters. Never invent results, files, credentials or evidence.
@@ -27,7 +27,7 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      PostgreSQL 17 + pgvector with roles supplylens_owner / supplylens_app (passwords *_dev) and database supplylens_test
      (copy the CI workflow's "databases and roles" step), then `uv sync`, `npm --prefix apps/web ci`,
      `uv run alembic -c services/api/alembic.ini upgrade head` against supplylens_test, `uv run pytest -q`.
-     Expected baseline: 421 passed, 6 skipped (Keycloak); web: `npm --prefix apps/web run lint` (0 warnings), `test` (19),
+     Expected baseline: 447 passed, 6 skipped (Keycloak); web: `npm --prefix apps/web run lint` (0 warnings), `test` (19),
      `typecheck`. Browser suite: see STATUS.md (disposable stack `supplylens_p4ci`, run with SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1;
      `--project desktop --project mobile --project webkit --project mobile-safari` → 191 passed, 7 skipped). Screenshot
      regression: `npx playwright test --project visual` (42 baselines per platform, darwin locally, linux in CI). CI: 217
@@ -58,25 +58,32 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
    - Lab Web Vitals targets stay as they are; QA-4B-01 (one CI sample of INP 224 ms on /inventory) is open, not waived.
    - Illustrations: do not generate images. A02/A13/A16 stay withheld until the owner approves the briefs in
      PHASE-04B.md §8.
-   - Generative inference stays disabled (D-041) unless the owner says otherwise.
+   - Generative inference stays disabled (D-041) unless the owner says otherwise. Purchasing stays deterministic and
+     approval-gated; model monitoring recommends, it never promotes, rolls back or orders by itself.
+   - Never import torch in the pytest process (D-023); run torch code in a child process as tests/test_phase5_ml.py does.
+   - Research results: label every number by kind (historical backtest, simulation, offline evaluation with generated
+     labels, real outcome — there are none yet). Do not re-tune on a test half; superseded runs go to
+     evaluations/study_registry.json with a reason. A lower MAE is not a business benefit (S2 showed the opposite).
    - External evidence (corporate IdP, ERP sandbox, pilot users, penetration test, certification) stays BLOCKED or
      UNVERIFIED until it really happens.
 
-4. PHASE 5 — DATA PROTECTION AND RETRIEVAL QUALITY (unless the owner gives a different phase brief, follow theirs instead)
-   Scope from ISSUES.md: P2-KNOW-01 (abstention), SEC-P2-12 (tamper-evident audit), SEC-P2-13 (retention jobs), P3-SEC-03
-   (nonce CSP), P2-PRIV-01 backfill, P3-ONB-01 rest, D-056 duplicate-draft warning, PERF-P3-09 (ANN/halfvec only with the
-   retrieval studies re-run), FE-P4-08 (focus loss under load), QA-4B-01 (lab INP on CI). Reproduce first, test, keep
-   API compatibility. Any UI you touch keeps the Phase 4B gate green (ui-quality spec, visual project, axe, no overflow).
+4. PHASE 6 — PLANNING DEPTH AND DATA PROTECTION (unless the owner gives a different phase brief, follow theirs instead)
+   First ask the owner for the rationing objective when the budget binds (PLAN-P5-01); do not choose it yourself.
+   Scope from ISSUES.md: PLAN-P5-01 (after that decision, re-run S2 under a new frozen config), P3-PLAN-06 rest, ML-P5-05
+   (zero-aware interval calibration under a new frozen protocol), KNOW-P5-03 (new frozen task set), P2-REL-03;
+   SEC-P2-12 (tamper-evident audit), SEC-P2-13 (retention jobs), P3-SEC-03 (nonce CSP), P2-PRIV-01 backfill, P3-ONB-01
+   rest, D-056 duplicate-draft warning, PERF-P3-09 (ANN/halfvec only with the retrieval studies re-run), FE-P4-08,
+   QA-4B-01. Reproduce first, test, keep API compatibility. Any UI you touch keeps the Phase 4B gate green (ui-quality
+   spec, visual project, axe, no overflow against the configured viewport).
 
 5. COMPLETION
    - Update docs/agent-handoff/STATUS.md, ISSUES.md (status + evidence id per issue), EVIDENCE.md (exact commands and
-     results, P5-E01…), DECISIONS.md, PROGRESS.md, and create docs/agent-handoff/phases/PHASE-05.md (findings, fixes,
+     results, P6-E01…), DECISIONS.md, PROGRESS.md, and create docs/agent-handoff/phases/PHASE-06.md (findings, fixes,
      files changed and why, tests run with results, remaining risks, next actions).
    - Commit and push; confirm CI and the Vercel deploy; run only non-destructive live checks.
    - Finish with a concise summary: fixes, commands and results, failures, blockers, next actions.
-   - STOP after Phase 5. Do not begin Phase 6.
+   - STOP after Phase 6. Do not begin Phase 7.
 
-Later phases (for orientation only; see PROGRESS.md): 5 data protection and retrieval quality (incl. PERF-P3-09 with the
-retrieval studies re-run); 6 planning/ML depth; 7 production platform and operations (incl. PERF-P3-08/10, the declared
+Later phases (for orientation only; see PROGRESS.md): 7 production platform and operations (incl. PERF-P3-08/10, the declared
 load profile); 8 identity and SaaS (owner decisions and a corporate IdP first).
 ```

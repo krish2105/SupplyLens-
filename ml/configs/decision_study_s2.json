@@ -1,0 +1,41 @@
+{
+  "study_id": "S2",
+  "version": "1.0.0",
+  "frozen_at": "2026-10-23",
+  "status_when_run": "exploratory",
+  "question": "Driving the PRODUCT's replenishment logic (lead-time-demand requirement per supplier lead time, coverage-first CP-SAT planner with MOQ, pack multiples, budget and open orders), do the trained forecasters give better simulated inventory outcomes than the seasonal-naive forecaster and than a simple non-forecast base-stock rule under identical constraints?",
+  "forecast_study": "latest non-superseded F1 (expected 2.1.0)",
+  "cohort": "the F1 cohort (503 products)",
+  "window": {"first_review": "2011-11-10", "review_days": 7, "reviews": 4, "last_day": "2011-12-08"},
+  "demand": "recorded daily unit sales (fulfilled units; stock-outs in the source are unobserved), lost-sales simulation",
+  "event_order": "orders are placed at the end of a review day; each day: receive due orders, sell up to stock, record lost units, accrue holding on ending stock",
+  "terms": {
+    "recipe": "uci-sim-ops v1 assumption ranges (D-013) applied to every cohort product with a study-only seed; NOT written to the workspace",
+    "seed": 20111110,
+    "price_basis": "median selling price from sales lines dated before 2011-11-10 (no information after the first review)",
+    "unit_cost_ratio_of_median_selling_price": [0.45, 0.65],
+    "alternate_supplier_cost_uplift": [0.05, 0.18],
+    "pack_sizes": [6, 12, 24, 48],
+    "moq_packs": [1, 4],
+    "primary_lead_time_days": [7, 21],
+    "alternate_lead_time_days": [2, 8]
+  },
+  "initial_stock": "ceil(14 x mean daily sales over the 28 days to 2011-11-10), identical for every policy",
+  "product_policy": {"replenishment_basis": "leadtime_demand", "coverage_days": 21, "service_level": 0.9,
+                     "dependence": "estimated from recorded selling days up to each review (calendar lags)",
+                     "planner": "coverage-first CP-SAT, allow_shortfall true, need_by = review + coverage_days"},
+  "policies": {
+    "product_seasonal_naive": "product policy fed by seasonal naive",
+    "product_lightgbm": "product policy fed by LightGBM quantile",
+    "product_tcn": "product policy fed by quantile TCN seed 0",
+    "simple_base_stock": "no forecast: S = m (L+C) + z s sqrt(L+C), m and s from the 56 days to the review, z = 1.2816 (90%), per supplier lead time L, same planner",
+    "perfect_foresight_reference": "requirement = actual sales over (review, review+L+C] minus position, same planner; a reference, not an achievable policy"
+  },
+  "budgets": {"workspace_scaled": "GBP 20,000 per weekly review per 48 products (the workspace's assumed budget) scaled to the cohort", "unconstrained": "no budget limit"},
+  "costs": {"holding_rate_annual": 0.25, "lost_margin": "median selling price minus primary unit cost, floored at 0, per lost unit", "currency": "GBP"},
+  "metrics": ["fill rate", "stock-out product-days", "lost margin", "holding cost", "total cost = lost margin + holding",
+              "purchase spend", "units ordered", "orders placed", "shortfall units reported by the planner",
+              "forecast MAE at each review (context)"],
+  "comparisons": "per-product total cost differences, product-level paired bootstrap (2,000 resamples): product_tcn and product_lightgbm vs product_seasonal_naive; best product policy vs simple_base_stock",
+  "honesty_note": "Simulated outcomes on assumed terms and costs; the 28-day window is F1's last test window, already seen by earlier studies, so nothing here is confirmatory. Lower MAE is not assumed to mean lower cost: both are reported side by side."
+}

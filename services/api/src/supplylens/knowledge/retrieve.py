@@ -20,6 +20,17 @@ from .embed import embed, to_pgvector
 from .rerank import Reranker, load_reranker, rerank_results
 
 RRF_K = 60
+# Answer support (Phase 5, P2-KNOW-01). The best passage is offered as an answer only when it covers enough of the
+# question's content terms (stemmed, stopwords removed) or is close in embedding space while every content term occurs in
+# some retrieved candidate; otherwise the search abstains and lists passages as related only. An unscoped question
+# (no product identifier, no supplier filter) whose best passages come from different suppliers with nearly equal scores is
+# ambiguous. Thresholds were fitted on the development half of study R3 and reported on its test half
+# (evaluations/answer_support_study.py); change them only through that study. Measured limit (R3): these retrieval-only
+# signals cannot tell an out-of-scope question from a reworded in-scope one, so abstention on out-of-scope questions is
+# partial and some reworded questions are listed as related passages instead of answered (PHASE-05).
+SUPPORT_MIN_COVERAGE = 0.40
+SUPPORT_MIN_SIMILARITY = 0.50
+AMBIGUITY_MARGIN = 0.05
 
 BASE_FILTER = """
   dv.known_at <= :as_of
@@ -37,7 +48,7 @@ QV = "(SELECT CAST(:qv AS vector))"
 
 SELECT_COLS = """c.id, c.version_id, c.section, c.body, c.char_start, c.char_end, d.id AS document_id,
   d.title, d.doc_type, d.supplier_id, d.source_kind, dv.version_label, dv.valid_from, dv.valid_to,
-  dv.known_at, dv.supersedes_version_id, dv.sha256"""
+  dv.known_at, dv.supersedes_version_id, dv.sha256, tsvector_to_array(c.tsv) AS lexemes"""
 
 
 @dataclass
@@ -69,21 +80,50 @@ def _row_to_evidence(r, score, signals) -> Evidence:
                     score, signals)
 
 
+def answer_support(query_lexemes: set[str], results: list[Evidence], lexemes: dict[str, set[str]], *,
+                   entities: list[str], scoped: bool, min_coverage: float = None, min_similarity: float = None,
+                   ambiguity_margin: float = None) -> dict:
+    """Whether the best passage supports an answer, and whether an unscoped question is ambiguous (see the constants)."""
+    min_coverage = SUPPORT_MIN_COVERAGE if min_coverage is None else min_coverage
+    min_similarity = SUPPORT_MIN_SIMILARITY if min_similarity is None else min_similarity
+    ambiguity_margin = AMBIGUITY_MARGIN if ambiguity_margin is None else ambiguity_margin
+    if not results:
+        return {"supported": False, "reason": "no permitted passage", "coverage": 0.0, "ambiguous": False}
+    top = results[0]
+    seen = set().union(*lexemes.values()) if lexemes else set()
+    unsupported = sorted(query_lexemes - seen)
+    coverage = len(query_lexemes & lexemes.get(top.chunk_id, set())) / len(query_lexemes) if query_lexemes else 0.0
+    sim = top.signals.get("vector_similarity")
+    by_coverage = coverage >= min_coverage
+    by_similarity = sim is not None and sim >= min_similarity and not unsupported
+    supported = by_coverage or by_similarity
+    rival = next((ev for ev in results[1:] if ev.supplier_id and ev.supplier_id != top.supplier_id), None)
+    ambiguous = bool(supported and not entities and not scoped and rival is not None and top.supplier_id
+                     and (top.score - rival.score) <= ambiguity_margin * top.score)
+    reason = ("answer supported by term coverage" if by_coverage else "answer supported by semantic similarity"
+              if by_similarity else "the passages do not cover the question" + (f" (no passage mentions: {', '.join(unsupported)})"
+                                                                                 if unsupported else ""))
+    return {"supported": supported, "ambiguous": ambiguous, "reason": reason, "coverage": round(coverage, 3),
+            "top_similarity": sim, "unsupported_terms": unsupported,
+            "candidate_suppliers": sorted({ev.supplier_id for ev in results if ev.supplier_id})[:8] if ambiguous else []}
+
+
 def search(tenant_id, query: str, *, as_of: datetime, role: str, effective_date: date | None = None,
            mode: Literal["effective", "known"] = "effective", supplier_id: str | None = None,
            entities: list[str] | None = None, k: int = 8, use_vectors: bool = True,
            channels: tuple[str, ...] = ("lexical", "vector"), rerank: bool = True, n_candidates: int = 30,
-           document_id: str | None = None, reranker: Reranker | None = None) -> dict:
+           document_id: str | None = None, reranker: Reranker | None = None, explain: bool = False) -> dict:
     """`channels` and `rerank` exist for controlled ablations (R1/R2); the product uses the defaults. `reranker` overrides
     the configured cross-encoder (tests, studies); with none configured only the rule-based reranker runs."""
     with telemetry.span("retrieval.search", **{"tenant.id": str(tenant_id), "retrieval.role": role, "retrieval.k": k}):
         return _search(tenant_id, query, as_of=as_of, role=role, effective_date=effective_date, mode=mode,
                        supplier_id=supplier_id, entities=entities, k=k, use_vectors=use_vectors, channels=channels,
-                       rerank=rerank, n_candidates=n_candidates, document_id=document_id, reranker=reranker)
+                       rerank=rerank, n_candidates=n_candidates, document_id=document_id, reranker=reranker,
+                       explain=explain)
 
 
 def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id, entities, k, use_vectors, channels,
-            rerank, n_candidates, document_id, reranker=None) -> dict:
+            rerank, n_candidates, document_id, reranker=None, explain=False) -> dict:
     eff = effective_date or as_of.date()
     use_vectors = use_vectors and "vector" in channels
     params = {"as_of": as_of, "eff": eff, "mode": mode, "role": role, "supplier": supplier_id, "q": query, "doc": document_id,
@@ -124,12 +164,15 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
                 JOIN documents d ON d.id = dv.document_id
                 ORDER BY top.dist, c.id"""),
                 {**params, "qv": to_pgvector(vectors[0])}).all()
+        query_lexemes = set(s.execute(text("SELECT tsvector_to_array(to_tsvector('english', :q))"), {"q": query}).scalar() or [])
     fused: dict[str, dict] = {}
     for name, rows in (("lexical", lexical), ("vector", semantic)):
         for rank, r in enumerate(rows, start=1):
             entry = fused.setdefault(str(r.id), {"row": r, "rrf": 0.0, "signals": {}})
             entry["rrf"] += 1.0 / (RRF_K + rank)
             entry["signals"][f"{name}_rank"] = rank
+            if name == "vector":
+                entry["signals"]["vector_similarity"] = round(float(r.rank), 4)
     ents = [e.lower() for e in (entities or [])]
     # A chunk is demoted only when a newer version of the same section is also in the results.
     superseded = {(str(e["row"].supersedes_version_id), e["row"].section)
@@ -156,8 +199,13 @@ def _search(tenant_id, query, *, as_of, role, effective_date, mode, supplier_id,
         rerank_note = f"reranker {settings.reranker_model} could not be loaded; rule-based order used"
     # Abstain when the question names identifiers (e.g. product codes) that no permitted result contains.
     abstain = bool(ents) and not any(any(x in ev.excerpt.lower() for x in ents) for ev in results[:k])
-    return {
+    lexemes = {cid: set(e["row"].lexemes or []) for cid, e in fused.items()}
+    support = answer_support(query_lexemes, results[:k], lexemes, entities=ents, scoped=bool(supplier_id or document_id))
+    extra = {"support_inputs": {"query_lexemes": query_lexemes, "lexemes": lexemes, "entities": ents,
+                                "scoped": bool(supplier_id or document_id)}} if explain else {}
+    return {**extra,
         "abstain": abstain,
+        "support": support,
         "results": results[:k],
         "mode": "hybrid" if vectors else "lexical_only",
         "degraded": "; ".join(x for x in (None if vectors or not use_vectors else "embedding service unavailable; lexical only",

@@ -1,0 +1,289 @@
+{
+  "experiment_id": "S2-20261023T183015Z",
+  "study": "S2",
+  "status": "exploratory",
+  "value_kind": "simulated",
+  "forecast_study": "F1-20261023T180239Z",
+  "products": 503,
+  "reviews": [
+    "2011-11-10",
+    "2011-11-17",
+    "2011-11-24",
+    "2011-12-01"
+  ],
+  "window_end": "2011-12-08",
+  "budgets_minor": {
+    "workspace_scaled": 20958333,
+    "unconstrained": 1000000000000
+  },
+  "context_forecast_mae": {
+    "seasonal_naive": 21.06313902300483,
+    "lightgbm": 15.443748015427019,
+    "tcn": 14.902711827541655
+  },
+  "results": {
+    "workspace_scaled": {
+      "product_seasonal_naive": {
+        "fill_rate": 0.7745577647813398,
+        "stockout_product_days": 2547,
+        "lost_margin": 75701.32,
+        "holding_cost": 2740.6557397260276,
+        "total_cost": 78441.97573972604,
+        "purchase_spend": 498892.86,
+        "units_ordered": 514194,
+        "order_lines": 735,
+        "shortfall_units": 239418,
+        "planner_statuses": [
+          "FEASIBLE",
+          "FEASIBLE",
+          "FEASIBLE",
+          "OPTIMAL"
+        ]
+      },
+      "product_lightgbm": {
+        "fill_rate": 0.8366661479898744,
+        "stockout_product_days": 1614,
+        "lost_margin": 48646.22,
+        "holding_cost": 3655.3494383561642,
+        "total_cost": 52301.569438356164,
+        "purchase_spend": 479989.68,
+        "units_ordered": 404022,
+        "order_lines": 842,
+        "shortfall_units": 87870,
+        "planner_statuses": [
+          "FEASIBLE",
+          "FEASIBLE",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "product_tcn": {
+        "fill_rate": 0.9598316451036278,
+        "stockout_product_days": 224,
+        "lost_margin": 9680.17,
+        "holding_cost": 3992.5955616438355,
+        "total_cost": 13672.765561643835,
+        "purchase_spend": 437336.76,
+        "units_ordered": 357612,
+        "order_lines": 1502,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "simple_base_stock": {
+        "fill_rate": 0.8349696953596139,
+        "stockout_product_days": 1734,
+        "lost_margin": 51220.630000000005,
+        "holding_cost": 3206.217198630137,
+        "total_cost": 54426.847198630145,
+        "purchase_spend": 449633.22,
+        "units_ordered": 420624,
+        "order_lines": 966,
+        "shortfall_units": 89801,
+        "planner_statuses": [
+          "FEASIBLE",
+          "FEASIBLE",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.9202629311817102,
+        "stockout_product_days": 731,
+        "lost_margin": 17414.7,
+        "holding_cost": 2006.0481506849314,
+        "total_cost": 19420.748150684933,
+        "purchase_spend": 188602.92,
+        "units_ordered": 160614,
+        "order_lines": 616,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      }
+    },
+    "unconstrained": {
+      "product_seasonal_naive": {
+        "fill_rate": 0.9724544671354999,
+        "stockout_product_days": 145,
+        "lost_margin": 6647.410000000001,
+        "holding_cost": 6309.937458904109,
+        "total_cost": 12957.34745890411,
+        "purchase_spend": 615604.62,
+        "units_ordered": 511344,
+        "order_lines": 1142,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "product_lightgbm": {
+        "fill_rate": 0.9441081479063801,
+        "stockout_product_days": 264,
+        "lost_margin": 14536.47,
+        "holding_cost": 5305.837952054795,
+        "total_cost": 19842.307952054794,
+        "purchase_spend": 525400.14,
+        "units_ordered": 393642,
+        "order_lines": 1231,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "product_tcn": {
+        "fill_rate": 0.9598316451036278,
+        "stockout_product_days": 224,
+        "lost_margin": 9680.17,
+        "holding_cost": 3992.5955616438355,
+        "total_cost": 13672.765561643835,
+        "purchase_spend": 437336.76,
+        "units_ordered": 357612,
+        "order_lines": 1502,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "simple_base_stock": {
+        "fill_rate": 0.9678926414943964,
+        "stockout_product_days": 207,
+        "lost_margin": 6915.950000000001,
+        "holding_cost": 5066.732369863013,
+        "total_cost": 11982.682369863014,
+        "purchase_spend": 504851.7,
+        "units_ordered": 425088,
+        "order_lines": 1494,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      },
+      "perfect_foresight_reference": {
+        "fill_rate": 0.9202629311817102,
+        "stockout_product_days": 731,
+        "lost_margin": 17414.7,
+        "holding_cost": 2006.0481506849314,
+        "total_cost": 19420.748150684933,
+        "purchase_spend": 188602.92,
+        "units_ordered": 160614,
+        "order_lines": 616,
+        "shortfall_units": 0,
+        "planner_statuses": [
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL",
+          "OPTIMAL"
+        ]
+      }
+    }
+  },
+  "comparisons": {
+    "workspace_scaled": {
+      "product_tcn_vs_product_seasonal_naive": {
+        "mean_diff": -128.76582540374196,
+        "ci95": [
+          -158.71315068152725,
+          -101.06269540871212
+        ],
+        "n_series": 503,
+        "share_a_better": 0.7952286282306164
+      },
+      "product_lightgbm_vs_product_seasonal_naive": {
+        "mean_diff": -51.96899861107328,
+        "ci95": [
+          -71.16321085847926,
+          -34.173323604945686
+        ],
+        "n_series": 503,
+        "share_a_better": 0.7176938369781312
+      },
+      "product_tcn_vs_simple_base_stock": {
+        "mean_diff": -81.02203108744791,
+        "ci95": [
+          -100.61702070317818,
+          -61.83328188131486
+        ],
+        "n_series": 503,
+        "share_a_better": 0.6918489065606361
+      },
+      "best_product_policy": "product_tcn"
+    },
+    "unconstrained": {
+      "product_tcn_vs_product_seasonal_naive": {
+        "mean_diff": 1.4223023911326558,
+        "ci95": [
+          -1.6441622446825905,
+          4.815387280767446
+        ],
+        "n_series": 503,
+        "share_a_better": 0.8349900596421471
+      },
+      "product_lightgbm_vs_product_seasonal_naive": {
+        "mean_diff": 13.687794220975517,
+        "ci95": [
+          4.67134052806449,
+          25.077372307592796
+        ],
+        "n_series": 503,
+        "share_a_better": 0.7673956262425448
+      },
+      "product_seasonal_naive_vs_simple_base_stock": {
+        "mean_diff": 1.9377039543560561,
+        "ci95": [
+          -1.2579025844930405,
+          5.478755014093521
+        ],
+        "n_series": 503,
+        "share_a_better": 0.23658051689860835
+      },
+      "best_product_policy": "product_seasonal_naive"
+    }
+  },
+  "term_summary": {
+    "median_unit_cost_gbp": 1.01,
+    "median_margin_gbp": 0.81,
+    "lead_times": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  "honesty_note": "Simulated outcomes on assumed terms and costs; the 28-day window is F1's last test window, already seen by earlier studies, so nothing here is confirmatory. Lower MAE is not assumed to mean lower cost: both are reported side by side."
+}

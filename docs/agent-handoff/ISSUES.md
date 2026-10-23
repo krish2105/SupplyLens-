@@ -30,8 +30,8 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | P2-PLAN-03 | P2 | Planning / temporal | Replays with `effective_date` > `knowledge_cutoff` read stock, open orders, shares, dependence and capacity dated after the cutoff | VERIFIED (code) | fixed (P1-E03) |
 | P2-PLAN-04 | P2 | Planning | Dependence (ACF) computed on recorded days as if consecutive calendar days → variance understated | VERIFIED (probe by reviewer; code re-read) | fixed (P1-E03) |
 | P2-PLAN-05 | P2 | Planning | Scenario studio plans through unresolved term conflicts (agent path blocks them) | VERIFIED (code) | fixed (P1-E03) |
-| P2-ML-01 | P2 | Forecasting | No test of a successful trained-model forecast through the service; missing artifacts raise `artifact_missing` without baseline fallback | VERIFIED (tests); fallback gap PLAUSIBLE | open |
-| P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | open |
+| P2-ML-01 | P2 | Forecasting | No test of a successful trained-model forecast through the service; missing artifacts raise `artifact_missing` without baseline fallback | VERIFIED (tests); fallback gap PLAUSIBLE | fixed (P5-E05) |
+| P2-KNOW-01 | P2 | Retrieval | Abstention fires only for digit-bearing tokens; vector channel has no similarity floor → nearest chunk presented as an answer | VERIFIED (code) | partially fixed: support rule + ambiguity flag (R3, P5-E04); see KNOW-P5-02/03 |
 | P2-PRIV-01 | P2 | Onboarding / privacy | Rows quarantined as personal data are stored raw, shown to viewers, and copied into an immutable quarantine table | VERIFIED (code) | fixed for new uploads (SEC-P2-07); old rows not rewritten |
 | P2-API-01 | P2 | API | No request-body size limit before multipart parsing (and before auth) | PLAUSIBLE | fixed (SEC-P2-03, P2-E03) |
 | P2-FE-03 | P2 | Web | No ESLint, no unit tests; e2e code excluded from typecheck | VERIFIED | fixed: ESLint zero warnings, Vitest (19 tests), e2e typechecked, all in CI (P4-E02, P4-E04) |
@@ -57,8 +57,8 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | SEC-P2-13 | P3 | Retention | No retention jobs for auth_sessions, import_rows, web_vitals, alerts | VERIFIED (absence) | open |
 | P3-DOC-01 | P3 | Docs | Numeric drift across README / PROJECT_STATUS / TASKS (tests, RLS tables, CI jobs, browser tests) | VERIFIED | fixed in README / PROJECT_STATUS current-state section |
 | P3-DOC-02 | P3 | Docs | Contradictory statements (no deployments vs D-050; "current task: session 3"; OIDC "outstanding") | VERIFIED | fixed (root DECISIONS, PROJECT_STATUS, README) |
-| P3-PLAN-06 | P3 | Planning | Smaller planner issues (ScaleError escapes explainer; UNKNOWN timeouts trigger extra solves; weekly budget on 21-day plan; stale docstrings) | VERIFIED (reviewer probes; code re-read for budget) | open |
-| P3-ML-02 | P3 | Forecasting | Model file hashed then re-read by path (TOCTOU); `simulation_study.py` loads models without hash check | VERIFIED (code) | open |
+| P3-PLAN-06 | P3 | Planning | Smaller planner issues (ScaleError escapes explainer; UNKNOWN timeouts trigger extra solves; weekly budget on 21-day plan; stale docstrings) | VERIFIED (reviewer probes; code re-read for budget) | partially fixed: explainer ScaleError, timeout re-solves (P5-E05); budget-period and docstrings open |
+| P3-ML-02 | P3 | Forecasting | Model file hashed then re-read by path (TOCTOU); `simulation_study.py` loads models without hash check | VERIFIED (code) | fixed (P5-E05) |
 | P3-ONB-01 | P3 | Onboarding | Oversized CSV field / NUL byte → 500; overlap not re-checked at publish; workspace creation not atomic | VERIFIED (parser run by reviewer) / PLAUSIBLE (NUL) | partially fixed: parser errors (SEC-P2-10); publish re-check and atomic workspace creation open |
 | P3-SEC-03 | P3 | Security hygiene | Stateless dev sessions not revocable (accepted F-06); CSP `'unsafe-inline'` (accepted F-09); IdP network errors in `confirm_session` uncaught; event stream keeps connect-time role | VERIFIED (code) | partially fixed: dev sessions revocable, IdP outage 503; CSP unsafe-inline and stream role open |
 | P3-CI-01 | P3 | Supply chain | GitHub Actions pinned by tag not SHA; base images (`python:3.12-slim`, `node:24-slim`, `pgvector/pgvector:pg17`) not digest-pinned | VERIFIED | partially fixed: actions SHA-pinned, hosted deps pinned (SEC-P2-06); Docker images open |
@@ -87,6 +87,16 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | QA-P4-01 | P2 | Tests | A first draft of the receipts journey booked receipts on the shared reference SKU, permanently changing the local `supplylens_p0e2e` reference case | VERIFIED | fixed: isolated onboarded workspace (PD-019); polluted DB left in place (PD-018) |
 | ENV-P4-01 | — | Environment | Bundled Firefox does not start on macOS 27 here | VERIFIED | CI only (PD-020) |
 | OPS-P4-01 | P2 | Deployment | The hosted-API source digest hashed only tracked files, so a local check passed while CI (seeing newly committed reports) failed | VERIFIED (P4-E12) | fixed: untracked files included, test output excluded |
+| ML-P5-01 | P1 | Forecasting | Panel dates reloaded in the wrong unit: the TCN's weekday inputs were constant in training and serving | VERIFIED (probe) | fixed; F1 re-run 2.1.0, TCN 2.0.0 retired (P5-E02, P5-E03) |
+| ML-P5-02 | P2 | Forecasting | Products younger than the trained model's window were dropped from forecasts | VERIFIED (code) | fixed (P5-E05) |
+| ML-P5-05 | P2 | Forecasting | Zero-inflated daily intervals cannot be calibrated by a symmetric scale; intervals asymmetric (≈5% below q10) | VERIFIED (F2) | open: zero-aware calibration under a new frozen protocol |
+| ML-P5-06 | P2 | Forecasting / decisions | Trained medians sum to 42–50% of realised volume | VERIFIED (F2) | open: never order medians (product uses lead-time demand at 90%) |
+| KNOW-P5-01 | P2 | Retrieval | Unscoped multi-supplier questions answered with one supplier's clause | VERIFIED (R3) | fixed: ambiguity flag (P5-E04) |
+| KNOW-P5-02 | P2 | Retrieval | Retrieval-only signals cannot separate out-of-scope from reworded questions: 10/26 out-of-scope declined, 51/172 reworded no longer answered | VERIFIED (R3 test half) | open: reader model + human-reviewed questions (EXT-06) |
+| KNOW-P5-03 | P2 | Retrieval | Lexical-only search (hosted demo) flags supplier-named questions as ambiguous (0/4) | VERIFIED (R3 test half) | open: new frozen task set needed (found on test) |
+| PLAN-P5-01 | P2 | Planning | Under a binding budget, coverage-first rationing maximises units covered, not margin or service (S2) | VERIFIED (S2, simulated) | open: owner decision on the rationing objective |
+| FE-P5-01 | P2 | Web / layout | On a phone, study cards with tables (Research) and the Forecast lab columns were 460–520 px wide on a 375 px screen: grid items default to `min-width: auto` and grew to their tables | VERIFIED (measured card widths) | fixed: `min-w-0` on the grid items (P5-E13) |
+| QA-P5-01 | P2 | Tests | The overflow checks compared `scrollWidth` with `innerWidth`; under phone emulation the browser widens `innerWidth` to the content, so the check could not fail | VERIFIED | fixed: compared with the configured viewport width; caught FE-P5-01 on `/forecast` (P5-E13) |
 
 ## External blockers (cannot be closed by code alone)
 
@@ -412,4 +422,18 @@ D-078 … D-080. All **FIXED** and pinned by a test that fails on the previous c
 - **QA-4B-01 (open, P3):** lab INP proxy for /inventory on desktop measured a 224 ms median on a CI runner (target 200 ms)
   on code that had passed the same gate before (P4B-E11). Locally and in the next CI run it is within target. Next: keep
   the target; record the samples per CI run and investigate the inventory row-selection handler if it recurs.
+
+## Phase 5 resolution notes (2026-10-23/24) — AI/ML, retrieval, optimisation, MLOps
+Detail and numbers: `phases/PHASE-05.md`, `docs/research/results.md` (F1 2.1.0, F2, S2, R3).
+- **ML-P5-01** — `ml/supplylens_ml/panel.py` (dates as `datetime64[D]`; `_dates` reads legacy integers in their unit).
+  F1 2.1.0 (`F1-20261023T180239Z`) registered; TCN 2.0.0 retired in the local registry. Hosted demo unaffected (no trained models).
+- **P2-ML-01 / ML-P5-02 / P3-ML-02** — `forecasting/service.py` (`FALLBACK_CODES`, `_baseline_points`, `_verified_bytes`),
+  `ml/supplylens_ml/tcn.py` (`torch.load(BytesIO)`), `evaluations/simulation_study.py` (recorded-hash checks).
+- **MLOps** — `forecasting/governance.py` (promotion gate, enforced in `routes_ops.set_model_status`),
+  `forecasting/monitor.py` + `GET /api/v1/models/monitoring` (admin.read).
+- **P2-KNOW-01 / KNOW-P5-01** — `knowledge/retrieve.py` (`answer_support`, constants fitted by R3), evidence route and
+  Policies page messages; `tests/test_api.py` updated to the ambiguity behaviour.
+- **P3-PLAN-06 (part)** — `optimisation/supplylens_opt/planner.py`.
+- **FE-P5-01 / QA-P5-01** — `apps/web/app/(app)/research/page.tsx` (`StudyCard`), `apps/web/app/(app)/forecast/page.tsx`;
+  `apps/web/e2e/layout.spec.ts` and `a11y.spec.ts` now compare with the configured viewport width.
 

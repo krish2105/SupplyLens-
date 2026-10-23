@@ -41,13 +41,27 @@ def latest(prefix):
     return sorted(p for p in (REPO / "artifacts/experiments").glob(prefix + "-2*") if (p / "metrics.json").exists())[-1]
 
 
+def _registered(f1: Path) -> dict[str, str]:
+    m = json.loads((f1 / "metrics.json").read_text())
+    return {a["file"]: a["sha256"] for fam in ("lightgbm", "tcn") for a in m["artifacts"][fam]}
+
+
+def _verified(f1: Path, name: str) -> bytes:
+    """Model bytes checked against the forecast study's recorded hash before use (audit P3-ML-02)."""
+    import hashlib
+    raw = (f1 / name).read_bytes()
+    if hashlib.sha256(raw).hexdigest() != _registered(f1)[name]:
+        raise SystemExit(f"{name} does not match the hash recorded by {f1.name}")
+    return raw
+
+
 def forecasts(model: str, panel, origins_i, f1: Path) -> dict[int, np.ndarray]:
     out = {}
     if model == "seasonal_naive":
         for i in origins_i:
             out[i] = rearrange(seasonal_naive_panel(panel, i))
     elif model == "lightgbm":
-        b = [lgb.Booster(model_file=str(f1 / f"lightgbm_q{q}.txt")) for q in (10, 50, 90)]
+        b = [lgb.Booster(model_str=_verified(f1, f"lightgbm_q{q}.txt").decode()) for q in (10, 50, 90)]
         for i in origins_i:
             out[i] = rearrange(predict_lgbm(b, panel, i))
     else:
@@ -57,7 +71,8 @@ def forecasts(model: str, panel, origins_i, f1: Path) -> dict[int, np.ndarray]:
             for i in origins_i:
                 y = Path(td) / f"{i}.npy"
                 r = subprocess.run([sys.executable, "-m", "supplylens_ml.tcn", "predict", "--panel", str(pnl), "--index", str(i),
-                                    "--model", str(f1 / "tcn_seed0.pt"), "--pred-out", str(y)], capture_output=True, text=True)
+                                    "--model", str(f1 / "tcn_seed0.pt"), "--model-sha256", _registered(f1)["tcn_seed0.pt"],
+                                    "--pred-out", str(y)], capture_output=True, text=True)
                 if r.returncode:
                     raise RuntimeError(r.stderr[-800:])
                 out[i] = rearrange(np.load(y))

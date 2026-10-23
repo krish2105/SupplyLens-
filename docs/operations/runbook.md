@@ -101,9 +101,25 @@ read back and compared → `RECONCILED`; not found → safely re-queued (the san
 
 ## Model retraining and promotion
 
-Run `uv run python evaluations/forecast_study.py`. Registry status follows the frozen validation rule. A tenant
-administrator can change status in Administration with a reason (audited); a model can only become champion if it
-has a recorded evaluation. Trained models refuse forecast origins earlier than their training cutoff.
+Run `uv run python evaluations/forecast_study.py --config ml/configs/forecast_study_v2_1.json` (current protocol; about
+20 minutes on an M4 Pro). Registry status follows the frozen validation rule. A tenant administrator can change status
+in Administration with a reason (audited).
+
+**Promotion gate (Phase 5, `forecasting/governance.py`).** A trained model becomes champion only if its recorded
+evaluation shows a validation pinball below the same experiment's seasonal-naive baseline, recorded 80% coverage within
+0.65–0.95, raw quantile crossing at most 20%, no smoke run, and every registered artifact present on this host with its
+registered hash. The API answers 422 `promotion_gate` with the reasons otherwise. Test-window results are never a gate.
+
+**Serving fallbacks.** A trained model refuses origins before its training cutoff. When decision flows allow it, a
+champion whose artifact is missing, untrusted or failing is replaced by seasonal naive for that run (flag `_model`) and a
+high-severity `model_unavailable` alert opens; products younger than the model's 56-day window get the baseline,
+flagged per product.
+
+**Monitoring and rollback.** `GET /api/v1/models/monitoring?as_of=YYYY-MM-DD` (administrators) scores stored forecasts
+against sales, recomputes seasonal naive on exactly the same products, origins and days (shadow baseline), reports
+realised 80% coverage and demand drift (PSI against the champion's training year). It recommends; it never acts. If it
+reports the champion worse than the shadow baseline on at least 200 points, roll back by promoting the baseline (or the
+previous version) in Administration with a reason — the same audited path as any promotion.
 
 ## Alerts (BUS-018)
 

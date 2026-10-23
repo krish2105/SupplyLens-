@@ -370,15 +370,28 @@ class Claim(Out):
     citation: Citation
 
 
+class AnswerSupport(Out):
+    """Why the best passage was or was not offered as an answer (knowledge/retrieve.py answer_support)."""
+    supported: bool
+    ambiguous: bool = False
+    reason: str
+    coverage: float
+    top_similarity: float | None = None
+    unsupported_terms: list[str] = []
+    candidate_suppliers: list[str] = []
+
+
 class Answer(Out):
     type: str
     claims: list[Claim]
     abstained: bool
     message: str | None = None
+    support: AnswerSupport | None = None
 
 
 class EvidenceSearch(Out):
     abstain: bool
+    support: AnswerSupport | None = None
     results: list[EvidenceResult]
     mode: str
     degraded: str | None = None
@@ -896,6 +909,17 @@ class Jobs(Out):
     jobs: list[JobRow]
     outbox: list[OutboxRow]
     usage: Json
+
+
+class ModelMonitoring(Out):
+    """Realized forecast accuracy, shadow seasonal-naive comparison, calibration and demand drift (forecasting/monitor.py)."""
+    as_of: str
+    lookback_days: int
+    champion: Json | None = None
+    models: dict[str, Json] = {}
+    drift: Json | None = None
+    recommendations: list[str] = []
+    notes: list[str] = []
 
 
 class ModelStatusChanged(Out):

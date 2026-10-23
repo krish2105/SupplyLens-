@@ -233,6 +233,10 @@ def plan(req: PlanRequest) -> PlanResult:
     except ScaleError as e:
         return PlanResult(status="MODEL_INVALID", explanation=[str(e)], **base)
     name = STATUS[status]
+    if name == "UNKNOWN":
+        # time limit reached without a feasible plan: do not spend up to five more time-limited solves explaining it
+        return PlanResult(status=name, explanation=[f"no feasible plan found within the {SOLVER_SETTINGS['max_time_s']:.0f} s "
+                                                    "solver time limit; reduce the scope or retry"], **base)
     if name not in ("OPTIMAL", "FEASIBLE"):
         return PlanResult(status=name, explanation=explain_infeasible(req), **base)
     lines = []
@@ -283,7 +287,11 @@ def explain_infeasible(req: PlanRequest) -> list[str]:
     ]
     for family, message, ignore in checks:
         cand, _ = _eligible(req, ignore) if ignore else (offers, None)
-        _, status, *_ = _solve(req, cand, {family})
+        try:
+            _, status, *_ = _solve(req, cand, {family})
+        except ScaleError:          # e.g. an offer excluded for its lead time is too large to model exactly (P3-PLAN-06)
+            reasons.append(f"relaxing '{family}' could not be tested: prices too large for exact integer arithmetic")
+            continue
         if STATUS[status] in ("OPTIMAL", "FEASIBLE"):
             reasons.append(f"{message} (relaxing '{family}' makes the problem feasible)")
     return reasons or ["No single constraint relaxation restores feasibility"]

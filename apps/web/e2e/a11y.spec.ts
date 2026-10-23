@@ -125,6 +125,5 @@ test("reduced motion and zoom: no horizontal scroll at 200% zoom equivalent widt
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 640, height: 800 });                                 // 1280 CSS px at 200% zoom
   await open(page, "/inventory");
-  const [sw, iw] = await page.evaluate(() => [document.documentElement.scrollWidth, window.innerWidth]);
-  expect(sw).toBeLessThanOrEqual(iw + 1);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(641);   // the set width, not innerWidth (a phone browser widens it)
 });

@@ -58,7 +58,10 @@ def ensure_seasonal_naive(tenant_id, dataset_id) -> uuid.UUID:
         return mid
 
 
-USABLE = ("CHAMPION", "CANDIDATE", "EVALUATED")   # never TRAINING, FAILED or RETIRED (audit S14)
+USABLE = ("CHAMPION", "CANDIDATE", "EVALUATED")
+FALLBACK_CODES = ("model_trained_after_origin", "horizon_exceeds_model", "artifact_missing", "artifact_untrusted",
+                  "model_failed")
+BASELINE_SKU_FLAG = "baseline: history shorter than the trained model's input window; seasonal naive used"   # never TRAINING, FAILED or RETIRED (audit S14)
 
 
 def resolve_model(tenant_id, dataset_id, family: str | None = None, *, allow_retired: bool = False) -> dict:
@@ -100,9 +103,15 @@ def _artifact(model: dict, name_filter) -> tuple[Path, str]:
     return [(REPO_ROOT / model["artifact_path"] / a["file"], a["sha256"]) for a in picks]
 
 
-def _verify(path: Path, expected: str) -> None:
-    if not path.exists() or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
-        raise ForecastError("artifact_untrusted", f"artifact {path.name} missing or hash mismatch")
+def _verified_bytes(path: Path, expected: str) -> bytes:
+    """Read the artifact once and return the bytes that were hashed, so the model is built from exactly what was checked
+    (no second read by path after the check; audit P3-ML-02)."""
+    if not path.exists():
+        raise ForecastError("artifact_missing", f"artifact {path.name} is not on this host")
+    raw = path.read_bytes()
+    if hashlib.sha256(raw).hexdigest() != expected:
+        raise ForecastError("artifact_untrusted", f"artifact {path.name} does not match its registered hash")
+    return raw
 
 
 def _trained_points(model: dict, daily: pd.DataFrame, sku_ids: list[str], origin: date, horizon: int):
@@ -124,14 +133,12 @@ def _trained_points(model: dict, daily: pd.DataFrame, sku_ids: list[str], origin
         from supplylens_ml.models import predict_lgbm
         files = sorted(_artifact(model, lambda a: a["file"].startswith("lightgbm")), key=lambda x: x[0].name)
         key = ",".join(h for _, h in files)
-        if key not in _BOOSTERS:
-            for f, h in files:
-                _verify(f, h)
-            _BOOSTERS[key] = [lgb.Booster(model_file=str(f)) for f, _ in files]  # q10, q50, q90 by name
+        if key not in _BOOSTERS:   # q10, q50, q90 by name, each built from its verified bytes
+            _BOOSTERS[key] = [lgb.Booster(model_str=_verified_bytes(f, h).decode()) for f, h in files]
         raw = predict_lgbm(_BOOSTERS[key], panel, i)
     else:  # tcn_quantile: PyTorch runs in a separate process (OpenMP conflict with LightGBM)
         (f, h), = _artifact(model, lambda a: a.get("seed") == 0)
-        _verify(f, h)
+        _verified_bytes(f, h)          # fail fast here; the subprocess re-verifies and loads from the same bytes
         with tempfile.TemporaryDirectory() as td:
             pnl, out = Path(td) / "p.npz", Path(td) / "y.npy"
             save_panel(panel, pnl)
@@ -150,10 +157,24 @@ def _trained_points(model: dict, daily: pd.DataFrame, sku_ids: list[str], origin
     return pd.concat(frames, ignore_index=True), flags
 
 
+def _baseline_points(daily: pd.DataFrame, sku_ids: list[str], origin: date, horizon: int):
+    frames, flags = [], {}
+    for sku in sku_ids:
+        hist = dense_series(daily, sku, origin) if not daily.empty else pd.Series(dtype=float)
+        if len(hist) < 28:
+            flags[sku] = "insufficient_history"
+            continue
+        f = seasonal_naive(hist, horizon=horizon)
+        f["sku_id"] = sku
+        frames.append(f)
+    return frames, flags
+
+
 def run_forecast(tenant_id, dataset_id, sku_ids: list[str], origin: date, horizon: int = 28,
                  created_by=None, model_family: str | None = None, allow_baseline_fallback: bool = False) -> ForecastRun:
-    """Forecast with the requested model or the champion. With `allow_baseline_fallback`, a champion that
-    cannot serve this origin (trained later, or horizon too long) is replaced by seasonal naive and flagged."""
+    """Forecast with the requested model or the champion. With `allow_baseline_fallback`, a champion that cannot serve
+    this request — trained after the origin, horizon too long, or its artifact missing, untrusted or failing (P2-ML-01;
+    a high-severity model_unavailable alert is still raised) — is replaced by seasonal naive and flagged."""
     with telemetry.span("forecast.run", **{"tenant.id": str(tenant_id), "forecast.skus": len(sku_ids),
                                            "forecast.horizon": horizon}):
         return _run_with_fallback(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_family,
@@ -165,7 +186,7 @@ def _run_with_fallback(tenant_id, dataset_id, sku_ids, origin, horizon, created_
     try:
         return _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_family)
     except ForecastError as e:
-        if not allow_baseline_fallback or e.code not in ("model_trained_after_origin", "horizon_exceeds_model"):
+        if not allow_baseline_fallback or e.code not in FALLBACK_CODES:
             raise
         run = _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, "seasonal_naive")
         run.quality_flags["_model"] = f"champion not usable here ({e.code}); seasonal_naive baseline used"
@@ -215,15 +236,13 @@ def _run(tenant_id, dataset_id, sku_ids, origin, horizon, created_by, model_fami
             raise
         if not pts.empty:
             frames.append(pts)
+        # A SKU too young for the trained model's window is not dropped: the baseline serves it, flagged (ML-P5-02).
+        short = [k for k, v in flags.items() if v == "insufficient_history"]
+        base, base_flags = _baseline_points(daily, short, origin, horizon)
+        frames += base
+        flags.update({k: BASELINE_SKU_FLAG for k in short if k not in base_flags} | base_flags)
     else:
-        for sku in sku_ids:
-            hist = dense_series(daily, sku, origin) if not daily.empty else pd.Series(dtype=float)
-            if len(hist) < 28:
-                flags[sku] = "insufficient_history"
-                continue
-            f = seasonal_naive(hist, horizon=horizon)
-            f["sku_id"] = sku
-            frames.append(f)
+        frames, flags = _baseline_points(daily, sku_ids, origin, horizon)
     for sku in sku_ids:
         recent = daily[daily["sku_id"] == sku]
         if sku not in flags and len(recent) and (pd.to_datetime(recent["day"]) > pd.Timestamp(origin) - pd.Timedelta(days=56)).sum() < 12:

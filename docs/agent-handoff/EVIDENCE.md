@@ -192,3 +192,25 @@ Firefox locally (blocked), physical devices, a manual screen-reader pass (EXT-05
 
 ### Not run in Phase 4B
 Firefox locally (blocked), physical devices, a manual screen-reader pass (EXT-05), Keycloak sign-in, Docker compose locally.
+
+## Phase 5 — AI/ML, retrieval, optimisation and MLOps (2026-10-23/24, UTC)
+
+**Starting point:** `main` @ `36f4f9d`. Environment: Apple M4 Pro 24 GB, macOS 27; Python 3.12.13; PostgreSQL 17.11 +
+pgvector; Ollama bge-m3:567m; PyTorch (MPS) and LightGBM in separate processes (D-023).
+
+| ID | Check | Command | Result | Notes |
+|---|---|---|---|---|
+| P5-E01 | Dev database backup and migration | `pg_dump -Fc supplylens` (scratchpad, 67 MB); `alembic upgrade head` | 0008 → 0010; 7,339 vectors in `chunk_vectors` | As superuser: the owner role sees no rows under FORCE RLS, which first looked like an empty database |
+| P5-E02 | Panel date defect probe | `load_panel(F1-20261022T090206Z/_work/panel.npz)` | dates 1970-01-15…; weekday of the last 10 days `[4,4,4,4,4,4,4,4,4,4]`; after the fix 2009-12-01 … 2011-12-08, weekdays `[4,5,6,0,1,2,3]` | ML-P5-01 |
+| P5-E03 | F1 2.1.0 (historical backtest) | `uv run python evaluations/forecast_study.py --config ml/configs/forecast_study_v2_1.json` (19 min) | `F1-20261023T180239Z`; pooled MAE naive 21.348, LightGBM 14.525 (both identical to 2.0.0; LightGBM files byte-identical), TCN 14.324 (2.0.0: 14.256); TCN − LightGBM −0.20 [−0.46, +0.03]; TCN 2.1.0 CHAMPION, 2.0.0 RETIRED in the local registry | Not confirmatory (D-042) |
+| P5-E04 | R3 answer support (offline, generated labels) | `uv run python evaluations/answer_support_study.py` | `R3-20261023T181121Z`, 535 tasks; dev-chosen thresholds coverage 0.40 / similarity 0.50 / margin 0.05 = constants in code; test half: see PHASE-05 §3 | A first run (`R3-20261023T180938Z`) used the pre-calibration constants and gave identical scores; removed and rerun so the record shows constants = choice |
+| P5-E05 | Phase 5 regression tests | `uv run pytest -q tests/test_phase5_ml.py` | **26 passed** | Torch-dependent checks run in child processes (D-023); importing torch in the test process crashed pytest during development |
+| P5-E06 | F2 segments/calibration (exploratory) | `uv run python evaluations/forecast_segments_study.py` | `F2-20261023T182141Z`; reproduced F1 2.1.0 test MAE exactly; rules frozen on validation: segment choice TCN everywhere, scale 1.0 for all | An earlier attempt failed on the panel-date defect before producing results; its directory (config only) was deleted |
+| P5-E07 | S2 decisions (simulation on historical sales) | `uv run python evaluations/decision_study.py` | `S2-20261023T183015Z`; see PHASE-05 §2 | Exploratory; terms/costs simulated |
+| P5-E08 | Corrected champion serves | `run_forecast(uci-research, 5 products, 2011-12-08, 14)` | served by `tcn_quantile 2.1.0`, 70 points, no flags | Dev database |
+| P5-E09 | Full backend suite | `uv run pytest -q -p no:cacheprovider` | first run 445 passed, 2 failed (two tests encoding superseded behaviour: missing-file code, multi-supplier answer), 6 skipped; tests updated; rerun **447 passed, 6 skipped** | Keycloak skips |
+| P5-E10 | Web | `npm run lint`; `npm test`; `npx tsc --noEmit`; `NEXT_DIST_DIR=.next-build npx next build` | lint clean; 19 unit tests passed; tsc ok; build ok | — |
+| P5-E11 | Browser suite (disposable stack `supplylens_p4ci`) | `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1 npx playwright test --project=desktop --project=mobile --project=webkit --project=mobile-safari` | **191 passed, 7 skipped** (2.2 min); rerun after the layout fix and stronger overflow checks (P5-E13): **191 passed, 7 skipped** (2.1 min) | Same as Phase 4B; Firefox and Linux screenshot baselines run in CI |
+| P5-E12 | Contracts / hosted pins | `./scripts/update_contracts.sh`; `check_contracts.sh`; `python3 scripts/vercel/build_api.py --pin` / `--check` | 70 paths (monitoring endpoint, answer support); match; digest current | — |
+| P5-E13 | Research page review and phone overflow | Browser pane at 375 px, card widths measured; `npx playwright test e2e/layout.spec.ts e2e/a11y.spec.ts -g "horizontal\|overflow"` on desktop, mobile, webkit, mobile-safari | Before: study cards with tables 522 px, `/forecast` 478 px on a 375 px phone (the old check passed). After `min-w-0`: all cards 343 px, page 375 px; **36 passed** with the stronger check, which failed on `/forecast` before its fix | FE-P5-01, QA-P5-01. S2 chart: axis name shortened, every policy labelled, legend on its own row |
+| P5-E14 | Screenshot regression (macOS) | `npx playwright test --project=visual` | before acceptance 38 passed, 4 failed (Research ×4: F1 2.1.0 headline and numbers, 2 superseded runs, chart legend row); actual images reviewed by eye in light/dark at desktop/phone; research baselines updated (`-g research --update-snapshots`); rerun **42 passed** | Linux baselines: from CI, see P5-E15 |

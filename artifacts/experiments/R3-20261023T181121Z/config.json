@@ -1,0 +1,63 @@
+{
+  "grid": {
+    "min_coverage": [
+      0.4,
+      0.5,
+      0.6,
+      0.67,
+      0.75,
+      0.8,
+      0.9,
+      1.0
+    ],
+    "min_similarity": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7,
+      0.75,
+      0.8,
+      0.85,
+      1.01
+    ],
+    "ambiguity_margin": [
+      0.0,
+      0.05,
+      0.1,
+      0.2,
+      0.3
+    ]
+  },
+  "paraphrases": [
+    "smallest order size and delivery time for {sku}",
+    "how many units must be ordered at minimum for {sku}",
+    "unit price and pack multiple for {sku}",
+    "how long does delivery take for {sku}"
+  ],
+  "out_of_scope": {
+    "warranty": "warranty period for {sku}",
+    "liability": "liability cap in the {supplier} agreement",
+    "force majeure": "force majeure clause in the {supplier} agreement",
+    "termination": "termination notice period for {supplier}",
+    "governing law": "governing law and jurisdiction of the {supplier} contract",
+    "insurance": "insurance cover required from {supplier}",
+    "confidentiality": "confidentiality obligations of {supplier}",
+    "rebate": "volume rebate for {sku}",
+    "audit": "audit rights over {supplier}",
+    "penalty": "late delivery penalty for {sku}",
+    "refund": "refund for damaged {sku}",
+    "exclusivity": "exclusivity commitment of {supplier}"
+  },
+  "ambiguous": [
+    "minimum order quantity and lead time",
+    "standard lead time from order acceptance",
+    "unit price per unit excluding VAT",
+    "order multiples for schedule items",
+    "minimum order quantity",
+    "lead time in calendar days",
+    "minimum order quantity DEMO-REF-SKU",
+    "lead time for DEMO-REF-SKU",
+    "unit price of DEMO-REF-SKU"
+  ]
+}

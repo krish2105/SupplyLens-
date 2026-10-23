@@ -85,9 +85,22 @@ def rearrange(q: np.ndarray) -> np.ndarray:
 
 
 def save_panel(panel: Panel, path) -> None:
-    np.savez(path, dates=panel.dates.asi8, skus=np.array(panel.skus), y=panel.y)
+    # Dates are stored as calendar days (datetime64[D]), never as raw integers: pandas 3 builds date ranges in
+    # microseconds, so integer timestamps reloaded as nanoseconds landed in January 1970 and every day had the same
+    # weekday — the TCN's weekday channels were constant in training and serving (Phase 5, ML-P5-01).
+    np.savez(path, dates=panel.dates.to_numpy().astype("datetime64[D]"), skus=np.array(panel.skus), y=panel.y)
+
+
+def _dates(raw: np.ndarray) -> pd.DatetimeIndex:
+    if np.issubdtype(raw.dtype, np.datetime64):
+        return pd.DatetimeIndex(raw.astype("datetime64[ns]"))
+    # legacy files hold integers since the epoch in the unit of the index that wrote them; any date after 1971 in
+    # nanoseconds exceeds 3e16, in microseconds 3e13, in milliseconds 3e10
+    first = int(raw[0]) if len(raw) else 0
+    unit = "ns" if first > 3e16 else "us" if first > 3e13 else "ms" if first > 3e10 else "s"
+    return pd.DatetimeIndex(pd.to_datetime(raw, unit=unit))
 
 
 def load_panel(path) -> Panel:
     z = np.load(path, allow_pickle=False)
-    return Panel(pd.DatetimeIndex(z["dates"]), [str(s) for s in z["skus"]], z["y"])
+    return Panel(_dates(z["dates"]), [str(s) for s in z["skus"]], z["y"])

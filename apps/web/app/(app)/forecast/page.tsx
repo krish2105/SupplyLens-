@@ -112,8 +112,8 @@ export default function ForecastPage() {
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
       {create.error && <ErrorState error={create.error} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]">
-        <Card className="p-4">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]">{/* grid items get min-w-0 so wide content scrolls inside them on a phone */}
+        <Card className="min-w-0 p-4">
           <Eyebrow>Product</Eyebrow>
           {inv.isLoading ? <Skeleton className="mt-2 h-60" /> : inv.error ? <QueryError q={inv} what="products" /> : (
             <ul className="mt-2 max-h-[460px] space-y-0.5 overflow-auto" aria-label="Products">
@@ -130,7 +130,7 @@ export default function ForecastPage() {
             </ul>
           )}
         </Card>
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
           <Card className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Eyebrow>{sku ? `${sku} — history and 28-day forecast` : "Select a product"}</Eyebrow>

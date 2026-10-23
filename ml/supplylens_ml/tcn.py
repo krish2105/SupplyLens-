@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import json
 import sys
 import time
@@ -122,10 +123,12 @@ def predict(model: QuantileTCN, panel: Panel, i: int) -> np.ndarray:
 
 def load_model(path: str, expected_sha256: str | None = None) -> QuantileTCN:
     """Load only trusted, hash-verified artifacts produced by the training pipeline."""
-    raw = open(path, "rb").read()
+    with open(path, "rb") as fh:
+        raw = fh.read()
     if expected_sha256 and hashlib.sha256(raw).hexdigest() != expected_sha256:
         raise ValueError("model artifact hash mismatch")
-    ck = torch.load(path, map_location="cpu", weights_only=True)
+    # load from the verified bytes, never by path again (audit P3-ML-02); weights only, no pickled code
+    ck = torch.load(io.BytesIO(raw), map_location="cpu", weights_only=True)
     m = QuantileTCN(ch=ck["config"]["ch"], dropout=ck["config"]["dropout"])
     m.load_state_dict(ck["state_dict"])
     return m

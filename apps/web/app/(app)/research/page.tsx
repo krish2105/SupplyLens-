@@ -21,7 +21,8 @@ function useStudy(id: string) {
 
 function bars(categories: string[], series: { name: string; data: number[]; color: string }[], yName: string) {
   const b = baseOption();
-  return { ...b, xAxis: { ...(b.xAxis as object), type: "category", data: categories },
+  return { ...b, grid: { ...(b.grid as object), top: 52 },  // legend and axis name on separate rows at phone width
+    xAxis: { ...(b.xAxis as object), type: "category", data: categories, axisLabel: { ...(b.xAxis as { axisLabel: object }).axisLabel, interval: 0 } },  // label every group, even at phone width
     yAxis: { ...(b.yAxis as object), type: "value", name: yName },
     series: series.map((s) => ({ type: "bar", name: s.name, data: s.data, itemStyle: { color: s.color }, barMaxWidth: 28 })) };
 }
@@ -31,7 +32,7 @@ function bars(categories: string[], series: { name: string; data: number[]; colo
 function StudyCard({ id, title: fallback, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any; error: unknown; refetch: () => unknown } }) {
   const review = q.data?.review as { status: string; headline?: string | null; notes?: string | null; superseded?: { experiment_id: string; reason?: string }[] } | undefined;
   return (
-    <Card className="p-5">
+    <Card className="min-w-0 p-5">{/* a grid item: without min-w-0 a wide table stretches the card past a phone screen */}
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div><Eyebrow>Study {id}</Eyebrow>
           <h2 className="display mt-1 text-xl font-semibold">{review?.headline ?? (q.data?.available ? `${fallback} — headline not yet reviewed` : fallback)}</h2>
@@ -53,7 +54,7 @@ function StudyCard({ id, title: fallback, question, children, q }: { id: string;
 
 export default function ResearchPage() {
   const ws = useWs();
-  const f1 = useStudy("F1"), s1 = useStudy("S1"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
+  const f1 = useStudy("F1"), s2 = useStudy("S2"), r3 = useStudy("R3"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
 
   const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const f1Opt = useMemo(() => {
@@ -67,16 +68,15 @@ export default function ResearchPage() {
     ].filter((_, i) => fams[i]), "lower is better");
   }, [f1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
-  const s1Opt = useMemo(() => {
-    const d = s1.data;
+  const s2Opt = useMemo(() => {
+    const d = s2.data;
     if (!d?.results) return null;
-    const b = d.results[d.base_case];
-    const keys = ["seasonal_naive", "lightgbm", "tcn"];
-    return bars(["Seasonal naive", "LightGBM", "TCN"], [
-      { name: "Median + safety policy", color: token("--muted"), data: keys.map((k) => Math.round(b[k].total_cost)) },
-      { name: "q90 order-up-to policy", color: token("--accent"), data: keys.map((k) => Math.round(b[`${k}__sum_q90`].total_cost)) },
-    ], "simulated £ cost (28 days)");
-  }, [s1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
+    const keys = ["product_seasonal_naive", "product_lightgbm", "product_tcn", "simple_base_stock"];
+    return bars(["Naive", "LightGBM", "TCN", "Base\nstock"], [
+      { name: "No budget limit", color: token("--accent"), data: keys.map((k) => Math.round(d.results.unconstrained[k].total_cost)) },
+      { name: "Workspace budget", color: token("--muted"), data: keys.map((k) => Math.round(d.results.workspace_scaled[k].total_cost)) },
+    ], "£, 28 days");
+  }, [s2.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   return (
     <div className="space-y-6">
@@ -103,16 +103,16 @@ export default function ResearchPage() {
         )}
       </StudyCard>
 
-      <StudyCard id="S1" q={s1} title="Inventory simulation study"
-        question="Holding policy, costs, lead time and the demand path fixed, does a more accurate forecaster lower simulated lost-sales + holding cost?">
-        {s1.data?.results && (
+      <StudyCard id="S2" q={s2} title="Decision study"
+        question="Fed through the product's own ordering logic (lead-time demand, MOQ, packs, lead times, budget, open orders), does a more accurate forecaster lower simulated cost?">
+        {s2.data?.results && (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
-            {s1Opt && <Chart option={s1Opt} height={240} label="Simulated cost by forecaster under two ordering policies" />}
+            {s2Opt && <Chart option={s2Opt} height={240} label="Simulated cost by policy, with and without a budget limit" />}
             <ul className="space-y-2 text-sm">
-              <li><Provenance kind="simulated" /> {s1.data.products} products, {s1.data.window.join(" → ")}, lead time {s1.data.assumptions.lead_time_days} days, weekly review.</li>
-              <li>With a median-based policy, trained models fill {pct(s1.data.results[s1.data.base_case].tcn.fill_rate)} (TCN) vs {pct(s1.data.results[s1.data.base_case].seasonal_naive.fill_rate)} (naive).</li>
-              <li>Why: {s1.data.caveats.at(-1)}</li>
-              <li>With the q90 order-up-to policy all three reach ≈{pct(s1.data.results[s1.data.base_case].tcn__sum_q90.fill_rate, 0)} fill. Exploratory: that policy was chosen after seeing test results. The product now uses the lead-time-demand model (D-032).</li>
+              <li><Provenance kind="simulated" /> {s2.data.products} products, weekly reviews {s2.data.reviews[0]} → {s2.data.window_end}; terms and costs simulated, demand = recorded sales.</li>
+              <li>Forecast error over the review windows (MAE): naive {num(s2.data.context_forecast_mae.seasonal_naive, 1)}, LightGBM {num(s2.data.context_forecast_mae.lightgbm, 1)}, TCN {num(s2.data.context_forecast_mae.tcn, 1)}.</li>
+              <li>No budget limit, fill rate: naive {pct(s2.data.results.unconstrained.product_seasonal_naive.fill_rate)}, LightGBM {pct(s2.data.results.unconstrained.product_lightgbm.fill_rate)}, TCN {pct(s2.data.results.unconstrained.product_tcn.fill_rate)}, base stock {pct(s2.data.results.unconstrained.simple_base_stock.fill_rate)}.</li>
+              <li>Exploratory: one 28-day window already seen by earlier studies. Replaces S1 (superseded: it used the weekday-blind TCN and its own ordering formula).</li>
             </ul>
           </div>
         )}
@@ -128,6 +128,19 @@ export default function ResearchPage() {
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{pct(v.top1_citation_accuracy)}</td>
                   <td className="num">{pct(v.wrong_version_top1_rate)}</td><td className="num">{pct(v.abstention_accuracy_unknown, 0)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{r2.data.questions} questions generated from simulated agreements (not human-reviewed). Cross-tenant probes: {r2.data.cross_tenant_probes.leaked_chunks} leaked chunks in {r2.data.cross_tenant_probes.queries} queries.</td></tr></tfoot>
+            </table></TableScroll>
+          )}
+        </StudyCard>
+        <StudyCard id="R3" q={r3} title="Answer support study"
+          question="When should supplier-document search offer one passage as the answer, decline, or say several suppliers match?">
+          {r3.data?.results && (
+            <TableScroll label="R3 test half" min={480}><table className="w-full text-sm"><caption className="sr-only">R3 test half</caption>
+              <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Question type</th><th className="font-medium">Before</th><th className="font-medium">Hybrid search</th><th className="font-medium">Lexical only</th></tr></thead>
+              <tbody>{Object.entries(r3.data.results.test.baseline_hybrid.categories as Record<string, Any>).map(([k, v]) => (
+                <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{v.correct}/{v.n}</td>
+                  <td className="num">{r3.data!.results.test.chosen_hybrid.categories[k].correct}/{v.n}</td>
+                  <td className="num">{r3.data!.results.test.chosen_lexical_only.categories[k].correct}/{v.n}</td></tr>))}</tbody>
+              <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{r3.data.tasks} generated questions, labels by construction (not human-reviewed); thresholds chosen on the other half.</td></tr></tfoot>
             </table></TableScroll>
           )}
         </StudyCard>

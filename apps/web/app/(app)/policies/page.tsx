@@ -87,11 +87,13 @@ export default function PoliciesPage() {
               {/* Retrieval mode describes how passages were found, not whether a claim is true (audit S16). */}
               <span className="rounded-md border border-line bg-surface-2 px-2 py-0.5 font-semibold text-ink">Retrieval: {res.mode === "hybrid" ? "hybrid" : res.mode}</span>
               <span>{res.mode === "hybrid" ? "lexical full-text + bge-m3 vectors, reciprocal-rank fusion" : res.degraded}</span>
-              <span>· {res.answer.abstained ? "no passage supports an answer" : "best passage extracted verbatim; not a verified answer"}</span>
+              <span>· {res.answer.support?.ambiguous ? "several suppliers match; no single answer" : res.answer.abstained
+                ? "no passage supports an answer" : "best passage extracted verbatim; not a verified answer"}</span>
               <span>· {res.reranker}</span>
             </div>
             {res.answer.abstained ? (
-              <Empty title="No permitted evidence found">{res.answer.message}</Empty>
+              <Empty title={res.answer.support?.ambiguous ? "More than one supplier matches"
+                : res.results.length ? "No passage answers this question" : "No permitted evidence found"}>{res.answer.message}</Empty>
             ) : (
               <div className="rounded-xl border-l-4 border-accent bg-accent-soft/50 p-4">
                 <Eyebrow>Best supporting passage (extracted, not generated)</Eyebrow>

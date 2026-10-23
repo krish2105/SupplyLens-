@@ -1,0 +1,50 @@
+{
+  "study_id": "F2",
+  "version": "1.0.0",
+  "frozen_at": "2026-10-23",
+  "status_when_run": "exploratory",
+  "question": "Within the F1 2.1.0 cohort (identical to 2.0.0), (a) does a per-segment model choice made on validation origins beat the single validation champion, and (b) do interval scale factors fitted on validation origins bring 80% coverage nearer 80% without losing pinball? Also: where do the models fail (demand segments, bias, calibration)?",
+  "base_experiment": "F1-20261023T180239Z",
+  "reuse": "F1 2.1.0 (weekday-corrected TCN) cohort, panel, selected configurations and its test-origin artifacts; no new hyper-parameter search",
+  "families": [
+    "seasonal_naive",
+    "lightgbm",
+    "tcn"
+  ],
+  "tcn_seed": 0,
+  "validation_origins": [
+    "2011-08-18",
+    "2011-09-15"
+  ],
+  "test_origins": [
+    "2011-10-13",
+    "2011-11-10"
+  ],
+  "horizon": 28,
+  "segmentation": {
+    "method": "Syntetos-Boylan on the 365 days up to (and including) each origin; only information available at the origin",
+    "adi_cut": 1.32,
+    "cv2_cut": 0.49,
+    "classes": [
+      "smooth",
+      "erratic",
+      "intermittent",
+      "lumpy"
+    ]
+  },
+  "rules_frozen_on_validation": {
+    "segment_choice": "for each segment, the family with the lowest mean pinball over the validation origins (series assigned to segments at each origin); a segment with fewer than 10 validation series falls back to the overall validation champion (tcn)",
+    "interval_scaling": "per family, one scale s on the grid 0.30..3.00 step 0.01 applied as [q50 - s(q50-q10), q50 + s(q90-q50)], chosen so validation 80% coverage is closest to 0.80 (ties: smaller s); q50 unchanged"
+  },
+  "test_use": "test origins are scored once with the frozen rules; they were already seen by F1 1.0.0 and 2.0.0, so every test result here is exploratory, not confirmatory (D-042)",
+  "comparisons": [
+    "segment composite vs tcn (per-product MAE and pinball, averaged over test origins, product-level paired bootstrap 2,000 resamples)"
+  ],
+  "outputs": [
+    "metrics.json",
+    "config.json",
+    "per_segment.csv"
+  ],
+  "config_sha256": "3d4bfc3e194a1bb6571f7c18290df9d1f5a4c5b797742262d606d43113a063b7",
+  "commit": "36f4f9d35a2359fb419924ca084bb65c7bcf5fdd"
+}

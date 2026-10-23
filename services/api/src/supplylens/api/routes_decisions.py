@@ -205,10 +205,18 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
     res = search(a.tenant_id, q, as_of=cutoff, role=a.role, effective_date=effective_date, mode=mode,
                  supplier_id=supplier_id, entities=ents, k=max(1, min(k, 20)))
     results = [e.__dict__ for e in res["results"]]
-    answer = {"type": "extractive", "claims": [], "abstained": not results or res["abstain"]}
+    support = res["support"]
+    answer = {"type": "extractive", "claims": [], "support": support,
+              "abstained": not results or res["abstain"] or not support["supported"] or support["ambiguous"]}
     if res["abstain"]:
         answer["message"] = ("No permitted document known at this cutoff mentions " + ", ".join(ents) +
                              ". Related passages are listed but not used as an answer.")
+    elif results and not support["supported"]:
+        answer["message"] = (f"No passage known at this cutoff answers this: {support['reason']}. "
+                             "Related passages are listed but not used as an answer.")
+    elif results and support["ambiguous"]:
+        answer["message"] = ("Several suppliers' terms match equally (" + ", ".join(support["candidate_suppliers"]) +
+                             "). Name the supplier or the product code to get one answer.")
     elif results:
         top = results[0]
         answer["claims"].append({"text": top["excerpt"], "citation": {

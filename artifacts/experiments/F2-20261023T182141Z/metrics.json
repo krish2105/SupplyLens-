@@ -1,0 +1,466 @@
+{
+  "experiment_id": "F2-20261023T182141Z",
+  "status": "exploratory",
+  "base_experiment": "F1-20261023T180239Z",
+  "dataset_sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+  "cohort_size": 503,
+  "commit": "36f4f9d35a2359fb419924ca084bb65c7bcf5fdd",
+  "config_sha256": "3d4bfc3e194a1bb6571f7c18290df9d1f5a4c5b797742262d606d43113a063b7",
+  "integrity": {
+    "dates": [
+      "2009-12-01",
+      "2011-12-08"
+    ],
+    "days": 738,
+    "contiguous_days": true,
+    "negative_values": 0,
+    "missing_before_first_sale": 31227,
+    "zero_share_after_first_sale": 0.3946349006233601,
+    "p99_9_daily_units": 673.0140000000247,
+    "max_daily_units": 11124.0
+  },
+  "reproduction_of_f1_test_mae": {
+    "seasonal_naive@2011-10-13": {
+      "ours": 20.57497869923317,
+      "f1": 20.57497869923317,
+      "match": true
+    },
+    "lightgbm@2011-10-13": {
+      "ours": 13.99067337295427,
+      "f1": 13.99067337295427,
+      "match": true
+    },
+    "tcn@2011-10-13": {
+      "ours": 13.815355223722646,
+      "f1": 13.815355223722646,
+      "match": true
+    },
+    "seasonal_naive@2011-11-10": {
+      "ours": 22.120491337688154,
+      "f1": 22.120491337688154,
+      "match": true
+    },
+    "lightgbm@2011-11-10": {
+      "ours": 15.05869844562431,
+      "f1": 15.05869844562431,
+      "match": true
+    },
+    "tcn@2011-11-10": {
+      "ours": 14.83302631920243,
+      "f1": 14.83302631920243,
+      "match": true
+    }
+  },
+  "rules_frozen_on_validation": {
+    "segment_choice": {
+      "smooth": "tcn",
+      "erratic": "tcn",
+      "intermittent": "tcn",
+      "lumpy": "tcn"
+    },
+    "interval_scale": {
+      "seasonal_naive": 1.0,
+      "lightgbm": 1.0,
+      "tcn": 1.0
+    }
+  },
+  "validation": {
+    "seasonal_naive": {
+      "2011-08-18": {
+        "series": 503,
+        "mae": 17.58222095995456,
+        "pinball_mean": 6.763633437470415,
+        "coverage_80": 0.8453564328315819,
+        "below_q10": 0.07306163021868788,
+        "above_q90": 0.08158193694973019,
+        "width_80": 33.21814825333713,
+        "median_to_volume": 0.9705720222193953
+      },
+      "2011-09-15": {
+        "series": 503,
+        "mae": 22.668205055381993,
+        "pinball_mean": 8.864586528448358,
+        "coverage_80": 0.7946606077818802,
+        "below_q10": 0.09940357852882704,
+        "above_q90": 0.10593581368929282,
+        "width_80": 34.531532235160476,
+        "median_to_volume": 1.0017244302556871
+      }
+    },
+    "lightgbm": {
+      "2011-08-18": {
+        "series": 503,
+        "mae": 11.545564030889592,
+        "pinball_mean": 4.32737185564201,
+        "coverage_80": 0.8810707185458676,
+        "below_q10": 0.04480261289406419,
+        "above_q90": 0.07412666856006817,
+        "width_80": 33.94267640407463,
+        "median_to_volume": 0.4063981832238615
+      },
+      "2011-09-15": {
+        "series": 503,
+        "mae": 14.855178468545136,
+        "pinball_mean": 5.575541332918646,
+        "coverage_80": 0.8892360124964499,
+        "below_q10": 0.03883839818233457,
+        "above_q90": 0.07192558932121557,
+        "width_80": 41.18465233148406,
+        "median_to_volume": 0.5355168718305829
+      }
+    },
+    "tcn": {
+      "2011-08-18": {
+        "series": 503,
+        "mae": 11.620162380377229,
+        "pinball_mean": 4.329361759567083,
+        "coverage_80": 0.8583499005964215,
+        "below_q10": 0.060281170122124396,
+        "above_q90": 0.08136892928145413,
+        "width_80": 31.3813559600751,
+        "median_to_volume": 0.39525252780999814
+      },
+      "2011-09-15": {
+        "series": 503,
+        "mae": 14.442638212603178,
+        "pinball_mean": 5.439891221721104,
+        "coverage_80": 0.8536637318943482,
+        "below_q10": 0.04494461800624822,
+        "above_q90": 0.10139165009940358,
+        "width_80": 32.18515728494041,
+        "median_to_volume": 0.3412461476628063
+      }
+    }
+  },
+  "test": {
+    "seasonal_naive": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 20.57497869923317,
+          "pinball_mean": 8.105155968948216,
+          "coverage_80": 0.8104231752343084,
+          "below_q10": 0.08470604941777904,
+          "above_q90": 0.10487077534791253,
+          "width_80": 33.1624183470605,
+          "median_to_volume": 0.9640393442622951
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 22.120491337688154,
+          "pinball_mean": 8.591470699611852,
+          "coverage_80": 0.7548281738142573,
+          "below_q10": 0.12269241692700937,
+          "above_q90": 0.12247940925873331,
+          "width_80": 34.06945470036922,
+          "median_to_volume": 1.064810562789621
+        }
+      },
+      "pooled_mae": 21.347735018460664,
+      "pooled_pinball": 8.348313334280034
+    },
+    "lightgbm": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.99067337295427,
+          "pinball_mean": 5.138165999022685,
+          "coverage_80": 0.8634620846350468,
+          "below_q10": 0.054529963078670834,
+          "above_q90": 0.08200795228628231,
+          "width_80": 37.00559516885943,
+          "median_to_volume": 0.49975981583944346
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 15.05869844562431,
+          "pinball_mean": 5.512732342801183,
+          "coverage_80": 0.841948310139165,
+          "below_q10": 0.05644703209315535,
+          "above_q90": 0.10160465776767964,
+          "width_80": 42.938505586834715,
+          "median_to_volume": 0.5031221870497851
+        }
+      },
+      "pooled_mae": 14.524685909289289,
+      "pooled_pinball": 5.325449170911934
+    },
+    "tcn": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.815355223722646,
+          "pinball_mean": 5.100829880829948,
+          "coverage_80": 0.8505396194262993,
+          "below_q10": 0.061630218687872766,
+          "above_q90": 0.08783016188582789,
+          "width_80": 35.241551572456295,
+          "median_to_volume": 0.421054250031529
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 14.83302631920243,
+          "pinball_mean": 5.339873544667803,
+          "coverage_80": 0.8518886679920478,
+          "below_q10": 0.04551263845498438,
+          "above_q90": 0.10259869355296791,
+          "width_80": 37.66349759418313,
+          "median_to_volume": 0.4176132849670541
+        }
+      },
+      "pooled_mae": 14.32419077146254,
+      "pooled_pinball": 5.220351712748875
+    },
+    "segment_composite": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.815355223722646,
+          "pinball_mean": 5.100829880829948,
+          "coverage_80": 0.8505396194262993,
+          "below_q10": 0.061630218687872766,
+          "above_q90": 0.08783016188582789,
+          "width_80": 35.241551572456295,
+          "median_to_volume": 0.421054250031529
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 14.83302631920243,
+          "pinball_mean": 5.339873544667803,
+          "coverage_80": 0.8518886679920478,
+          "below_q10": 0.04551263845498438,
+          "above_q90": 0.10259869355296791,
+          "width_80": 37.66349759418313,
+          "median_to_volume": 0.4176132849670541
+        }
+      },
+      "pooled_mae": 14.32419077146254,
+      "pooled_pinball": 5.220351712748875
+    },
+    "seasonal_naive_scaled": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 20.57497869923317,
+          "pinball_mean": 8.105155968948216,
+          "coverage_80": 0.8104231752343084,
+          "below_q10": 0.08470604941777904,
+          "above_q90": 0.10487077534791253,
+          "width_80": 33.1624183470605,
+          "median_to_volume": 0.9640393442622951
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 22.120491337688154,
+          "pinball_mean": 8.591470699611852,
+          "coverage_80": 0.7548281738142573,
+          "below_q10": 0.12269241692700937,
+          "above_q90": 0.12247940925873331,
+          "width_80": 34.06945470036922,
+          "median_to_volume": 1.064810562789621
+        }
+      },
+      "pooled_mae": 21.347735018460664,
+      "pooled_pinball": 8.348313334280034
+    },
+    "lightgbm_scaled": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.99067337295427,
+          "pinball_mean": 5.138165999022685,
+          "coverage_80": 0.8634620846350468,
+          "below_q10": 0.054529963078670834,
+          "above_q90": 0.08200795228628231,
+          "width_80": 37.00559516885943,
+          "median_to_volume": 0.49975981583944346
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 15.05869844562431,
+          "pinball_mean": 5.512732342801183,
+          "coverage_80": 0.841948310139165,
+          "below_q10": 0.05644703209315535,
+          "above_q90": 0.10160465776767964,
+          "width_80": 42.938505586834715,
+          "median_to_volume": 0.5031221870497851
+        }
+      },
+      "pooled_mae": 14.524685909289289,
+      "pooled_pinball": 5.325449170911934
+    },
+    "tcn_scaled": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.815355223722646,
+          "pinball_mean": 5.100829880829948,
+          "coverage_80": 0.8505396194262993,
+          "below_q10": 0.061630218687872766,
+          "above_q90": 0.08783016188582789,
+          "width_80": 35.241551572456295,
+          "median_to_volume": 0.421054250031529
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 14.83302631920243,
+          "pinball_mean": 5.339873544667803,
+          "coverage_80": 0.8518886679920478,
+          "below_q10": 0.04551263845498438,
+          "above_q90": 0.10259869355296791,
+          "width_80": 37.66349759418313,
+          "median_to_volume": 0.4176132849670541
+        }
+      },
+      "pooled_mae": 14.32419077146254,
+      "pooled_pinball": 5.220351712748875
+    },
+    "segment_composite_scaled": {
+      "per_origin": {
+        "2011-10-13": {
+          "series": 503,
+          "mae": 13.815355223722646,
+          "pinball_mean": 5.100829880829948,
+          "coverage_80": 0.8505396194262993,
+          "below_q10": 0.061630218687872766,
+          "above_q90": 0.08783016188582789,
+          "width_80": 35.241551572456295,
+          "median_to_volume": 0.421054250031529
+        },
+        "2011-11-10": {
+          "series": 503,
+          "mae": 14.83302631920243,
+          "pinball_mean": 5.339873544667803,
+          "coverage_80": 0.8518886679920478,
+          "below_q10": 0.04551263845498438,
+          "above_q90": 0.10259869355296791,
+          "width_80": 37.66349759418313,
+          "median_to_volume": 0.4176132849670541
+        }
+      },
+      "pooled_mae": 14.32419077146254,
+      "pooled_pinball": 5.220351712748875
+    }
+  },
+  "segments_test": {
+    "smooth": {
+      "series_origin_pairs": 0,
+      "mae_seasonal_naive": null,
+      "mae_lightgbm": null,
+      "mae_tcn": null,
+      "pinball_seasonal_naive": null,
+      "pinball_lightgbm": null,
+      "pinball_tcn": null,
+      "chosen_on_validation": "tcn"
+    },
+    "erratic": {
+      "series_origin_pairs": 58,
+      "mae_seasonal_naive": 64.64039408866995,
+      "mae_lightgbm": 45.22111767081153,
+      "mae_tcn": 46.95387154794832,
+      "pinball_seasonal_naive": 24.67948275862069,
+      "pinball_lightgbm": 16.31058238780405,
+      "pinball_tcn": 16.770879316842706,
+      "chosen_on_validation": "tcn"
+    },
+    "intermittent": {
+      "series_origin_pairs": 0,
+      "mae_seasonal_naive": null,
+      "mae_lightgbm": null,
+      "mae_tcn": null,
+      "pinball_seasonal_naive": null,
+      "pinball_lightgbm": null,
+      "pinball_tcn": null,
+      "chosen_on_validation": "tcn"
+    },
+    "lumpy": {
+      "series_origin_pairs": 948,
+      "mae_seasonal_naive": 18.699028028933093,
+      "mae_lightgbm": 12.646634177044259,
+      "mae_tcn": 12.32786009104463,
+      "pinball_seasonal_naive": 7.349148960216998,
+      "pinball_lightgbm": 4.653362961439632,
+      "pinball_tcn": 4.513673863553261,
+      "chosen_on_validation": "tcn"
+    }
+  },
+  "segment_counts": {
+    "2011-08-18": {
+      "smooth": 0,
+      "erratic": 30,
+      "intermittent": 0,
+      "lumpy": 473
+    },
+    "2011-09-15": {
+      "smooth": 0,
+      "erratic": 31,
+      "intermittent": 0,
+      "lumpy": 472
+    },
+    "2011-10-13": {
+      "smooth": 0,
+      "erratic": 29,
+      "intermittent": 0,
+      "lumpy": 474
+    },
+    "2011-11-10": {
+      "smooth": 0,
+      "erratic": 29,
+      "intermittent": 0,
+      "lumpy": 474
+    }
+  },
+  "comparisons": {
+    "segment_composite_vs_tcn_mae": {
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n_series": 503,
+      "share_a_better": 0.0
+    },
+    "segment_composite_vs_tcn_pinball": {
+      "mean_diff": 0.0,
+      "ci95": [
+        0.0,
+        0.0
+      ],
+      "n_series": 503,
+      "share_a_better": 0.0
+    },
+    "tcn_scaled_vs_tcn_pinball": {
+      "mean_diff": -5.5180070806419315e-18,
+      "ci95": [
+        -1.8540503790956888e-17,
+        5.7387273638676084e-18
+      ],
+      "n_series": 503,
+      "share_a_better": 0.015904572564612324
+    },
+    "lightgbm_scaled_vs_lightgbm_pinball": {
+      "mean_diff": 3.3108042483851586e-18,
+      "ci95": [
+        -7.28376934644735e-18,
+        1.3690175567072601e-17
+      ],
+      "n_series": 503,
+      "share_a_better": 0.015904572564612324
+    }
+  },
+  "test_artifacts_sha256": {
+    "2011-10-13": {
+      "lightgbm_o2011-10-13_q10.txt": "5df663b1ccc5a53381ba3bf41c078523427aca9a0d4bff11a0ce8fc782d30a14",
+      "lightgbm_o2011-10-13_q50.txt": "b637dfcd9c9927a3685323d1eff05325a78d0453adaa7a66f9c90fb98ded71b5",
+      "lightgbm_o2011-10-13_q90.txt": "026ab77d4fabbf30b0921eb45d8519050bdea3449ac760c13d6d97d4dbab2032",
+      "tcn_o2011-10-13_seed0.pt": "14cf991442b64d5741f3456f556efb6ac02e22958c7f80bb8b6c91f918a1aaa0"
+    },
+    "2011-11-10": {
+      "lightgbm_q10.txt": "aa0ceeb16a9d70a520d8f2e7a6eb264a0e6a38a1796596f0de9b06b040ba6fa4",
+      "lightgbm_q50.txt": "43678afcdf1251ce8d3783d22373cdf4a398bdfae63f94c05b12a47bb5c96698",
+      "lightgbm_q90.txt": "6870b693df684235f15479e463cd33d7e8120d00478f5d102f4fccb2086d33d4",
+      "tcn_seed0.pt": "2c023c5f7abc6bfe7dd1224915450a77c3621c28d2db1ef28051c7d3ce16a4cd"
+    }
+  },
+  "honesty_note": "test origins are scored once with the frozen rules; they were already seen by F1 1.0.0 and 2.0.0, so every test result here is exploratory, not confirmatory (D-042)"
+}

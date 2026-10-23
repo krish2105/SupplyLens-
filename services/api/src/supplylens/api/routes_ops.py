@@ -15,10 +15,20 @@ from sqlalchemy import text
 from ..authz import MATRIX, Actor
 from ..config import REPO_ROOT
 from ..db import control_session, tenant_session
+from ..forecasting import monitor as forecast_monitor
+from ..forecasting.governance import promotion_problems
 from ..knowledge import acl
 from .deps import actor, csrf_guard, idempotent
 from .routes_core import INVENTORY_SQL
-from .schemas import ClauseLabel, Exceptions, Jobs, Members, ModelStatusChanged, Value
+from .schemas import (
+    ClauseLabel,
+    Exceptions,
+    Jobs,
+    Members,
+    ModelMonitoring,
+    ModelStatusChanged,
+    Value,
+)
 
 router = APIRouter(prefix="/api/v1", dependencies=[Depends(csrf_guard)])
 
@@ -110,6 +120,18 @@ def jobs(a: Actor = Depends(actor)):
                       "budget_note": "Configured limits; no paid model provider is used."}}
 
 
+@router.get("/models/monitoring", response_model=ModelMonitoring)
+def model_monitoring(as_of: date | None = None, a: Actor = Depends(actor)):
+    """Realized accuracy of stored forecasts against sales, a shadow seasonal-naive comparison on the same points,
+    interval calibration and demand drift. Recommends; never changes the champion (monitor.py)."""
+    a.require("admin.read")
+    with tenant_session(a.tenant_id) as s:
+        st = s.execute(text("SELECT dataset_id, operational_as_of FROM tenant_settings")).first()
+    if not st or not st.dataset_id:
+        raise HTTPException(404, {"code": "no_dataset", "message": "this workspace has no sales history to monitor"})
+    return forecast_monitor.report(a.tenant_id, st.dataset_id, as_of or st.operational_as_of.date())
+
+
 class PromoteIn(BaseModel):
     status: str = Field(pattern="^(CHAMPION|CANDIDATE|RETIRED)$")
     reason: str = Field(min_length=5, max_length=500)
@@ -122,12 +144,17 @@ def set_model_status(model_id: uuid.UUID, body: PromoteIn, a: Actor = Depends(ac
 
     def do():
         with tenant_session(a.tenant_id) as s:
-            m = s.execute(text("SELECT family, status, metrics FROM model_versions WHERE id=:i FOR UPDATE"), {"i": model_id}).mappings().first()
+            m = s.execute(text("SELECT family, status, metrics, artifact_path, artifact_sha256 FROM model_versions WHERE id=:i "
+                               "FOR UPDATE"), {"i": model_id}).mappings().first()
             if not m:
                 raise HTTPException(404, {"code": "not_found", "message": "model not found"})
             if body.status == "CHAMPION":
                 if not (m["metrics"] or {}).get("experiment_id") and m["family"] != "seasonal_naive":
                     raise HTTPException(422, {"code": "not_evaluated", "message": "only models with a recorded evaluation can be champion"})
+                problems = promotion_problems(s, dict(m))
+                if problems:
+                    raise HTTPException(422, {"code": "promotion_gate", "message": "the model did not pass the promotion gate: "
+                                              + "; ".join(problems), "problems": problems})
                 s.execute(text("UPDATE model_versions SET status='CANDIDATE' WHERE status='CHAMPION' AND id <> :i"), {"i": model_id})
             s.execute(text("UPDATE model_versions SET status=:st WHERE id=:i"), {"st": body.status, "i": model_id})
             s.execute(text("""INSERT INTO audit_events (tenant_id, actor_id, action, entity, entity_id, detail) VALUES

@@ -871,6 +871,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/models/monitoring": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Model Monitoring
+         * @description Realized accuracy of stored forecasts against sales, a shadow seasonal-naive comparison on the same points,
+         *     interval calibration and demand drift. Recommends; never changes the champion (monitor.py).
+         */
+        get: operations["model_monitoring_api_v1_models_monitoring_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/models/{model_id}/status": {
         parameters: {
             query?: never;
@@ -1485,8 +1506,40 @@ export interface components {
             claims: components["schemas"]["Claim"][];
             /** Message */
             message: string | null;
+            support: components["schemas"]["AnswerSupport"] | null;
             /** Type */
             type: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * AnswerSupport
+         * @description Why the best passage was or was not offered as an answer (knowledge/retrieve.py answer_support).
+         */
+        AnswerSupport: {
+            /**
+             * Ambiguous
+             * @default false
+             */
+            ambiguous: boolean;
+            /**
+             * Candidate Suppliers
+             * @default []
+             */
+            candidate_suppliers: string[];
+            /** Coverage */
+            coverage: number;
+            /** Reason */
+            reason: string;
+            /** Supported */
+            supported: boolean;
+            /** Top Similarity */
+            top_similarity: number | null;
+            /**
+             * Unsupported Terms
+             * @default []
+             */
+            unsupported_terms: string[];
         } & {
             [key: string]: unknown;
         };
@@ -2171,6 +2224,7 @@ export interface components {
             reranker: string;
             /** Results */
             results: components["schemas"]["EvidenceResult"][];
+            support: components["schemas"]["AnswerSupport"] | null;
         } & {
             [key: string]: unknown;
         };
@@ -3090,6 +3144,45 @@ export interface components {
             email: string;
             /** Result */
             result: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * ModelMonitoring
+         * @description Realized forecast accuracy, shadow seasonal-naive comparison, calibration and demand drift (forecasting/monitor.py).
+         */
+        ModelMonitoring: {
+            /** As Of */
+            as_of: string;
+            /** Champion */
+            champion: {
+                [key: string]: unknown;
+            } | null;
+            /** Drift */
+            drift: {
+                [key: string]: unknown;
+            } | null;
+            /** Lookback Days */
+            lookback_days: number;
+            /**
+             * Models
+             * @default {}
+             */
+            models: {
+                [key: string]: {
+                    [key: string]: unknown;
+                };
+            };
+            /**
+             * Notes
+             * @default []
+             */
+            notes: string[];
+            /**
+             * Recommendations
+             * @default []
+             */
+            recommendations: string[];
         } & {
             [key: string]: unknown;
         };
@@ -6264,6 +6357,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ModelVersion"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    model_monitoring_api_v1_models_monitoring_get: {
+        parameters: {
+            query?: {
+                as_of?: string | null;
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelMonitoring"];
                 };
             };
             /** @description Validation Error */

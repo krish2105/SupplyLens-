@@ -149,7 +149,9 @@ def test_terms_documents_and_evidence(world):
     assert v["text"] and v["chunks"] and v["untrusted_content"] is True and v["id"] == world["version_id"]
     assert get(world, f"/api/v1/documents/versions/{world['version_id']}/labels") == []
     ev = get(world, "/api/v1/evidence/search", DEMO, q="minimum order quantity DEMO-REF-SKU")
-    assert ev["results"] and ev["answer"]["claims"] and ev["filters"]["role"] == "viewer"
+    assert ev["results"] and ev["answer"]["support"]["ambiguous"] and ev["filters"]["role"] == "viewer"   # two suppliers (R3)
+    ev = get(world, "/api/v1/evidence/search", DEMO, q="minimum order quantity DEMO-REF-SKU", supplier_id="DEMO-REF-A")
+    assert ev["answer"]["claims"] and ev["answer"]["support"]["supported"]
     miss = get(world, "/api/v1/evidence/search", DEMO, q="ZZZ-UNKNOWN-9 quantity")
     assert miss["answer"]["abstained"] is True
 
