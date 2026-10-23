@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
-import { Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance } from "@/components/ui";
+import { Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, TableScroll } from "@/components/ui";
 import { useApi } from "@/lib/queries";
 import { money, num } from "@/lib/format";
 
@@ -33,13 +33,14 @@ export default function ValuePage() {
       {!d.ledger.length ? <Empty title="No simulation study yet">Run evaluations/simulation_study.py.</Empty> : (
         <Card className="p-5">
           <Eyebrow>Ledger</Eyebrow>
-          <table className="mt-3 w-full text-sm"><caption className="sr-only">Value ledger items</caption>
-            <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Change</th><th className="font-medium">Evidence</th><th className="font-medium">Baseline</th><th className="font-medium">With change</th><th className="font-medium">Difference</th><th className="font-medium">Source</th></tr></thead>
+          <TableScroll label="Value ledger items" min={680} className="mt-3"><table className="w-full text-sm"><caption className="sr-only">Value ledger items</caption>
+            <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Change</th><th className="pr-4 font-medium">Evidence</th><th className="pr-4 text-right font-medium">Baseline</th><th className="pr-4 text-right font-medium">With change</th><th className="pr-4 text-right font-medium">Difference</th><th className="font-medium">Source</th></tr></thead>
             <tbody>{d.ledger.map((l) => (
-              <tr key={l.item} className="border-b border-line/60 align-top"><td className="py-2">{l.item}<span className="block text-xs text-muted">{l.period} · {l.unit}</span></td>
-                <td><Provenance kind="simulated" /></td><td className="num">{money(l.baseline_minor)}</td><td className="num">{money(l.intervention_minor)}</td>
-                <td className="num font-semibold">{money(l.intervention_minor - l.baseline_minor)}</td><td><Mono className="text-xs text-muted">{l.source}</Mono></td></tr>))}</tbody>
-          </table>
+              <tr key={l.item} className="border-b border-line/60 align-top"><td className="py-2 pr-4">{l.item}<span className="block text-xs text-muted">{l.period} · {l.unit}</span></td>
+                <td className="pr-4"><Provenance kind="simulated" /></td><td className="num whitespace-nowrap pr-4 text-right">{money(l.baseline_minor)}</td>
+                <td className="num whitespace-nowrap pr-4 text-right">{money(l.intervention_minor)}</td>
+                <td className="num whitespace-nowrap pr-4 text-right font-semibold">{money(l.intervention_minor - l.baseline_minor)}</td><td><Mono className="text-xs text-muted">{l.source}</Mono></td></tr>))}</tbody>
+          </table></TableScroll>
           <p className="mt-3 text-xs text-muted">Assumptions: lead time {d.ledger[0]!.assumptions.lead_time_days} days, review {d.ledger[0]!.assumptions.review_days} days, holding {num(d.ledger[0]!.assumptions.holding_rate_annual * 100, 0)}%/year, unit cost {num(d.ledger[0]!.assumptions.unit_cost_share_of_price * 100, 0)}% of selling price. {d.ledger[0]!.assumptions.notes}</p>
         </Card>
       )}

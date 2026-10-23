@@ -3,7 +3,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import Link from "next/link";
 import { useMemo } from "react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
-import { Card, Eyebrow, Mono, PageHeader, Provenance, QueryError, Skeleton, Status } from "@/components/ui";
+import { Card, Eyebrow, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TableScroll } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { useApi, useWs } from "@/lib/queries";
 import { num } from "@/lib/format";
@@ -122,46 +122,46 @@ export default function ResearchPage() {
         <StudyCard id="R2" q={r2} title="Time-aware retrieval study"
           question="On supplier-terms questions, does explicit effective-date and supersession handling change which version is cited?">
           {r2.data?.conditions && (
-            <table className="w-full text-sm"><caption className="sr-only">R2 conditions</caption>
+            <TableScroll label="R2 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">R2 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Condition</th><th className="font-medium">Top-1 correct</th><th className="font-medium">Wrong version</th><th className="font-medium">Abstain on unknown</th></tr></thead>
               <tbody>{Object.entries(r2.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{pct(v.top1_citation_accuracy)}</td>
                   <td className="num">{pct(v.wrong_version_top1_rate)}</td><td className="num">{pct(v.abstention_accuracy_unknown, 0)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{r2.data.questions} questions generated from simulated agreements (not human-reviewed). Cross-tenant probes: {r2.data.cross_tenant_probes.leaked_chunks} leaked chunks in {r2.data.cross_tenant_probes.queries} queries.</td></tr></tfoot>
-            </table>
+            </table></TableScroll>
           )}
         </StudyCard>
         <StudyCard id="C1" q={c1} title="Clause localisation study"
           question="Within 73 real CUAD supply/distribution contracts, does a top-k chunk overlap the clause an expert labelled?">
           {c1.data?.conditions && (
-            <table className="w-full text-sm"><caption className="sr-only">C1 conditions</caption>
+            <TableScroll label="C1 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">C1 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Retrieval</th><th className="font-medium">Hit@1</th><th className="font-medium">Hit@3</th><th className="font-medium">Hit@5</th></tr></thead>
               <tbody>{Object.entries(c1.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{pct(v["hit@1"])}</td><td className="num">{pct(v["hit@3"])}</td><td className="num">{pct(v["hit@5"])}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={4} className="pt-2 text-xs text-muted">{c1.data.conditions.hybrid_rrf.items} contract × category items; public data, CC BY 4.0.</td></tr></tfoot>
-            </table>
+            </table></TableScroll>
           )}
         </StudyCard>
         <StudyCard id="R1" q={r1} title="ACORD retrieval study"
           question="Across 56 expert-graded ACORD test queries, how do keyword, vector and hybrid retrieval rank 3,931 clauses?">
           {r1.data?.conditions && (
-            <table className="w-full text-sm"><caption className="sr-only">R1 conditions</caption>
+            <TableScroll label="R1 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">R1 conditions</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Retrieval</th><th className="font-medium">nDCG@10</th><th className="font-medium">Recall@10</th><th className="font-medium">MRR@10</th><th className="font-medium">p95 ms</th></tr></thead>
               <tbody>{Object.entries(r1.data.conditions as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{num(v["ndcg@10"], 3)}</td><td className="num">{num(v["recall@10_rel>=2_capped"], 3)}</td><td className="num">{num(v["mrr@10"], 3)}</td><td className="num">{num(v.latency_ms_p95, 0)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={5} className="pt-2 text-xs text-muted">Keyword = PostgreSQL full-text ranking (not BM25). Short category queries favour semantic matching.</td></tr></tfoot>
-            </table>
+            </table></TableScroll>
           )}
         </StudyCard>
         <StudyCard id="IB" q={ib} title="InventoryBench study"
           question="Scored by the benchmark's own evaluator on all 1,320 instances (pinned commit), normalised reward vs perfect foresight.">
           {ib.data?.policies && (
-            <table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
+            <TableScroll label="InventoryBench scores" min={360}><table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Policy</th><th className="font-medium">Mean normalised reward</th></tr></thead>
               <tbody>{Object.entries(ib.data.policies as Record<string, Any>).map(([k, v]) => (
                 <tr key={k} className="border-b border-line/60"><td className="py-2"><Mono>{k}</Mono></td><td className="num">{num(v.overall_score, 3)}</td></tr>))}</tbody>
               <tfoot><tr><td colSpan={2} className="pt-2 text-xs text-muted">No LLM in any policy. Real trajectories derive from H&amp;M data; upstream terms not cleared for redistribution.</td></tr></tfoot>
-            </table>
+            </table></TableScroll>
           )}
         </StudyCard>
       </div>

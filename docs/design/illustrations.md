@@ -31,3 +31,8 @@ Rules in code (`apps/web/components/illustration.tsx`): decorative only (`alt=""
 carries the title and actions, a failed image load collapses to nothing, and errors/loading never use empty-state art.
 Reviewed in the running app in light and dark themes at 1440 px and 375 px (session-4 screenshots,
 `docs/screenshots/session4/`).
+
+Phase 4B review (2026-10-23, `docs/agent-handoff/phases/PHASE-04B.md` §4): the 13 published pieces match their states and
+load in every capture (light and dark, 1440/834/390 px). A02, A13 and A16 stay withheld; on review they also show data,
+stock or a network that the empty state does not have. Replacement is optional; exact briefs are in PHASE-04B §8 and
+need owner approval before any image is produced. Art is never a substitute for charts, data or status.

@@ -46,7 +46,8 @@ export default function OverviewPage() {
       <section aria-labelledby="hero" className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="flex flex-col justify-between gap-6 py-2">
           <div>
-            <Eyebrow>{o?.dataset ? "UCI Online Retail II · one online retailer" : "Fictional demo workspace"}</Eyebrow>
+            {/* the workspace kind is only stated once the overview says what it holds (a loading UCI workspace is not "fictional") */}
+            {o ? <Eyebrow>{o.dataset ? "UCI Online Retail II · one online retailer" : "Fictional demo workspace"}</Eyebrow> : <Skeleton className="h-4 w-56" />}
             {inv.isLoading || !o ? <Skeleton className="mt-3 h-36" /> : (
               <motion.h1 id="hero" className="display mt-2 text-[clamp(2.1rem,4.2vw,3.6rem)] font-semibold leading-[1.02]"
                 // slide only: an opacity fade-in hides the headline from LCP until it ends (UX-011)
@@ -59,8 +60,8 @@ export default function OverviewPage() {
               </motion.h1>
             )}
             <p className="mt-4 max-w-xl text-[15px] text-muted">
-              Cover is available stock divided by the last 28 days of recorded unit sales. Stock levels here are{" "}
-              <Provenance kind={o?.dataset ? "simulated" : "synthetic"} /> because the source data contains sales only.
+              Cover is available stock divided by the last 28 days of recorded unit sales.{o && <>{" "}Stock levels here are{" "}
+              <Provenance kind={o.dataset ? "simulated" : "synthetic"} /> because the source data contains sales only.</>}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
@@ -80,18 +81,20 @@ export default function OverviewPage() {
         </div>
         <Card className="overflow-hidden p-0">
           {inv.error ? <div className="p-4"><ErrorState error={inv.error} /></div> :
-            gl === false || glFailed ? (
+            gl === null || inv.isLoading ? <Skeleton className="h-[460px]" /> : !items.length ? (
+              <div className="p-6"><EmptyState variant="empty_scope" art="empty-inventory" title="No stock positions at this date" compact>
+                Move “In force on” to a date with a recorded snapshot, or publish a stock file on the Data page. Missing records are not zero stock.</EmptyState></div>
+            ) : gl === false || glFailed ? (
               <div className="p-4">
                 {glFailed && <GLNotice />}
                 <p className="mb-3 text-sm text-muted">Showing the 2D floor plan (small screen or WebGL unavailable). It shows the same records as the 3D view.</p>
                 <FloorPlan items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} />
               </div>
-            ) : gl === null || inv.isLoading ? <Skeleton className="h-[460px]" /> : items.length ? (
+            ) : (
               <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
                 <Warehouse3D items={items} selected={ctx.sku} onSelect={(s) => setCtx({ sku: s })} onFail={() => setGlFailed(true)} />
               </GLBoundary>
-            ) : <div className="p-6"><EmptyState variant="empty_scope" art="empty-inventory" title="No stock positions at this date" compact>
-              Move “In force on” to a date with a recorded snapshot, or publish a stock file on the Data page. Missing records are not zero stock.</EmptyState></div>}
+            )}
           {ctx.sku && (() => {
             const it = items.find((i) => i.sku_id === ctx.sku);
             return it ? (
@@ -110,7 +113,7 @@ export default function OverviewPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="p-5">
           <Eyebrow>Admitted data</Eyebrow>
-          {o?.dataset ? (
+          {!o ? <Skeleton className="mt-3 h-32" /> : o.dataset ? (
             <div className="mt-3 space-y-3">
               <p className="font-semibold">{o.dataset.name} <span className="text-muted">· {o.dataset.license}</span></p>
               <dl className="divide-y divide-line rounded-xl border border-line">

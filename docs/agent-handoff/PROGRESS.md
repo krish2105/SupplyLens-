@@ -58,6 +58,7 @@ SEC-P2-11 fixed per process; P2-PERF-01 and P2-REL-03 partially fixed; new PERF-
 (see ISSUES.md "Phase 3 resolution notes").
 
 ## Recommended order for the remaining work
+1. **Phase 4B — done** (visual UI/UX and asset gate; PHASE-04B): 13 defects fixed, screenshot regression (`visual` project), Playwright 191 passed / 7 skipped locally.
 1. **Phase 4 — done** (frontend, UX, journeys; PHASE-04). Formerly: P1-FE-01, rest of P1-FE-02, P2-FE-03 (ESLint + unit tests in CI first),
    P2-FE-04/05/06/07/08, P2-QA-01/02 (then require `e2e` in branch protection), P3-FE-09/10.
 2. **Phase 5 — data protection and retrieval quality** (+ PERF-P3-09 with the retrieval study re-run): P2-KNOW-01, SEC-P2-11, SEC-P2-12, SEC-P2-13, P3-SEC-03 (nonce

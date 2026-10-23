@@ -4,7 +4,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { FileUp, FolderPlus, ShieldCheck, Upload } from "lucide-react";
-import { Button, Card, ErrorState, Eyebrow, Mono, Status } from "@/components/ui";
+import { Button, Card, ErrorState, Eyebrow, Mono, Status, TableScroll } from "@/components/ui";
 import { api, apiPost, intentKey } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useWs } from "@/lib/queries";
@@ -103,7 +103,7 @@ export function Onboarding({ admin }: { admin: boolean }) {
         {openError != null && <div className="mt-2"><ErrorState error={openError} /></div>}
         {batches.data && batches.data.length === 0 && <p className="mt-2 text-sm text-muted">No files imported into this workspace yet.</p>}
         {!!batches.data?.length && (
-          <table className="mt-3 w-full text-sm"><caption className="sr-only">Import batches</caption>
+          <TableScroll label="Import batches" min={620} className="mt-3"><table className="w-full text-sm"><caption className="sr-only">Import batches</caption>
             <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">File</th><th className="font-medium">Kind</th>
               <th className="font-medium">Status</th><th className="font-medium">Valid / quarantined</th><th className="font-medium">Snapshot</th><th className="font-medium">Uploaded</th></tr></thead>
             <tbody>{batches.data.map((b) => (
@@ -114,7 +114,7 @@ export function Onboarding({ admin }: { admin: boolean }) {
                 <td><Mono className="text-muted">{b.snapshot_sha256 ? `${short(b.snapshot_sha256, 12)}…` : "—"}</Mono></td>
                 <td className="text-xs text-muted">{dateTime(b.created_at)}</td>
               </tr>))}</tbody>
-          </table>
+          </table></TableScroll>
         )}
       </Card>
     </div>

@@ -110,5 +110,6 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
   nav, .no-print { display: none !important; }
 }
 
-/* Sticky header + decision clock: anchors and focused elements scroll clear of them (audit S17). */
-html { scroll-padding-top: 9rem; }
+/* Sticky header + decision clock: anchors and focused elements scroll clear of them (audit S17); --header-h is measured
+   by the shell (app/(app)/layout.tsx). Below md the header scrolls away (Phase 4B), so phones keep no gap. */
+@media (min-width: 48rem) { html { scroll-padding-top: calc(var(--header-h, 9rem) + 0.5rem); } }

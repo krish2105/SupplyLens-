@@ -17,12 +17,14 @@ export function useDecisionClock() {
   const base = overview.data?.settings?.operational_as_of ?? null;
   const known = ctx.known ?? base;
   const eff = ctx.eff ?? (known ? known.slice(0, 10) : null);
-  return { known, eff, base, replay: !!ctx.known && ctx.known !== base, loading: overview.isLoading };
+  return { known, eff, base, replay: !!ctx.known && ctx.known !== base,
+    // only a loaded overview without settings means "no operational date"; a failed or pending one says nothing yet
+    noDate: !!overview.data && !overview.data.settings };
 }
 
 export function ClockRail() {
   const [, setCtx] = usePlanningContext();
-  const { known, eff, base, replay } = useDecisionClock();
+  const { known, eff, base, replay, noDate } = useDecisionClock();
   const docs = useApi(["documents"], "/api/v1/documents");
 
   const range = useMemo(() => {
@@ -61,7 +63,8 @@ export function ClockRail() {
           </span>
         ) : (
           // Always rendered (with a placeholder until the overview arrives) so the row wraps the same way before and after load.
-          <span className="text-[11px] text-muted">Workspace as-of <span className="num">{base ? day(base) : "—"}</span> (UTC)</span>
+          <span className="text-[11px] text-muted">{!noDate ? <>Workspace as-of <span className="num">{base ? day(base) : "—"}</span> (UTC)</>
+            : "No operational date in this workspace: it holds reference documents, not stock or orders"}</span>
         )}
         {(replay || (eff && known && eff !== known.slice(0, 10))) && (
           <button className="inline-flex items-center gap-1 text-xs text-accent underline-offset-2 hover:underline"

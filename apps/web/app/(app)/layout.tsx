@@ -4,10 +4,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { Suspense, useEffect, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "next-themes";
+import * as Dialog from "@radix-ui/react-dialog";
 import clsx from "clsx";
 import {
-  BadgePoundSterling, Boxes, ClipboardCheck, Database, FileText, FlaskConical, Gauge, Globe2, LineChart, LogOut, Microscope, Monitor, Moon,
-  Settings2, ShieldCheck, Siren, Sparkles, Sun, Workflow,
+  BadgePoundSterling, Boxes, ClipboardCheck, Database, FileText, FlaskConical, Gauge, Globe2, LineChart, LogOut, Menu, Microscope, Monitor,
+  Moon, Settings2, ShieldCheck, Siren, Sparkles, Sun, Workflow, X,
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
 import { ClockRail } from "@/components/clock-rail";
@@ -61,7 +62,62 @@ function ThemeSwitch() {
   );
 }
 
+/** Below the lg breakpoint (no sidebar): one button naming the current section, opening every section grouped as in the
+ *  sidebar. Replaces a horizontal strip that showed about five of fourteen links with no sign of the rest (Phase 4B). */
+function SectionsMenu({ ws, path }: { ws: string; path: string }) {
+  const [open, setOpen] = useState(false);
+  const isActive = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  const current = NAV.find((n) => isActive(n.href));
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <button type="button" className="inline-flex h-8 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-sm font-medium hover:bg-surface-2">
+          <Menu className="size-4" aria-hidden /><span className="sr-only">Sections, current: </span>{current?.label ?? "Sections"}
+        </button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-[min(320px,86vw)] overflow-y-auto bg-surface p-4 shadow-xl">
+          <div className="mb-3 flex items-center justify-between">
+            <Dialog.Title className="display text-lg font-semibold">Sections</Dialog.Title>
+            <Dialog.Close className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink" aria-label="Close sections">
+              <X className="size-4" aria-hidden /></Dialog.Close>
+          </div>
+          <Dialog.Description className="sr-only">Go to a section of SupplyLens in this workspace.</Dialog.Description>
+          <div className="space-y-4">
+            {GROUPS.map((g) => (
+              <div key={g}>
+                <p className="px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted">{g}</p>
+                <ul className="space-y-0.5">
+                  {NAV.filter((n) => n.group === g).map(({ href, label, icon: Icon }) => (
+                    <li key={href}>
+                      <Link href={{ pathname: href, query: { ws } }} aria-current={isActive(href) ? "page" : undefined} onClick={() => setOpen(false)}
+                        className={clsx("flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm",
+                          isActive(href) ? "bg-accent-soft font-semibold text-accent" : "text-ink hover:bg-surface-2")}>
+                        <Icon className="size-4" aria-hidden /> {label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 // URL-backed planning state needs a Suspense boundary for static prerendering.
+// Anchors and focused elements scroll clear of the sticky header (globals.css scroll-padding-top). Its height varies with
+// width and with the replay notice (176 px at tablet width vs the 144 px once assumed), so it is measured, not guessed.
+function trackHeaderHeight(el: HTMLDivElement | null) {
+  if (!el) return;
+  const ro = new ResizeObserver(() => document.documentElement.style.setProperty("--header-h", `${el.offsetHeight}px`));
+  ro.observe(el);
+  return () => ro.disconnect();
+}
+
 export default function AppLayout({ children }: { children: ReactNode }) {
   return <Suspense fallback={<Loading label="Loading workspace" className="min-h-screen justify-center" />}><AppShell>{children}</AppShell></Suspense>;
 }
@@ -169,7 +225,9 @@ function AppShell({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="min-w-0 flex-1">
-          <div className="sticky top-0 z-30">
+          {/* Sticky from tablet width up. On a phone the header and decision clock are ~300 px (a third of the screen), so
+              they scroll away with the page instead of covering it (Phase 4B). */}
+          <div ref={trackHeaderHeight} className="z-30 md:sticky md:top-0">
             <div className="glass flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5 md:px-6">
               <label className="flex items-center gap-2 text-sm">
                 <span className="sr-only">Workspace</span>
@@ -189,11 +247,7 @@ function AppShell({ children }: { children: ReactNode }) {
                   {membership.kind === "demo" ? "Fictional demo data" : membership.slug === "contract-research" ? "Real public contracts & awards" : "Real sales · simulated operations"}
                 </span>
               )}
-              <nav aria-label="Sections" className="flex gap-1 overflow-x-auto lg:hidden">
-                {NAV.map(({ href, label }) => (
-                  <Link key={href} href={{ pathname: href, query: { ws: ctx.ws } }} className="whitespace-nowrap rounded-md px-2 py-1 text-xs text-muted hover:text-ink">{label}</Link>
-                ))}
-              </nav>
+              <nav aria-label="Sections" className="lg:hidden"><SectionsMenu ws={ctx.ws} path={path} /></nav>
               <div className="ml-auto flex items-center gap-2">
                 <SafeBoundary name="command palette"><CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} /></SafeBoundary>
                 <ThemeSwitch />

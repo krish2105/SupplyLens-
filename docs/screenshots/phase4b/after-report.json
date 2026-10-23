@@ -1,0 +1,2148 @@
+[
+ {
+  "screen": "login",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "sl-welcome.webp",
+    "ok": true,
+    "shown": "450x300",
+    "natural": "1120x747"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "value",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "light",
+  "width": "desktop",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ {
+  "screen": "login",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "sl-welcome.webp",
+    "ok": true,
+    "shown": "450x300",
+    "natural": "1120x747"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [
+   "500 /api/v1/research/s1"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 500 (Internal Server Error)"
+  ]
+ },
+ {
+  "screen": "value",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "dark",
+  "width": "desktop",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ {
+  "screen": "login",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "sl-welcome.webp",
+    "ok": true,
+    "shown": "342x228",
+    "natural": "1120x747"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "value",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "light",
+  "width": "tablet",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ {
+  "screen": "login",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "sl-welcome.webp",
+    "ok": true,
+    "shown": "342x228",
+    "natural": "1120x747"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "value",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "dark",
+  "width": "tablet",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ {
+  "screen": "login",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "",
+    "ok": false,
+    "shown": "0x0",
+    "natural": "0x0"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content",
+   "Units/day (28d)",
+   "Days of cover",
+   "Status"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "value",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "light",
+  "width": "mobile",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ },
+ {
+  "screen": "login",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/login",
+  "role": null,
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [
+   {
+    "src": "",
+    "ok": false,
+    "shown": "0x0",
+    "natural": "0x0"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "overview-demo",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "exceptions",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/exceptions",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "inventory",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/inventory",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "span.sr-only: Search products",
+   "caption.sr-only: Inventory positions. Select a row to inspect it."
+  ],
+  "offscreen": [
+   "Skip to content",
+   "Units/day (28d)",
+   "Days of cover",
+   "Status"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "forecast",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/forecast",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Registered forecasting models",
+   "caption.sr-only: Held-out test metrics for the three model families"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-forecast-setup.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "scenarios",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/scenarios",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Previously computed scenarios"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "runs",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/runs?known=2026-10-20T09:00:00.000Z&eff=2026-10-20",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "approvals",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/approvals",
+  "role": "approver",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Purchase orders in the sandbox ERP"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "policies",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/policies",
+  "role": "planner",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-policy-change.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "market",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/market",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "research",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/research",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: R2 conditions",
+   "caption.sr-only: C1 conditions",
+   "caption.sr-only: R1 conditions",
+   "caption.sr-only: InventoryBench scores"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "value",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/value",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Value ledger items"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "data",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/data",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Sample of quarantined source rows",
+   "caption.sr-only: Import batches"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "admin",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/admin",
+  "role": "tenant_admin",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Operations allowed per role",
+   "caption.sr-only: Registered models",
+   "caption.sr-only: Exports",
+   "caption.sr-only: Web Vitals by route"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "settings",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/settings",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [
+   "span.sr-only: Workspace",
+   "span.sr-only: Sections, current:",
+   "legend.sr-only: Theme",
+   "caption.sr-only: Recent audit events"
+  ],
+  "offscreen": [
+   "Skip to content"
+  ],
+  "images": [
+   {
+    "src": "sl-empty-integrations.webp",
+    "ok": true,
+    "shown": "96x96",
+    "natural": "360x360"
+   }
+  ],
+  "failed": [],
+  "consoleErrors": []
+ },
+ {
+  "screen": "not-found",
+  "theme": "dark",
+  "width": "mobile",
+  "url": "/no-such-page",
+  "role": "viewer",
+  "overflowX": 0,
+  "clipped": [],
+  "offscreen": [],
+  "images": [],
+  "failed": [
+   "404 /no-such-page"
+  ],
+  "consoleErrors": [
+   "Failed to load resource: the server responded with a status of 404 (Not Found)"
+  ]
+ }
+]

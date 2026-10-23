@@ -133,8 +133,27 @@ jobs:
           cat api.log web.log; exit 1
       - name: browsers (Chromium, Firefox, WebKit)
         run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright install --with-deps chromium firefox webkit
+      # Screenshot regression first, on the freshly seeded stack, before any suite changes data. Baselines are per platform
+      # and reviewed by eye before they are committed; until Linux ones exist the run records them for review, compares nothing.
+      - name: screenshot regression (critical screens, light and dark, desktop and phone)
+        run: |
+          cd apps/web
+          if ls e2e/visual.spec.ts-snapshots/*-linux.png >/dev/null 2>&1; then
+            ../../scripts/ci_annotate.sh npx playwright test --project visual --reporter=list --output test-results-visual
+          else
+            echo "::warning::No Linux visual baselines are committed: screenshots recorded for review (artifact visual-baselines-linux), not compared."
+            npx playwright test --project visual --reporter=list --output test-results-visual --update-snapshots=missing
+          fi
+      - if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: visual-baselines-linux
+          path: |
+            apps/web/e2e/visual.spec.ts-snapshots/*-linux.png
+            apps/web/test-results-visual
+          if-no-files-found: ignore
       - name: end-to-end, resilience, accessibility and Web Vitals suites (Chromium desktop and mobile; journeys on Firefox, WebKit, iPhone-sized WebKit)
-        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test
+        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test --project desktop --project mobile --project firefox --project webkit --project mobile-safari
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

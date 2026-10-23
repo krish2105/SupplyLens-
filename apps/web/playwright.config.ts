@@ -14,8 +14,11 @@ export default defineConfig({
     ...(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, args: ["--no-sandbox"] } } : {}),
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|vitals|a11y)\.spec/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /visual\.spec/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|vitals|a11y|ui-quality)\.spec/ },
+    // Screenshot regression (Phase 4B): sets its own widths and themes; run alone, on a freshly seeded stack, before the
+    // suites above change data (CI does). Per-platform baselines under e2e/visual.spec.ts-snapshots/, reviewed before commit.
+    { name: "visual", use: { ...devices["Desktop Chrome"] }, testMatch: /visual\.spec/ },
     // Other engines (Phase 4): the user journeys on Firefox and WebKit, and the purchase journey on an iPhone-sized WebKit.
     // Emulation only: no physical device is involved.
     { name: "firefox", use: { ...devices["Desktop Firefox"], viewport: { width: 1440, height: 900 } }, testMatch: /(journey|workflows)\.spec/ },

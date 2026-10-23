@@ -7,9 +7,9 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 4 complete** (2026-10-23): frontend, UX and end-to-end journeys (owner brief, PD-017); all 12 journeys pass (PHASE-04 §1). Next: Phase 5, only on the owner's instruction. |
+| Current phase | **Phase 4B complete** (2026-10-23): visual UI, UX and asset quality gate (owner brief); 13 visual/UX defects fixed with before/after screenshots (PHASE-04B §2); screenshot regression added. Next: Phase 5, only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 4: `bf2c757` (changes), `1f914a8` (digest and Firefox locator fixes); handoff commit follows. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| Code commits | Phase 4B: see PHASE-04B and EVIDENCE P4B-E11 (commit and CI recorded there). Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
 | CI | `1f914a8` run 39897951198: **8/8 success**, browser suite 200 passed / 5 skipped on five projects incl. Firefox (P4-E15); `bf2c757` run 39894389197 failed 6/8, fixed (P4-E12) |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
 | Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
@@ -24,8 +24,9 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 | 2 | 2026-10-23 | Git pushes deploy (P3-OPS-02). Security: 10 findings fixed (fixture safety, revocable sessions, body cap and sign-in throttle, error disclosure, PII redaction, supply-chain pins, IdP outage, parser 500s, 404 consistency); 3 new open (retrieval ceiling, audit tamper-evidence, retention). pytest 398/6; Playwright 114/2; no certification claimed | `phases/PHASE-02.md` |
 | 3 | 2026-10-23 | Performance (owner brief): historical 5 req/s collapse not reproducible on the M4 Pro; vectors moved to `chunk_vectors` (0010), admission classes/queue/workspace share, statement and pool timeouts → 503, bounded listings, `/metrics`, outbox dead letter, worker isolation. Same machine before → after: retrieval p95 256 → 157 ms at 5/s; 16/s fully served (p95 442 ms) vs ~8/s before. pytest 414/6; Playwright 116/2. Laptop, stubbed embedder: not the declared profile | `phases/PHASE-03.md` |
 | 4 | 2026-10-23 | Frontend/UX/E2E (owner brief): 12 journeys pass; document upload added (journey 4); P1-FE-01/02, P2-FE-03…08, P2-QA-01/02, P3-FE-10 fixed; ESLint + Vitest + typed e2e in CI; Firefox/WebKit/iPhone projects. pytest 419/6; Playwright 174/4 locally (Firefox CI-only) | `phases/PHASE-04.md` |
+| 4B | 2026-10-23 | Visual/UX gate (owner brief): 166 captures × before/after (17 screens, 16 states, 2 themes, 3 widths); 13 defects fixed (phone navigation and header, sign-in, tables, misleading £0 materiality, loading/empty labels, empty 3D under errors, off-screen reader, tablet anchors, chart motion, duplicate request); illustrations: 13 reused, A02/A13/A16 withheld with briefs. pytest 421/6; Playwright 191/7 locally; 42 screenshot baselines | `phases/PHASE-04B.md` |
 
-## Open P0/P1 after Phase 4
+## Open P0/P1 after Phase 4B (unchanged by 4B)
 - P0: none open. (Phase 3 changed no P0/P1 status; P2-PERF-01, P2-REL-03 partially fixed, SEC-P2-11 fixed per process.)
 - P1 open: P1-IAM-01 (needs EXT-01), P1-OPS-01, P1-SAAS-01, P1-PROC-01 remainder,
   P1-SEC-02 residual (owner must scope the Neon integration variables).
@@ -35,6 +36,7 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 - Local: Docker daemon (colima) not running — no local compose smoke, image scan or Keycloak tests.
 
 ## Next actions (Phase 5 proposal — awaiting owner go-ahead)
+0. From 4B: review and commit the Linux screenshot baselines CI recorded (artifact `visual-baselines-linux`) so CI enforces them; owner decision on the A02/A13/A16 briefs (PHASE-04B §8).
 1. Data protection and retrieval quality (P2-KNOW-01, SEC-P2-11…13, PERF-P3-09); FE-P4-08; propose `e2e` as a required check.
 2. Remaining security checkpoint items (distributed sign-in throttle, retention jobs, tamper-evident audit, nonce CSP,
    Docker digests).

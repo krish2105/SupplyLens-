@@ -220,3 +220,13 @@ export function TabList<T extends string>({ id, label, tabs, value, onChange, cl
 export function TabPanel({ id, value, children, className }: { id: string; value: string | null; children: ReactNode; className?: string }) {
   return <div role="tabpanel" id={`${id}-panel`} aria-labelledby={value ? `${id}-tab-${value}` : undefined} className={className}>{children}</div>;
 }
+
+/** A table that may be wider than a phone: it scrolls inside its card instead of being cut off at the card's edge
+ *  (Phase 4B). Focusable, so the scroll works from the keyboard; `min` is the width below which it scrolls. */
+export function TableScroll({ label, min = 560, children, className }: { label: string; min?: number; children: ReactNode; className?: string }) {
+  return (
+    <div role="region" aria-label={`${label}, scrollable`} tabIndex={0} className={clsx("max-w-full overflow-x-auto", className)}>
+      <div style={{ minWidth: min }}>{children}</div>
+    </div>
+  );
+}

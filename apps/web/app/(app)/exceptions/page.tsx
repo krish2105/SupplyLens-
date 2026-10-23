@@ -9,6 +9,7 @@ import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Pr
 import { EmptyState } from "@/components/illustration";
 import { apiPost } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
+import { usePlanningContext } from "@/lib/state";
 import { dateTime, day, money } from "@/lib/format";
 
 
@@ -21,8 +22,12 @@ const KIND: Record<string, { label: string; icon: typeof AlertOctagon }> = {
 
 export default function ExceptionsPage() {
   const ws = useWs();
+  const [ctx] = usePlanningContext();
   const { eff } = useDecisionClock();
-  const q = useApi(["exceptions", eff], "/api/v1/exceptions", { query: { effective_date: eff }, refetchInterval: 10000 });
+  // Without a replayed date the API uses the workspace as-of itself, so the first request does not wait for (and is not
+  // repeated after) the overview that the clock derives its date from.
+  const effQ = ctx.known || ctx.eff ? eff ?? undefined : undefined;
+  const q = useApi(["exceptions", effQ ?? "workspace"], "/api/v1/exceptions", { query: { effective_date: effQ }, refetchInterval: 10000 });
   const [kind, setKind] = useState<string>("all");
   const items = useMemo(() => (q.data?.items ?? []).filter((i) => kind === "all" || i.kind === kind), [q.data, kind]);
   return (
@@ -57,6 +62,7 @@ export default function ExceptionsPage() {
                     </div>
                     <p className="mt-1 text-sm text-muted">{i.detail}</p>
                     <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+                      {i.materiality_minor == null && i.materiality_basis && <span className="text-muted">{i.materiality_basis}</span>}
                       {i.materiality_minor != null && <span title={i.materiality_basis ?? undefined}><span className="num font-semibold text-ink">{money(i.materiality_minor, q.data?.currency ?? undefined)}</span> <span className="text-muted">{i.materiality_basis}</span></span>}
                       {i.deadline && <span className="text-muted">Decide by <span className="num text-ink">{day(i.deadline)}</span></span>}
                       <span className={clsx("rounded-md px-2 py-0.5 font-semibold capitalize",

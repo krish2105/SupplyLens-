@@ -386,3 +386,26 @@ Evidence P4-E.. in EVIDENCE.md; record in phases/PHASE-04.md; product decisions 
 - Documents: `knowledge/upload.py`, `POST /api/v1/documents`, Policies "Add a document" and clause-label viewer.
 - Tests: `tests/test_phase4_web_api.py` (5), `apps/web/{lib,components}/*.test.ts(x)` (19), `e2e/workflows.spec.ts` (20),
   `e2e/fixtures.ts` (reference-case lock), cross-browser projects in `playwright.config.ts`, CI lint/unit/browsers.
+
+---
+
+## Phase 4B resolution notes (2026-10-23) — visual UI, UX and asset quality gate
+Record in phases/PHASE-04B.md (§2 has the screen, fix and before/after screenshot per issue); evidence P4B-E..; decisions
+D-078 … D-080. All **FIXED** and pinned by a test that fails on the previous code unless noted.
+- **UI-4B-01** sign-in clipped on phone/tablet — `app/login/page.tsx`; `e2e/ui-quality.spec.ts` "sign-in fits the screen".
+- **UI-4B-02** sticky header covered a third of a phone screen — `app/(app)/layout.tsx`, `app/globals.css`; "header scrolls away".
+- **UI-4B-03** phone section strip clipped, no current section — `SectionsMenu` in `layout.tsx`; "sections menu …" + visual baseline.
+- **UI-4B-04** seven tables overflowed on phones; ledger figures touching — `components/ui.tsx` `TableScroll`, value/research/forecast/onboarding; "wide tables scroll inside a labelled region".
+- **UI-4B-05** market told Contract research to switch to itself; clock rail empty without reason — `api/routes_market.py`, `components/clock-rail.tsx`; `tests/test_phase4b.py`, "no operational date …".
+- **UI-4B-06** runs Mode select overflowed on phones — `runs/page.tsx` (seen in screenshots; covered by the no-overflow layout tests).
+- **UI-4B-07** £0 materiality without a selling price (misleading) — `api/routes_ops.py`, `exceptions/page.tsx`; `tests/test_phase4b.py`.
+- **UI-4B-08** loading overview called UCI Research fictional and without sales data — `app/(app)/page.tsx`; "the overview does not call a workspace fictional …".
+- **UI-4B-09** empty warehouse and "Snapshot — ·" under error/empty/offline; empty floor plan on phones — `inventory/page.tsx`, `app/(app)/page.tsx`; "inventory that fails to load …".
+- **UI-4B-10** version comparison/reader opened off-screen below xl — `policies/page.tsx`; "opening a version comparison …" (also asserts where it lands).
+- **UI-4B-11** anchors/focus landed under the 176 px tablet header (144 px reserved) — `layout.tsx` measures `--header-h`; probe P4B-E10.
+- **UI-4B-12** charts animated despite reduced motion — `components/chart-impl.tsx`; visual baselines (reduced motion) would drift otherwise.
+- **UI-4B-13** duplicate exceptions request on first load — `exceptions/page.tsx`; after-probe shows no aborted request.
+- **Open, low:** UI-4B-R1 (Contract research clock rail shows empty date inputs, now explained), UI-4B-R2 (offline before
+  first load: skeleton and an empty "0 of 0" table header). **Open, process:** Linux visual baselines need one
+  review-and-commit cycle before CI enforces them (P4B-E11). **Illustrations:** A02/A13/A16 stay withheld (D-040
+  reconfirmed); replacement briefs await owner approval (PHASE-04B §8); nothing generated.

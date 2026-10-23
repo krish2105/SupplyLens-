@@ -16,6 +16,16 @@ def _has(s) -> bool:
     return bool(s.execute(text("SELECT 1 FROM public_awards LIMIT 1")).first())
 
 
+def _absent_message(s) -> str:
+    """Say what is true for the workspace the reader is in (Phase 4B): only Contract research holds the award data, and in a
+    stack where it was never imported, telling the reader to switch to the workspace they are already in is wrong."""
+    if s.execute(text("SELECT slug FROM tenants WHERE id = NULLIF(current_setting('app.tenant_id', true), '')::uuid")).scalar() \
+            == "contract-research":
+        return ("No public award data has been imported into this workspace yet. The World Bank contract awards (CC BY 4.0) "
+                "are loaded by scripts/download_datasets.py and the bootstrap.")
+    return "Public award data lives in the Contract research workspace. Switch to it with the workspace selector."
+
+
 @router.get("/summary", response_model=MarketSummary)
 def summary(category: str | None = None, region: str | None = None, a: Actor = Depends(actor)):
     a.require("read")
@@ -23,7 +33,7 @@ def summary(category: str | None = None, region: str | None = None, a: Actor = D
     p = {"c": category, "r": region}
     with tenant_session(a.tenant_id) as s:
         if not _has(s):
-            return {"available": False, "message": "No public award data in this workspace. Switch to Contract research."}
+            return {"available": False, "message": _absent_message(s)}
         ds = s.execute(text("SELECT name, license, source_url, sha256, report, created_at FROM datasets "
                             "WHERE name = 'World Bank IPF contract awards'")).mappings().first()
         by_year = s.execute(text(f"""SELECT fiscal_year, count(*) n, sum(amount_usd)::float usd FROM public_awards {f}

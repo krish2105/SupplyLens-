@@ -72,10 +72,17 @@ export default function InventoryPage() {
               tabClassName={(on) => clsx("rounded-md px-3 py-1 text-sm disabled:opacity-40", on ? "bg-accent text-accent-ink" : "text-muted")} />
             {/* Space reserved before the data arrives: on phones the label has its own line at the chip's height, so the loaded
                 text never wraps differently from the placeholder and pushes the scene down (CLS). */}
-            <span className="inline-flex min-h-5 w-full items-center gap-1 text-xs text-muted sm:w-auto">Snapshot {day(items[0]?.as_of)} · <Provenance kind={items[0]?.value_kind} /></span>
+            <span className="inline-flex min-h-5 w-full items-center gap-1 text-xs text-muted sm:w-auto">
+              {items.length ? <>Snapshot {day(items[0]?.as_of)} · <Provenance kind={items[0]?.value_kind} /></> : inv.isLoading ? "Snapshot …" : "No snapshot to show"}
+            </span>
           </div>
           <TabPanel id="layout" value={view}>
-          {inv.isLoading || view === null ? <Skeleton className="h-[420px]" /> : view === "3d" && gl && !glFailed ? (
+          {inv.isLoading || view === null ? <Skeleton className="h-[420px]" /> : !items.length ? (
+            // An empty floor would read as "a warehouse holding nothing"; the error or empty state above/below says why instead.
+            <p className="grid h-[180px] place-items-center px-6 text-center text-sm text-muted">
+              {inv.error ? "The layout appears once stock positions load." : "No stock positions to lay out at this date."}
+            </p>
+          ) : view === "3d" && gl && !glFailed ? (
             <GLBoundary onError={() => setGlFailed(true)} fallback={null}>
               <Warehouse3D items={items} selected={ctx.sku} onSelect={select} height={420} onFail={() => setGlFailed(true)} />
             </GLBoundary>

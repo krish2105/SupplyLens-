@@ -1,5 +1,6 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import clsx from "clsx";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FilePlus2, Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
@@ -26,6 +27,20 @@ export default function PoliciesPage() {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<{ version: string; highlight?: string } | null>(null);
   const [compare, setCompare] = useState<[string, string] | null>(null);
+  // Below xl the reader sits under the document list: opening a version or a comparison there happened off-screen.
+  // Bring it into view (and focus it, so keyboard and screen-reader users land on it) only when it is out of sight.
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = panel.current;
+    if (!el || (!compare && !open)) return;
+    const frame = requestAnimationFrame(() => {
+      const top = el.getBoundingClientRect().top;
+      if (top >= 0 && top <= window.innerHeight * 0.75) return;
+      el.focus({ preventScroll: true });       // focus first: focusing during a smooth scroll cancels the scroll
+      el.scrollIntoView({ block: "start", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [compare, open]);
 
   async function run(e?: React.FormEvent) {
     e?.preventDefault();
@@ -143,7 +158,10 @@ export default function PoliciesPage() {
             </ul>
           )}
         </Card>
-        <div className="space-y-6">
+        {/* an open reader reserves a screen's height on stacked layouts: the page is tall enough to scroll it to the top while
+            the text is still loading (otherwise the scroll stops short and the reader is left peeking in at the bottom) */}
+        <div ref={panel} tabIndex={-1} aria-label="Document reader" role="region"
+          className={clsx("scroll-mt-4 space-y-6 outline-none", (compare || open) && "min-h-[85svh] xl:min-h-0")}>
           {compare ? <CompareVersions ids={compare} onClose={() => setCompare(null)} /> :
             open ? <Viewer id={open.version} highlight={open.highlight} /> :
               <Card className="p-5"><Empty title="Open a document version">Pick a version or a search result to read it with the cited passage highlighted.</Empty></Card>}

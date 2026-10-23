@@ -46,13 +46,18 @@ def exceptions(effective_date: date | None = None, a: Actor = Depends(actor)):
                 short_units = avg * 7 - avail
                 items.append({"kind": "shortage_risk", "basis": "predicted", "sku_id": r["sku_id"], "title": f"{r['sku_id']} covers {cover:.1f} days",
                               "detail": f"{avail} available at {r['location_id']} vs {avg:.1f}/day recent unit sales", "severity": "high" if cover < 2 else "medium",
-                              "materiality_minor": int(short_units * price.get(r["sku_id"], 0)), "materiality_basis": "7-day shortfall x median selling price (revenue at risk, not margin)",
+                              # no recorded selling price: no money figure (0 would read as "nothing at risk")
+                              "materiality_minor": int(short_units * price[r["sku_id"]]) if r["sku_id"] in price else None,
+                              "materiality_basis": "7-day shortfall x median selling price (revenue at risk, not margin)" if r["sku_id"] in price
+                              else "no selling price recorded in the last 90 days, so revenue at risk is not estimated",
                               "deadline": str(eff + timedelta(days=max(int(cover), 0))), "value_kind": "derived"})
             elif cover > 90:
                 items.append({"kind": "excess", "basis": "derived", "sku_id": r["sku_id"], "title": f"{r['sku_id']} covers {cover:.0f} days",
                               "detail": "Stock above 90 days of recent sales", "severity": "low",
-                              "materiality_minor": int((avail - avg * 90) * price.get(r["sku_id"], 0) * 0.55),
-                              "materiality_basis": "excess units x assumed unit cost (55% of selling price)", "deadline": None, "value_kind": "derived"})
+                              "materiality_minor": int((avail - avg * 90) * price[r["sku_id"]] * 0.55) if r["sku_id"] in price else None,
+                              "materiality_basis": "excess units x assumed unit cost (55% of selling price)" if r["sku_id"] in price
+                              else "no selling price recorded in the last 90 days, so tied-up value is not estimated",
+                              "deadline": None, "value_kind": "derived"})
         upcoming = s.execute(text("""SELECT st.term_id, st.supplier_id, st.sku_id, st.moq, st.lead_time_days, st.valid_from, st.known_at,
             prev.moq AS prev_moq, prev.lead_time_days AS prev_lead FROM supplier_terms st
             LEFT JOIN supplier_terms prev ON prev.term_id = st.supersedes_term_id

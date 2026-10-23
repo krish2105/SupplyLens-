@@ -31,8 +31,10 @@ export default function Login() {
 
   return (
     <main className="grid-paper flex min-h-screen items-center justify-center p-4">
-      <div className="card grid w-full max-w-5xl overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
-        <div className="p-8">
+      {/* One explicit column below md: an implicit grid column sized itself to the widest content (an account email) and
+          the card clipped everything at its edge on phones (Phase 4B). */}
+      <div className="card grid w-full max-w-5xl grid-cols-1 overflow-hidden md:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
+        <div className="min-w-0 p-5 sm:p-8">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">SupplyLens</p>
           <h1 className="display mt-2 text-4xl font-semibold leading-tight">Welcome to SupplyLens</h1>
           <p className="mt-2 text-muted">Roles decide what you can do. Approvals always need a different person from the one who prepared the draft.</p>
@@ -64,12 +66,10 @@ export default function Login() {
                 {users.data?.users.map((u) => (
                   <li key={u.email}>
                     <button onClick={() => signIn(u.email)} disabled={!!busy}
-                      className="flex w-full items-center justify-between gap-4 rounded-xl border border-line bg-surface p-3.5 text-left hover:border-accent hover:bg-surface-2 disabled:opacity-60">
-                      <span>
-                        <span className="block font-semibold">{u.display_name}</span>
-                        <span className="block text-sm text-muted">{ROLE_COPY[u.roles[0] ?? ""] ?? u.roles.join(", ")}</span>
-                      </span>
-                      <span className="num shrink-0 text-xs text-muted">{busy === u.email ? "Signing in…" : u.email}</span>
+                      className="block w-full rounded-xl border border-line bg-surface p-3.5 text-left hover:border-accent hover:bg-surface-2 disabled:opacity-60">
+                      <span className="block font-semibold">{u.display_name}</span>
+                      <span className="block text-sm text-muted">{ROLE_COPY[u.roles[0] ?? ""] ?? u.roles.join(", ")}</span>
+                      <span className="num mt-1 block break-all text-xs text-muted">{busy === u.email ? "Signing in…" : u.email}</span>
                     </button>
                   </li>
                 ))}

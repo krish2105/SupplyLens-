@@ -41,7 +41,9 @@ export default function ChartImpl({ option, onEvents }: {
     const live = ((chart.getOption()?.dataZoom ?? []) as { start?: number; end?: number }[])
       .map((z) => ({ start: z.start ?? 0, end: z.end ?? 100 }));
     if (!zoomed.current && live.some((z) => z.start > 0 || z.end < 100)) zoomed.current = live;
-    chart.setOption(option, { notMerge: true });
+    // reduced motion (Phase 4B): charts appear in their final state instead of growing in for a second
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    chart.setOption(still ? { ...option, animation: false } : option, { notMerge: true });
     if (zoomed.current) {
       zoomed.current.forEach((z, i) => chart.dispatchAction({ type: "dataZoom", dataZoomIndex: i, start: z.start, end: z.end }));
       zoomed.current = null;     // re-applied once after the option was replaced

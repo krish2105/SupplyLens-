@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, QueryError, Skeleton, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TableScroll } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, getTenant } from "@/lib/api";
 import { useApi, useMe, useWs } from "@/lib/queries";
@@ -184,7 +184,7 @@ export default function ForecastPage() {
           <Card className="p-5">
             <Eyebrow>Model registry</Eyebrow>
             <QueryError q={models} what="the model registry" />
-            <table className="mt-3 w-full text-sm">
+            <TableScroll label="Registered forecasting models" min={420} className="mt-3"><table className="w-full text-sm">
               <caption className="sr-only">Registered forecasting models</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Model</th><th className="font-medium">Status</th><th className="font-medium">Evaluation</th></tr></thead>
               <tbody>
@@ -197,7 +197,7 @@ export default function ForecastPage() {
                     <td className="text-xs text-muted">{p.note} Not trained yet.</td></tr>
                 ))}
               </tbody>
-            </table>
+            </table></TableScroll>
           </Card>
           <StudyPanel />
         </div>

@@ -66,6 +66,7 @@ infra/docker/ca/*.crt
 # Runtime document storage and test storage (generated, may contain customer documents)
 /storage*/
 apps/web/test-results/
+apps/web/test-results-visual/
 apps/web/.next-build/
 /SupplyLens_Updated_Pack_With_Images/
 .vercel

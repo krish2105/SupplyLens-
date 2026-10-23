@@ -58,8 +58,8 @@ export default function RunsPage() {
       </PageHeader>
       <Card className="p-5">
         <div className="flex flex-wrap items-end gap-4">
-          <label className="text-sm"><span className="mb-1 block font-medium">Mode</span>
-            <select value={mode} onChange={(e) => setMode(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2">
+          <label className="w-full min-w-0 text-sm sm:w-auto"><span className="mb-1 block font-medium">Mode</span>
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="w-full max-w-full rounded-lg border border-line bg-surface px-3 py-2 sm:w-auto">
               <option value="observe">Observe — analyse only</option><option value="recommend">Recommend — plan, no drafts</option>
               <option value="draft">Draft — prepare purchase-order drafts for approval</option>
             </select></label>
