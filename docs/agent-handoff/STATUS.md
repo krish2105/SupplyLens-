@@ -9,8 +9,8 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 |---|---|
 | Current phase | **Phase 4B complete** (2026-10-23): visual UI, UX and asset quality gate (owner brief); 13 visual/UX defects fixed with before/after screenshots (PHASE-04B §2); screenshot regression added. Next: Phase 5, only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 4B: `967ba0b` (changes), Linux screenshot baselines and evidence follow. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
-| CI | `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); screenshot regression enforced on Linux from the baseline commit (P4B-E13/E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
+| Code commits | Phase 4B: `967ba0b` (changes), `85f9b6b` (Linux screenshot baselines, evidence); evidence commit follows. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| CI | `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); `85f9b6b` run 39906427424: 8/8, screenshot regression compared on Linux, 42 passed (P4B-E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
 | Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |
