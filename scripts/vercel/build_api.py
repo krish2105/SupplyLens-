@@ -45,6 +45,14 @@ TREES = ["services/api/src/supplylens", "services/api/migrations", "services/wor
 STAGED = ["services", "ml", "optimisation", "artifacts", "evaluations"]    # top-level staged paths inside OUT
 COMMITTED = {"index.py", "pyproject.toml", ".python-version", "hosted_storage", "hosted_data", "source.sha256"}
 SKIP_PARTS = {"__pycache__", "tests"}
+# Written by the test suites on every run and never read by the API: left out of the bundle and of the digest, so a test
+# run does not make the committed digest stale (Phase 4, P4-E12).
+VOLATILE_REPORTS = {"e2e-results.json", "acceptance_evidence.json"}
+
+
+def shipped_report(path: Path) -> bool:
+    """A JSON file directly in artifacts/reports that the hosted API may read (not a test suite's own output)."""
+    return path.parent.name == "reports" and path.parent.parent.name == "artifacts" and path.name not in VOLATILE_REPORTS
 SKIP_SUFFIXES = {".pyc", ".npz", ".pt"}
 
 
@@ -76,16 +84,18 @@ entrypoint = "index:app"
 
 def staged_sources() -> list[str]:
     """Git-tracked files stage() copies, as repository-relative paths (sorted)."""
-    tracked = subprocess.run(["git", "ls-files", "-z", *TREES, "services/api/alembic.ini", "artifacts",
-                              "evaluations/study_registry.json"], cwd=ROOT, capture_output=True, check=True).stdout
+    # tracked files and new ones not yet added (not ignored): the check before a commit must see what the commit will hold
+    tracked = subprocess.run(["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", *TREES,
+                              "services/api/alembic.ini", "artifacts", "evaluations/study_registry.json"],
+                             cwd=ROOT, capture_output=True, check=True).stdout
     out = []
-    for path in sorted(x for x in tracked.decode().split("\0") if x):
+    for path in sorted({x for x in tracked.decode().split("\0") if x}):
         parts = Path(path).parts
         if parts[0] == "artifacts":
             name, keep = parts[-1], False
             if path.endswith(".json"):
                 keep = ("experiments" in parts and name in ("metrics.json", "config.json", "selection.json")
-                        or parts[-2] == "reports")
+                        or shipped_report(Path(path)))
             if not keep:
                 continue
         elif SKIP_PARTS & set(parts) or Path(path).suffix in SKIP_SUFFIXES:
@@ -118,7 +128,7 @@ def stage() -> None:
     shutil.copy2(ROOT / "services" / "api" / "alembic.ini", OUT / "services" / "api" / "alembic.ini")
     for f in (ROOT / "artifacts").rglob("*.json"):
         if ("experiments" in f.parts and f.name in ("metrics.json", "config.json", "selection.json")
-                or f.parent.name == "reports"):
+                or shipped_report(f.relative_to(ROOT))):
             dest = OUT / f.relative_to(ROOT)
             dest.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(f, dest)

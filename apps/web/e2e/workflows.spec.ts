@@ -309,9 +309,12 @@ test("J12 inventory filters, search and sorting narrow the table and say so", as
   const count = page.getByText(/\d+ of \d+ products/);
   await expect(count).toBeVisible();
   const total = Number((await count.textContent())!.match(/of (\d+)/)![1]);
-  await page.getByLabel("Health").selectOption("shortage_risk");
+  // The 2D floor plan's tiles also mention health ("healthy", "shortage risk"): with it on screen (as on browsers without
+  // WebGL) the filter must still be found by its own name.
+  await page.getByRole("tab", { name: "2D floor plan" }).click();
+  await page.getByRole("combobox", { name: /^Health/ }).selectOption("shortage_risk");
   await expect(count).not.toHaveText(`${total} of ${total} products`);
-  await page.getByLabel("Health").selectOption("all");
+  await page.getByRole("combobox", { name: /^Health/ }).selectOption("all");
   const firstSku = (await page.locator("tbody tr").first().locator(".num").first().textContent())!.trim();
   await page.getByPlaceholder(/Search code or description/).fill(firstSku);
   await expect(page.locator("tbody tr")).toHaveCount(1);

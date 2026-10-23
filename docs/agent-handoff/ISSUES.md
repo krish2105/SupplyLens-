@@ -86,6 +86,7 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | FE-P4-08 | P3 | Web / a11y | Under heavy parallel CPU load focus was lost right after page load in ~1 of 10 runs; not reproducible single-threaded; the app has no focus-moving code | OBSERVED; cause UNVERIFIED | open: test acts after load; investigate with a trace on CI |
 | QA-P4-01 | P2 | Tests | A first draft of the receipts journey booked receipts on the shared reference SKU, permanently changing the local `supplylens_p0e2e` reference case | VERIFIED | fixed: isolated onboarded workspace (PD-019); polluted DB left in place (PD-018) |
 | ENV-P4-01 | — | Environment | Bundled Firefox does not start on macOS 27 here | VERIFIED | CI only (PD-020) |
+| OPS-P4-01 | P2 | Deployment | The hosted-API source digest hashed only tracked files, so a local check passed while CI (seeing newly committed reports) failed | VERIFIED (P4-E12) | fixed: untracked files included, test output excluded |
 
 ## External blockers (cannot be closed by code alone)
 
