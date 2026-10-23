@@ -72,7 +72,7 @@ jobs:
       - name: unit, integration, security-matrix, contract and BUS-020 rehearsal tests
         run: uv run pytest -q --junitxml=artifacts/reports/pytest-junit.xml
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: pytest-junit, path: artifacts/reports/pytest-junit.xml, if-no-files-found: ignore }
 
   contracts-and-web:
@@ -145,7 +145,7 @@ jobs:
             npx playwright test --project visual --reporter=list --output test-results-visual --update-snapshots=missing
           fi
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: visual-baselines-linux
           path: |
@@ -155,7 +155,7 @@ jobs:
       - name: end-to-end, resilience, accessibility and Web Vitals suites (Chromium desktop and mobile; journeys on Firefox, WebKit, iPhone-sized WebKit)
         run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test --project desktop --project mobile --project firefox --project webkit --project mobile-safari
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: e2e-reports
           path: |
@@ -183,7 +183,7 @@ jobs:
           echo "PGBIN=$(ls -d /usr/lib/postgresql/*/bin | sort -V | tail -1)" >> "$GITHUB_ENV"
       - name: point-in-time recovery drill (ARC-06, BUS-014, BUS-020)
         run: ./scripts/ci_annotate.sh ./scripts/pitr_drill.sh
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with: { name: pitr-report, path: artifacts/reports/pitr_drill_*.json, if-no-files-found: ignore }
 
   compose-smoke:
@@ -225,7 +225,7 @@ jobs:
       - name: link acceptance criteria to this run's results
         run: python3 scripts/acceptance_evidence.py --junit artifacts/reports/pytest-junit.xml --playwright artifacts/reports/e2e-results.json
       - if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: acceptance-evidence
           path: |
