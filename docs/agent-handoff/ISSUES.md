@@ -406,6 +406,10 @@ D-078 … D-080. All **FIXED** and pinned by a test that fails on the previous c
 - **UI-4B-12** charts animated despite reduced motion — `components/chart-impl.tsx`; visual baselines (reduced motion) would drift otherwise.
 - **UI-4B-13** duplicate exceptions request on first load — `exceptions/page.tsx`; after-probe shows no aborted request.
 - **Open, low:** UI-4B-R1 (Contract research clock rail shows empty date inputs, now explained), UI-4B-R2 (offline before
-  first load: skeleton and an empty "0 of 0" table header). **Open, process:** Linux visual baselines need one
-  review-and-commit cycle before CI enforces them (P4B-E11). **Illustrations:** A02/A13/A16 stay withheld (D-040
+  first load: skeleton and an empty "0 of 0" table header). **Process:** Linux visual baselines reviewed and
+  committed (P4B-E13); CI compares from then on (P4B-E14). **Illustrations:** A02/A13/A16 stay withheld (D-040
   reconfirmed); replacement briefs await owner approval (PHASE-04B §8); nothing generated.
+- **QA-4B-01 (open, P3):** lab INP proxy for /inventory on desktop measured a 224 ms median on a CI runner (target 200 ms)
+  on code that had passed the same gate before (P4B-E11). Locally and in the next CI run it is within target. Next: keep
+  the target; record the samples per CI run and investigate the inventory row-selection handler if it recurs.
+

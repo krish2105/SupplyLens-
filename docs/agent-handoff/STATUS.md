@@ -9,8 +9,8 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 |---|---|
 | Current phase | **Phase 4B complete** (2026-10-23): visual UI, UX and asset quality gate (owner brief); 13 visual/UX defects fixed with before/after screenshots (PHASE-04B §2); screenshot regression added. Next: Phase 5, only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 4B: see PHASE-04B and EVIDENCE P4B-E11 (commit and CI recorded there). Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
-| CI | `1f914a8` run 39897951198: **8/8 success**, browser suite 200 passed / 5 skipped on five projects incl. Firefox (P4-E15); `bf2c757` run 39894389197 failed 6/8, fixed (P4-E12) |
+| Code commits | Phase 4B: `967ba0b` (changes), Linux screenshot baselines and evidence follow. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| CI | `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); screenshot regression enforced on Linux from the baseline commit (P4B-E13/E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
 | Database schema | migration head **0010** (`chunk_vectors`); hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |
@@ -36,7 +36,7 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 - Local: Docker daemon (colima) not running — no local compose smoke, image scan or Keycloak tests.
 
 ## Next actions (Phase 5 proposal — awaiting owner go-ahead)
-0. From 4B: review and commit the Linux screenshot baselines CI recorded (artifact `visual-baselines-linux`) so CI enforces them; owner decision on the A02/A13/A16 briefs (PHASE-04B §8).
+0. From 4B: owner decision on the A02/A13/A16 image briefs (PHASE-04B §8); watch QA-4B-01 (lab INP on CI).
 1. Data protection and retrieval quality (P2-KNOW-01, SEC-P2-11…13, PERF-P3-09); FE-P4-08; propose `e2e` as a required check.
 2. Remaining security checkpoint items (distributed sign-in throttle, retention jobs, tamper-evident audit, nonce CSP,
    Docker digests).

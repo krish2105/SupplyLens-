@@ -96,14 +96,16 @@ focus when it opens off-screen; charts respect reduced motion. Responsive: no pa
 | Backend | ruff clean; pytest **421 passed, 6 skipped**; contracts match; hosted digest re-pinned |
 | Web | ESLint 0 warnings; Vitest 19; typecheck (app + e2e); `npm audit` 0 high |
 
-**Screenshot regression in CI.** Baselines are per platform. Until Linux baselines are committed, CI records them
-(artifact `visual-baselines-linux`) with a warning and compares nothing; they must be reviewed by eye before being
-committed — never accepted to make a run pass. CI results for this phase: see EVIDENCE P4B-E11.
+**CI.** `967ba0b`: 8/8 jobs, browser suites 217 passed / 8 skipped / 0 failed on all five projects incl. Firefox
+(P4B-E11). **Screenshot regression in CI.** Baselines are per platform. Without Linux baselines CI records them (artifact
+`visual-baselines-linux`) with a warning and compares nothing. The 42 recorded on that run were reviewed by eye and
+committed (P4B-E13); from then on CI compares (P4B-E14). A changed baseline is never accepted just to make a run pass.
+**Deploy:** `967ba0b` deployed by Vercel; read-only live checks passed (P4B-E12).
 
 ## 7. Remaining defects and limits
 - UI-4B-R1 (low): Contract research shows empty date inputs on the clock rail (now explained by the rail's message).
 - UI-4B-R2 (low): offline before the first load shows the inventory skeleton and an empty table header ("0 of 0").
-- Linux visual baselines need one review-and-commit cycle before CI enforces them (P4B-E11).
+- QA-4B-01: one CI run (documentation-only commit) missed the lab INP target on /inventory desktop (224 vs 200 ms).
 - FE-P4-08 (focus occasionally lost after load under heavy parallel load) unchanged; Firefox local, physical devices and a
   manual screen-reader pass were not run.
 
