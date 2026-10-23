@@ -73,5 +73,5 @@ INP 200 ms / CLS 0.1 on desktop and within the mobile stress budget. **Not done:
 - Local `supplylens_p0e2e` keeps polluted reference data (left in place by the no-drop rule).
 
 ## 6. Next actions
-Phase 5 (data protection and retrieval quality, PERF-P3-09); investigate FE-P4-08 with a CI trace. **Proposal to the
-owner:** add `e2e` to the required checks after one more green run on all browsers (branch protection is the owner's setting).
+Phase 5 (data protection and retrieval quality, PERF-P3-09); investigate FE-P4-08 with a CI trace. **Proposal declined for now by the
+owner (PD-021):** `e2e` stays optional in branch protection.
