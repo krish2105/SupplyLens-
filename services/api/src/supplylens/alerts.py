@@ -1,6 +1,7 @@
 """Operational alert queue (BUS-018).
 
-Four conditions raise alerts: stale data, failed reconciliation, exhausted budgets and unavailable models.
+Conditions that raise alerts: stale data, failed reconciliation, exhausted budgets, unavailable models, failed jobs and
+(Phase 6) the ERP connector, ERP synchronisation exceptions and overdue receipts.
 Failure sites raise alerts immediately (`raise_alert`); `evaluate` re-checks the state-based conditions on a
 schedule, ages them and resolves alerts whose condition has cleared. The `alerts` table is the designated queue
 (shown in the Exceptions inbox and `GET /api/v1/alerts`); when a webhook URL is configured each newly opened alert
@@ -26,7 +27,8 @@ from .db import tenant_session
 
 log = logging.getLogger("supplylens.alerts")
 
-KINDS = ("stale_data", "failed_reconciliation", "budget_exhausted", "model_unavailable", "job_failed")
+KINDS = ("stale_data", "failed_reconciliation", "budget_exhausted", "model_unavailable", "job_failed",
+         "erp_connector", "erp_sync", "overdue_receipt")       # the last three: migration 0011 (Phase 6)
 DEFAULT_RULES = {"max_runs_per_day": 200}
 MAX_DELIVERY_ATTEMPTS = 6
 

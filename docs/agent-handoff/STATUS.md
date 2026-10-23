@@ -7,12 +7,12 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 5 complete** (2026-10-24): AI/ML, retrieval, optimisation and MLOps (owner brief). Panel-date defect fixed (ML-P5-01, the TCN's weekday inputs were constant) and F1 re-run as 2.1.0; trained-model fallbacks, verified artifact loading, promotion gate, monitoring/shadow/drift report; decision-level study S2 (simulated: lower MAE did not lower cost); answer-support/ambiguity rules with study R3. No generative model; purchasing unchanged (deterministic, approval-gated). Next: Phase 6 only on the owner's instruction. |
+| Current phase | **Phase 6 complete** (2026-10-24): ERP integration and operational excellence (owner brief). Adapter contract with five error classes; connector circuit breaker (outages no longer spend retries, ERP-P6-01 P1); expired-credential stop and probe; business rejections never retried; ERP receipt feed, order-status sync, Cancel order; health and reconciliation reports, Administration cards, metrics, worker heartbeats; 503 on database outage; outage and disk-loss drills with measured RPO/RTO. **No real ERP was connected**: external qualification BLOCKED (EXT-02). Next: Phase 7 only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
-| Code commits | Phase 5: see `git log` after `36f4f9d` (code + Linux Research baselines). Phase 4B: `967ba0b` (changes), `85f9b6b` (Linux screenshot baselines, evidence); evidence commit follows. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
-| CI | Phase 5: see EVIDENCE P5-E15. Phase 4B: `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); `85f9b6b` run 39906427424: 8/8, screenshot regression compared on Linux, 42 passed (P4B-E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
+| Code commits | Phase 6: see `git log` after `e9ed389`. Phase 5: see `git log` after `36f4f9d` (code + Linux Research baselines). Phase 4B: `967ba0b` (changes), `85f9b6b` (Linux screenshot baselines, evidence); evidence commit follows. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
+| CI | Phase 6: see EVIDENCE P6-E01 and P6-E10. Phase 5: P5-E15, P5-E16. Phase 4B: `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); `85f9b6b` run 39906427424: 8/8, screenshot regression compared on Linux, 42 passed (P4B-E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
 | Deploys | Pushes to `main` deploy through the Vercel Git integration **when a file under a service root changes** — backend code changes must re-pin `deploy/vercel-api/source.sha256` (`build_api.py --pin`; CI enforces it). `542ca72` is live at https://supplylens-self.vercel.app (P3-E19) |
-| Database schema | migration head **0010** (`chunk_vectors`; Phase 5 added none); local dev DB `supplylens` migrated 0008 → 0010 in Phase 5 (backup taken, P5-E01) and its registry holds TCN 2.1.0 as champion; hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
+| Database schema | migration head **0011** (ERP connector state, receipt sync, worker heartbeats; Phase 6). Local `supplylens_test` and `supplylens_p4ci` at 0011; dev DB `supplylens` still 0010. **Hosted Neon still 0010** (owner action, OPS-P6-03; the code runs in its pre-0011 mode, D-090). Phase 5: local dev DB `supplylens` migrated 0008 → 0010 in Phase 5 (backup taken, P5-E01) and its registry holds TCN 2.1.0 as champion; hosted Neon migrated to 0010 (P3-E17), token removed and redeployed (P3-E18) |
 | Dependabot | 7 open PRs opened by the new config (actions, TypeScript 7, web-vitals 6) — proposals, not merged (PD-013) |
 | Local scratch state | DB `supplylens_p0e2e` + `storage_p0e2e/` (git-ignored) for the disposable browser stack (launch config sets `SUPPLYLENS_E2E_DISPOSABLE=true`; run with `SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1`). DB `supplylens_load` (1 GB, migrated to 0010) holds the reference load data; `storage_load/`. **Browser stack now `supplylens_p4ci`** (launch configs `p4-api`, `p4-worker`, `p0-web`; PD-018); `supplylens_p0e2e` keeps polluted reference data, `supplylens_p4e2e` is scratch with real UCI data |
 
@@ -26,9 +26,10 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 | 4 | 2026-10-23 | Frontend/UX/E2E (owner brief): 12 journeys pass; document upload added (journey 4); P1-FE-01/02, P2-FE-03…08, P2-QA-01/02, P3-FE-10 fixed; ESLint + Vitest + typed e2e in CI; Firefox/WebKit/iPhone projects. pytest 419/6; Playwright 174/4 locally (Firefox CI-only) | `phases/PHASE-04.md` |
 | 4B | 2026-10-23 | Visual/UX gate (owner brief): 166 captures × before/after (17 screens, 16 states, 2 themes, 3 widths); 13 defects fixed (phone navigation and header, sign-in, tables, misleading £0 materiality, loading/empty labels, empty 3D under errors, off-screen reader, tablet anchors, chart motion, duplicate request); illustrations: 13 reused, A02/A13/A16 withheld with briefs. pytest 421/6; Playwright 191/7 locally; 42 screenshot baselines | `phases/PHASE-04B.md` |
 | 5 | 2026-10-23/24 | AI/ML, retrieval, optimisation, MLOps (owner brief): ML-P5-01 (P1) fixed and F1 2.1.0 (TCN − LightGBM −0.20 [−0.46, +0.03], no clear difference; corrects 2.0.0); P2-ML-01, ML-P5-02, P3-ML-02, KNOW-P5-01 fixed; P2-KNOW-01 partly; promotion gate + monitoring endpoint; S2: no cost benefit from lower MAE (simulated); R3: ambiguity 0/4 → 3/4, out-of-scope 0/26 → 10/26 at a cost on reworded questions; phone overflow on Research/Forecast fixed and its test made able to fail. pytest 447/6; Playwright 191/7 locally; 42 screenshot baselines | `phases/PHASE-05.md` |
+| 6 | 2026-10-24 | ERP and operations (owner brief): adapter contract + conformance suite; ERP-P6-01 (P1) and ERP-P6-02…05, OPS-P6-01/02 fixed against the simulator; runbook, SLO, service-management and ERP-integration documents; outage drill (5 orders, 20 s crash-stop, reconciled 5.3 s after restart, 1 order each); disk-loss drill on 1.29 GB (RPO 59.8 s at archive_timeout 60, 0.4 s at 15; loss → healthy API 7.0 s). pytest 477/6; Playwright 191/7; 42 screenshots. Real ERP BLOCKED | `phases/PHASE-06.md` |
 
-## Open P0/P1 after Phase 5
-- P0: none open. Phase 5 found and fixed one P1 (ML-P5-01); no other P0/P1 status changed.
+## Open P0/P1 after Phase 6
+- P0: none open. Phase 6 found and fixed one P1 (ERP-P6-01); Phase 5 one (ML-P5-01).
 - P1 open: P1-IAM-01 (needs EXT-01), P1-OPS-01, P1-SAAS-01, P1-PROC-01 remainder,
   P1-SEC-02 residual (owner must scope the Neon integration variables).
 
@@ -36,15 +37,16 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 - External: EXT-01 … EXT-10 unchanged; corporate IdP qualification and penetration test remain **not performed**.
 - Local: Docker daemon (colima) not running — no local compose smoke, image scan or Keycloak tests.
 
-## Next actions (Phase 6 proposal — awaiting owner go-ahead)
-0. Owner decisions: the rationing objective when the budget binds (PLAN-P5-01); A02/A13/A16 image briefs (PHASE-04B §8);
-   whether to fund human review of retrieval questions (EXT-06) and a pilot (EXT-03).
-1. Planning/ML depth: PLAN-P5-01 after the decision; P3-PLAN-06 rest; ML-P5-05 (zero-aware interval calibration under a
-   new frozen protocol); KNOW-P5-03 (new frozen task set); P2-REL-03.
-2. Data protection carried from the old Phase 5 proposal: SEC-P2-12, SEC-P2-13, P3-SEC-03 (nonce CSP), P2-PRIV-01
-   backfill, P3-ONB-01 rest, D-056 duplicate-draft warning, PERF-P3-09 (with the retrieval studies re-run).
-3. Watch QA-4B-01 (lab INP on CI) and FE-P4-08.
-4. Review the Dependabot PRs; owner: scope Neon variables; branch-protection admin exemption.
+## Next actions (Phase 7 proposal — awaiting owner go-ahead)
+0. Owner actions: migrate the hosted database to 0011 (PD-009 setup token; OPS-P6-03); decide the rationing objective
+   (PLAN-P5-01); name an ERP vendor and test tenant if real integration is wanted (EXT-02, list in
+   docs/operations/erp-integration.md); decide hosting platform, database tier and on-call (P1-OPS-01, slo.md).
+1. Production platform and operations (P1-OPS-01): HA database with off-host WAL archive and an archiving alert, ≥ 2 API
+   instances and workers, external uptime probe and paging, secret manager; rerun recovery_drill.sh and outage_drill.sh
+   there; PERF-P3-08/10.
+2. Carried: PLAN-P5-01, P3-PLAN-06 rest, ML-P5-05, KNOW-P5-03, P2-REL-03; SEC-P2-12, SEC-P2-13, P3-SEC-03, P2-PRIV-01
+   backfill, P3-ONB-01 rest, D-056, PERF-P3-09; OPS-P6-04.
+3. Watch QA-4B-01 (lab INP on CI) and FE-P4-08. Review the Dependabot PRs.
 
 ## Notes for the next session
 - Re-verify HEAD and CI before trusting anything here (`git rev-parse HEAD`, `gh run list --workflow ci.yml --branch main`).
@@ -52,7 +54,9 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
   `docs/operations/hosted-demo.md`); after changing `uv.lock`, run `python3 scripts/vercel/build_api.py --pin`.
 - pytest refuses non-local or non-`_test` databases; the browser suite refuses to reset data unless the stack is proven
   disposable (D-065).
-- New migrations must bump `HEAD` in `tests/test_rehearsals.py` (now 0010).
+- New migrations must bump `HEAD` in `tests/test_rehearsals.py` (now 0011), and serving code must keep working on the
+  previous schema until the hosted database is migrated (D-090; rehearsal `test_new_code_serves_a_database_still_at_0010`).
+- Drills: `scripts/outage_drill.sh`, `scripts/recovery_drill.sh` (scratch clusters; macOS needs `LC_ALL`, set by the scripts).
 - Never import torch in the pytest process (D-023): Phase 5 tests run torch code in a child process.
 - Superseded experiments are listed with reasons in `evaluations/study_registry.json`; the Research page shows reviewed
   headlines only from there.

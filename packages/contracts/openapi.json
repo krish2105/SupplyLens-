@@ -1090,6 +1090,21 @@
         "title": "CancelOpenResult",
         "type": "object"
       },
+      "CancelOrderIn": {
+        "properties": {
+          "reason": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason"
+        ],
+        "title": "CancelOrderIn",
+        "type": "object"
+      },
       "Capability": {
         "additionalProperties": true,
         "properties": {
@@ -1506,6 +1521,114 @@
           "suppliers"
         ],
         "title": "Concentration",
+        "type": "object"
+      },
+      "ConnectorIn": {
+        "properties": {
+          "available": {
+            "default": true,
+            "title": "Available",
+            "type": "boolean"
+          },
+          "credentials_valid": {
+            "default": true,
+            "title": "Credentials Valid",
+            "type": "boolean"
+          }
+        },
+        "title": "ConnectorIn",
+        "type": "object"
+      },
+      "ConnectorProbe": {
+        "additionalProperties": true,
+        "description": "Result of an ERP connector health check (integrations/connector.py).",
+        "properties": {
+          "adapter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adapter"
+          },
+          "checked": {
+            "title": "Checked",
+            "type": "boolean"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "qualification": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qualification"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "checked",
+          "error",
+          "adapter",
+          "qualification",
+          "note"
+        ],
+        "title": "ConnectorProbe",
+        "type": "object"
+      },
+      "ConnectorSet": {
+        "additionalProperties": true,
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "credentials_valid": {
+            "title": "Credentials Valid",
+            "type": "boolean"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ok",
+          "available",
+          "credentials_valid"
+        ],
+        "title": "ConnectorSet",
         "type": "object"
       },
       "Dataset": {
@@ -5233,6 +5356,104 @@
         "title": "OpenOrderLine",
         "type": "object"
       },
+      "OpsHealth": {
+        "additionalProperties": true,
+        "description": "Database, workers, job queue, order outbox, imports, open alerts and ERP connector (operations.health).",
+        "properties": {
+          "alerts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Alerts",
+            "type": "array"
+          },
+          "checked_at": {
+            "format": "date-time",
+            "title": "Checked At",
+            "type": "string"
+          },
+          "connector": {
+            "additionalProperties": true,
+            "title": "Connector",
+            "type": "object"
+          },
+          "database": {
+            "additionalProperties": true,
+            "title": "Database",
+            "type": "object"
+          },
+          "imports": {
+            "additionalProperties": true,
+            "title": "Imports",
+            "type": "object"
+          },
+          "jobs": {
+            "additionalProperties": true,
+            "title": "Jobs",
+            "type": "object"
+          },
+          "outbox": {
+            "additionalProperties": true,
+            "title": "Outbox",
+            "type": "object"
+          },
+          "problems": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Problems",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "workers": {
+            "additionalProperties": true,
+            "title": "Workers",
+            "type": "object"
+          }
+        },
+        "required": [
+          "status",
+          "problems",
+          "checked_at",
+          "database",
+          "workers",
+          "jobs",
+          "outbox",
+          "imports",
+          "alerts",
+          "connector"
+        ],
+        "title": "OpsHealth",
+        "type": "object"
+      },
+      "OrderCancelled": {
+        "additionalProperties": true,
+        "properties": {
+          "po_number": {
+            "title": "Po Number",
+            "type": "string"
+          },
+          "released_units": {
+            "title": "Released Units",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "released_units",
+          "po_number"
+        ],
+        "title": "OrderCancelled",
+        "type": "object"
+      },
       "OutboxInfo": {
         "additionalProperties": true,
         "properties": {
@@ -6430,6 +6651,91 @@
         "title": "ReceiptResult",
         "type": "object"
       },
+      "Reconciliation": {
+        "additionalProperties": true,
+        "description": "Order states, items needing a person, open-order ledger, ERP sync and service levels (operations.reconciliation).",
+        "properties": {
+          "actions_by_status": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Actions By Status",
+            "type": "object"
+          },
+          "adapter": {
+            "title": "Adapter",
+            "type": "string"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "ledger": {
+            "additionalProperties": true,
+            "title": "Ledger",
+            "type": "object"
+          },
+          "needs_attention": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Needs Attention",
+            "type": "array"
+          },
+          "outbox": {
+            "additionalProperties": true,
+            "title": "Outbox",
+            "type": "object"
+          },
+          "overdue_lines": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Overdue Lines",
+            "type": "array"
+          },
+          "service_levels": {
+            "additionalProperties": true,
+            "title": "Service Levels",
+            "type": "object"
+          },
+          "sync": {
+            "additionalProperties": true,
+            "title": "Sync",
+            "type": "object"
+          },
+          "sync_alerts": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Sync Alerts",
+            "type": "array"
+          },
+          "unaccounted_orders": {
+            "title": "Unaccounted Orders",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "generated_at",
+          "adapter",
+          "actions_by_status",
+          "outbox",
+          "needs_attention",
+          "unaccounted_orders",
+          "ledger",
+          "overdue_lines",
+          "sync",
+          "sync_alerts",
+          "service_levels"
+        ],
+        "title": "Reconciliation",
+        "type": "object"
+      },
       "RejectIn": {
         "properties": {
           "expected_row_version": {
@@ -7019,6 +7325,71 @@
           "created_at"
         ],
         "title": "SandboxOrder",
+        "type": "object"
+      },
+      "SandboxReceipt": {
+        "additionalProperties": true,
+        "properties": {
+          "receipt_id": {
+            "title": "Receipt Id",
+            "type": "string"
+          },
+          "sequence": {
+            "title": "Sequence",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "receipt_id",
+          "sequence"
+        ],
+        "title": "SandboxReceipt",
+        "type": "object"
+      },
+      "SandboxReceiptIn": {
+        "properties": {
+          "action_id": {
+            "format": "uuid",
+            "title": "Action Id",
+            "type": "string"
+          },
+          "location_id": {
+            "anyOf": [
+              {
+                "maxLength": 64,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Location Id"
+          },
+          "quantity": {
+            "exclusiveMinimum": 0.0,
+            "maximum": 1000000.0,
+            "title": "Quantity",
+            "type": "integer"
+          },
+          "received_on": {
+            "format": "date",
+            "title": "Received On",
+            "type": "string"
+          },
+          "sku_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Sku Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "action_id",
+          "sku_id",
+          "quantity",
+          "received_on"
+        ],
+        "title": "SandboxReceiptIn",
         "type": "object"
       },
       "ScenarioInput": {
@@ -9164,6 +9535,105 @@
           }
         },
         "summary": "Cancel Open"
+      }
+    },
+    "/api/v1/actions/{action_id}/cancel-order": {
+      "post": {
+        "description": "Ask the purchasing system to cancel a placed order; its open units are released once the target confirms.",
+        "operationId": "cancel_order_api_v1_actions__action_id__cancel_order_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "action_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Action Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "idempotency-key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrderCancelled"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Order"
       }
     },
     "/api/v1/actions/{action_id}/edit": {
@@ -13347,6 +13817,205 @@
         "summary": "List Open Orders"
       }
     },
+    "/api/v1/ops/connector/test": {
+      "post": {
+        "description": "Health-check the purchasing system now (after renewing credentials). Never sends an order.",
+        "operationId": "ops_connector_test_api_v1_ops_connector_test_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorProbe"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ops Connector Test"
+      }
+    },
+    "/api/v1/ops/health": {
+      "get": {
+        "description": "Is the service doing its job: database, workers, job queue, order outbox, imports, open alerts, ERP connector.",
+        "operationId": "ops_health_api_v1_ops_health_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OpsHealth"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ops Health"
+      }
+    },
+    "/api/v1/ops/reconciliation": {
+      "get": {
+        "description": "Does every approved order have a known, matching outcome; what needs a person; receipts and service levels.",
+        "operationId": "ops_reconciliation_api_v1_ops_reconciliation_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Reconciliation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ops Reconciliation"
+      }
+    },
     "/api/v1/overview": {
       "get": {
         "operationId": "overview_api_v1_overview_get",
@@ -13655,6 +14324,79 @@
         "summary": "Generic Study"
       }
     },
+    "/api/v1/sandbox/connector": {
+      "post": {
+        "description": "Development-only: simulate an ERP outage or expired credentials (affects every workspace on this database).",
+        "operationId": "sandbox_connector_api_v1_sandbox_connector_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConnectorIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConnectorSet"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sandbox Connector"
+      }
+    },
     "/api/v1/sandbox/faults": {
       "post": {
         "description": "Development-only fault injection to demonstrate unknown-outcome reconciliation.",
@@ -13793,6 +14535,79 @@
           }
         },
         "summary": "Sandbox Orders"
+      }
+    },
+    "/api/v1/sandbox/receipts": {
+      "post": {
+        "description": "Development-only: the warehouse books a goods receipt in the simulated ERP (synchronised by the worker).",
+        "operationId": "sandbox_receipt_api_v1_sandbox_receipts_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxReceiptIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxReceipt"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sandbox Receipt"
       }
     },
     "/api/v1/scenarios": {

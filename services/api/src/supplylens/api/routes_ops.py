@@ -12,21 +12,26 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
+from .. import operations
 from ..authz import MATRIX, Actor
 from ..config import REPO_ROOT
 from ..db import control_session, tenant_session
 from ..forecasting import monitor as forecast_monitor
 from ..forecasting.governance import promotion_problems
+from ..integrations import connector
 from ..knowledge import acl
 from .deps import actor, csrf_guard, idempotent
 from .routes_core import INVENTORY_SQL
 from .schemas import (
     ClauseLabel,
+    ConnectorProbe,
     Exceptions,
     Jobs,
     Members,
     ModelMonitoring,
     ModelStatusChanged,
+    OpsHealth,
+    Reconciliation,
     Value,
 )
 
@@ -118,6 +123,27 @@ def jobs(a: Actor = Depends(actor)):
     return {"jobs": [dict(r) for r in j], "outbox": [dict(r) for r in o],
             "usage": {**dict(usage), "llm_tokens": 0, "budget": {"max_runs_per_day": 200, "max_tool_calls_per_run": 400},
                       "budget_note": "Configured limits; no paid model provider is used."}}
+
+
+@router.get("/ops/health", response_model=OpsHealth)
+def ops_health(a: Actor = Depends(actor)):
+    """Is the service doing its job: database, workers, job queue, order outbox, imports, open alerts, ERP connector."""
+    a.require("admin.read")
+    return operations.health(a.tenant_id)
+
+
+@router.get("/ops/reconciliation", response_model=Reconciliation)
+def ops_reconciliation(days: int = 30, a: Actor = Depends(actor)):
+    """Does every approved order have a known, matching outcome; what needs a person; receipts and service levels."""
+    a.require("action.reconcile")
+    return operations.reconciliation(a.tenant_id, days=max(1, min(days, 365)))
+
+
+@router.post("/ops/connector/test", response_model=ConnectorProbe)
+def ops_connector_test(a: Actor = Depends(actor)):
+    """Health-check the purchasing system now (after renewing credentials). Never sends an order."""
+    a.require("admin.write")
+    return connector.probe(a.tenant_id, force=True)
 
 
 @router.get("/models/monitoring", response_model=ModelMonitoring)

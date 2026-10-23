@@ -67,6 +67,12 @@ the serving function holds no owner credentials, so it cannot migrate. Setup cop
 through a staging table and inserts them under that workspace's row-level-security context; it refuses a role that can
 bypass row-level security.
 
+**Pending (Phase 6, 2026-10-24): migration 0011** (ERP connector state, receipt sync, worker heartbeats, new alert kinds)
+has not been applied to the hosted database; it needs the schema-upgrade steps above (owner action, OPS-P6-03). Until then
+the deployed code detects the older schema and keeps the pre-Phase-6 behaviour (D-090). Ordering and reconciliation work,
+but the connector state, ERP sync and heartbeats are not recorded. The hosted demo has no worker process, so worker
+health reports `inline (serverless)`.
+
 Runtime variables on Vercel: `SUPPLYLENS_ENVIRONMENT=demo`, `SUPPLYLENS_DEV_AUTH=true`, `SUPPLYLENS_COOKIE_SECURE=true`,
 `SUPPLYLENS_SESSION_SECRET`, `SUPPLYLENS_ALERT_WEBHOOK_SECRET`, `SUPPLYLENS_APP_DB_PASSWORD` (all generated, sensitive), plus
 Neon's own `DATABASE_URL_UNPOOLED`. The demo profile refuses to start with default secrets, insecure cookies or owner

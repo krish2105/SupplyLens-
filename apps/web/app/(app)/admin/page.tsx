@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
 import { Download, Trash2, UserPlus } from "lucide-react";
+import { OperationsHealth, OrderReconciliation } from "@/components/operations";
 import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, QueryError, Status } from "@/components/ui";
 import { apiPost } from "@/lib/api";
 import { useApi, useDemoLockdown, useMe, useWs } from "@/lib/queries";
@@ -40,7 +41,7 @@ export default function AdminPage() {
   );
   return (
     <div className="space-y-6">
-      <PageHeader eyebrow="Administration" title="Members, jobs, models and audit" actions={<>
+      <PageHeader eyebrow="Administration" title="Members, operations, models and audit" actions={<>
         <Link href={{ pathname: "/data", query: { ws } }} className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink hover:brightness-110">
           Import data / new workspace</Link>
         <a href={`/api/v1/admin/audit.csv?ws=${ws}`} className="inline-flex h-10 items-center gap-2 rounded-lg border border-line-strong bg-surface px-4 text-sm font-medium hover:bg-surface-2" download>
@@ -75,6 +76,10 @@ export default function AdminPage() {
             <tbody>{Object.entries(members.data.role_matrix).map(([r, ops]) => (
               <tr key={r} className="border-b border-line/60 align-top"><td className="py-2 pr-3"><Mono>{r}</Mono></td><td className="text-xs text-muted">{ops.join(" · ")}</td></tr>))}</tbody></table>}
         </Card>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <OperationsHealth locked={locked} />
+        <OrderReconciliation />
       </div>
       <Card className="p-5"><Eyebrow>Model registry and promotion</Eyebrow>
         <p className="mt-1 text-sm text-muted">The champion serves forecasts in investigations and scenarios. Promotion requires a recorded evaluation and a reason, and is audited.</p>

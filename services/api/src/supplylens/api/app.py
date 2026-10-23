@@ -140,7 +140,13 @@ async def database_operational(request: Request, e: OperationalError):
         log.warning("statement timeout on %s %s", request.method, request.url.path)
         return JSONResponse({"code": "query_timeout", "message": "The request took too long and was stopped; retry in a "
                              "few seconds.", "retry_after_s": 3}, status_code=503, headers={"Retry-After": "3"})
-    return await unexpected(request, e)
+    # Connection refused, server shut down or restarting: the database is unavailable, not the request wrong. A 503 with
+    # Retry-After lets load balancers, uptime checks and clients treat it as an outage (Phase 6 outage drill: was a 500).
+    metrics.count("db_unavailable_total")
+    log.error("database unavailable on %s %s: %s", request.method, request.url.path, type(e.orig).__name__)
+    return JSONResponse({"code": "database_unavailable", "message": "The database is unavailable; retry in a few seconds. "
+                         "Nothing you submitted was lost.", "retry_after_s": 5}, status_code=503,
+                        headers={"Retry-After": "5"})
 
 
 @app.exception_handler(Forbidden)

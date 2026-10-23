@@ -43,6 +43,7 @@ from .schemas import (
     ActionResult,
     ActionRow,
     CancelOpenResult,
+    ConnectorSet,
     DocumentRow,
     DocumentUploaded,
     DocumentVersion,
@@ -51,12 +52,14 @@ from .schemas import (
     ForecastRun,
     ModelVersion,
     OpenOrderLine,
+    OrderCancelled,
     ReceiptResult,
     RunCreated,
     RunDetail,
     RunEvent,
     RunRow,
     SandboxOrder,
+    SandboxReceipt,
     ScenarioResult,
     ScenarioRow,
     Terms,
@@ -483,6 +486,19 @@ def accept_remote(action_id: uuid.UUID, body: AcceptRemoteIn, a: Actor = Depends
         return acl.redact(s, a.role, json.loads(json.dumps(detail, default=str)))
 
 
+class CancelOrderIn(BaseModel):
+    reason: str = Field(min_length=1, max_length=500)
+
+
+@router.post("/actions/{action_id}/cancel-order", response_model=OrderCancelled)
+def cancel_order(action_id: uuid.UUID, body: CancelOrderIn, a: Actor = Depends(actor),
+                 idempotency_key: str | None = Header(None)):
+    """Ask the purchasing system to cancel a placed order; its open units are released once the target confirms."""
+    code, resp = idempotent(a, idempotency_key, f"cancel-order:{action_id}", body.model_dump(),
+                            lambda: (200, _guard(lambda: actions.cancel_order(a, action_id, reason=body.reason))))
+    return JSONResponse(json.loads(json.dumps(resp, default=str)), status_code=code)
+
+
 @router.get("/open-orders", response_model=list[OpenOrderLine])
 def list_open_orders(a: Actor = Depends(actor)):
     return actions.open_orders(a)
@@ -514,8 +530,46 @@ def sandbox_fault(body: FaultIn, a: Actor = Depends(actor)):
         raise HTTPException(404, {"code": "disabled", "message": "fault injection disabled"})
     a.require("action.reconcile")
     if body.mode not in ("timeout_after_commit", "fail_before_commit", "alter_line_price", "duplicate_line",
-                         "change_unit", "change_need_by", "cancel_after_commit"):
+                         "change_unit", "change_need_by", "cancel_after_commit", "reject"):
         raise HTTPException(422, {"code": "invalid_mode", "message": "unknown fault mode"})
     actions.get(a, body.action_id)  # tenant check
     sandbox_erp.inject_fault(f"po-{body.action_id}", body.mode)
     return {"ok": True, "operation_id": f"po-{body.action_id}", "mode": body.mode}
+
+
+def _dev_only(a: Actor) -> None:
+    if not settings.dev_login_available:
+        raise HTTPException(404, {"code": "disabled", "message": "sandbox controls disabled"})
+    a.require("action.reconcile")
+
+
+class ConnectorIn(BaseModel):
+    available: bool = True
+    credentials_valid: bool = True
+
+
+@router.post("/sandbox/connector", response_model=ConnectorSet)
+def sandbox_connector(body: ConnectorIn, a: Actor = Depends(actor)):
+    """Development-only: simulate an ERP outage or expired credentials (affects every workspace on this database)."""
+    _dev_only(a)
+    sandbox_erp.set_connector(available=body.available, credentials_valid=body.credentials_valid)
+    return {"ok": True, "available": body.available, "credentials_valid": body.credentials_valid}
+
+
+class SandboxReceiptIn(BaseModel):
+    action_id: uuid.UUID
+    sku_id: str = Field(min_length=1, max_length=64)
+    location_id: str | None = Field(default=None, max_length=64)
+    quantity: int = Field(gt=0, le=1_000_000)
+    received_on: date
+
+
+@router.post("/sandbox/receipts", response_model=SandboxReceipt)
+def sandbox_receipt(body: SandboxReceiptIn, a: Actor = Depends(actor)):
+    """Development-only: the warehouse books a goods receipt in the simulated ERP (synchronised by the worker)."""
+    _dev_only(a)
+    detail = _guard(lambda: actions.get(a, body.action_id))  # tenant check
+    if not detail.get("external_ref"):
+        raise HTTPException(409, {"code": "not_placed", "message": "this draft has no order in the sandbox"})
+    return sandbox_erp.post_receipt(detail["external_ref"], body.sku_id, body.quantity, body.received_on,
+                                    body.location_id)

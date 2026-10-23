@@ -1,0 +1,49 @@
+{
+  "drill": "database outage and worker crash",
+  "ok": true,
+  "orders": 5,
+  "outage_seconds_planned": 20,
+  "outage_seconds_actual": 20.7,
+  "state_before_outage": {
+    "actions": {
+      "QUEUED": 5
+    },
+    "sandbox_orders": 0,
+    "distinct_keys": 0,
+    "workers_seen": 2,
+    "workers_with_errors": 1,
+    "last_tick": "2026-10-23 20:00:57.799854+00:00"
+  },
+  "state_after_recovery": {
+    "actions": {
+      "RECONCILED": 5
+    },
+    "sandbox_orders": 5,
+    "distinct_keys": 5,
+    "workers_seen": 2,
+    "workers_with_errors": 1,
+    "last_tick": "2026-10-23 20:01:26.201143+00:00"
+  },
+  "health_codes_during_outage": [
+    "503",
+    "503",
+    "503",
+    "503",
+    "503",
+    "503",
+    "503",
+    "503",
+    "503",
+    "503"
+  ],
+  "api_alive_during_outage": true,
+  "worker_alive_during_outage": true,
+  "api_alive_after": true,
+  "worker_alive_after": true,
+  "worker_failed_ticks_logged": 4,
+  "seconds_db_up_to_api_healthy": 0.0,
+  "seconds_db_up_to_all_orders_reconciled": 5.3,
+  "exactly_one_order_per_action": true,
+  "host": "Krishnas-MacBook-Pro.local",
+  "notes": "scratch cluster on one machine; the worker was killed before approval, so orders waited in the outbox through the outage. Recovery times exclude detection and the time to restart the database."
+}

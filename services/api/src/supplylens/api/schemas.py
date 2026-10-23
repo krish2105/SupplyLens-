@@ -843,6 +843,63 @@ class FaultInjected(Out):
     mode: str
 
 
+class OrderCancelled(Out):
+    status: str
+    released_units: int
+    po_number: str
+
+
+class ConnectorSet(Out):
+    ok: bool
+    available: bool
+    credentials_valid: bool
+
+
+class SandboxReceipt(Out):
+    receipt_id: str
+    sequence: int
+
+
+# ------------------------------------------------------------------------------------------ operations (Phase 6)
+class ConnectorProbe(Out):
+    """Result of an ERP connector health check (integrations/connector.py)."""
+    status: str
+    checked: bool
+    error: str | None = None
+    adapter: str | None = None
+    qualification: str | None = None
+    note: str | None = None
+
+
+class OpsHealth(Out):
+    """Database, workers, job queue, order outbox, imports, open alerts and ERP connector (operations.health)."""
+    status: str
+    problems: list[str]
+    checked_at: datetime
+    database: Json
+    workers: Json
+    jobs: Json
+    outbox: Json
+    imports: Json
+    alerts: list[Json]
+    connector: Json
+
+
+class Reconciliation(Out):
+    """Order states, items needing a person, open-order ledger, ERP sync and service levels (operations.reconciliation)."""
+    generated_at: datetime
+    adapter: str
+    actions_by_status: dict[str, int]
+    outbox: Json
+    needs_attention: list[Json]
+    unaccounted_orders: int
+    ledger: Json
+    overdue_lines: list[Json]
+    sync: Json
+    sync_alerts: list[Json]
+    service_levels: Json
+
+
 # ------------------------------------------------------------------------------------------ exceptions / admin
 class ExceptionItem(Out):
     kind: str

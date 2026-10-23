@@ -1,6 +1,6 @@
 # Agent handoff — progress across phases
 
-Consolidated view of Phases 0–5 (2026-10-22/24, UTC). Detail lives in `ISSUES.md` (register with acceptance criteria),
+Consolidated view of Phases 0–6 (2026-10-22/24, UTC). Detail lives in `ISSUES.md` (register with acceptance criteria),
 `EVIDENCE.md` (every command and result), `DECISIONS.md` and `phases/PHASE-0N.md`. This file is a map, not proof: verify
 anything you rely on.
 
@@ -15,8 +15,9 @@ anything you rely on.
 | 4 — frontend, UX and journeys (owner brief) | see `git log` after `55e0b1c` | 12 journeys end to end; document upload; workspace reconciliation; inventory per SKU@location; error boundaries and states; per-intent keys; 401 → sign-in and back; lint/unit/typed e2e in CI; Firefox/WebKit/iPhone projects; reference-case lock | P4-E01… |
 | 4B — visual UI/UX gate (owner brief) | `967ba0b`, `85f9b6b` | 13 visual/UX defects fixed; 42 screenshot baselines per platform enforced in CI | P4B-E01… |
 | 5 — AI/ML, retrieval, optimisation, MLOps (owner brief) | see `git log` after `36f4f9d` | Panel-date defect (TCN weekday inputs constant) fixed, F1 2.1.0; model fallbacks and verified loading; promotion gate; monitoring/shadow/drift report; S2 decision study (simulated); R3 answer support and ambiguity; phone overflow fix | P5-E01… |
+| 6 — ERP integration and operational excellence (owner brief) | see `git log` after `e9ed389` | Adapter contract and conformance suite; circuit breaker; credential stop; rejection handling; receipt/status sync; Cancel order; health and reconciliation reports; worker heartbeats; 503 on database outage; outage and disk-loss drills; runbook, SLO, service-management, ERP-integration documents | P6-E01… |
 
-Test counts over time: pytest 336 → 374 → 398 → 414 → 419 → 421 → **447 passed, 6 skipped** (Keycloak; Phase 5). Playwright 113
+Test counts over time: pytest 336 → 374 → 398 → 414 → 419 → 421 → 447 → **477 passed, 6 skipped** (Keycloak; Phase 6). Playwright 113
 (+1 order-dependent failure) → 114 → 116 → 174 → **191 passed, 7 skipped** on four local projects (Phase 4B/5; Firefox in CI);
 42 screenshot baselines per platform. Web unit tests: 19.
 
@@ -46,15 +47,15 @@ load profile · EXT-05 screen-reader pass · EXT-06 R2 human review · EXT-07 pe
 (D-041) · EXT-09 dataset licences · EXT-10 pricing/SLA/support.
 
 ## Scores (evidence-weighted judgement, rules in DECISIONS PD-006; not measurements)
-| Category | Phase 0 | After Phase 2 | After Phase 3 | After Phase 5 | Why it moved / what caps it |
-|---|---|---|---|---|---|
-| CTO | 66 | 73 | 76 | 76 | Measured capacity work, admission control, timeouts, metrics; still no production platform |
-| CEO | 38 | 40 | 40 | 40 | Unchanged: no customers, pilot, pricing or ERP |
-| COO | 42 | 47 | 51 | 51 | Metrics endpoint and overload runbook; no scraper, SLOs or on-call yet |
-| AI Engineering | 58 | 65 | 66 | 70 | Phase 5: a P1 model-input defect found and fixed, promotion gate, fallbacks, monitoring, decision-level and answer-support studies with negative results reported; capped by no real outcomes, no human-reviewed labels and no untouched holdout |
-| Security | 55 | 70 | 71 | 71 | Per-workspace admission share (SEC-P2-11), statement timeouts; no pentest or corporate IdP |
-| Real MVP | 40 | 45 (cap 50) | 45 (cap 50) | 45 (cap 50) | Unchanged (no real user, ERP or IdP) |
-| Real SaaS | 28 | 30 | 31 | 31 | Tenant-level consumption metrics exist; no signup, billing or metering product |
+| Category | Phase 0 | After Phase 2 | After Phase 3 | After Phase 5 | After Phase 6 | Why it moved / what caps it |
+|---|---|---|---|---|---|---|
+| CTO | 66 | 73 | 76 | 76 | 78 | Phase 6: adapter boundary, failure classification, drills with measured recovery; no production platform |
+| CEO | 38 | 40 | 40 | 40 | 40 | Unchanged: no customers, pilot, pricing or ERP |
+| COO | 42 | 47 | 51 | 51 | 60 | Phase 6: health and reconciliation reports, runbooks, incident/support/onboarding/release procedures, measured RPO/RTO; no on-call, probe or pilot |
+| AI Engineering | 58 | 65 | 66 | 70 | 70 | Phase 5: a P1 model-input defect found and fixed, promotion gate, fallbacks, monitoring, decision-level and answer-support studies with negative results reported; capped by no real outcomes, no human-reviewed labels and no untouched holdout |
+| Security | 55 | 70 | 71 | 71 | 71 | Per-workspace admission share (SEC-P2-11), statement timeouts; no pentest or corporate IdP |
+| Real MVP | 40 | 45 (cap 50) | 45 (cap 50) | 45 (cap 50) | 47 (cap 50) | Phase 6: execution path closer to a real ERP; still no real ERP, IdP or user |
+| Real SaaS | 28 | 30 | 31 | 31 | 31 | Tenant-level consumption metrics exist; no signup, billing or metering product |
 
 ## Phase 3 changes to the issue status
 SEC-P2-11 fixed per process; P2-PERF-01 and P2-REL-03 partially fixed; new PERF-P3-01…07 fixed, PERF-P3-08/09/10 open
@@ -65,13 +66,19 @@ Fixed: ML-P5-01 (P1), P2-ML-01, ML-P5-02, P3-ML-02, KNOW-P5-01, FE-P5-01, QA-P5-
 support and ambiguity; out-of-scope detection limited, KNOW-P5-02), P3-PLAN-06 (explainer and timeout parts). New open:
 ML-P5-05, ML-P5-06, KNOW-P5-02, KNOW-P5-03, PLAN-P5-01 (owner decision). See ISSUES.md "Phase 5 resolution notes".
 
+## Phase 6 changes to the issue status
+Fixed (against the simulator): ERP-P6-01 (P1), ERP-P6-02…05, OPS-P6-01/02. New open: OPS-P6-03 (hosted migration, owner),
+OPS-P6-04. EXT-02 (real ERP) unchanged: BLOCKED. See ISSUES.md "Phase 6 resolution notes".
+
 ## Recommended order for the remaining work
 1. **Phase 4B — done** (visual UI/UX and asset gate; PHASE-04B): 13 defects fixed, screenshot regression (`visual` project), Playwright 191 passed / 7 skipped locally.
 1. **Phase 4 — done** (frontend, UX, journeys; PHASE-04). Formerly: P1-FE-01, rest of P1-FE-02, P2-FE-03 (ESLint + unit tests in CI first),
    P2-FE-04/05/06/07/08, P2-QA-01/02 (then require `e2e` in branch protection), P3-FE-09/10.
 2. **Phase 5 — done** (AI/ML, retrieval, optimisation, MLOps; PHASE-05). The owner's Phase 5 brief replaced the earlier
    data-protection plan, whose items move to Phase 6.
-3. **Phase 6 — planning depth and data protection:** PLAN-P5-01 (after the owner's decision), P3-PLAN-06 rest, ML-P5-05,
+3. **Phase 6 — done** (ERP integration and operational excellence; PHASE-06). The owner's Phase 6 brief replaced the
+   planned items below, which move to Phase 7 or later.
+   Carried: **planning depth and data protection:** PLAN-P5-01 (after the owner's decision), P3-PLAN-06 rest, ML-P5-05,
    KNOW-P5-03, P2-REL-03; SEC-P2-12, SEC-P2-13, P3-SEC-03 (nonce CSP), P2-PRIV-01 backfill, P3-ONB-01 rest, D-056
    duplicate warning, PERF-P3-09 (with the retrieval studies re-run).
 4. **Phase 7 — production platform and operations:** P1-OPS-01 (IaC, staging, secrets manager, replicas, SLOs,

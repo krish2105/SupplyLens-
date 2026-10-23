@@ -98,13 +98,22 @@ repeated. Where a Phase 0 finding is a residual of one of them it says so.
 | FE-P5-01 | P2 | Web / layout | On a phone, study cards with tables (Research) and the Forecast lab columns were 460–520 px wide on a 375 px screen: grid items default to `min-width: auto` and grew to their tables | VERIFIED (measured card widths) | fixed: `min-w-0` on the grid items (P5-E13) |
 | QA-P5-01 | P2 | Tests | The overflow checks compared `scrollWidth` with `innerWidth`; under phone emulation the browser widens `innerWidth` to the content, so the check could not fail | VERIFIED | fixed: compared with the configured viewport width; caught FE-P5-01 on `/forecast` (P5-E13) |
 | QA-P5-02 | P3 | Tests | A Phase 5 retrieval test passed locally (embedding model running) but failed in CI (lexical only): it asserted an embedder-only detail | VERIFIED (CI run 40007061655) | fixed: asserts the right reason in each mode; run the suite with `SUPPLYLENS_OLLAMA_URL=http://127.0.0.1:9` before pushing retrieval changes (P5-E15) |
+| ERP-P6-01 | P1 | Execution | An ERP outage spent the retry budget: 5 attempts with 2–16 s back-off, so a ~30 s outage failed every queued order and needed a person to retry each | VERIFIED (code; test reproduces the old count) | fixed: circuit breaker, outages do not spend attempts (D-089, P6-E03) |
+| ERP-P6-02 | P2 | Execution | A business rejection was treated as transient: retried 5 times, then retryable by hand with the same order | VERIFIED (code) | fixed: `AdapterRejected` fails at once, `failure_kind = rejected`, retry refused (P6-E03) |
+| ERP-P6-03 | P2 | Execution | Expired credentials were indistinguishable from any error: every queued order would fail; no health probe | VERIFIED (code) | fixed: `CREDENTIALS_INVALID` stop, probe, Test ERP connection (P6-E03, P6-E05) |
+| ERP-P6-04 | P2 | Execution | A lookup failing during a lookup-first retry escaped the dispatcher: the item stayed IN_FLIGHT until its lease expired and each expiry counted towards the dead letter (8), so an outage of ~6 min could park orders as UNKNOWN_OUTCOME | VERIFIED (code) | fixed: paused like an outage, attempts kept above 1 so the next try still looks up first (P6-E03) |
+| ERP-P6-05 | P2 | Execution | No ERP receipt or order-status synchronisation (receipts by hand or CSV only); no way to cancel a placed order in the ERP; an ERP-side cancellation left phantom supply in planning | VERIFIED (absence) | fixed against the simulator: receipt feed, order-status sync, Cancel order (D-088, D-092, P6-E03); real ERP BLOCKED (EXT-02) |
+| OPS-P6-01 | P2 | Operations | `/health` and every route answered 500 while the database was down | VERIFIED (outage drill) | fixed: 503 `database_unavailable` + Retry-After (D-091, P6-E06) |
+| OPS-P6-02 | P2 | Operations | A stopped worker was invisible outside its container (heartbeat file only); no service-health or reconciliation view or report | VERIFIED (absence) | fixed: `worker_heartbeats`, `GET /ops/health`, `GET /ops/reconciliation`, Administration cards (P6-E03, P6-E08) |
+| OPS-P6-03 | P2 | Operations | Hosted database not yet migrated to 0011: the live demo runs the Phase 6 code in its pre-0011 mode (no connector state, sync, heartbeats) | VERIFIED (design, D-090) | open: owner runs the PD-009 setup-token procedure |
+| OPS-P6-04 | P3 | Execution | Receipts held for an order awaiting reconciliation keep the feed cursor; more than 500 later receipts in that window would wait until it is reconciled | VERIFIED (design) | open: per-receipt hold table if real volumes need it |
 
 ## External blockers (cannot be closed by code alone)
 
 | ID | Blocker | Blocks | Owner |
 |---|---|---|---|
 | EXT-01 | Corporate identity provider to qualify OIDC/SCIM | BUS-012, BUS-022, P1-IAM-01 acceptance | Owner / customer IT |
-| EXT-02 | Real ERP sandbox + credentials (only `integrations/sandbox_erp.py`, a local simulator, exists) | BUS-013, EXE-013 | Customer |
+| EXT-02 | Real ERP test tenant + credentials + schemas (only `integrations/sandbox_erp.py`, a local simulator, exists; the adapter contract and what qualification needs: `docs/operations/erp-integration.md`) | BUS-013, EXE-013 | Customer |
 | EXT-03 | Pilot business users | BUS-016, BUS-017, Real-MVP score | Owner |
 | EXT-04 | Declared 8 vCPU / 32 GiB load profile | ARC-07 | Owner (hardware) |
 | EXT-05 | Manual screen-reader pass | UX-010 | A person with NVDA/VoiceOver |
@@ -437,4 +446,19 @@ Detail and numbers: `phases/PHASE-05.md`, `docs/research/results.md` (F1 2.1.0, 
 - **P3-PLAN-06 (part)** — `optimisation/supplylens_opt/planner.py`.
 - **FE-P5-01 / QA-P5-01** — `apps/web/app/(app)/research/page.tsx` (`StudyCard`), `apps/web/app/(app)/forecast/page.tsx`;
   `apps/web/e2e/layout.spec.ts` and `a11y.spec.ts` now compare with the configured viewport width.
+
+## Phase 6 resolution notes (2026-10-24) — ERP integration and operational excellence
+Detail: `phases/PHASE-06.md`, `docs/operations/erp-integration.md`, `slo.md`, `service-management.md`, runbook.
+- **ERP-P6-01…04** — `integrations/contract.py` (error classes), `registry.py`, `connector.py` (circuit breaker, probe),
+  `actions/service.py` (`_pause`, `failure_kind`, lookup failures paused, `_lookup` 503); migration 0011.
+- **ERP-P6-05** — `integrations/sync.py` (order status, receipt feed, overdue), `actions/service.py` (`book_receipt`,
+  `release_open_units`, `cancel_order`), route `POST /actions/{id}/cancel-order`; sandbox `cancel`, `post_receipt`,
+  `cancel_by_supplier`, `set_connector`.
+- **OPS-P6-01** — `api/app.py` (OperationalError → 503 `database_unavailable`).
+- **OPS-P6-02** — `operations.py`, `routes_ops.py` (`/ops/health`, `/ops/reconciliation`, `/ops/connector/test`),
+  worker heartbeat (`worker_heartbeats`), `metrics.py` gauges, `apps/web/components/operations.tsx` on Administration.
+- Found during verification and fixed before commit: reading connector state created a row, so a deleted workspace left
+  one behind (caught by `tests/test_lifecycle.py`); reads are now read-only (`test_reading_connector_state_never_creates_a_row`).
+- **Not done:** a real ERP adapter (EXT-02); ERP inventory/supplier pull (needs vendor schemas); WAL-archiving alert;
+  external uptime probe and paging (P1-OPS-01).
 

@@ -9,7 +9,7 @@ deployment (no enterprise identity, no off-host backups, no managed monitoring).
 |---|---|---|---|
 | PostgreSQL 17 + pgvector | Homebrew service `postgresql@17` | 5432 | `pg_isready -h /tmp` |
 | API | `uv run uvicorn supplylens.api.app:app --host 127.0.0.1 --port 8000` | 8000 | `GET /health` |
-| Worker | `uv run python -m supplylens_worker.main` | — | jobs/outbox drain in Administration |
+| Worker | `uv run python -m supplylens_worker.main` | — | `GET /api/v1/ops/health` → `workers.live ≥ 1` (a heartbeat row per tick; stale after 30 s); container check reads the heartbeat file |
 | Web | `npm --prefix apps/web run dev` (or `start` after build) | 3100 | page loads |
 | Embeddings (optional) | Ollama with `bge-m3:567m` | 11434 | Settings → Connections |
 
@@ -89,15 +89,72 @@ certificates you keep outside the database (a backup older than the deletion doe
 
 ## Unknown order outcome
 
-Symptoms: an action shows `UNKNOWN_OUTCOME` (Exceptions inbox or Approvals). Do **not** re-approve or resend.
-This includes a dispatch the worker was interrupted on more than 8 times (reason "dispatch interrupted … reconcile
-before any retry"): it is parked here instead of being sent again. Open the draft → *Reconcile with sandbox*. The system looks the operation up by its idempotency key: found →
-read back and compared → `RECONCILED`; not found → safely re-queued (the sandbox deduplicates by key).
+Symptoms: an action shows `UNKNOWN_OUTCOME` (Exceptions inbox, Approvals, Administration → Order reconciliation). Do
+**not** re-approve or resend. This includes a dispatch the worker was interrupted on more than 8 times (reason "dispatch
+interrupted … reconcile before any retry"): it is parked here instead of being sent again. Open the draft → *Reconcile*.
+The system looks the operation up by its idempotency key: found → read back and compared → `RECONCILED`; not found →
+safely re-queued (the adapter contract requires deduplication by key). If the ERP cannot be reached, reconcile answers
+503 `erp_unavailable` and changes nothing: try again when the connector is back.
 
 ## Stale approval
 
 `STALE` means the supplier terms, payload or approval expiry changed after preparation. Start a new investigation
 (or edit quantities, which revalidates); the old approval can never be reused.
+
+## ERP connector (Phase 6; adapter contract in `docs/operations/erp-integration.md`)
+
+Administration → **Service health** shows the connector state; `GET /api/v1/ops/health` returns the same.
+
+| State / alert | Meaning | What to do |
+|---|---|---|
+| `UNAVAILABLE`, alert `erp_connector:unavailable` | 3+ consecutive "unreachable" answers; dispatch paused (30 s doubling to 5 min, one probe after each pause) | Check the ERP's status page and the network path. Nothing to resend: queued orders keep their place and retry budget and go out on their own when it answers. Escalate to the ERP owner after 30 min (SEV2) |
+| `CREDENTIALS_INVALID`, alert `erp_connector:credentials` | The ERP refused the credentials; nothing is sent | Renew the credentials in the secret store and redeploy (or fix the configuration), then **Test ERP connection**. Dispatch resumes on success; the alert resolves |
+| Action `FAILED`, `failure_kind = rejected` | The ERP refused this order (blocked supplier, closed period, ...) | Read the reason. **Retry is refused** on purpose. Fix the cause (supplier or terms) and prepare a new draft |
+| Action `FAILED`, `failure_kind = exhausted` | 5 transient errors | Retry once the cause is gone (Retry checks the ERP first and refuses if the order exists) |
+
+The simulator can reproduce each case on a development stack: `POST /api/v1/sandbox/connector`
+`{"available": false}` or `{"credentials_valid": false}`, and the fault mode `reject` (development only).
+
+## Order cancellation
+
+An approver can **Cancel order** on a reconciled order with open units. The ERP decides: once every line is received it
+refuses, and nothing changes here. On success the open units are released from the open-order ledger, so planning sees
+the supply gone. With no answer, nothing changes here and the next order sync applies whatever the ERP then holds. A
+supplier cancelling or rejecting an order inside the ERP has the same effect at the next sync, with alert
+`erp_sync:closed:<action>`: re-plan if the need remains.
+
+## Receipts, synchronisation exceptions and overdue receipts
+
+The worker reads the ERP's goods-receipt feed every 60 s and books each receipt once (key `erp:<receipt_id>`; the
+audit entry `order.received` says `source: erp`). Manual receipts (draft → *Record receipt*) and receipt CSV imports remain
+for ERPs without a feed.
+
+| Alert | Cause | What to do |
+|---|---|---|
+| `erp_sync:receipt:<id>` | The ERP booked more than is open, or a receipt for an unknown line | Compare the receipt with the order in the ERP; book the correct quantity by hand or correct the ERP. Over-deliveries are never booked automatically |
+| `erp_sync:drift:<action>` | The ERP holds an order SupplyLens records as failed, stale or unapproved | Never resolve by resending. Either cancel the order in the ERP, or reconcile it here if it is legitimate. The alert clears when the two agree |
+| `overdue_receipt:<action>` | Open units past the expected date + 2 days (business date = the workspace's operational date) | Chase the supplier; book the receipt when it arrives or cancel the open units. Clears on receipt or cancellation |
+
+A receipt for an order not yet reconciled here (`UNKNOWN_OUTCOME`, `CONFIRMED`) is held, and booked after
+reconciliation.
+
+## Daily reconciliation check (operations owner)
+
+Administration → **Order reconciliation** (`GET /api/v1/ops/reconciliation`):
+1. "Every approved order has a known outcome", or work through **Orders that need a person** from the oldest.
+2. Approved → reconciled p95 and "within 5 minutes" against the objective (`docs/operations/slo.md`).
+3. Open `erp_sync` / `overdue_receipt` alerts; last receipt sync less than 2 minutes old while the worker runs.
+Record exceptions older than one business day in the incident log (`docs/operations/service-management.md`).
+
+## Worker stopped or database unavailable
+
+* **Worker**: `ops/health` → `workers.status = failing` ("no worker has ticked in the last 30 s"). Approved orders wait;
+  nothing is lost. Restart the worker. It resumes the queue and dispatches from the outbox; lease expiry makes interrupted
+  sends look the order up first. A worker that crashes mid-send is covered by the same rule (tests and the outage drill).
+* **Database**: the API answers **503 `database_unavailable`** with `Retry-After` (Phase 6; before, a 500) and the
+  worker logs failed ticks and keeps retrying every 5 s. Measured on a scratch cluster (`scripts/outage_drill.sh`): after a
+  20 s crash-stop, the API was healthy as soon as PostgreSQL accepted connections, and 5 orders that waited through the
+  outage were reconciled 5.3 s later, exactly one ERP order each. Restore procedures are under *Backup and restore*.
 
 ## Model retraining and promotion
 
@@ -123,8 +180,9 @@ previous version) in Administration with a reason — the same audited path as a
 
 ## Alerts (BUS-018)
 
-Four alert kinds open in the **Exceptions** inbox (the operational queue) and optionally go to a webhook:
-`stale_data`, `failed_reconciliation`, `budget_exhausted`, `model_unavailable`. Identical open alerts are de-duplicated
+Eight alert kinds open in the **Exceptions** inbox (the operational queue) and optionally go to a webhook:
+`stale_data`, `failed_reconciliation`, `budget_exhausted`, `model_unavailable`, `job_failed`, and since Phase 6
+`erp_connector`, `erp_sync`, `overdue_receipt`. Identical open alerts are de-duplicated
 (occurrence count increases); an alert resolves itself when its cause clears (for example, a failed order is re-queued and
 reconciled). Planners, approvers and administrators acknowledge alerts.
 

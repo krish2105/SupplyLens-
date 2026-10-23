@@ -1,5 +1,8 @@
 """SupplyLens worker: runs queued jobs and dispatches the outbox for every tenant.
 
+Each tick also records a heartbeat row (worker_heartbeats, read by GET /api/v1/ops/health), and once a minute per
+workspace health-checks a paused ERP connector and synchronises order status and receipts (integrations/sync.py).
+
 Run: uv run python -m supplylens_worker.main [--once]
 """
 from __future__ import annotations
@@ -21,7 +24,8 @@ from supplylens import alerts, jobs, lifecycle, telemetry
 from supplylens.actions import service as actions
 from supplylens.agent.graph import execute_run
 from supplylens.config import settings
-from supplylens.db import tenant_session
+from supplylens.db import control_session, tenant_session
+from supplylens.integrations import connector, schema, sync
 
 log = logging.getLogger("supplylens.worker")
 WORKER_ID = f"{socket.gethostname()}:{uuid.uuid4().hex[:6]}"
@@ -81,6 +85,44 @@ def _run_job(tenant_id, job: dict) -> None:
 
 ALERT_EVERY_S = 30
 _last_alert_eval: dict = {}
+_last_sync: dict = {}
+
+
+def sync_tick(tenant_id) -> None:
+    """Probe a paused connector, then synchronise orders and receipts, at most every SYNC_EVERY_S per workspace."""
+    now = time.monotonic()
+    if now - _last_sync.get(tenant_id, -1e9) < sync.SYNC_EVERY_S:
+        return
+    _last_sync[tenant_id] = now
+    try:
+        connector.probe(tenant_id)
+        r = sync.sync_tenant(tenant_id)
+        if any(r.get(k) for k in ("released_units", "drift", "receipts_booked", "receipt_exceptions", "error")):
+            log.info("erp sync %s: %s", tenant_id, r)
+    except Exception:
+        log.exception("erp sync failed for workspace %s", tenant_id)
+
+
+_cleaned = {"at": -1e9}
+
+
+def heartbeat(error: str | None = None) -> None:
+    """One row per worker process; the API reports a worker as stopped when its row stops moving."""
+    try:
+        if not schema.has_0011():
+            return
+        with control_session() as s:
+            s.execute(text("""INSERT INTO worker_heartbeats (worker_id, host, last_error, last_error_at)
+                VALUES (:w, :h, :e, CASE WHEN CAST(:e AS text) IS NOT NULL THEN now() END)
+                ON CONFLICT (worker_id) DO UPDATE SET last_tick_at = now(), ticks = worker_heartbeats.ticks + 1,
+                  last_error = COALESCE(EXCLUDED.last_error, worker_heartbeats.last_error),
+                  last_error_at = COALESCE(EXCLUDED.last_error_at, worker_heartbeats.last_error_at)"""),
+                {"w": WORKER_ID, "h": socket.gethostname(), "e": error})
+            if time.monotonic() - _cleaned["at"] > 3600:
+                s.execute(text("DELETE FROM worker_heartbeats WHERE last_tick_at < now() - interval '7 days'"))
+                _cleaned["at"] = time.monotonic()
+    except Exception:
+        log.warning("could not record the worker heartbeat", exc_info=True)
 
 
 def alert_tick(tenant_id) -> None:
@@ -114,6 +156,7 @@ def tenant_tick(tenant_id) -> int:
         worked += 1
     refresh_runs(tenant_id)
     alert_tick(tenant_id)
+    sync_tick(tenant_id)
     return worked
 
 
@@ -143,10 +186,12 @@ def main() -> None:
         try:
             n = tick()
             HEARTBEAT.touch()          # a container health check reads this file's age
-        except Exception:
+            heartbeat()
+        except Exception as e:
             if ns.once:
                 raise
             log.exception("worker tick failed; retrying")      # a database blip must not end the process
+            heartbeat(f"{type(e).__name__}: {e}"[:500])
             n = 0
             time.sleep(min(30.0, ns.interval * 5))
         if ns.once:

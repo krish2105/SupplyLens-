@@ -12,6 +12,10 @@ everything the approval relied on: the bound payload hash, expiry, the approver 
 action still queued, the spend within the approved maximum and the supplier terms still applicable. A changed fact
 routes the action back to review (STALE) instead of sending.
 
+Every call to the purchasing system goes through the adapter contract (integrations/contract.py, Phase 6). An outage
+or rejected credentials pause dispatch for the workspace without spending the item's retry budget (integrations/
+connector.py); a business rejection fails the action at once and is never retried automatically.
+
 Read-back (audit F06) compares the returned order with the approved payload line by line as multisets (SKU, quantity,
 unit, unit price, line value), plus supplier, currency, total, need-by date and order status. Equal totals never stand
 in for equal orders. A reconciled order enters the open-order ledger (purchase_order_lines) that planning reads (S12).
@@ -35,7 +39,15 @@ from ..authz import MATRIX, Actor, resolve_actor
 from ..config import settings
 from ..db import tenant_session
 from ..idempotency import record_outcome
-from ..integrations import sandbox_erp
+from ..integrations import connector, schema
+from ..integrations.contract import (
+    AdapterAuthError,
+    AdapterError,
+    AdapterRejected,
+    AdapterTimeout,
+    AdapterUnavailable,
+)
+from ..integrations.registry import adapter as erp
 from ..planning.terms_service import applicable_terms
 
 LEASE_SECONDS = 45
@@ -182,8 +194,9 @@ def approve(actor: Actor, action_id, *, payload_hash: str, expected_row_version:
             # Re-approval after the action went STALE at dispatch (audit P1-ACT-01). The operation key is kept, never
             # replaced, so the target can still deduplicate; attempts stays above 1 so the next dispatch looks the key
             # up before sending anything.
-            s.execute(text("""UPDATE outbox SET status='PENDING', payload=CAST(:p AS jsonb), payload_hash=:h, attempts=1,
-                next_attempt_at=now(), last_error=NULL, lease_owner=NULL, lease_expires_at=NULL, updated_at=now()
+            kind = ", failure_kind=NULL" if schema.has_0011() else ""
+            s.execute(text(f"""UPDATE outbox SET status='PENDING', payload=CAST(:p AS jsonb), payload_hash=:h, attempts=1,
+                next_attempt_at=now(), last_error=NULL, lease_owner=NULL, lease_expires_at=NULL, updated_at=now(){kind}
                 WHERE id=:i"""), {"i": prior.id, "p": json.dumps(a["payload"]), "h": a["payload_hash"]})
         else:
             raise ActionError("invalid_state", f"a dispatch for this action is still {prior.status}; it cannot be "
@@ -294,22 +307,25 @@ def _claim(tenant_id, worker: str):
 
 
 def _finish(tenant_id, item, outbox_status, action_status, *, external_ref=None, error=None, reason=None,
-            retry_in: int | None = None, keep_lease: bool = False, order: dict | None = None) -> bool:
+            retry_in: int | None = None, keep_lease: bool = False, order: dict | None = None,
+            failure_kind: str | None = None) -> bool:
     lease = "" if keep_lease else "lease_owner=NULL, lease_expires_at=NULL,"
+    kind = "failure_kind=:fk," if schema.has_0011() else ""
     with tenant_session(tenant_id) as s:
         updated = s.execute(text(f"""
-            UPDATE outbox SET status=:st, external_ref=COALESCE(:x, external_ref), last_error=:e, {lease}
+            UPDATE outbox SET status=:st, external_ref=COALESCE(:x, external_ref), last_error=:e, {lease} {kind}
               next_attempt_at=now() + make_interval(secs => :r), updated_at=now()
             WHERE id=:i AND fencing_token=:f RETURNING id"""),
             {"st": outbox_status, "x": external_ref, "e": error, "r": retry_in or 0, "i": item["id"],
-             "f": item["fencing_token"]}).first()
+             "f": item["fencing_token"], "fk": failure_kind}).first()
         if not updated:
             return False  # lease was lost to another worker; its result wins
         s.execute(text("UPDATE actions SET status=:st, external_ref=COALESCE(:x, external_ref), "
                        "status_reason=:r, row_version=row_version+1, updated_at=now() WHERE id=:i"),
                   {"st": action_status, "x": external_ref, "r": reason, "i": item["action_id"]})
         _audit(s, tenant_id, None, f"dispatch.{action_status.lower()}", item["action_id"],
-               {"operation_id": item["operation_id"], "external_ref": external_ref, "error": error})
+               {"operation_id": item["operation_id"], "external_ref": external_ref, "error": error,
+                **({"failure_kind": failure_kind} if failure_kind else {})})
         if action_status == "RECONCILED" and order is not None:
             _open_order_lines(s, tenant_id, item, order)
         supplier = s.execute(text("SELECT payload->>'supplier_id' FROM actions WHERE id=:i"),
@@ -413,6 +429,9 @@ def _open_order_lines(s, tenant_id, item, order: dict) -> None:
 def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
     """Claim and process one outbox item for the tenant. Returns a summary or None if idle."""
     worker = worker or f"{socket.gethostname()}:{uuid.uuid4().hex[:6]}"
+    allowed, _why = connector.may_dispatch(tenant_id)
+    if not allowed:
+        return None             # the connector is paused; items keep their place and retry budget (connector.py)
     item = _claim(tenant_id, worker)
     if item is None:
         return None
@@ -420,7 +439,8 @@ def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
         # Dead letter: no external call from here; a person reconciles (lookup first, never a blind re-send).
         reason = (f"dispatch interrupted {item['attempts'] - 1} times without a recorded outcome; "
                   "reconcile before any retry")
-        _finish(tenant_id, item, "UNKNOWN_OUTCOME", "UNKNOWN_OUTCOME", error="attempts exhausted", reason=reason)
+        _finish(tenant_id, item, "UNKNOWN_OUTCOME", "UNKNOWN_OUTCOME", error="attempts exhausted", reason=reason,
+                failure_kind="interrupted")
         return {"operation_id": item["operation_id"], "result": "DEAD_LETTER", "attempts": item["attempts"]}
     with telemetry.span("outbox.dispatch", **{"tenant.id": str(tenant_id), "outbox.operation_id": item["operation_id"],
                                               "outbox.attempt": item["attempts"]}) as sp:
@@ -429,35 +449,68 @@ def dispatch_once(tenant_id, worker: str | None = None) -> dict | None:
     return result
 
 
+def _pause(tenant_id, item, exc: Exception) -> dict:
+    """The target was unreachable or refused the credentials before doing anything: put the item back without spending
+    an attempt (a resend after a lookup-first retry keeps its attempts > 1, so it still looks up first)."""
+    status = connector.record_failure(tenant_id, exc)
+    with tenant_session(tenant_id) as s:
+        s.execute(text("""UPDATE outbox SET status='PENDING', attempts=GREATEST(attempts - 1, 0), last_error=:e,
+            lease_owner=NULL, lease_expires_at=NULL, next_attempt_at=now() + interval '30 seconds', updated_at=now()
+            WHERE id=:i AND fencing_token=:f"""), {"e": f"{type(exc).__name__}: {exc}", "i": item["id"],
+                                                   "f": item["fencing_token"]})
+        s.execute(text("UPDATE actions SET status_reason=:r, updated_at=now() WHERE id=:i AND status IN ('QUEUED','SUBMITTED')"),
+                  {"r": f"waiting for the ERP connector ({status}): {exc}", "i": item["action_id"]})
+        _audit(s, tenant_id, None, "dispatch.paused", item["action_id"],
+               {"operation_id": item["operation_id"], "connector": status, "error": str(exc)})
+    return {"operation_id": item["operation_id"], "result": "PAUSED", "connector": status}
+
+
 def _dispatch(tenant_id, item) -> dict:
     key = item["operation_id"]
-    if item["attempts"] > 1:
-        # A previous attempt may have reached the target: look before anything else (audit F07). An order that exists
-        # is verified and reconciled even if the approval has expired since; it is never sent again.
-        found = sandbox_erp.lookup(key)
-        if found:
-            return _confirm(tenant_id, item, found)
+    try:
+        target = erp()
+        if item["attempts"] > 1:
+            # A previous attempt may have reached the target: look before anything else (audit F07). An order that exists
+            # is verified and reconciled even if the approval has expired since; it is never sent again.
+            found = target.lookup_purchase_order(key)
+            if found:
+                connector.record_success(tenant_id)
+                return _confirm(tenant_id, item, found)
+    except (AdapterUnavailable, AdapterAuthError) as e:
+        return _pause(tenant_id, item, e)
     problems = _fresh_send_problems(tenant_id, item)
     if problems:
         reason = "; ".join(problems)
-        _finish(tenant_id, item, "FAILED", "STALE", error=reason, reason=reason + " (review again before sending)")
+        _finish(tenant_id, item, "FAILED", "STALE", error=reason, reason=reason + " (review again before sending)",
+                failure_kind="stale")
         return {"operation_id": key, "result": "STALE", "reason": reason}
     try:
-        resp = sandbox_erp.execute(key, str(item["action_id"]), item["payload"])
-    except sandbox_erp.AdapterTimeout as e:
+        resp = target.submit_purchase_order(key, str(item["action_id"]), item["payload"])
+    except AdapterTimeout as e:
         _finish(tenant_id, item, "UNKNOWN_OUTCOME", "UNKNOWN_OUTCOME", error=str(e),
                 reason="submission outcome unknown; reconcile before any retry")
         return {"operation_id": key, "result": "UNKNOWN_OUTCOME"}
-    except sandbox_erp.AdapterError as e:
+    except (AdapterUnavailable, AdapterAuthError) as e:
+        return _pause(tenant_id, item, e)
+    except AdapterRejected as e:
+        _finish(tenant_id, item, "FAILED", "FAILED", error=str(e), failure_kind="rejected",
+                reason=f"rejected by the purchasing system: {e} (not retried; prepare a new draft if still needed)")
+        return {"operation_id": key, "result": "REJECTED", "reason": str(e)}
+    except AdapterError as e:
         if item["attempts"] >= 5:
-            _finish(tenant_id, item, "FAILED", "FAILED", error=str(e), reason="retries exhausted")
+            _finish(tenant_id, item, "FAILED", "FAILED", error=str(e), reason="retries exhausted", failure_kind="exhausted")
             return {"operation_id": key, "result": "FAILED"}
         backoff = min(300, 2 ** item["attempts"])
         _finish(tenant_id, item, "PENDING", "QUEUED", error=str(e), reason="retry scheduled", retry_in=backoff)
         return {"operation_id": key, "result": "RETRY", "retry_in_s": backoff}
+    connector.record_success(tenant_id)
     # Keep the lease: if this worker dies now, lease expiry triggers a lookup-first retry.
     _finish(tenant_id, item, "IN_FLIGHT", "SUBMITTED", external_ref=resp["po_number"], keep_lease=True)
-    found = sandbox_erp.lookup(key)
+    try:
+        found = target.lookup_purchase_order(key)
+    except AdapterError:
+        # Read-back failed after a confirmed submit: the lease runs out and the retry looks the order up first.
+        return {"operation_id": key, "result": "SUBMITTED", "po_number": resp["po_number"]}
     return _confirm(tenant_id, item, found)
 
 
@@ -475,6 +528,15 @@ def _confirm(tenant_id, item, order: dict | None) -> dict:
     return {"operation_id": item["operation_id"], "result": "RECONCILED", "po_number": order["po_number"]}
 
 
+def _lookup(operation_id: str) -> dict | None:
+    """Read-back for a person's request: an unreachable target is a 503 the caller can retry, never a guess."""
+    try:
+        return erp().lookup_purchase_order(operation_id)
+    except AdapterError as e:
+        raise ActionError("erp_unavailable", f"the purchasing system cannot be reached right now ({e}); try again later",
+                          503) from e
+
+
 def retry_failed(actor: Actor, action_id) -> dict:
     """Re-queue a dispatch that failed after exhausting its retries (for example during a connector outage).
 
@@ -487,13 +549,18 @@ def retry_failed(actor: Actor, action_id) -> dict:
                          {"i": action_id}).mappings().first()
         if a["status"] != "FAILED" or not item or item["status"] != "FAILED":
             raise ActionError("invalid_state", "only a FAILED dispatch can be retried")
+        if schema.has_0011() and s.execute(text("SELECT failure_kind FROM outbox WHERE id=:i"),
+                                           {"i": item["id"]}).scalar() == "rejected":
+            raise ActionError("rejected_by_target", "the purchasing system rejected this order; sending the same order "
+                                                    "again would be rejected again. Prepare a new draft")
         problem = _approval_valid(actor.tenant_id, {"action_id": action_id, "payload_hash": item["payload_hash"]})
         if problem:
             raise ActionError("approval_invalid", f"cannot retry: {problem}; prepare and approve a new draft")
-        if sandbox_erp.lookup(item["operation_id"]):
+        if _lookup(item["operation_id"]):
             raise ActionError("remote_order_exists", "the target already holds this order: reconcile it instead")
-        s.execute(text("""UPDATE outbox SET status='PENDING', attempts=0, next_attempt_at=now(), last_error=NULL,
-            lease_owner=NULL, lease_expires_at=NULL, updated_at=now() WHERE id=:i"""), {"i": item["id"]})
+        kind = ", failure_kind=NULL" if schema.has_0011() else ""
+        s.execute(text(f"""UPDATE outbox SET status='PENDING', attempts=0, next_attempt_at=now(), last_error=NULL,
+            lease_owner=NULL, lease_expires_at=NULL, updated_at=now(){kind} WHERE id=:i"""), {"i": item["id"]})
         s.execute(text("UPDATE actions SET status='QUEUED', status_reason='retry requested after failure', "
                        "row_version=row_version+1, updated_at=now() WHERE id=:i"), {"i": action_id})
         _audit(s, actor.tenant_id, actor.user_id, "action.retry_requested", action_id,
@@ -512,11 +579,12 @@ def reconcile(actor: Actor, action_id) -> dict:
         if item["status"] != "UNKNOWN_OUTCOME":
             raise ActionError("invalid_state", "only an UNKNOWN_OUTCOME operation can be reconciled")
         item = dict(item)
-    order = sandbox_erp.lookup(item["operation_id"])
+    order = _lookup(item["operation_id"])
     if order:
         return _confirm(actor.tenant_id, item, order)
-    # Not found: the sandbox deduplicates on the key, so re-queueing is safe for this adapter.
-    _finish(actor.tenant_id, item, "PENDING", "QUEUED", reason="not found in sandbox; safe re-queue (idempotent key)")
+    # Not found: the adapter contract requires deduplication on the key, so re-queueing cannot create a second order.
+    _finish(actor.tenant_id, item, "PENDING", "QUEUED", reason="not found in the purchasing system; safe re-queue "
+                                                               "(idempotent key)")
     return {"operation_id": item["operation_id"], "result": "REQUEUED"}
 
 
@@ -537,7 +605,7 @@ def accept_remote_order(actor: Actor, action_id, *, reason: str) -> dict:
             raise ActionError("invalid_state", "only an order whose read-back differed (CONFIRMED) can be accepted")
         if a["prepared_by"] == actor.user_id:
             raise ActionError("separation_of_duties", "the preparer cannot accept a changed order", 403)
-        order = sandbox_erp.lookup(item["operation_id"])
+        order = _lookup(item["operation_id"])
         if order is None:
             raise ActionError("remote_order_missing", "the target no longer returns this order; reconcile instead", 409)
         mismatches = verify(actor.tenant_id, dict(item), order)
@@ -577,34 +645,42 @@ def _line_for(s, action_id, sku_id: str, location_id: str | None):
     return rows[0]
 
 
+def book_receipt(s, tenant_id, action_id, *, sku_id: str, quantity: int, received_on: date, key: str,
+                 location_id: str | None = None, user_id=None, source: str = "manual") -> dict:
+    """Book units received against a reconciled order line, inside the caller's transaction. One receipt per
+    idempotency key; never more than is open. Shared by the manual route and the ERP receipt feed (integrations/sync.py)."""
+    if quantity <= 0:
+        raise ActionError("invalid_quantity", "received quantity must be positive", 422)
+    dup = s.execute(text("SELECT po_line_id, quantity FROM receipts WHERE idempotency_key=:k"), {"k": key}).first()
+    if dup:
+        return {"status": "DUPLICATE", "po_line_id": str(dup.po_line_id), "quantity": dup.quantity}
+    line = _line_for(s, action_id, sku_id, location_id)
+    open_units = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
+    if quantity > open_units:
+        raise ActionError("over_receipt", f"only {open_units} unit(s) are open on this line", 422)
+    if received_on < line["ordered_on"]:
+        raise ActionError("invalid_date", "a receipt cannot predate its order", 422)
+    s.execute(text("""INSERT INTO receipts (id, tenant_id, po_line_id, sku_id, quantity, received_on, idempotency_key,
+        created_by) VALUES (:i,:t,:l,:k,:q,:d,:key,:u)"""),
+        {"i": uuid.uuid4(), "t": tenant_id, "l": line["id"], "k": sku_id, "q": quantity, "d": received_on,
+         "key": key, "u": user_id})
+    received = line["received_units"] + quantity
+    status = "RECEIVED" if received + line["cancelled_units"] == line["ordered_units"] else "PARTIAL"
+    s.execute(text("UPDATE purchase_order_lines SET received_units=:r, status=:s, updated_at=now() WHERE id=:i"),
+              {"r": received, "s": status, "i": line["id"]})
+    _audit(s, tenant_id, user_id, "order.received", action_id,
+           {"sku_id": sku_id, "quantity": quantity, "received_on": received_on.isoformat(), "source": source, "key": key})
+    return {"status": status, "po_line_id": str(line["id"]), "received_units": received,
+            "open_units": open_units - quantity}
+
+
 def record_receipt(actor: Actor, action_id, *, sku_id: str, quantity: int, received_on: date, key: str,
                    location_id: str | None = None) -> dict:
     """Book units received against a reconciled order line. One receipt per idempotency key; never more than open."""
     actor.require("action.reconcile")
-    if quantity <= 0:
-        raise ActionError("invalid_quantity", "received quantity must be positive", 422)
     with tenant_session(actor.tenant_id) as s:
-        dup = s.execute(text("SELECT po_line_id, quantity FROM receipts WHERE idempotency_key=:k"), {"k": key}).first()
-        if dup:
-            return {"status": "DUPLICATE", "po_line_id": str(dup.po_line_id), "quantity": dup.quantity}
-        line = _line_for(s, action_id, sku_id, location_id)
-        open_units = line["ordered_units"] - line["received_units"] - line["cancelled_units"]
-        if quantity > open_units:
-            raise ActionError("over_receipt", f"only {open_units} unit(s) are open on this line", 422)
-        if received_on < line["ordered_on"]:
-            raise ActionError("invalid_date", "a receipt cannot predate its order", 422)
-        s.execute(text("""INSERT INTO receipts (id, tenant_id, po_line_id, sku_id, quantity, received_on, idempotency_key,
-            created_by) VALUES (:i,:t,:l,:k,:q,:d,:key,:u)"""),
-            {"i": uuid.uuid4(), "t": actor.tenant_id, "l": line["id"], "k": sku_id, "q": quantity, "d": received_on,
-             "key": key, "u": actor.user_id})
-        received = line["received_units"] + quantity
-        status = "RECEIVED" if received + line["cancelled_units"] == line["ordered_units"] else "PARTIAL"
-        s.execute(text("UPDATE purchase_order_lines SET received_units=:r, status=:s, updated_at=now() WHERE id=:i"),
-                  {"r": received, "s": status, "i": line["id"]})
-        _audit(s, actor.tenant_id, actor.user_id, "order.received", action_id,
-               {"sku_id": sku_id, "quantity": quantity, "received_on": received_on.isoformat()})
-    return {"status": status, "po_line_id": str(line["id"]), "received_units": received,
-            "open_units": open_units - quantity}
+        return book_receipt(s, actor.tenant_id, action_id, sku_id=sku_id, quantity=quantity, received_on=received_on,
+                            key=key, location_id=location_id, user_id=actor.user_id)
 
 
 def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str, location_id: str | None = None) -> dict:
@@ -623,6 +699,52 @@ def cancel_open_units(actor: Actor, action_id, *, sku_id: str, reason: str, loca
         _audit(s, actor.tenant_id, actor.user_id, "order.cancelled_open_units", action_id,
                {"sku_id": sku_id, "units": released, "reason": reason})
     return {"status": "CANCELLED", "released_units": released}
+
+
+def release_open_units(s, tenant_id, action_id, *, reason: str, user_id=None, event: str) -> int:
+    """Release every still-open unit of an order's lines (the order was cancelled or rejected in the purchasing system)."""
+    released = 0
+    for line in s.execute(text("""SELECT id, ordered_units - received_units - cancelled_units AS open_units FROM
+            purchase_order_lines WHERE action_id=:a FOR UPDATE"""), {"a": action_id}).mappings().all():
+        if line["open_units"] > 0:
+            s.execute(text("""UPDATE purchase_order_lines SET cancelled_units = cancelled_units + :c,
+                status = CASE WHEN received_units = 0 THEN 'CANCELLED' ELSE 'RECEIVED' END, updated_at=now() WHERE id=:i"""),
+                {"c": line["open_units"], "i": line["id"]})
+            released += line["open_units"]
+    _audit(s, tenant_id, user_id, event, action_id, {"units": released, "reason": reason})
+    return released
+
+
+def cancel_order(actor: Actor, action_id, *, reason: str) -> dict:
+    """Ask the purchasing system to cancel a placed order, then release its open units (Phase 6).
+
+    An external write that changes a commitment, so it needs approval rights. The target decides: a refusal (for example
+    every line already received) is reported, never overridden. No answer leaves the ledger unchanged; the order sync
+    applies whatever the target then holds."""
+    actor.require("action.approve")
+    if not reason.strip():
+        raise ActionError("reason_required", "a cancellation reason is required", 422)
+    with tenant_session(actor.tenant_id) as s:
+        a = _load(s, action_id)
+        item = s.execute(text("SELECT operation_id FROM outbox WHERE action_id=:i"), {"i": action_id}).first()
+        open_units = s.execute(text("SELECT coalesce(sum(ordered_units - received_units - cancelled_units), 0) FROM "
+                                    "purchase_order_lines WHERE action_id=:i"), {"i": action_id}).scalar()
+    if a["status"] != "RECONCILED" or item is None or not open_units:
+        raise ActionError("invalid_state", "only a reconciled order with open units can be cancelled")
+    try:
+        res = erp().cancel_purchase_order(item.operation_id, reason)
+    except AdapterRejected as e:
+        raise ActionError("cancel_refused", f"the purchasing system refused the cancellation: {e}") from e
+    except AdapterTimeout as e:
+        raise ActionError("cancel_outcome_unknown", "no answer from the purchasing system; the order sync will apply "
+                                                    "whatever it then holds", 503) from e
+    except AdapterError as e:
+        raise ActionError("erp_unavailable", f"the purchasing system cannot be reached right now ({e})", 503) from e
+    with tenant_session(actor.tenant_id) as s:
+        released = release_open_units(s, actor.tenant_id, action_id, reason=reason, user_id=actor.user_id,
+                                      event="order.cancelled_in_erp")
+        record_outcome(s, 200, {"status": "CANCELLED", "released_units": released})
+    return {"status": "CANCELLED", "released_units": released, "po_number": res["po_number"]}
 
 
 def open_orders(actor: Actor) -> list[dict]:

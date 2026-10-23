@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     sign_in_per_minute: int = 20
     trust_forwarded_for: bool = False
     storage_dir: Path = Path("storage")
+    # Purchasing-system adapter (integrations/registry.py). Only registered adapters exist; today the local sandbox.
+    erp_adapter: str = "sandbox_erp"
     ollama_url: str = "http://localhost:11434"
     embed_model: str = "bge-m3:567m"
     embed_dim: int = 1024

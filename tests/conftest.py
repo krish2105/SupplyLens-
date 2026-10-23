@@ -43,7 +43,7 @@ if settings.environment not in ("development", "test"):
     raise pytest.UsageError(f"refusing to run tests with SUPPLYLENS_ENVIRONMENT={settings.environment}")
 
 TENANT_TABLES_CLEAR_ORDER = [
-    "receipts", "purchase_order_lines", "import_rows", "import_batches",
+    "receipts", "purchase_order_lines", "import_rows", "import_batches", "erp_connector_state",
     "web_vitals", "tenant_exports", "alerts", "rate_limit_buckets", "clause_labels", "public_awards", "tenant_settings", "warehouse_slots",
     "audit_events", "approvals", "outbox", "actions", "agent_events", "agent_runs",
     "idempotency_keys", "jobs", "plan_runs", "forecast_points", "forecast_runs",
@@ -64,7 +64,9 @@ def clean_db():
     with admin_engine().begin() as conn:
         # TRUNCATE is not subject to RLS (FORCE RLS also binds the owner for DELETE).
         tables = ", ".join(TENANT_TABLES_CLEAR_ORDER)
-        conn.execute(text(f"TRUNCATE {tables}, sandbox_erp.purchase_orders, sandbox_erp.fault_injection"))
+        conn.execute(text(f"TRUNCATE {tables}, sandbox_erp.receipts, sandbox_erp.purchase_orders, "
+                          "sandbox_erp.fault_injection, worker_heartbeats"))
+        conn.execute(text("UPDATE sandbox_erp.connector SET available = true, credentials_valid = true"))
     yield
 
 

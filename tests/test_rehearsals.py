@@ -28,7 +28,7 @@ from supplylens.simulation import demo
 from supplylens_worker.main import tick
 
 MIGRATIONS = REPO_ROOT / "services" / "api" / "migrations"
-HEAD = "0010"                     # current migration head; update with each new migration
+HEAD = "0011"                     # current migration head; update with each new migration
 DEMO = {"X-Requested-With": "supplylens", "X-SupplyLens-Tenant": "demo"}
 RUN = {"mode": "draft", "sku_ids": ["DEMO-REF-SKU"], "knowledge_cutoff": "2026-10-20T09:00:00Z",
        "effective_date": "2026-10-20", "budget_minor": 18000, "currency": "USD", "allow_shortfall": False}
@@ -391,6 +391,38 @@ def test_retry_refused_when_the_remote_order_already_exists(world):
     r = c.post(f"/api/v1/actions/{aid}/retry", headers={**DEMO, "Idempotency-Key": "rt-dup"})
     assert r.status_code == 409 and r.json()["code"] == "remote_order_exists"
     assert assert_orders_accounted(t) == 1
+
+
+# ----------------------------------------------------------------------------- rehearsal 3b: code ahead of schema
+OPS_PROBE = """
+import json
+from fastapi.testclient import TestClient
+from supplylens.api.app import app
+H = {"X-Requested-With": "supplylens", "X-SupplyLens-Tenant": "demo"}
+c = TestClient(app)
+c.post("/api/v1/auth/dev-login", json={"email": "tenant_admin@dev.supplylens.local"}, headers=H)
+out = {"health": c.get("/api/v1/ops/health", headers=H), "reconciliation": c.get("/api/v1/ops/reconciliation", headers=H),
+       "probe": c.post("/api/v1/ops/connector/test", headers=H)}
+print(json.dumps({k: [r.status_code, r.json()] for k, r in out.items()}, default=str))
+"""
+
+
+def test_new_code_serves_a_database_still_at_0010():
+    """The hosted database reaches 0011 only when the owner runs the setup-token procedure after a deploy (PD-009, D-090):
+    until then the deployed code must investigate, approve, dispatch and reconcile on schema 0010."""
+    with Scratch() as s:
+        r = s.alembic("upgrade", "0010")
+        assert r.returncode == 0, r.stderr[-1500:]
+        out = s.workload()
+        assert out["status"] == "RECONCILED" and out["counts"]["sandbox_orders"] == 1
+        probe = subprocess.run([sys.executable, "-c", OPS_PROBE], env=s.env(), capture_output=True, text=True,
+                               cwd=REPO_ROOT, timeout=300)
+        assert probe.returncode == 0, probe.stderr[-1500:]
+        got = json.loads(probe.stdout.strip().splitlines()[-1])
+        assert got["health"][0] == 200 and got["health"][1]["database"]["schema_0011"] is False
+        assert got["reconciliation"][0] == 200 and got["reconciliation"][1]["actions_by_status"]["RECONCILED"] == 1
+        assert got["probe"][0] == 200 and got["probe"][1]["checked"] is False
+        assert s.version() == "0010"
 
 
 # ----------------------------------------------------------------------------- rehearsal 4: model outage

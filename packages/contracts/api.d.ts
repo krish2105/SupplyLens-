@@ -92,6 +92,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/actions/{action_id}/cancel-order": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Cancel Order
+         * @description Ask the purchasing system to cancel a placed order; its open units are released once the target confirms.
+         */
+        post: operations["cancel_order_api_v1_actions__action_id__cancel_order_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/actions/{action_id}/edit": {
         parameters: {
             query?: never;
@@ -1049,6 +1069,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ops/connector/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ops Connector Test
+         * @description Health-check the purchasing system now (after renewing credentials). Never sends an order.
+         */
+        post: operations["ops_connector_test_api_v1_ops_connector_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ops/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ops Health
+         * @description Is the service doing its job: database, workers, job queue, order outbox, imports, open alerts, ERP connector.
+         */
+        get: operations["ops_health_api_v1_ops_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ops/reconciliation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ops Reconciliation
+         * @description Does every approved order have a known, matching outcome; what needs a person; receipts and service levels.
+         */
+        get: operations["ops_reconciliation_api_v1_ops_reconciliation_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/overview": {
         parameters: {
             query?: never;
@@ -1117,6 +1197,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sandbox/connector": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sandbox Connector
+         * @description Development-only: simulate an ERP outage or expired credentials (affects every workspace on this database).
+         */
+        post: operations["sandbox_connector_api_v1_sandbox_connector_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sandbox/faults": {
         parameters: {
             query?: never;
@@ -1151,6 +1251,26 @@ export interface paths {
         get: operations["sandbox_orders_api_v1_sandbox_orders_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sandbox/receipts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sandbox Receipt
+         * @description Development-only: the warehouse books a goods receipt in the simulated ERP (synchronised by the worker).
+         */
+        post: operations["sandbox_receipt_api_v1_sandbox_receipts_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1690,6 +1810,11 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** CancelOrderIn */
+        CancelOrderIn: {
+            /** Reason */
+            reason: string;
+        };
         /** Capability */
         Capability: {
             /** Basis */
@@ -1846,6 +1971,50 @@ export interface components {
             procurement_category: string | null;
             /** Suppliers */
             suppliers: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ConnectorIn */
+        ConnectorIn: {
+            /**
+             * Available
+             * @default true
+             */
+            available?: boolean;
+            /**
+             * Credentials Valid
+             * @default true
+             */
+            credentials_valid?: boolean;
+        };
+        /**
+         * ConnectorProbe
+         * @description Result of an ERP connector health check (integrations/connector.py).
+         */
+        ConnectorProbe: {
+            /** Adapter */
+            adapter: string | null;
+            /** Checked */
+            checked: boolean;
+            /** Error */
+            error: string | null;
+            /** Note */
+            note: string | null;
+            /** Qualification */
+            qualification: string | null;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ConnectorSet */
+        ConnectorSet: {
+            /** Available */
+            available: boolean;
+            /** Credentials Valid */
+            credentials_valid: boolean;
+            /** Ok */
+            ok: boolean;
         } & {
             [key: string]: unknown;
         };
@@ -3278,6 +3447,62 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /**
+         * OpsHealth
+         * @description Database, workers, job queue, order outbox, imports, open alerts and ERP connector (operations.health).
+         */
+        OpsHealth: {
+            /** Alerts */
+            alerts: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+            /** Connector */
+            connector: {
+                [key: string]: unknown;
+            };
+            /** Database */
+            database: {
+                [key: string]: unknown;
+            };
+            /** Imports */
+            imports: {
+                [key: string]: unknown;
+            };
+            /** Jobs */
+            jobs: {
+                [key: string]: unknown;
+            };
+            /** Outbox */
+            outbox: {
+                [key: string]: unknown;
+            };
+            /** Problems */
+            problems: string[];
+            /** Status */
+            status: string;
+            /** Workers */
+            workers: {
+                [key: string]: unknown;
+            };
+        } & {
+            [key: string]: unknown;
+        };
+        /** OrderCancelled */
+        OrderCancelled: {
+            /** Po Number */
+            po_number: string;
+            /** Released Units */
+            released_units: number;
+            /** Status */
+            status: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** OutboxInfo */
         OutboxInfo: {
             /** Attempts */
@@ -3715,6 +3940,55 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /**
+         * Reconciliation
+         * @description Order states, items needing a person, open-order ledger, ERP sync and service levels (operations.reconciliation).
+         */
+        Reconciliation: {
+            /** Actions By Status */
+            actions_by_status: {
+                [key: string]: number;
+            };
+            /** Adapter */
+            adapter: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Ledger */
+            ledger: {
+                [key: string]: unknown;
+            };
+            /** Needs Attention */
+            needs_attention: {
+                [key: string]: unknown;
+            }[];
+            /** Outbox */
+            outbox: {
+                [key: string]: unknown;
+            };
+            /** Overdue Lines */
+            overdue_lines: {
+                [key: string]: unknown;
+            }[];
+            /** Service Levels */
+            service_levels: {
+                [key: string]: unknown;
+            };
+            /** Sync */
+            sync: {
+                [key: string]: unknown;
+            };
+            /** Sync Alerts */
+            sync_alerts: {
+                [key: string]: unknown;
+            }[];
+            /** Unaccounted Orders */
+            unaccounted_orders: number;
+        } & {
+            [key: string]: unknown;
+        };
         /** RejectIn */
         RejectIn: {
             /** Expected Row Version */
@@ -3961,6 +4235,34 @@ export interface components {
             total_minor: number;
         } & {
             [key: string]: unknown;
+        };
+        /** SandboxReceipt */
+        SandboxReceipt: {
+            /** Receipt Id */
+            receipt_id: string;
+            /** Sequence */
+            sequence: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** SandboxReceiptIn */
+        SandboxReceiptIn: {
+            /**
+             * Action Id
+             * Format: uuid
+             */
+            action_id: string;
+            /** Location Id */
+            location_id?: string | null;
+            /** Quantity */
+            quantity: number;
+            /**
+             * Received On
+             * Format: date
+             */
+            received_on: string;
+            /** Sku Id */
+            sku_id: string;
         };
         /** ScenarioInput */
         ScenarioInput: {
@@ -4773,6 +5075,46 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CancelOpenResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_order_api_v1_actions__action_id__cancel_order_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "idempotency-key"?: string | null;
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                action_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CancelOrderIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrderCancelled"];
                 };
             };
             /** @description Validation Error */
@@ -6761,6 +7103,106 @@ export interface operations {
             };
         };
     };
+    ops_connector_test_api_v1_ops_connector_test_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectorProbe"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ops_health_api_v1_ops_health_get: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpsHealth"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ops_reconciliation_api_v1_ops_reconciliation_get: {
+        parameters: {
+            query?: {
+                days?: number;
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Reconciliation"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     overview_api_v1_overview_get: {
         parameters: {
             query?: {
@@ -6899,6 +7341,43 @@ export interface operations {
             };
         };
     };
+    sandbox_connector_api_v1_sandbox_connector_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConnectorIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectorSet"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     sandbox_fault_api_v1_sandbox_faults_post: {
         parameters: {
             query?: {
@@ -6956,6 +7435,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SandboxOrder"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sandbox_receipt_api_v1_sandbox_receipts_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SandboxReceiptIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SandboxReceipt"];
                 };
             };
             /** @description Validation Error */

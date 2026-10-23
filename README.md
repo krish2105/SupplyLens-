@@ -36,8 +36,10 @@ target system before it is marked complete.
 - **Lead-time-demand replenishment** — order-up-to level is the service-level quantile of demand over lead time + coverage,
   with day-to-day dependence measured from the SKU's own sales (simulation-checked, not yet validated on real history).
 - **Controlled execution** — stateful LangGraph investigator, approvals bound to payload hash and expiry,
-  separation of duties, transactional outbox, idempotent sandbox ERP, unknown-outcome reconciliation.
-- **Multi-tenant by construction** — forced row-level security on 38 tables, non-owner database role,
+  separation of duties, transactional outbox, unknown-outcome reconciliation; an ERP adapter contract with an outage
+  circuit breaker, receipt and order-status synchronisation and cancellation, verified against a local sandbox ERP
+  (no real ERP is connected).
+- **Multi-tenant by construction** — forced row-level security on 40 tables, non-owner database role,
   CSRF protection, atomic idempotency keys, database-shared rate limits, append-only audit trail, verified tenant
   export and certified deletion.
 - **Operable** — alert queue with signed webhook, OpenTelemetry tracing, WAL archiving with a rehearsed point-in-time
@@ -110,7 +112,10 @@ uv run python -m supplylens_worker.main                 # worker
 npm --prefix apps/web install && npm --prefix apps/web run dev   # http://localhost:3100
 ```
 
-Full setup, backup/restore and operating procedures: [`docs/operations/runbook.md`](docs/operations/runbook.md).
+Full setup, backup/restore and operating procedures: [`docs/operations/runbook.md`](docs/operations/runbook.md). ERP
+boundary and what qualifying a real ERP needs: [`erp-integration.md`](docs/operations/erp-integration.md); proposed service
+levels and measured recovery: [`slo.md`](docs/operations/slo.md); incidents, support, onboarding and releases:
+[`service-management.md`](docs/operations/service-management.md).
 
 ## Testing
 
@@ -122,6 +127,8 @@ uv run ruff check .                    # correctness, imports, bugbear and secur
 ./scripts/check_contracts.sh           # API contract drift (the web client is typed from it)
 ./scripts/backup_restore_drill.sh      # logical restore rehearsal with hash verification
 ./scripts/pitr_drill.sh                # point-in-time recovery rehearsal on a scratch cluster
+./scripts/recovery_drill.sh            # measured RPO/RTO for primary disk loss (copies a local database read-only)
+./scripts/outage_drill.sh              # database outage + worker crash with orders in flight
 uv run python scripts/loadtest/seed_reference.py && scripts/loadtest/run_reference.sh   # ARC-07 reference workload
 ```
 

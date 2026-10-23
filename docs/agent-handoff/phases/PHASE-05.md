@@ -5,7 +5,7 @@
 retrieval, MLOps). No generative model was introduced (D-041); purchasing stays deterministic and approval-gated.
 
 Evidence IDs `P5-E..` → [`../EVIDENCE.md`](../EVIDENCE.md); issues → [`../ISSUES.md`](../ISSUES.md); product decisions
-D-081 … D-087 → root [`DECISIONS.md`](../../DECISIONS.md); research numbers → [`docs/research/results.md`](../../docs/research/results.md).
+D-081 … D-087 → root [`DECISIONS.md`](../../../DECISIONS.md); research numbers → [`docs/research/results.md`](../../research/results.md).
 
 **Evidence kinds used below** — *historical backtest* (real UCI sales, forecasts scored after the fact); *simulation*
 (assumed terms, costs or demand); *offline evaluation* (generated question sets, labels by construction); *unit/integration

@@ -72,6 +72,10 @@ def _queue_depth(lines: list[str]) -> None:
     jobs: dict[str, int] = defaultdict(int)
     outbox: dict[str, int] = defaultdict(int)
     oldest_queued = 0.0
+    oldest_pending_order = 0.0
+    connectors_not_ok = 0
+    worker_age = None
+    from .integrations import schema
     try:
         with control_session() as s:
             tenants = [r.id for r in s.execute(text("SELECT id FROM tenants WHERE deleted_at IS NULL"))]
@@ -85,6 +89,16 @@ def _queue_depth(lines: list[str]) -> None:
                 for r in s.execute(text("""SELECT status, count(*) n FROM outbox
                                            WHERE status IN ('PENDING','IN_FLIGHT','UNKNOWN_OUTCOME') GROUP BY status""")):
                     outbox[r.status] += r.n
+                age = s.execute(text("""SELECT max(extract(epoch FROM now() - next_attempt_at)) FROM outbox
+                                        WHERE status = 'PENDING' AND next_attempt_at <= now()""")).scalar()
+                oldest_pending_order = max(oldest_pending_order, float(age or 0))
+                if schema.has_0011():
+                    connectors_not_ok += s.execute(text("SELECT count(*) FROM erp_connector_state "
+                                                        "WHERE status <> 'OK'")).scalar()
+        if schema.has_0011():
+            with control_session() as s:
+                worker_age = s.execute(text("SELECT min(extract(epoch FROM now() - last_tick_at)) "
+                                            "FROM worker_heartbeats")).scalar()
     except Exception:                       # metrics must never fail the scrape because the database is struggling
         count("metrics_queue_depth_errors_total")
         return
@@ -93,6 +107,13 @@ def _queue_depth(lines: list[str]) -> None:
     out += ["# TYPE supplylens_jobs_oldest_queued_seconds gauge", f"supplylens_jobs_oldest_queued_seconds {oldest_queued:.1f}"]
     out += ["# TYPE supplylens_outbox gauge"]
     out += [f'supplylens_outbox{{status="{k}"}} {outbox.get(k, 0)}' for k in ("PENDING", "IN_FLIGHT", "UNKNOWN_OUTCOME")]
+    # Phase 6: what the dispatch and worker alerts key on (docs/operations/slo.md)
+    out += ["# TYPE supplylens_outbox_oldest_pending_seconds gauge",
+            f"supplylens_outbox_oldest_pending_seconds {oldest_pending_order:.1f}",
+            "# TYPE supplylens_erp_connectors_not_ok gauge", f"supplylens_erp_connectors_not_ok {connectors_not_ok}"]
+    if worker_age is not None:
+        out += ["# TYPE supplylens_worker_heartbeat_age_seconds gauge",
+                f"supplylens_worker_heartbeat_age_seconds {float(worker_age):.1f}"]
     _queue_cache.update(at=now, lines=out)
     lines += out
 

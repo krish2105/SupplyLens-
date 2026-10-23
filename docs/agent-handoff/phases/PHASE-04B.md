@@ -2,7 +2,7 @@
 
 **Date:** 2026-10-23 (UTC) · **Start:** `main` @ `98c838a` · **Brief:** the owner's "Phase 4B: complete visual UI, UX and asset
 quality gate". Evidence `P4B-E..` → [`../EVIDENCE.md`](../EVIDENCE.md); issues `UI-4B-..` → [`../ISSUES.md`](../ISSUES.md);
-decisions D-078 … D-080 → root [`DECISIONS.md`](../../DECISIONS.md). The existing design language was kept: no screen was
+decisions D-078 … D-080 → root [`DECISIONS.md`](../../../DECISIONS.md). The existing design language was kept: no screen was
 redesigned, no colour, type or spacing token changed.
 
 **What was and was not tested.** Every screenshot is of the running product on the disposable CI-equivalent stack
