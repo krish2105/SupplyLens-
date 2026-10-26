@@ -429,9 +429,26 @@ D-078 … D-080. All **FIXED** and pinned by a test that fails on the previous c
   first load: skeleton and an empty "0 of 0" table header). **Process:** Linux visual baselines reviewed and
   committed (P4B-E13); CI compares from then on (P4B-E14). **Illustrations:** A02/A13/A16 stay withheld (D-040
   reconfirmed); replacement briefs await owner approval (PHASE-04B §8); nothing generated.
-- **QA-4B-01 (open, P3):** lab INP proxy for /inventory on desktop measured a 224 ms median on a CI runner (target 200 ms)
-  on code that had passed the same gate before (P4B-E11). Locally and in the next CI run it is within target. Next: keep
-  the target; record the samples per CI run and investigate the inventory row-selection handler if it recurs.
+- **QA-4B-01 — FIXED (measurement, target unchanged):** the lab INP proxy missed 200 ms on CI only (224 ms /inventory;
+  later 232 ms on `/`, run 40019830966), always on the two 3D pages, never locally. Cause: the vitals tests ran in the same
+  CI step as the Firefox/WebKit journeys on a 4-vCPU runner, so they measured the runner's load. Evidence: every slow entry
+  is presentation delay with 0 ms in handlers; with all 12 local cores busy the same interactions took 0.7–1.7 s **with or
+  without WebGL** (so neither the 3D scene nor the app code is the variable); alone they read 24–40 ms (desktop) and
+  40–80 ms (throttled phone). Fix: `vitals-desktop`/`vitals-mobile` projects run alone, one test at a time, in their own CI
+  step after the other suites (`playwright.config.ts`, `ci.yml`); acceptance evidence reads both results files. Targets
+  and the median-of-3 rule did not change (QA-E04, QA-E05).
+- **QA-4B-02 — FIXED (test and product):** J4 failed on WebKit in CI with two versions labelled "v1" (run 40019830966).
+  Cause, from the CI trace and Playwright's source: `fill` focuses the field, then types with a separate keyboard command;
+  a frame after the first upload the Policies reader took focus (UI-4B-10's reveal), so the "v2" keystrokes went nowhere
+  and the amendment was saved as "v1". A second cause found while reproducing: two runs started in the same millisecond
+  uploaded identical text and the API refused it as a duplicate. Fixes: unique stamp; J4 asserts the label before
+  submitting; see FE-4B-14 for the product fix (QA-E01…E03).
+- **FE-4B-14 — FIXED (regression from Phase 4B):** after adding a document the reader stole focus and scrolled the page
+  up (621 px desktop, 746 px phone) while the user carried on in the form. The reveal now happens only when the user opens
+  a version, a comparison or a citation, and only if focus is still where the click left it (`policies/page.tsx`).
+  Pinned by `ui-quality.spec.ts` "after adding a document, focus and scroll stay with the form" (fails on the old build).
+- **DOC-4B-15 (open, P3):** the API accepts a second version with the same label in one document (how the J4 failure
+  stored two "v1"s). Proposal: refuse a duplicate `version_label` per document with 409.
 
 ## Phase 5 resolution notes (2026-10-23/24) — AI/ML, retrieval, optimisation, MLOps
 Detail and numbers: `phases/PHASE-05.md`, `docs/research/results.md` (F1 2.1.0, F2, S2, R3).

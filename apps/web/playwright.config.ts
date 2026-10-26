@@ -6,7 +6,8 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   timeout: 60_000,
   retries: 0,
-  reporter: [["list"], ["json", { outputFile: "../../artifacts/reports/e2e-results.json" }]],
+  // E2E_JSON: a suite run as its own CI step (lab vitals) writes its own results file; acceptance evidence reads both
+  reporter: [["list"], ["json", { outputFile: process.env.E2E_JSON ?? "../../artifacts/reports/e2e-results.json" }]],
   use: {
     baseURL: process.env.SUPPLYLENS_WEB_URL ?? "http://localhost:3100",
     trace: "retain-on-failure",
@@ -14,8 +15,13 @@ export default defineConfig({
     ...(process.env.PLAYWRIGHT_CHROMIUM_PATH ? { launchOptions: { executablePath: process.env.PLAYWRIGHT_CHROMIUM_PATH, args: ["--no-sandbox"] } } : {}),
   },
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /visual\.spec/ },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|vitals|a11y|ui-quality)\.spec/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /(visual|vitals)\.spec/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|a11y|ui-quality)\.spec/ },
+    // Lab Web Vitals (UX-011) measure the app, so they run alone and one at a time: run beside other suites they measured
+    // the machine's load (QA-4B-01: the INP proxy read 224–232 ms on CI only while other browsers ran; with every core
+    // busy, interactions took 0.7–1.7 s with or without WebGL). CI runs them in their own step with --workers 1.
+    { name: "vitals-desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testMatch: /vitals\.spec/, workers: 1 },
+    { name: "vitals-mobile", use: { ...devices["Pixel 7"] }, testMatch: /vitals\.spec/, workers: 1 },
     // Screenshot regression (Phase 4B): sets its own widths and themes; run alone, on a freshly seeded stack, before the
     // suites above change data (CI does). Per-platform baselines under e2e/visual.spec.ts-snapshots/, reviewed before commit.
     { name: "visual", use: { ...devices["Desktop Chrome"] }, testMatch: /visual\.spec/ },

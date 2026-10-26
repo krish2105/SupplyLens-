@@ -47,7 +47,7 @@ COMMITTED = {"index.py", "pyproject.toml", ".python-version", "hosted_storage", 
 SKIP_PARTS = {"__pycache__", "tests"}
 # Written by the test suites on every run and never read by the API: left out of the bundle and of the digest, so a test
 # run does not make the committed digest stale (Phase 4, P4-E12).
-VOLATILE_REPORTS = {"e2e-results.json", "acceptance_evidence.json"}
+VOLATILE_REPORTS = {"e2e-results.json", "e2e-vitals-results.json", "acceptance_evidence.json"}
 
 
 def shipped_report(path: Path) -> bool:

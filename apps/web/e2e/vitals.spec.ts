@@ -19,7 +19,8 @@ declare global { interface Window { __v: { lcp: number; cls: number; inp: number
 
 for (const p of PAGES) {
   test(`lab vitals ${p}`, async ({ page }, info) => {
-    const mobile = info.project.name === "mobile";
+    const profile = info.project.name.replace(/^vitals-/, "");   // "desktop" | "mobile" (report files and summaries)
+    const mobile = profile === "mobile";
     if (mobile) {            // Lighthouse-style mobile throttling: 4x CPU slowdown, ~1.6 Mbps / 150 ms RTT
       const cdp = await page.context().newCDPSession(page);
       await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
@@ -40,8 +41,9 @@ for (const p of PAGES) {
         window.__v.inp = Math.max(0, ...Object.values(byInteraction));
       }).observe({ type: "event", durationThreshold: 16, buffered: true } as PerformanceObserverInit);
     });
-    // Three loads, judged by the median of each metric against the unchanged targets (P2-QA-02): one sample on a shared
-    // CI runner is noise-bound (one desktop INP proxy read 224 ms on a docs-only commit). Every sample is recorded.
+    // Three loads, judged by the median of each metric against the unchanged targets (P2-QA-02). The project runs alone
+    // and serially (playwright.config.ts): a sample taken while other suites ran measured the runner, not the app
+    // (QA-4B-01). Every sample is recorded.
     const samples: { lcp: number; cls: number; inp: number }[] = [];
     for (let n = 0; n < 3; n++) {
       await page.goto(`${p}?ws=uci-research`);
@@ -59,14 +61,14 @@ for (const p of PAGES) {
     const median = (k: "lcp" | "cls" | "inp") => samples.map((x) => x[k]).sort((a, b) => a - b)[1]!;
     const v = { lcp: median("lcp"), cls: median("cls"), inp: median("inp") };
     fs.mkdirSync(OUT, { recursive: true });       // one file per test: workers run in parallel
-    fs.writeFileSync(path.join(OUT, `${info.project.name}${p === "/" ? "-overview" : p.replaceAll("/", "-")}.json`), JSON.stringify({
-      path: p, profile: info.project.name, measured_at: new Date().toISOString(), targets: mobile ? STRESS_BUDGET : TARGET,
+    fs.writeFileSync(path.join(OUT, `${profile}${p === "/" ? "-overview" : p.replaceAll("/", "-")}.json`), JSON.stringify({
+      path: p, profile, measured_at: new Date().toISOString(), targets: mobile ? STRESS_BUDGET : TARGET,
       lcp_ms: Math.round(v.lcp), cls: +v.cls.toFixed(4), inp_ms: Math.round(v.inp), statistic: "median of 3 loads",
       samples: samples.map((x) => ({ lcp_ms: Math.round(x.lcp), cls: +x.cls.toFixed(4), inp_ms: Math.round(x.inp) })) }));
     const limit = mobile ? STRESS_BUDGET : TARGET;
-    expect.soft(v.lcp, `LCP ${p} (${info.project.name})`).toBeLessThanOrEqual(limit.lcp);
-    expect.soft(v.cls, `CLS ${p} (${info.project.name})`).toBeLessThanOrEqual(limit.cls);
-    expect.soft(v.inp, `INP proxy ${p} (${info.project.name})`).toBeLessThanOrEqual(limit.inp);
+    expect.soft(v.lcp, `LCP ${p} (${profile})`).toBeLessThanOrEqual(limit.lcp);
+    expect.soft(v.cls, `CLS ${p} (${profile})`).toBeLessThanOrEqual(limit.cls);
+    expect.soft(v.inp, `INP proxy ${p} (${profile})`).toBeLessThanOrEqual(limit.inp);
   });
 }
 

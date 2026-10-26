@@ -154,13 +154,21 @@ jobs:
           if-no-files-found: ignore
       - name: end-to-end, resilience, accessibility and Web Vitals suites (Chromium desktop and mobile; journeys on Firefox, WebKit, iPhone-sized WebKit)
         run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test --project desktop --project mobile --project firefox --project webkit --project mobile-safari
+      # Lab Web Vitals alone and one at a time, after the other suites: beside them they measured the runner's load (QA-4B-01).
+      # Targets unchanged (LCP 2.5 s, INP 200 ms, CLS 0.1 desktop; stress budgets on the throttled phone profile).
+      - name: lab Web Vitals (alone, one test at a time)
+        if: success() || failure()
+        env: { E2E_JSON: ../../artifacts/reports/e2e-vitals-results.json }
+        run: cd apps/web && ../../scripts/ci_annotate.sh npx playwright test --project vitals-desktop --project vitals-mobile --workers 1 --output test-results-vitals
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-reports
           path: |
             artifacts/reports/e2e-results.json
+            artifacts/reports/e2e-vitals-results.json
             apps/web/playwright-report
+            apps/web/test-results-vitals
             apps/web/test-results
             artifacts/reports/webvitals
             artifacts/reports/a11y-tree
@@ -223,7 +231,7 @@ jobs:
         with: { name: e2e-reports, path: . }
         continue-on-error: true
       - name: link acceptance criteria to this run's results
-        run: python3 scripts/acceptance_evidence.py --junit artifacts/reports/pytest-junit.xml --playwright artifacts/reports/e2e-results.json
+        run: python3 scripts/acceptance_evidence.py --junit artifacts/reports/pytest-junit.xml --playwright artifacts/reports/e2e-results.json artifacts/reports/e2e-vitals-results.json
       - if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

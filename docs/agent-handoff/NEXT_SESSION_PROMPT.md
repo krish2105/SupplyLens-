@@ -29,7 +29,8 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      `uv run alembic -c services/api/alembic.ini upgrade head` against supplylens_test, `uv run pytest -q`.
      Expected baseline: 477 passed, 6 skipped (Keycloak); web: `npm --prefix apps/web run lint` (0 warnings), `test` (19),
      `typecheck`. Browser suite: see STATUS.md (disposable stack `supplylens_p4ci`, run with SUPPLYLENS_E2E_ALLOW_DESTRUCTIVE=1;
-     `--project desktop --project mobile --project webkit --project mobile-safari` → 191 passed, 7 skipped). Screenshot
+     `--project desktop --project mobile --project webkit --project mobile-safari` → 175 passed, 7 skipped; then lab vitals
+     alone: `--project vitals-desktop --project vitals-mobile --workers 1` → 18 passed). Screenshot
      regression: `npx playwright test --project visual` (42 baselines per platform, darwin locally, linux in CI). CI: 217
      passed, 8 skipped on five projects + 42 visual. Migration head 0011 (the hosted database may still be at 0010: OPS-P6-03).
    - Never point tests at a real database: pytest refuses anything but a local *_test database, and the browser suite
@@ -55,7 +56,8 @@ durable record in docs/agent-handoff/. Do not rely on any chat history: the repo
      change is intended (D-080). Never run --update-snapshots just to make a run pass. A UI change that alters a
      critical screen needs both darwin and linux baselines refreshed: linux ones come from the CI artifact
      visual-baselines-linux (delete the affected *-linux.png, push, review the recorded images, commit).
-   - Lab Web Vitals targets stay as they are; QA-4B-01 (one CI sample of INP 224 ms on /inventory) is open, not waived.
+   - Lab Web Vitals targets stay as they are. Measure them alone (vitals-* projects, --workers 1): beside other suites they
+     measure the machine, not the app (QA-4B-01).
    - Illustrations: do not generate images. A02/A13/A16 stay withheld until the owner approves the briefs in
      PHASE-04B.md §8.
    - No real ERP exists: never claim ERP integration passed; never create real orders without approval. Every adapter goes

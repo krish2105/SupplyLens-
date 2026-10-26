@@ -59,6 +59,7 @@ apps/web/.next-build/
 !artifacts/reports/*.txt
 artifacts/experiments/*smoke*/
 artifacts/reports/e2e-results.json
+artifacts/reports/e2e-vitals-results.json
 
 # Local proxy CA for image builds (infra/docker/ca/README.md)
 infra/docker/ca/*.crt
@@ -67,6 +68,7 @@ infra/docker/ca/*.crt
 /storage*/
 apps/web/test-results/
 apps/web/test-results-visual/
+apps/web/test-results-vitals/
 apps/web/.next-build/
 /SupplyLens_Updated_Pack_With_Images/
 .vercel

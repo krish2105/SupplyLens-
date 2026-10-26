@@ -61,6 +61,12 @@ data layer than this work item. Until then the mobile LCP gap stands.
 
 ```
 cd apps/web && NEXT_DIST_DIR=.next-build npx next build && NEXT_DIST_DIR=.next-build npx next start --port 3100 &
-npx playwright test e2e/vitals.spec.ts         # needs the API and worker running
+npx playwright test --project vitals-desktop --project vitals-mobile --workers 1   # needs the API and worker running
 uv run python scripts/summarise_vitals.py      # rewrites artifacts/reports/webvitals-lab.json
 ```
+
+Run the lab measurements alone, one test at a time, with nothing else loading the machine. Run beside other browser
+suites they measure the machine's load, not the app: on CI the desktop INP proxy read 224–232 ms on `/` and `/inventory`
+while Firefox and WebKit journeys ran in parallel, and locally, with every core busy, the same interactions took
+0.7–1.7 s with or without WebGL (QA-4B-01). CI runs them in their own step after the other suites; the targets did not
+change.

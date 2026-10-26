@@ -25,15 +25,20 @@ export default function PoliciesPage() {
   const [res, setRes] = useState<SearchRes | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
-  const [open, setOpen] = useState<{ version: string; highlight?: string } | null>(null);
+  // reveal: the reader was opened from the list or a citation, so it is brought into view (below)
+  const [open, setOpen] = useState<{ version: string; highlight?: string; reveal?: boolean } | null>(null);
   const [compare, setCompare] = useState<[string, string] | null>(null);
   // Below xl the reader sits under the document list: opening a version or a comparison there happened off-screen.
-  // Bring it into view (and focus it, so keyboard and screen-reader users land on it) only when it is out of sight.
+  // Bring it into view (and focus it, so keyboard and screen-reader users land on it) only when it is out of sight, only
+  // when the reader asked for it (not after an upload, where the user carries on in the form), and only if focus is still
+  // where the click left it: moving focus a frame later could land in a field the user had moved to and swallow typing.
   const panel = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = panel.current;
-    if (!el || (!compare && !open)) return;
+    if (!el || !(compare || open?.reveal)) return;
+    const from = document.activeElement;
     const frame = requestAnimationFrame(() => {
+      if (document.activeElement !== from) return;
       const top = el.getBoundingClientRect().top;
       if (top >= 0 && top <= window.innerHeight * 0.75) return;
       el.focus({ preventScroll: true });       // focus first: focusing during a smooth scroll cancels the scroll
@@ -109,7 +114,7 @@ export default function PoliciesPage() {
                     <span className="font-medium">{r.title}</span><span className="text-muted">— {r.version_label}</span>
                     <Provenance kind={r.source_kind === "generated" ? "simulated" : "observed"} />
                     {r.signals.superseded_in_results ? <Status value="STALE" /> : null}
-                    <button className="ml-auto text-xs text-accent hover:underline" onClick={() => setOpen({ version: r.version_id, highlight: r.chunk_id })}>Open at passage</button>
+                    <button className="ml-auto text-xs text-accent hover:underline" onClick={() => setOpen({ version: r.version_id, highlight: r.chunk_id, reveal: true })}>Open at passage</button>
                   </div>
                   <p className="mt-1 text-xs text-muted">{r.section} · known {day(r.known_at)} · in force {day(r.valid_from)}{r.valid_to ? `–${day(r.valid_to)}` : ""}</p>
                   <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm">{r.excerpt}</p>
@@ -147,7 +152,7 @@ export default function PoliciesPage() {
                       const inForce = eff ? v.valid_from <= eff && (!v.valid_to || v.valid_to >= eff) : false;
                       return (
                         <li key={v.version_id} className="flex flex-wrap items-center gap-2 text-sm">
-                          <button className="text-accent hover:underline" onClick={() => setOpen({ version: v.version_id })}>{v.version_label}</button>
+                          <button className="text-accent hover:underline" onClick={() => setOpen({ version: v.version_id, reveal: true })}>{v.version_label}</button>
                           <span className="text-xs text-muted">known {day(v.known_at)} · from {day(v.valid_from)}{v.valid_to ? ` to ${day(v.valid_to)}` : ""}</span>
                           {!knownYet ? <Status value="NOT_CONFIGURED" /> : inForce ? <Status value="available" /> : null}
                           {!knownYet && <span className="text-xs text-muted">not yet known at cutoff</span>}

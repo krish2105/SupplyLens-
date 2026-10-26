@@ -137,3 +137,24 @@ test("illustrations match their states and every image loads", async ({ page }) 
   await expect(page.locator('[data-state="no_pending"] [data-illustration]').or(page.getByText("Nothing in this queue"))).toBeVisible();
   await loaded();
 });
+
+test("after adding a document, focus and scroll stay with the form (the reader does not pull them away)", async ({ page }) => {
+  // QA-4B-01 follow-up: a frame after an upload the reader took focus and scrolled the page up; a field the user had moved
+  // to lost its typing (seen in CI as an amendment saved with the label "v1" instead of "v2")
+  const stamp = `${Date.now()}${crypto.randomUUID().slice(0, 8)}`;
+  await signIn(page, "tenant_admin");
+  await page.goto("/policies?ws=demo");
+  const add = page.getByRole("region", { name: /Add a document or a new version/ });
+  await add.getByLabel("Title").fill(`Focus check ${stamp}`);
+  await add.getByLabel("Type").selectOption("policy");
+  await add.getByLabel("In force from").fill("2026-11-01");
+  await add.getByLabel("Text file").setInputFiles({ name: "focus.txt", mimeType: "text/plain", buffer: Buffer.from(`focus check ${stamp}\n`) });
+  await add.getByRole("button", { name: "Add document" }).click();
+  await expect(page.getByTestId("document-added")).toBeVisible();
+  const label = add.getByLabel("Version label");
+  await label.focus();
+  const y = await page.evaluate(() => window.scrollY);
+  await page.waitForTimeout(600);                                       // several frames: any deferred focus move has run
+  await expect(label).toBeFocused();
+  expect(Math.abs((await page.evaluate(() => window.scrollY)) - y)).toBeLessThan(2);
+});

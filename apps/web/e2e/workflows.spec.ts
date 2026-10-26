@@ -119,7 +119,9 @@ test("J2 a double-clicked export request creates one export", async ({ page }) =
 
 // ------------------------------------------------------------------------------------- 4. documents and contract history
 test("J4 an administrator adds a policy and an amendment; history, comparison and the in-force citation follow", async ({ page }) => {
-  const stamp = Date.now();
+  // unique per run: browser projects run this test in parallel, and two runs started in the same millisecond uploaded the
+  // same text, which the API rightly refuses as a duplicate document
+  const stamp = `${Date.now()}${crypto.randomUUID().slice(0, 8)}`;
   const v1 = `# Pallet labelling policy ${stamp}\nAll pallets carry one label per side.\n\nSection 2 Label stock\nLabels are thermal grade ${stamp}.\n`;
   const v2 = v1.replace("one label per side", "two labels per side");
   await signIn(page, "tenant_admin");
@@ -138,6 +140,7 @@ test("J4 an administrator adds a policy and an amendment; history, comparison an
   await expect(add.getByLabel("Title")).toBeDisabled();                    // an amendment keeps its document's title
   await add.getByLabel("Version label").fill("v2");
   await add.getByLabel("In force from").fill("2026-12-01");
+  await expect(add.getByLabel("Version label")).toHaveValue("v2");      // a swallowed fill fails here, not as two "v1"s later
   await add.getByLabel("Text file").setInputFiles({ name: "pallet-labelling-v2.txt", mimeType: "text/plain", buffer: Buffer.from(v2) });
   await add.getByRole("button", { name: "Add amendment" }).click();
   await expect(page.getByTestId("document-added")).toBeVisible();

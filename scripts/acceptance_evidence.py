@@ -5,7 +5,7 @@ apps/web/e2e/*.spec.ts, optionally narrowed to ::test names), and looks their ou
 pytest JUnit XML and the Playwright JSON report. Writes artifacts/reports/acceptance_evidence.json and .md stamped with
 the commit, run id and run URL, so each claim points at an immutable CI artifact rather than at a remembered result.
 
-uv run python scripts/acceptance_evidence.py --junit <pytest-junit.xml> --playwright <e2e-results.json>
+uv run python scripts/acceptance_evidence.py --junit <pytest-junit.xml> --playwright <e2e-results.json> [<more.json> ...]
 """
 from __future__ import annotations
 
@@ -57,9 +57,12 @@ def playwright_results(path: Path | None) -> dict[str, dict[str, str]]:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--junit", type=Path)
-    ap.add_argument("--playwright", type=Path)
+    ap.add_argument("--playwright", type=Path, nargs="*", default=[])   # main suites + lab vitals (own CI step)
     a = ap.parse_args()
-    results = {**pytest_results(a.junit), **playwright_results(a.playwright)}
+    results = pytest_results(a.junit)
+    for f in a.playwright:
+        for file, tests in playwright_results(f).items():
+            results.setdefault(file, {}).update(tests)
     sha = os.environ.get("GITHUB_SHA") or subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True,
                                                           cwd=ROOT).stdout.strip()
     run_id = os.environ.get("GITHUB_RUN_ID")
