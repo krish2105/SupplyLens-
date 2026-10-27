@@ -55,6 +55,7 @@ function StudyCard({ id, title: fallback, question, children, q }: { id: string;
 export default function ResearchPage() {
   const ws = useWs();
   const f1 = useStudy("F1"), s2 = useStudy("S2"), r3 = useStudy("R3"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
+  const e1 = useStudy("E1"), fa1 = useStudy("FA1"), g1 = useStudy("G1"), w1 = useStudy("W1"), d1s = useStudy("D1");
 
   const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const f1Opt = useMemo(() => {
@@ -77,6 +78,36 @@ export default function ResearchPage() {
       { name: "Workspace budget", color: token("--muted"), data: keys.map((k) => Math.round(d.results.workspace_scaled[k].total_cost)) },
     ], "£, 28 days");
   }, [s2.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
+
+  const e1Opt = useMemo(() => {
+    const d = e1.data;
+    if (!d?.exact?.points) return null;
+    const req = d.scope.required_units as number;
+    const b = baseOption();
+    const front = (d.nsga2.per_seed[0]?.front ?? []) as [number, number][];
+    return { ...b, grid: { left: 56, right: 20, top: 40, bottom: 76 }, legend: { bottom: 0, textStyle: { color: token("--muted") } },
+      tooltip: { trigger: "item", backgroundColor: token("--surface"), borderColor: token("--line"), textStyle: { color: token("--ink") } },
+      xAxis: { ...(b.xAxis as object), type: "value", name: "kg CO₂e", nameLocation: "middle", nameGap: 26 },
+      yAxis: { ...(b.yAxis as object), type: "value", name: "required units covered", min: 0, max: 1, nameLocation: "middle", nameGap: 40,
+        axisLabel: { color: token("--muted"), formatter: (v: number) => `${Math.round(v * 100)}%` } },
+      series: [
+        { type: "scatter", name: "NSGA-II front (seed 1)", symbolSize: 5, data: front.map(([sh, g]) => [g / 1000, 1 - sh / req]), itemStyle: { color: token("--muted") } },
+        { type: "line", name: "Exact (CP-SAT, epsilon-constraint)", data: (d.exact.points as Any[]).map((p) => [p.co2_grams / 1000, 1 - p.shortfall_units / req]),
+          lineStyle: { color: token("--accent") }, itemStyle: { color: token("--accent") } },
+      ] };
+  }, [e1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
+
+  const fa1Opt = useMemo(() => {
+    const d = fa1.data;
+    if (!d?.baseline?.groups) return null;
+    const groups = Object.keys(d.baseline.groups).filter((g) => d.baseline.groups[g].required >= 50);
+    const rec = d.recommended?.groups ?? {};
+    return bars(groups, [
+      { name: "No reweighing", color: token("--muted"), data: groups.map((g) => d.baseline.groups[g].coverage) },
+      ...(d.recommended ? [{ name: `Reweighed (alpha ${d.recommended.alpha})`, color: token("--accent"), data: groups.map((g) => rec[g]) }] : []),
+      { name: "Full reweighing (alpha 1)", color: token("--risk"), data: groups.map((g) => d.reweighed.groups[g].coverage) },
+    ], "coverage");
+  }, [fa1.data, chartTheme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   return (
     <div className="space-y-6">
@@ -190,6 +221,92 @@ export default function ResearchPage() {
           </div>
         )}
       </StudyCard>
+
+      <section aria-labelledby="operations-studies" className="space-y-6">
+        <h2 id="operations-studies" className="display pt-4 text-2xl font-semibold">Operations studies: trade-offs, fairness, generated answers and weather</h2>
+        <StudyCard id="E1" q={e1} title="Cost, service and CO₂"
+          question="What does cutting the plan's CO₂ cost in service and spend, and does an evolutionary search find the same trade-off as the exact solver?">
+          {e1.data?.exact && (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+              {e1Opt && <Chart option={e1Opt} height={260} label="Share of required units covered against kg CO2e for the exact front and NSGA-II" />}
+              <ul className="space-y-2 text-sm">
+                <li><Provenance kind="assumed" /> CO₂ lane factors and unit weight; <Provenance kind="simulated" /> stock, terms and budget. {e1.data.scope.skus} products, budget {num(e1.data.scope.budget_minor / 100, 0)} {e1.data.scope.currency}.</li>
+                <li>Exact front: {e1.data.exact.points.length} caps in {num(e1.data.exact.seconds, 1)} s. NSGA-II: {e1.data.nsga2.method}, {num(e1.data.nsga2.seconds_total, 1)} s in total.</li>
+                <li>NSGA-II reaches {(e1.data.nsga2.per_seed as Any[]).map((x) => pct(x.hypervolume_ratio)).join(", ")} of the exact hypervolume; {(e1.data.nsga2.per_seed as Any[]).map((x) => `${x.dominated_by_exact} of ${x.front_points}`).join(", ")} of its front points are dominated by exact points.</li>
+              </ul>
+            </div>
+          )}
+        </StudyCard>
+        <StudyCard id="FA1" q={fa1} title="Fair allocation across countries"
+          question="When the budget binds, are customers in every country group served equally, and what does reweighing change?">
+          {fa1.data?.baseline && (
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+              {fa1Opt && <Chart option={fa1Opt} height={260} label="Coverage by country group without, with moderate and with full reweighing" />}
+              <ul className="space-y-2 text-sm">
+                <li><Provenance kind="simulated" /> plan; country shares are recorded sales ({fa1.data.scope.share_window}).</li>
+                <li>Gap between best- and worst-served group: {num(fa1.data.baseline.summary.gap_points, 1)} points before{d1(fa1.data)}; worst-to-best ratio {num(fa1.data.baseline.summary.worst_to_best_ratio, 2)} before.</li>
+                {fa1.data.recommended && <li>Recommended weighting: alpha {fa1.data.recommended.alpha} — ratio {num(fa1.data.recommended.summary.worst_to_best_ratio, 2)}, costing {num(fa1.data.recommended.coverage_cost_points, 1)} points of total coverage.</li>}
+                <li>Full reweighing over-corrects: total coverage {pct(fa1.data.reweighed.overall_coverage)} against {pct(fa1.data.baseline.overall_coverage)}.</li>
+              </ul>
+            </div>
+          )}
+        </StudyCard>
+        <StudyCard id="G1" q={g1} title="Generated answers"
+          question="Are generated answers correct and cited, and is nothing generated where no passage answers?">
+          {g1.data?.categories && (
+            <>
+              <TableScroll label="Generated answers by question type" min={560}><table className="w-full text-sm"><caption className="sr-only">Generated answers by question type</caption>
+                <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 pr-4 font-medium">Question type</th><th className="pr-4 text-right font-medium">Tasks</th>
+                  <th className="pr-4 text-right font-medium">Answered</th><th className="pr-4 text-right font-medium">Figures correct</th><th className="text-right font-medium">Citation correct</th></tr></thead>
+                <tbody>{Object.entries(g1.data.categories as Record<string, Any>).map(([k, v]) => (
+                  <tr key={k} className="border-b border-line/60"><td className="py-1.5 pr-4">{k.replaceAll("_", " ")}</td><td className="num pr-4 text-right">{v.n}</td>
+                    <td className="num pr-4 text-right">{pct(v.answered_rate)}</td><td className="num pr-4 text-right">{v.facts_correct.n ? pct(v.facts_correct.rate) : "—"}</td>
+                    <td className="num text-right">{v.citation_correct.n ? pct(v.citation_correct.rate) : "—"}</td></tr>))}</tbody>
+              </table></TableScroll>
+              <p className="mt-2 text-sm">Model {g1.data.model}; generated where no passage answers: {g1.data.overall.must_abstain_wrongly_answered} of {g1.data.overall.must_abstain_tasks}; median latency {num(g1.data.latency_seconds.p50, 1)} s.</p>
+            </>
+          )}
+        </StudyCard>
+        <StudyCard id="W1" q={w1} title="Forecast metrics and weather"
+          question="How do Prophet and XGBoost compare on MAE, RMSE, WAPE and MAPE, and does London weather improve the forecasts?">
+          {w1.data?.results && (
+            <>
+              {(["total", "skus"] as const).map((lvl) => (
+                <TableScroll key={lvl} label={`Forecast metrics, ${lvl === "total" ? "total daily units" : "top products"}`} min={560} className="mb-3">
+                  <table className="w-full text-sm"><caption className="text-left text-xs text-muted">{lvl === "total" ? "Total daily units" : `Top ${w1.data!.data.top_products} products, pooled`}</caption>
+                    <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 pr-4 font-medium">Model</th><th className="pr-4 text-right font-medium">MAE</th>
+                      <th className="pr-4 text-right font-medium">RMSE</th><th className="pr-4 text-right font-medium">WAPE</th><th className="text-right font-medium">MAPE (non-zero days)</th></tr></thead>
+                    <tbody>{Object.entries(w1.data!.results[lvl].models as Record<string, Any>).map(([m, v]) => (
+                      <tr key={m} className="border-b border-line/60"><td className="py-1.5 pr-4">{m.replaceAll("_", " ")}</td><td className="num pr-4 text-right">{num(v.mae, 1)}</td>
+                        <td className="num pr-4 text-right">{num(v.rmse, 1)}</td><td className="num pr-4 text-right">{pct(v.wape)}</td><td className="num text-right">{pct(v.mape_nonzero_days)}</td></tr>))}</tbody>
+                  </table></TableScroll>
+              ))}
+              <ul className="space-y-1 text-sm">{(["total", "skus"] as const).flatMap((lvl) => Object.entries(w1.data!.results[lvl].weather_effect as Record<string, Any>).map(([m, e]) => (
+                <li key={lvl + m}>{m} with weather, {lvl === "total" ? "total" : "products"}: MAE change {num(e.mean_abs_error_change, 2)} (95% CI {num(e.ci95[0], 2)} to {num(e.ci95[1], 2)}) — {e.clear ? "difference detected" : "no clear difference"}.</li>)))}</ul>
+              <p className="mt-2 text-xs text-muted">Weather on the target day is the observed value, so any gain is an upper bound (a perfect weather forecast). Weather data: Open-Meteo, CC BY 4.0.</p>
+            </>
+          )}
+        </StudyCard>
+        <StudyCard id="D1" q={d1s} title="Supplier delay risk"
+          question="Can a model trained on past orders flag late deliveries ahead of time? (a method check on a simulated order history)">
+          {d1s.data?.models && (
+            <>
+              <TableScroll label="Delay risk models" min={520}><table className="w-full text-sm"><caption className="sr-only">Delay risk models on the held-out half-year</caption>
+                <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 pr-4 font-medium">Model</th><th className="pr-4 text-right font-medium">AUC</th>
+                  <th className="pr-4 text-right font-medium">Brier</th><th className="text-right font-medium">Late share in top 10 % (× base rate)</th></tr></thead>
+                <tbody>{Object.entries(d1s.data.models as Record<string, Any>).map(([m, v]) => (
+                  <tr key={m} className="border-b border-line/60"><td className="py-1.5 pr-4">{m.replaceAll("_", " ")}</td><td className="num pr-4 text-right">{num(v.auc, 2)}</td>
+                    <td className="num pr-4 text-right">{num(v.brier, 3)}</td><td className="num text-right">{pct(v.late_share_in_top_decile)} ({num(v.lift_top_decile, 2)}×)</td></tr>))}</tbody>
+              </table></TableScroll>
+              <p className="mt-2 text-sm"><Provenance kind="simulated" /> {d1s.data.data.orders_train.toLocaleString("en-GB")} training and {d1s.data.data.orders_test.toLocaleString("en-GB")} test orders, generated from a stated process; the models can only recover effects that were put in.</p>
+            </>
+          )}
+        </StudyCard>
+      </section>
     </div>
   );
+}
+
+function d1(d: Any) {
+  return d.recommended ? `, ${num(d.recommended.summary.gap_points, 1)} after moderate reweighing` : "";
 }

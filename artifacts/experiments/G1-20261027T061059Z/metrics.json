@@ -1,0 +1,151 @@
+{
+ "experiment_id": "G1-20261027T061059Z",
+ "study": "G1",
+ "kind": "measured on synthetic tasks",
+ "question": "Are generated answers correct and cited, and is nothing generated where no passage answers?",
+ "model": "qwen2.5:7b",
+ "taskset": "r3_answer_support_v1.jsonl",
+ "tasks": 271,
+ "categories": {
+  "ambiguous": {
+   "n": 9,
+   "generation": {
+    "not_attempted": 8,
+    "answered": 1
+   },
+   "answered_rate": 0.1111,
+   "facts_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "extractive_citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "wrongly_answered": 1
+  },
+  "answerable": {
+   "n": 108,
+   "generation": {
+    "answered": 108
+   },
+   "answered_rate": 1.0,
+   "facts_correct": {
+    "n": 108,
+    "rate": 1.0
+   },
+   "citation_correct": {
+    "n": 108,
+    "rate": 1.0
+   },
+   "extractive_citation_correct": {
+    "n": 108,
+    "rate": 1.0
+   }
+  },
+  "named_supplier": {
+   "n": 8,
+   "generation": {
+    "not_attempted": 8
+   },
+   "answered_rate": 0.0,
+   "facts_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "extractive_citation_correct": {
+    "n": 0,
+    "rate": null
+   }
+  },
+  "out_of_scope": {
+   "n": 48,
+   "generation": {
+    "not_attempted": 48
+   },
+   "answered_rate": 0.0,
+   "facts_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "extractive_citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "wrongly_answered": 0
+  },
+  "paraphrase": {
+   "n": 88,
+   "generation": {
+    "answered": 88
+   },
+   "answered_rate": 1.0,
+   "facts_correct": {
+    "n": 88,
+    "rate": 1.0
+   },
+   "citation_correct": {
+    "n": 88,
+    "rate": 1.0
+   },
+   "extractive_citation_correct": {
+    "n": 88,
+    "rate": 1.0
+   }
+  },
+  "unknown_product": {
+   "n": 10,
+   "generation": {
+    "not_attempted": 10
+   },
+   "answered_rate": 0.0,
+   "facts_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "extractive_citation_correct": {
+    "n": 0,
+    "rate": null
+   },
+   "wrongly_answered": 0
+  }
+ },
+ "overall": {
+  "answered_facts_correct": {
+   "n": 196,
+   "rate": 1.0
+  },
+  "answered_citation_correct": {
+   "n": 196,
+   "rate": 1.0
+  },
+  "must_abstain_wrongly_answered": 1,
+  "must_abstain_tasks": 67
+ },
+ "withheld_reasons": {},
+ "latency_seconds": {
+  "p50": 2.81,
+  "p95": 4.01
+ },
+ "limits": [
+  "labels known by construction from simulated and fictional agreements, not human-reviewed",
+  "fact check: the asked figures appear in the answer (a correct figure next to a wrong one would pass)",
+  "one local 7B model at temperature 0; paraphrases sampled one in four"
+ ]
+}

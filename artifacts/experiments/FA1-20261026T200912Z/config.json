@@ -1,0 +1,40 @@
+{
+ "weight_scale": 100,
+ "min_country_units": 50,
+ "alphas": [
+  0.0,
+  0.1,
+  0.2,
+  0.3,
+  0.4,
+  0.5,
+  0.6,
+  0.75,
+  1.0
+ ],
+ "europe": [
+  "Austria",
+  "Belgium",
+  "Channel Islands",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "EIRE",
+  "European Community",
+  "Finland",
+  "France",
+  "Germany",
+  "Greece",
+  "Iceland",
+  "Italy",
+  "Lithuania",
+  "Malta",
+  "Netherlands",
+  "Norway",
+  "Poland",
+  "Portugal",
+  "Spain",
+  "Sweden",
+  "Switzerland"
+ ]
+}

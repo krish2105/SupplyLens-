@@ -1,0 +1,405 @@
+{
+  "name": "SupplyLens: shortage to draft purchase order",
+  "nodes": [
+    {
+      "name": "Every 15 minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "id": "2bfa1a28-f49a-50a4-9b7e-e666e0d2013e"
+    },
+    {
+      "name": "Run now",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        200
+      ],
+      "parameters": {},
+      "id": "0f26c3c2-678d-510c-9c76-4c54ceb135fa"
+    },
+    {
+      "name": "Settings",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// Edit these for your stack. The account needs the planner role; it can prepare drafts, never approve or send them.\nreturn [{ json: { base_url: 'http://localhost:3100', workspace: 'uci-research', email: 'planner@dev.supplylens.local',\n  max_skus: 3, severities: ['high'] } }];"
+      },
+      "id": "02f780dd-8db2-5d47-a71d-a332c5726fe6"
+    },
+    {
+      "name": "Sign in",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.base_url }}/api/v1/auth/dev-login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Requested-With",
+              "value": "supplylens"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ email: $json.email }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "5ea8b700-5c2e-5988-b681-93f618a040de"
+    },
+    {
+      "name": "Session",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// Keep the session cookie for the calls below (local development sign-in; a deployed stack uses its identity provider).\nconst raw = $input.first().json.headers['set-cookie'];\nconst cookie = (Array.isArray(raw) ? raw : [raw]).map((c) => String(c).split(';')[0]).join('; ');\nreturn [{ json: { ...$('Settings').first().json, cookie } }];"
+      },
+      "id": "16e40b3a-8b8c-5a7b-9736-43561c274a0c"
+    },
+    {
+      "name": "Read exceptions",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        0
+      ],
+      "parameters": {
+        "url": "={{ $('Session').item.json.base_url }}/api/v1/exceptions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Requested-With",
+              "value": "supplylens"
+            },
+            {
+              "name": "X-SupplyLens-Tenant",
+              "value": "={{ $('Session').item.json.workspace }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $('Session').item.json.cookie }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f1733f43-7c42-5a6f-9794-6966826fde8d"
+    },
+    {
+      "name": "Read open drafts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "url": "={{ $('Session').item.json.base_url }}/api/v1/actions?status=PENDING_APPROVAL",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Requested-With",
+              "value": "supplylens"
+            },
+            {
+              "name": "X-SupplyLens-Tenant",
+              "value": "={{ $('Session').item.json.workspace }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $('Session').item.json.cookie }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "fe0cd708-0851-5e4b-a5b7-badcab699b08",
+      "alwaysOutputData": true
+    },
+    {
+      "name": "Pick shortages",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// High-severity shortages without an open draft, largest money at risk first. Nothing to do -> stop quietly.\nconst s = $('Session').first().json;\nconst exc = $('Read exceptions').first().json.items ?? [];\nconst drafts = $('Read open drafts').all().map((i) => i.json);\nconst drafted = new Set(drafts.flatMap((d) => (d.payload?.lines ?? []).map((l) => String(l.sku_id).split('@')[0])));\nconst pick = exc.filter((e) => e.kind === 'shortage_risk' && s.severities.includes(e.severity) && e.sku_id && !drafted.has(e.sku_id))\n  .sort((a, b) => (b.materiality_minor ?? 0) - (a.materiality_minor ?? 0)).slice(0, s.max_skus).map((e) => e.sku_id);\nif (!pick.length) return [];\nconst key = 'n8n-' + new Date().toISOString().slice(0, 13) + '-' + pick.join('-');\nreturn [{ json: { sku_ids: pick, idempotency_key: key } }];"
+      },
+      "id": "3a88110c-497a-53b4-be31-8fe9898235cd"
+    },
+    {
+      "name": "Prepare draft order",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        100
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Session').item.json.base_url }}/api/v1/agent-runs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Requested-With",
+              "value": "supplylens"
+            },
+            {
+              "name": "X-SupplyLens-Tenant",
+              "value": "={{ $('Session').item.json.workspace }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $('Session').item.json.cookie }}"
+            },
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.idempotency_key }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ mode: 'draft', sku_ids: $json.sku_ids }) }}",
+        "options": {}
+      },
+      "id": "e0890f71-c271-5a59-a755-06e9a23ce0d7"
+    },
+    {
+      "name": "Give the investigator time",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        100
+      ],
+      "parameters": {
+        "amount": 15
+      },
+      "id": "48b7a40f-e915-5bfc-aa7e-a31a99f09fd7"
+    },
+    {
+      "name": "Read the run",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        100
+      ],
+      "parameters": {
+        "url": "={{ $('Session').item.json.base_url }}/api/v1/agent-runs/{{ $('Prepare draft order').item.json.run_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Requested-With",
+              "value": "supplylens"
+            },
+            {
+              "name": "X-SupplyLens-Tenant",
+              "value": "={{ $('Session').item.json.workspace }}"
+            },
+            {
+              "name": "Cookie",
+              "value": "={{ $('Session').item.json.cookie }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30055494-d3cd-5135-b374-e75da66d8697"
+    },
+    {
+      "name": "Notify",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        100
+      ],
+      "parameters": {
+        "jsCode": "// The message a team channel would receive. Approval stays in SupplyLens: another person must approve the exact payload.\nconst s = $('Session').first().json; const run = $input.first().json;\nconst ids = (run.actions ?? []).map((a) => a.id);\nconst text = ids.length\n  ? `Draft purchase order ready for approval (${$('Pick shortages').first().json.sku_ids.join(', ')}): ${s.base_url}/approvals?ws=${s.workspace}`\n  : `Investigation ${run.status ?? 'unknown'} without a draft for ${$('Pick shortages').first().json.sku_ids.join(', ')}: ${s.base_url}/runs?ws=${s.workspace}`;\nreturn [{ json: { text, run_id: run.id ?? run.run_id, status: run.status, action_ids: ids } }];"
+      },
+      "id": "e4479f0b-8768-5d97-9bee-273c58049a63"
+    }
+  ],
+  "connections": {
+    "Every 15 minutes": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Run now": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Sign in",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sign in": {
+      "main": [
+        [
+          {
+            "node": "Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session": {
+      "main": [
+        [
+          {
+            "node": "Read exceptions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read exceptions": {
+      "main": [
+        [
+          {
+            "node": "Read open drafts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read open drafts": {
+      "main": [
+        [
+          {
+            "node": "Pick shortages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick shortages": {
+      "main": [
+        [
+          {
+            "node": "Prepare draft order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare draft order": {
+      "main": [
+        [
+          {
+            "node": "Give the investigator time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Give the investigator time": {
+      "main": [
+        [
+          {
+            "node": "Read the run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read the run": {
+      "main": [
+        [
+          {
+            "node": "Notify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "SLshortage2draft"
+}

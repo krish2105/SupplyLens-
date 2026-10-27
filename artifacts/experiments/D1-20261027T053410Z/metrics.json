@@ -1,0 +1,198 @@
+{
+ "experiment_id": "D1-20261027T053410Z",
+ "study": "D1",
+ "kind": "simulated",
+ "question": "Can a model trained on past orders flag late deliveries ahead of time? (method check on a simulated history)",
+ "data": {
+  "orders_train": 8112,
+  "orders_test": 2392,
+  "split": "2011-07-01",
+  "late_definition": "more than 2 days after the quoted lead time",
+  "generator": {
+   "reliability_days": {
+    "SIM-SUP-ALPHA": 0.4,
+    "SIM-SUP-BRAVO": 1.6,
+    "SIM-SUP-CHARLIE": 0.9,
+    "SIM-SUP-DELTA": 0.2
+   },
+   "sea_extra_days": 1.2,
+   "december_extra_days": 1.5,
+   "seed": 11
+  }
+ },
+ "models": {
+  "supplier_late_rate": {
+   "auc": 0.692,
+   "brier": 0.2011,
+   "late_share_in_top_decile": 0.5186,
+   "late_rate": 0.347,
+   "lift_top_decile": 1.49,
+   "calibration": [
+    {
+     "decile": 3,
+     "predicted": 0.084,
+     "observed": 0.082
+    },
+    {
+     "decile": 5,
+     "predicted": 0.373,
+     "observed": 0.325
+    },
+    {
+     "decile": 8,
+     "predicted": 0.426,
+     "observed": 0.438
+    },
+    {
+     "decile": 10,
+     "predicted": 0.54,
+     "observed": 0.519
+    }
+   ]
+  },
+  "logistic_regression": {
+   "auc": 0.7674,
+   "brier": 0.182,
+   "late_share_in_top_decile": 0.6333,
+   "late_rate": 0.347,
+   "lift_top_decile": 1.83,
+   "calibration": [
+    {
+     "decile": 1,
+     "predicted": 0.054,
+     "observed": 0.013
+    },
+    {
+     "decile": 2,
+     "predicted": 0.068,
+     "observed": 0.054
+    },
+    {
+     "decile": 3,
+     "predicted": 0.16,
+     "observed": 0.134
+    },
+    {
+     "decile": 4,
+     "predicted": 0.232,
+     "observed": 0.259
+    },
+    {
+     "decile": 5,
+     "predicted": 0.313,
+     "observed": 0.393
+    },
+    {
+     "decile": 6,
+     "predicted": 0.418,
+     "observed": 0.402
+    },
+    {
+     "decile": 7,
+     "predicted": 0.476,
+     "observed": 0.439
+    },
+    {
+     "decile": 8,
+     "predicted": 0.54,
+     "observed": 0.556
+    },
+    {
+     "decile": 9,
+     "predicted": 0.61,
+     "observed": 0.586
+    },
+    {
+     "decile": 10,
+     "predicted": 0.697,
+     "observed": 0.633
+    }
+   ]
+  },
+  "lightgbm": {
+   "auc": 0.7549,
+   "brier": 0.1851,
+   "late_share_in_top_decile": 0.6183,
+   "late_rate": 0.347,
+   "lift_top_decile": 1.78,
+   "calibration": [
+    {
+     "decile": 1,
+     "predicted": 0.019,
+     "observed": 0.017
+    },
+    {
+     "decile": 2,
+     "predicted": 0.049,
+     "observed": 0.062
+    },
+    {
+     "decile": 3,
+     "predicted": 0.132,
+     "observed": 0.108
+    },
+    {
+     "decile": 4,
+     "predicted": 0.253,
+     "observed": 0.286
+    },
+    {
+     "decile": 5,
+     "predicted": 0.351,
+     "observed": 0.404
+    },
+    {
+     "decile": 6,
+     "predicted": 0.441,
+     "observed": 0.413
+    },
+    {
+     "decile": 7,
+     "predicted": 0.497,
+     "observed": 0.514
+    },
+    {
+     "decile": 8,
+     "predicted": 0.541,
+     "observed": 0.535
+    },
+    {
+     "decile": 9,
+     "predicted": 0.588,
+     "observed": 0.51
+    },
+    {
+     "decile": 10,
+     "predicted": 0.689,
+     "observed": 0.618
+    }
+   ]
+  }
+ },
+ "logistic_coefficients_standardised": {
+  "supplier=SIM-SUP-ALPHA": -0.031,
+  "supplier=SIM-SUP-BRAVO": 0.326,
+  "supplier=SIM-SUP-CHARLIE": 0.162,
+  "supplier=SIM-SUP-DELTA": -0.473,
+  "quoted_lead_days": -0.046,
+  "sea_lane": 0.722,
+  "log_order_size": 0.143,
+  "december": 0.281,
+  "november": -0.06
+ },
+ "lightgbm_gain_importance": {
+  "supplier=SIM-SUP-ALPHA": 732.0,
+  "supplier=SIM-SUP-BRAVO": 2081.3,
+  "supplier=SIM-SUP-CHARLIE": 847.3,
+  "supplier=SIM-SUP-DELTA": 2492.2,
+  "quoted_lead_days": 13547.2,
+  "sea_lane": 0.0,
+  "log_order_size": 4546.7,
+  "december": 1584.5,
+  "november": 170.7
+ },
+ "limits": [
+  "the order history is generated: the models can only recover effects that were put in",
+  "no real supplier delivery data; replace generate() with recorded receipts (ERP receipt feed, Phase 6)"
+ ]
+}

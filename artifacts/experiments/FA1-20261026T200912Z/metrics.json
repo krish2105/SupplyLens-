@@ -1,0 +1,424 @@
+{
+ "experiment_id": "FA1-20261026T200912Z",
+ "study": "FA1",
+ "kind": "simulated",
+ "question": "When the budget binds, are customers in every country group served equally, and what does reweighing change?",
+ "scope": {
+  "skus": 40,
+  "required_units": 23980,
+  "budget_minor": 2000000,
+  "currency": "GBP",
+  "effective_date": "2011-12-08",
+  "share_window": "2010-12-08 to 2011-12-08"
+ },
+ "group_demand_share": {
+  "United Kingdom": 0.8468,
+  "Europe (non-UK)": 0.1368,
+  "Rest of world": 0.0161,
+  "Unspecified": 0.0003
+ },
+ "weights": {
+  "method": "sum over the product's country shares of (1 / that group's share of all demand) ** alpha",
+  "alpha_1_min": 1.37,
+  "alpha_1_max": 17.75
+ },
+ "baseline": {
+  "alpha": 0.0,
+  "status": "OPTIMAL",
+  "spend_minor": 1999998,
+  "shortfall_units": 4565,
+  "overall_coverage": 0.8096,
+  "weights": {
+   "min": 1.0,
+   "max": 1.0
+  },
+  "groups": {
+   "United Kingdom": {
+    "required": 20755.5,
+    "covered": 17124.1,
+    "coverage": 0.825
+   },
+   "Europe (non-UK)": {
+    "required": 2810.4,
+    "covered": 2080.7,
+    "coverage": 0.7403
+   },
+   "Rest of world": {
+    "required": 407.4,
+    "covered": 207.0,
+    "coverage": 0.5081
+   },
+   "Unspecified": {
+    "required": 6.6,
+    "covered": 3.2,
+    "coverage": 0.4795
+   }
+  },
+  "summary": {
+   "best": 0.825,
+   "worst": 0.5081,
+   "gap_points": 31.69,
+   "worst_to_best_ratio": 0.6159
+  },
+  "countries": {
+   "United Kingdom": {
+    "required": 20755.5,
+    "covered": 17124.1,
+    "coverage": 0.825
+   },
+   "Netherlands": {
+    "required": 642.5,
+    "covered": 535.0,
+    "coverage": 0.8327
+   },
+   "EIRE": {
+    "required": 621.3,
+    "covered": 427.1,
+    "coverage": 0.6874
+   },
+   "France": {
+    "required": 459.3,
+    "covered": 383.6,
+    "coverage": 0.8353
+   },
+   "Germany": {
+    "required": 352.7,
+    "covered": 246.2,
+    "coverage": 0.6981
+   },
+   "Australia": {
+    "required": 300.6,
+    "covered": 145.2,
+    "coverage": 0.483
+   },
+   "Spain": {
+    "required": 138.3,
+    "covered": 103.4,
+    "coverage": 0.7476
+   },
+   "Sweden": {
+    "required": 130.5,
+    "covered": 81.0,
+    "coverage": 0.6209
+   },
+   "Portugal": {
+    "required": 83.5,
+    "covered": 58.0,
+    "coverage": 0.695
+   },
+   "Switzerland": {
+    "required": 71.7,
+    "covered": 37.8,
+    "coverage": 0.5275
+   },
+   "Channel Islands": {
+    "required": 57.4,
+    "covered": 41.6,
+    "coverage": 0.7252
+   },
+   "Belgium": {
+    "required": 56.2,
+    "covered": 41.8,
+    "coverage": 0.7442
+   },
+   "Italy": {
+    "required": 51.1,
+    "covered": 32.2,
+    "coverage": 0.6304
+   }
+  }
+ },
+ "reweighed": {
+  "alpha": 1.0,
+  "status": "OPTIMAL",
+  "spend_minor": 1999986,
+  "shortfall_units": 6249,
+  "overall_coverage": 0.7394,
+  "weights": {
+   "min": 1.37,
+   "max": 17.75
+  },
+  "groups": {
+   "United Kingdom": {
+    "required": 20755.5,
+    "covered": 15015.8,
+    "coverage": 0.7235
+   },
+   "Europe (non-UK)": {
+    "required": 2810.4,
+    "covered": 2351.8,
+    "coverage": 0.8368
+   },
+   "Rest of world": {
+    "required": 407.4,
+    "covered": 357.3,
+    "coverage": 0.8771
+   },
+   "Unspecified": {
+    "required": 6.6,
+    "covered": 6.1,
+    "coverage": 0.9171
+   }
+  },
+  "summary": {
+   "best": 0.8771,
+   "worst": 0.7235,
+   "gap_points": 15.36,
+   "worst_to_best_ratio": 0.8249
+  },
+  "countries": {
+   "United Kingdom": {
+    "required": 20755.5,
+    "covered": 15015.8,
+    "coverage": 0.7235
+   },
+   "Netherlands": {
+    "required": 642.5,
+    "covered": 559.3,
+    "coverage": 0.8706
+   },
+   "EIRE": {
+    "required": 621.3,
+    "covered": 466.8,
+    "coverage": 0.7513
+   },
+   "France": {
+    "required": 459.3,
+    "covered": 405.4,
+    "coverage": 0.8828
+   },
+   "Germany": {
+    "required": 352.7,
+    "covered": 295.9,
+    "coverage": 0.8392
+   },
+   "Australia": {
+    "required": 300.6,
+    "covered": 261.9,
+    "coverage": 0.8714
+   },
+   "Spain": {
+    "required": 138.3,
+    "covered": 115.9,
+    "coverage": 0.8382
+   },
+   "Sweden": {
+    "required": 130.5,
+    "covered": 127.7,
+    "coverage": 0.9786
+   },
+   "Portugal": {
+    "required": 83.5,
+    "covered": 72.7,
+    "coverage": 0.87
+   },
+   "Switzerland": {
+    "required": 71.7,
+    "covered": 52.8,
+    "coverage": 0.736
+   },
+   "Channel Islands": {
+    "required": 57.4,
+    "covered": 37.7,
+    "coverage": 0.6559
+   },
+   "Belgium": {
+    "required": 56.2,
+    "covered": 50.5,
+    "coverage": 0.8986
+   },
+   "Italy": {
+    "required": 51.1,
+    "covered": 45.7,
+    "coverage": 0.894
+   }
+  }
+ },
+ "sweep": [
+  {
+   "alpha": 0.0,
+   "overall_coverage": 0.8096,
+   "spend_minor": 1999998,
+   "summary": {
+    "best": 0.825,
+    "worst": 0.5081,
+    "gap_points": 31.69,
+    "worst_to_best_ratio": 0.6159
+   },
+   "groups": {
+    "United Kingdom": 0.825,
+    "Europe (non-UK)": 0.7403,
+    "Rest of world": 0.5081,
+    "Unspecified": 0.4795
+   }
+  },
+  {
+   "alpha": 0.1,
+   "overall_coverage": 0.8096,
+   "spend_minor": 1999998,
+   "summary": {
+    "best": 0.825,
+    "worst": 0.5081,
+    "gap_points": 31.69,
+    "worst_to_best_ratio": 0.6159
+   },
+   "groups": {
+    "United Kingdom": 0.825,
+    "Europe (non-UK)": 0.7403,
+    "Rest of world": 0.5081,
+    "Unspecified": 0.4795
+   }
+  },
+  {
+   "alpha": 0.2,
+   "overall_coverage": 0.8077,
+   "spend_minor": 1999998,
+   "summary": {
+    "best": 0.8196,
+    "worst": 0.5594,
+    "gap_points": 26.02,
+    "worst_to_best_ratio": 0.6825
+   },
+   "groups": {
+    "United Kingdom": 0.8196,
+    "Europe (non-UK)": 0.7565,
+    "Rest of world": 0.5594,
+    "Unspecified": 0.5402
+   }
+  },
+  {
+   "alpha": 0.3,
+   "overall_coverage": 0.8054,
+   "spend_minor": 1999914,
+   "summary": {
+    "best": 0.8133,
+    "worst": 0.6174,
+    "gap_points": 19.59,
+    "worst_to_best_ratio": 0.7591
+   },
+   "groups": {
+    "United Kingdom": 0.8133,
+    "Europe (non-UK)": 0.7745,
+    "Rest of world": 0.6174,
+    "Unspecified": 0.6067
+   }
+  },
+  {
+   "alpha": 0.4,
+   "overall_coverage": 0.7957,
+   "spend_minor": 1999968,
+   "summary": {
+    "best": 0.8073,
+    "worst": 0.6849,
+    "gap_points": 12.24,
+    "worst_to_best_ratio": 0.8484
+   },
+   "groups": {
+    "United Kingdom": 0.7963,
+    "Europe (non-UK)": 0.8073,
+    "Rest of world": 0.6849,
+    "Unspecified": 0.8463
+   }
+  },
+  {
+   "alpha": 0.5,
+   "overall_coverage": 0.7892,
+   "spend_minor": 1999866,
+   "summary": {
+    "best": 0.8192,
+    "worst": 0.7358,
+    "gap_points": 8.34,
+    "worst_to_best_ratio": 0.8982
+   },
+   "groups": {
+    "United Kingdom": 0.7862,
+    "Europe (non-UK)": 0.8192,
+    "Rest of world": 0.7358,
+    "Unspecified": 0.8711
+   }
+  },
+  {
+   "alpha": 0.6,
+   "overall_coverage": 0.7775,
+   "spend_minor": 1999854,
+   "summary": {
+    "best": 0.8403,
+    "worst": 0.7688,
+    "gap_points": 7.15,
+    "worst_to_best_ratio": 0.9149
+   },
+   "groups": {
+    "United Kingdom": 0.7688,
+    "Europe (non-UK)": 0.8403,
+    "Rest of world": 0.7865,
+    "Unspecified": 0.8995
+   }
+  },
+  {
+   "alpha": 0.75,
+   "overall_coverage": 0.7676,
+   "spend_minor": 1999992,
+   "summary": {
+    "best": 0.8446,
+    "worst": 0.756,
+    "gap_points": 8.86,
+    "worst_to_best_ratio": 0.8951
+   },
+   "groups": {
+    "United Kingdom": 0.756,
+    "Europe (non-UK)": 0.8446,
+    "Rest of world": 0.8202,
+    "Unspecified": 0.9107
+   }
+  },
+  {
+   "alpha": 1.0,
+   "overall_coverage": 0.7394,
+   "spend_minor": 1999986,
+   "summary": {
+    "best": 0.8771,
+    "worst": 0.7235,
+    "gap_points": 15.36,
+    "worst_to_best_ratio": 0.8249
+   },
+   "groups": {
+    "United Kingdom": 0.7235,
+    "Europe (non-UK)": 0.8368,
+    "Rest of world": 0.8771,
+    "Unspecified": 0.9171
+   }
+  }
+ ],
+ "recommended": {
+  "alpha": 0.4,
+  "overall_coverage": 0.7957,
+  "summary": {
+   "best": 0.8073,
+   "worst": 0.6849,
+   "gap_points": 12.24,
+   "worst_to_best_ratio": 0.8484
+  },
+  "groups": {
+   "United Kingdom": 0.7963,
+   "Europe (non-UK)": 0.8073,
+   "Rest of world": 0.6849,
+   "Unspecified": 0.8463
+  },
+  "coverage_cost_points": 1.39,
+  "rule": "highest overall coverage among weightings whose worst-to-best ratio is at least 0.8"
+ },
+ "effect": {
+  "gap_points_before": 31.69,
+  "gap_points_after": 15.36,
+  "ratio_before": 0.6159,
+  "ratio_after": 0.8249,
+  "overall_coverage_change_points": -7.02,
+  "spend_change_minor": -12
+ },
+ "limits": [
+  "one scope, one date; deterministic allocation, no sampling interval",
+  "a stock-out is assumed to hit a product's customers in proportion to their past purchases",
+  "groups and countries with fewer than 50 attributed required units are not ranked",
+  "stock, terms and budget are the workspace's assumed recipe; demand is the champion forecast"
+ ]
+}

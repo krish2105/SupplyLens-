@@ -697,6 +697,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/evidence/answer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evidence Answer
+         * @description A cited answer written by the local model from the retrieved passages (F1, D-094). Generation runs only where it is
+         *     enabled and only when the extractive layer found something to answer; every sentence is checked against its sources.
+         */
+        post: operations["evidence_answer_api_v1_evidence_answer_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/evidence/search": {
         parameters: {
             query?: never;
@@ -798,6 +819,26 @@ export interface paths {
          *     exist. Without `limit` the response holds the whole list up to that bound, as before.
          */
         get: operations["inventory_api_v1_inventory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inventory/classes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Inventory Classes
+         * @description ABC/XYZ classes, safety stock per class service level and the cost of service (F4).
+         */
+        get: operations["inventory_classes_api_v1_inventory_classes_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1295,6 +1336,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/scenarios/emissions-frontier": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Scenarios Emissions Frontier
+         * @description Solve the scenario's plan under falling CO2 caps (nothing is persisted).
+         */
+        post: operations["scenarios_emissions_frontier_api_v1_scenarios_emissions_frontier_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/telemetry/vitals": {
         parameters: {
             query?: never;
@@ -1632,6 +1693,22 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** AnswerIn */
+        AnswerIn: {
+            /** Effective Date */
+            effective_date?: string | null;
+            /** Knowledge Cutoff */
+            knowledge_cutoff?: string | null;
+            /**
+             * Mode
+             * @default effective
+             */
+            mode?: string;
+            /** Q */
+            q: string;
+            /** Supplier Id */
+            supplier_id?: string | null;
+        };
         /**
          * AnswerSupport
          * @description Why the best passage was or was not offered as an answer (knowledge/retrieve.py answer_support).
@@ -1932,6 +2009,46 @@ export interface components {
             citation: components["schemas"]["Citation"];
             /** Text */
             text: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ClassCell */
+        ClassCell: {
+            /** Abc */
+            abc: string;
+            /** Products */
+            products: number;
+            /** Value Share */
+            value_share: number;
+            /** Xyz */
+            xyz: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ClassedSku */
+        ClassedSku: {
+            /** Abc */
+            abc: string;
+            /** Cv */
+            cv: number | null;
+            /** Holding Cost Minor Per Year */
+            holding_cost_minor_per_year: number | null;
+            /** Lead Time Days */
+            lead_time_days: number | null;
+            /** Mean Daily */
+            mean_daily: number;
+            /** Safety Stock Units */
+            safety_stock_units: number | null;
+            /** Sd Daily */
+            sd_daily: number;
+            /** Service Level */
+            service_level: number;
+            /** Sku Id */
+            sku_id: string;
+            /** Unit Cost Minor */
+            unit_cost_minor: number | null;
+            /** Xyz */
+            xyz: string | null;
         } & {
             [key: string]: unknown;
         };
@@ -2286,6 +2403,35 @@ export interface components {
             quantities: {
                 [key: string]: number;
             };
+        };
+        /**
+         * EmissionsFrontier
+         * @description Cost / service / CO2 trade-off by the epsilon-constraint method (F2). CO2 is assumed, the rest simulated.
+         */
+        EmissionsFrontier: {
+            /** Assumptions */
+            assumptions: string[];
+            /** Budget Minor */
+            budget_minor: number;
+            /** Currency */
+            currency: string;
+            /**
+             * Effective Date
+             * Format: date
+             */
+            effective_date: string;
+            /** Method */
+            method: string;
+            /** Points */
+            points: components["schemas"]["FrontierPoint"][];
+            /** Skus Needing Order */
+            skus_needing_order: number;
+            /** Value Kinds */
+            value_kinds: {
+                [key: string]: string;
+            };
+        } & {
+            [key: string]: unknown;
         };
         /**
          * EvidencePacket
@@ -2778,6 +2924,108 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** FrontierPoint */
+        FrontierPoint: {
+            /** Cap Grams */
+            cap_grams: number | null;
+            /** Cap Share */
+            cap_share: number | null;
+            /** Co2 Grams */
+            co2_grams: number | null;
+            /** Required Units */
+            required_units: number;
+            /** Service */
+            service: number | null;
+            /** Shortfall Units */
+            shortfall_units: number | null;
+            /** Spend Minor */
+            spend_minor: number;
+            /** Status */
+            status: string;
+            /** Units Ordered */
+            units_ordered: number;
+        } & {
+            [key: string]: unknown;
+        };
+        /** Generated */
+        Generated: {
+            /** Abstained */
+            abstained: boolean;
+            /**
+             * Citations
+             * @default []
+             */
+            citations: components["schemas"]["GeneratedCitation"][];
+            /** Latency Ms */
+            latency_ms: number | null;
+            /** Model */
+            model: string;
+            /** Reason */
+            reason: string | null;
+            /**
+             * Sentences
+             * @default []
+             */
+            sentences: components["schemas"]["GeneratedSentence"][];
+            /**
+             * Type
+             * @default generated
+             */
+            type: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * GeneratedAnswer
+         * @description A cited answer written by a local model from retrieved passages (F1, D-094), with the extractive answer beside it.
+         *     generation: off | not_attempted | withheld | answered.
+         */
+        GeneratedAnswer: {
+            extractive: components["schemas"]["Answer"];
+            generated: components["schemas"]["Generated"] | null;
+            /** Generation */
+            generation: string;
+            /** Message */
+            message: string | null;
+            /** Question */
+            question: string;
+            /** Results */
+            results: components["schemas"]["EvidenceResult"][];
+        } & {
+            [key: string]: unknown;
+        };
+        /** GeneratedCitation */
+        GeneratedCitation: {
+            /** Char End */
+            char_end: number;
+            /** Char Start */
+            char_start: number;
+            /** Chunk Id */
+            chunk_id: string;
+            /** Document Id */
+            document_id: string;
+            /** N */
+            n: number;
+            /** Section */
+            section: string;
+            /** Title */
+            title: string;
+            /** Version Id */
+            version_id: string;
+            /** Version Label */
+            version_label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** GeneratedSentence */
+        GeneratedSentence: {
+            /** Cites */
+            cites: number[];
+            /** Sentence */
+            sentence: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2959,6 +3207,75 @@ export interface components {
             offset: number;
             /** Total */
             total: number | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * InventoryClasses
+         * @description ABC/XYZ classes and statistical safety stock (F4). Derived from sales; holding rate assumed.
+         */
+        InventoryClasses: {
+            /**
+             * Abc Cuts
+             * @default []
+             */
+            abc_cuts: number[];
+            /**
+             * Assumptions
+             * @default []
+             */
+            assumptions: string[];
+            /** Basis */
+            basis: string | null;
+            /** Currency */
+            currency: string | null;
+            /**
+             * Curve
+             * @default []
+             */
+            curve: components["schemas"]["ServicePoint"][];
+            /** Effective Date */
+            effective_date: string | null;
+            /** Holding Rate Annual */
+            holding_rate_annual: number | null;
+            /**
+             * Matrix
+             * @default []
+             */
+            matrix: components["schemas"]["ClassCell"][];
+            /**
+             * Policy
+             * @default {}
+             */
+            policy: {
+                [key: string]: number;
+            };
+            policy_point: components["schemas"]["ServicePoint"] | null;
+            /**
+             * Products Classified
+             * @default 0
+             */
+            products_classified: number;
+            /**
+             * Stocked
+             * @default []
+             */
+            stocked: components["schemas"]["ClassedSku"][];
+            /**
+             * Value Kind
+             * @default derived
+             */
+            value_kind: string;
+            /**
+             * Window Days
+             * @default 365
+             */
+            window_days: number;
+            /**
+             * Xyz Cuts
+             * @default []
+             */
+            xyz_cuts: number[];
         } & {
             [key: string]: unknown;
         };
@@ -4273,6 +4590,8 @@ export interface components {
             allow_shortfall?: boolean;
             /** Budget Minor */
             budget_minor?: number | null;
+            /** Co2 Cap Grams */
+            co2_cap_grams?: number | null;
             /** Coverage Days */
             coverage_days?: number | null;
             /** Currency */
@@ -4472,6 +4791,17 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** ServicePoint */
+        ServicePoint: {
+            /** Holding Cost Minor Per Year */
+            holding_cost_minor_per_year: number;
+            /** Safety Stock Units */
+            safety_stock_units: number;
+            /** Service Level */
+            service_level: number;
+        } & {
+            [key: string]: unknown;
+        };
         /** SheetReport */
         SheetReport: {
             /** Accepted */
@@ -4513,6 +4843,8 @@ export interface components {
         };
         /** SolverInfo */
         SolverInfo: {
+            /** Deterministic */
+            deterministic: boolean | null;
             /** Max Time S */
             max_time_s: number;
             /** Name */
@@ -6341,6 +6673,43 @@ export interface operations {
             };
         };
     };
+    evidence_answer_api_v1_evidence_answer_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AnswerIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GeneratedAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     evidence_api_v1_evidence_search_get: {
         parameters: {
             query: {
@@ -6542,6 +6911,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Inventory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inventory_classes_api_v1_inventory_classes_get: {
+        parameters: {
+            query?: {
+                effective_date?: string | null;
+                service_a?: number;
+                service_b?: number;
+                service_c?: number;
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InventoryClasses"];
                 };
             };
             /** @description Validation Error */
@@ -7542,6 +7948,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ScenarioResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    scenarios_emissions_frontier_api_v1_scenarios_emissions_frontier_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScenarioInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmissionsFrontier"];
                 };
             };
             /** @description Validation Error */

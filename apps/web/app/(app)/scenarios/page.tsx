@@ -7,6 +7,7 @@ import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, intentKey } from "@/lib/api";
+import { EmissionsFrontier } from "@/components/emissions-frontier";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useMe, useWs } from "@/lib/queries";
 import { dateTime, int, money, num } from "@/lib/format";
@@ -163,6 +164,7 @@ export default function ScenariosPage() {
           {results.draft && !incompatible(results.draft) && <Lines result={results.draft.result} currency={currency} />}
         </div>
       </div>
+      <EmissionsFrontier request={{ knowledge_cutoff: known, effective_date: eff, ...body(d) }} canRun={canRun} currency={currency} />
       <Card className="p-5">
         <Eyebrow>Saved scenario runs</Eyebrow>
         {saved.data && saved.data.length === 0 && (

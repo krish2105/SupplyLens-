@@ -98,7 +98,7 @@ test("inventory that fails to load draws no empty warehouse and no blank snapsho
   await expect(page.getByText("The server hit an unexpected error.").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText("The layout appears once stock positions load.")).toBeVisible();
   await expect(page.getByText("No snapshot to show")).toBeVisible();
-  await expect(page.locator("canvas")).toHaveCount(0);
+  await expect(page.locator('[aria-label^="3D schematic warehouse"] canvas')).toHaveCount(0);   // charts below draw their own
 });
 
 test("phone: opening a version comparison brings the reader into view and moves focus to it", async ({ page }) => {

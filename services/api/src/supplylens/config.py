@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     ollama_url: str = "http://localhost:11434"
     embed_model: str = "bge-m3:567m"
     embed_dim: int = 1024
+    # Cited generative answers (knowledge/generate.py, D-094). Off unless enabled; never in the demo profile.
+    generation_enabled: bool = False
+    generation_model: str = "qwen2.5:7b"
+    generation_timeout_s: float = 90.0
     # Optional cross-encoder reranker: a local model directory or hub id. Unset = rule-based reranking only.
     reranker_model: str | None = None
     reranker_candidates: int = 20
@@ -125,6 +129,8 @@ class Settings(BaseSettings):
                 problems.append("SUPPLYLENS_COOKIE_SECURE must be true (cookies only over TLS)")
             if self.e2e_disposable:
                 problems.append("SUPPLYLENS_E2E_DISPOSABLE marks test infrastructure; it is never allowed here")
+            if self.generation_enabled and self.environment == "demo":
+                problems.append("generated answers are off in the public demo (D-094): unset SUPPLYLENS_GENERATION_ENABLED")
             if self.environment == "production" and not (self.oidc_issuer and self.oidc_client_id and self.oidc_client_secret):
                 problems.append("an OIDC provider (issuer, client id, client secret) must be configured")
             if problems:
@@ -139,6 +145,10 @@ class Settings(BaseSettings):
         if self.environment in ("development", "test"):
             return DEV_OWNER_URL
         raise RuntimeError("SUPPLYLENS_ADMIN_DATABASE_URL is not set: owner access is only for migrations and maintenance")
+
+    @property
+    def generation_available(self) -> bool:
+        return self.generation_enabled and self.environment != "demo"
 
     @property
     def oidc_enabled(self) -> bool:

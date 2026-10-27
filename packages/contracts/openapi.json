@@ -674,6 +674,59 @@
         "title": "Answer",
         "type": "object"
       },
+      "AnswerIn": {
+        "properties": {
+          "effective_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "knowledge_cutoff": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Knowledge Cutoff"
+          },
+          "mode": {
+            "default": "effective",
+            "title": "Mode",
+            "type": "string"
+          },
+          "q": {
+            "title": "Q",
+            "type": "string"
+          },
+          "supplier_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Supplier Id"
+          }
+        },
+        "required": [
+          "q"
+        ],
+        "title": "AnswerIn",
+        "type": "object"
+      },
       "AnswerSupport": {
         "additionalProperties": true,
         "description": "Why the best passage was or was not offered as an answer (knowledge/retrieve.py answer_support).",
@@ -1417,6 +1470,141 @@
           "citation"
         ],
         "title": "Claim",
+        "type": "object"
+      },
+      "ClassCell": {
+        "additionalProperties": true,
+        "properties": {
+          "abc": {
+            "title": "Abc",
+            "type": "string"
+          },
+          "products": {
+            "title": "Products",
+            "type": "integer"
+          },
+          "value_share": {
+            "title": "Value Share",
+            "type": "number"
+          },
+          "xyz": {
+            "title": "Xyz",
+            "type": "string"
+          }
+        },
+        "required": [
+          "abc",
+          "xyz",
+          "products",
+          "value_share"
+        ],
+        "title": "ClassCell",
+        "type": "object"
+      },
+      "ClassedSku": {
+        "additionalProperties": true,
+        "properties": {
+          "abc": {
+            "title": "Abc",
+            "type": "string"
+          },
+          "cv": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cv"
+          },
+          "holding_cost_minor_per_year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holding Cost Minor Per Year"
+          },
+          "lead_time_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lead Time Days"
+          },
+          "mean_daily": {
+            "title": "Mean Daily",
+            "type": "number"
+          },
+          "safety_stock_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Safety Stock Units"
+          },
+          "sd_daily": {
+            "title": "Sd Daily",
+            "type": "number"
+          },
+          "service_level": {
+            "title": "Service Level",
+            "type": "number"
+          },
+          "sku_id": {
+            "title": "Sku Id",
+            "type": "string"
+          },
+          "unit_cost_minor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Cost Minor"
+          },
+          "xyz": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Xyz"
+          }
+        },
+        "required": [
+          "sku_id",
+          "abc",
+          "xyz",
+          "cv",
+          "mean_daily",
+          "sd_daily",
+          "lead_time_days",
+          "unit_cost_minor",
+          "service_level",
+          "safety_stock_units",
+          "holding_cost_minor_per_year"
+        ],
+        "title": "ClassedSku",
         "type": "object"
       },
       "ClauseLabel": {
@@ -2258,6 +2446,66 @@
           "expected_row_version"
         ],
         "title": "EditIn",
+        "type": "object"
+      },
+      "EmissionsFrontier": {
+        "additionalProperties": true,
+        "description": "Cost / service / CO2 trade-off by the epsilon-constraint method (F2). CO2 is assumed, the rest simulated.",
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "budget_minor": {
+            "title": "Budget Minor",
+            "type": "integer"
+          },
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "effective_date": {
+            "format": "date",
+            "title": "Effective Date",
+            "type": "string"
+          },
+          "method": {
+            "title": "Method",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/FrontierPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "skus_needing_order": {
+            "title": "Skus Needing Order",
+            "type": "integer"
+          },
+          "value_kinds": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Value Kinds",
+            "type": "object"
+          }
+        },
+        "required": [
+          "currency",
+          "budget_minor",
+          "effective_date",
+          "skus_needing_order",
+          "points",
+          "method",
+          "value_kinds",
+          "assumptions"
+        ],
+        "title": "EmissionsFrontier",
         "type": "object"
       },
       "EvidencePacket": {
@@ -3544,6 +3792,293 @@
         "title": "ForecastStudyReport",
         "type": "object"
       },
+      "FrontierPoint": {
+        "additionalProperties": true,
+        "properties": {
+          "cap_grams": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Grams"
+          },
+          "cap_share": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cap Share"
+          },
+          "co2_grams": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Co2 Grams"
+          },
+          "required_units": {
+            "title": "Required Units",
+            "type": "integer"
+          },
+          "service": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Service"
+          },
+          "shortfall_units": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shortfall Units"
+          },
+          "spend_minor": {
+            "title": "Spend Minor",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "units_ordered": {
+            "title": "Units Ordered",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "cap_share",
+          "cap_grams",
+          "status",
+          "spend_minor",
+          "co2_grams",
+          "units_ordered",
+          "required_units",
+          "shortfall_units",
+          "service"
+        ],
+        "title": "FrontierPoint",
+        "type": "object"
+      },
+      "Generated": {
+        "additionalProperties": true,
+        "properties": {
+          "abstained": {
+            "title": "Abstained",
+            "type": "boolean"
+          },
+          "citations": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GeneratedCitation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sentences": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/GeneratedSentence"
+            },
+            "title": "Sentences",
+            "type": "array"
+          },
+          "type": {
+            "default": "generated",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "model",
+          "abstained",
+          "reason",
+          "sentences",
+          "citations",
+          "latency_ms"
+        ],
+        "title": "Generated",
+        "type": "object"
+      },
+      "GeneratedAnswer": {
+        "additionalProperties": true,
+        "description": "A cited answer written by a local model from retrieved passages (F1, D-094), with the extractive answer beside it.\ngeneration: off | not_attempted | withheld | answered.",
+        "properties": {
+          "extractive": {
+            "$ref": "#/components/schemas/Answer"
+          },
+          "generated": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Generated"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generation": {
+            "title": "Generation",
+            "type": "string"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceResult"
+            },
+            "title": "Results",
+            "type": "array"
+          }
+        },
+        "required": [
+          "question",
+          "generation",
+          "message",
+          "extractive",
+          "generated",
+          "results"
+        ],
+        "title": "GeneratedAnswer",
+        "type": "object"
+      },
+      "GeneratedCitation": {
+        "additionalProperties": true,
+        "properties": {
+          "char_end": {
+            "title": "Char End",
+            "type": "integer"
+          },
+          "char_start": {
+            "title": "Char Start",
+            "type": "integer"
+          },
+          "chunk_id": {
+            "title": "Chunk Id",
+            "type": "string"
+          },
+          "document_id": {
+            "title": "Document Id",
+            "type": "string"
+          },
+          "n": {
+            "title": "N",
+            "type": "integer"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version_id": {
+            "title": "Version Id",
+            "type": "string"
+          },
+          "version_label": {
+            "title": "Version Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "n",
+          "chunk_id",
+          "document_id",
+          "version_id",
+          "version_label",
+          "title",
+          "section",
+          "char_start",
+          "char_end"
+        ],
+        "title": "GeneratedCitation",
+        "type": "object"
+      },
+      "GeneratedSentence": {
+        "additionalProperties": true,
+        "properties": {
+          "cites": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Cites",
+            "type": "array"
+          },
+          "sentence": {
+            "title": "Sentence",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sentence",
+          "cites"
+        ],
+        "title": "GeneratedSentence",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4056,6 +4591,157 @@
           "next_offset"
         ],
         "title": "Inventory",
+        "type": "object"
+      },
+      "InventoryClasses": {
+        "additionalProperties": true,
+        "description": "ABC/XYZ classes and statistical safety stock (F4). Derived from sales; holding rate assumed.",
+        "properties": {
+          "abc_cuts": {
+            "default": [],
+            "items": {
+              "type": "number"
+            },
+            "title": "Abc Cuts",
+            "type": "array"
+          },
+          "assumptions": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Basis"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "curve": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ServicePoint"
+            },
+            "title": "Curve",
+            "type": "array"
+          },
+          "effective_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Date"
+          },
+          "holding_rate_annual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Holding Rate Annual"
+          },
+          "matrix": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ClassCell"
+            },
+            "title": "Matrix",
+            "type": "array"
+          },
+          "policy": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "default": {},
+            "title": "Policy",
+            "type": "object"
+          },
+          "policy_point": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ServicePoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "products_classified": {
+            "default": 0,
+            "title": "Products Classified",
+            "type": "integer"
+          },
+          "stocked": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ClassedSku"
+            },
+            "title": "Stocked",
+            "type": "array"
+          },
+          "value_kind": {
+            "default": "derived",
+            "title": "Value Kind",
+            "type": "string"
+          },
+          "window_days": {
+            "default": 365,
+            "title": "Window Days",
+            "type": "integer"
+          },
+          "xyz_cuts": {
+            "default": [],
+            "items": {
+              "type": "number"
+            },
+            "title": "Xyz Cuts",
+            "type": "array"
+          }
+        },
+        "required": [
+          "effective_date",
+          "basis",
+          "currency",
+          "window_days",
+          "abc_cuts",
+          "xyz_cuts",
+          "products_classified",
+          "matrix",
+          "policy",
+          "holding_rate_annual",
+          "stocked",
+          "curve",
+          "policy_point",
+          "value_kind",
+          "assumptions"
+        ],
+        "title": "InventoryClasses",
         "type": "object"
       },
       "InventoryItem": {
@@ -7412,6 +8098,19 @@
             ],
             "title": "Budget Minor"
           },
+          "co2_cap_grams": {
+            "anyOf": [
+              {
+                "maximum": 1000000000000.0,
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Co2 Cap Grams"
+          },
           "coverage_days": {
             "anyOf": [
               {
@@ -7909,6 +8608,30 @@
         "title": "ScenarioTerms",
         "type": "object"
       },
+      "ServicePoint": {
+        "additionalProperties": true,
+        "properties": {
+          "holding_cost_minor_per_year": {
+            "title": "Holding Cost Minor Per Year",
+            "type": "integer"
+          },
+          "safety_stock_units": {
+            "title": "Safety Stock Units",
+            "type": "integer"
+          },
+          "service_level": {
+            "title": "Service Level",
+            "type": "number"
+          }
+        },
+        "required": [
+          "service_level",
+          "safety_stock_units",
+          "holding_cost_minor_per_year"
+        ],
+        "title": "ServicePoint",
+        "type": "object"
+      },
       "SheetReport": {
         "additionalProperties": true,
         "properties": {
@@ -8001,6 +8724,17 @@
       "SolverInfo": {
         "additionalProperties": true,
         "properties": {
+          "deterministic": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deterministic"
+          },
           "max_time_s": {
             "title": "Max Time S",
             "type": "number"
@@ -8027,7 +8761,8 @@
           "version",
           "num_workers",
           "random_seed",
-          "max_time_s"
+          "max_time_s",
+          "deterministic"
         ],
         "title": "SolverInfo",
         "type": "object"
@@ -12142,6 +12877,79 @@
         "summary": "Labels"
       }
     },
+    "/api/v1/evidence/answer": {
+      "post": {
+        "description": "A cited answer written by the local model from the retrieved passages (F1, D-094). Generation runs only where it is\nenabled and only when the extractive layer found something to answer; every sentence is checked against its sources.",
+        "operationId": "evidence_answer_api_v1_evidence_answer_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnswerIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedAnswer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Evidence Answer"
+      }
+    },
     "/api/v1/evidence/search": {
       "get": {
         "operationId": "evidence_api_v1_evidence_search_get",
@@ -12679,6 +13487,122 @@
           }
         },
         "summary": "Inventory"
+      }
+    },
+    "/api/v1/inventory/classes": {
+      "get": {
+        "description": "ABC/XYZ classes, safety stock per class service level and the cost of service (F4).",
+        "operationId": "inventory_classes_api_v1_inventory_classes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "effective_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Effective Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "service_a",
+            "required": false,
+            "schema": {
+              "default": 0.98,
+              "exclusiveMaximum": 1,
+              "exclusiveMinimum": 0.5,
+              "title": "Service A",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "service_b",
+            "required": false,
+            "schema": {
+              "default": 0.95,
+              "exclusiveMaximum": 1,
+              "exclusiveMinimum": 0.5,
+              "title": "Service B",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "service_c",
+            "required": false,
+            "schema": {
+              "default": 0.9,
+              "exclusiveMaximum": 1,
+              "exclusiveMinimum": 0.5,
+              "title": "Service C",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryClasses"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Inventory Classes"
       }
     },
     "/api/v1/market/summary": {
@@ -14744,6 +15668,79 @@
           }
         },
         "summary": "Scenarios"
+      }
+    },
+    "/api/v1/scenarios/emissions-frontier": {
+      "post": {
+        "description": "Solve the scenario's plan under falling CO2 caps (nothing is persisted).",
+        "operationId": "scenarios_emissions_frontier_api_v1_scenarios_emissions_frontier_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScenarioInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmissionsFrontier"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Scenarios Emissions Frontier"
       }
     },
     "/api/v1/telemetry/vitals": {

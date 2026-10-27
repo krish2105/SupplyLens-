@@ -1,0 +1,138 @@
+{
+ "experiment_id": "W1-20261027T055557Z",
+ "study": "W1",
+ "kind": "measured (backtest)",
+ "question": "How do Prophet and XGBoost compare on MAE, RMSE, WAPE and MAPE, and does London weather improve the forecasts?",
+ "data": {
+  "sales": "UCI Online Retail II daily units",
+  "weather": "Open-Meteo archive, London 51.51N 0.13W",
+  "weather_sha256": "27999be01df230f21f41f203c7775d6a5fe52447037f280f7bdb0ac702b7049c",
+  "weather_licence": "CC BY 4.0",
+  "top_products": 50
+ },
+ "protocol": {
+  "origins": [
+   "2011-09-05",
+   "2011-09-12",
+   "2011-09-19",
+   "2011-09-26",
+   "2011-10-03",
+   "2011-10-10",
+   "2011-10-17",
+   "2011-10-24",
+   "2011-10-31",
+   "2011-11-07",
+   "2011-11-14",
+   "2011-11-21",
+   "2011-11-28"
+  ],
+  "horizon_days": 7,
+  "refit_each_origin": true,
+  "weather_on_target_day": "observed (upper bound: a perfect weather forecast)",
+  "bootstrap": "2000 resamples of origins"
+ },
+ "results": {
+  "total": {
+   "models": {
+    "seasonal_naive": {
+     "mae": 6428.418,
+     "rmse": 8909.444,
+     "wape": 0.2974,
+     "mape_nonzero_days": 0.3306
+    },
+    "prophet": {
+     "mae": 6061.42,
+     "rmse": 7617.37,
+     "wape": 0.2804,
+     "mape_nonzero_days": 0.268
+    },
+    "prophet_weather": {
+     "mae": 6051.61,
+     "rmse": 7611.699,
+     "wape": 0.28,
+     "mape_nonzero_days": 0.2664
+    },
+    "xgboost": {
+     "mae": 5306.825,
+     "rmse": 7498.421,
+     "wape": 0.2455,
+     "mape_nonzero_days": 0.2632
+    },
+    "xgboost_weather": {
+     "mae": 6153.854,
+     "rmse": 9114.56,
+     "wape": 0.2847,
+     "mape_nonzero_days": 0.3241
+    }
+   },
+   "points": 91,
+   "weather_effect": {
+    "prophet": {
+     "mean_abs_error_change": -9.81,
+     "ci95": [
+      -54.019,
+      33.024
+     ],
+     "relative_to_without": -0.0016,
+     "clear": false
+    },
+    "xgboost": {
+     "mean_abs_error_change": 847.029,
+     "ci95": [
+      -494.811,
+      3145.38
+     ],
+     "relative_to_without": 0.1596,
+     "clear": false
+    }
+   }
+  },
+  "skus": {
+   "models": {
+    "seasonal_naive": {
+     "mae": 62.182,
+     "rmse": 193.991,
+     "wape": 1.1425,
+     "mape_nonzero_days": 3.616
+    },
+    "xgboost": {
+     "mae": 59.948,
+     "rmse": 153.706,
+     "wape": 1.1015,
+     "mape_nonzero_days": 4.8086
+    },
+    "xgboost_weather": {
+     "mae": 60.108,
+     "rmse": 148.455,
+     "wape": 1.1044,
+     "mape_nonzero_days": 4.5381
+    }
+   },
+   "points": 4550,
+   "weather_effect": {
+    "xgboost": {
+     "mean_abs_error_change": 0.16,
+     "ci95": [
+      -11.799,
+      10.104
+     ],
+     "relative_to_without": 0.0027,
+     "clear": false
+    }
+   }
+  }
+ },
+ "context": {
+  "corr_units_temp_mean": -0.032,
+  "corr_units_precip": 0.047,
+  "corr_window": "2009-12-31 to 2011-09-05, trading days"
+ },
+ "seconds": 208,
+ "limits": [
+  "one retailer, one city's weather, one autumn test period",
+  "observed weather stands in for a forecast",
+  "MAPE leaves out zero-sales days; WAPE is the comparable figure",
+  "Prophet is run on the total only",
+  "Prophet's yearly seasonality is fitted on under two years of history (it warns that it may be under-identified)"
+ ]
+}

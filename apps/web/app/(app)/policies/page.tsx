@@ -6,6 +6,7 @@ import { FilePlus2, Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
+import { CitedAnswer } from "@/components/cited-answer";
 import { api, apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useDemoLockdown, useMe, useWs } from "@/lib/queries";
@@ -22,6 +23,9 @@ export default function PoliciesPage() {
   const docs = useApi(["documents"], "/api/v1/documents");
   const [q, setQ] = useState(ctx.sku ? `minimum order quantity ${ctx.sku}` : "minimum order quantity lead time");
   const [mode, setMode] = useState<"effective" | "known">("effective");
+  // Scope to one supplier: a question two suppliers answer differently is (rightly) refused as ambiguous otherwise, and
+  // naming the supplier in the text does not scope it.
+  const [supplier, setSupplier] = useState("");
   const [res, setRes] = useState<SearchRes | null>(null);
   const [err, setErr] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
@@ -51,7 +55,8 @@ export default function PoliciesPage() {
     e?.preventDefault();
     setBusy(true); setErr(null);
     try {
-      setRes(await apiGet("/api/v1/evidence/search", { query: { q, mode, k: 8, knowledge_cutoff: known, effective_date: eff }, tenant: ws }));
+      setRes(await apiGet("/api/v1/evidence/search", { query: { q, mode, k: 8, knowledge_cutoff: known, effective_date: eff,
+        supplier_id: supplier || undefined }, tenant: ws }));
     } catch (x) { setErr(x); } finally { setBusy(false); }
   }
 
@@ -83,6 +88,11 @@ export default function PoliciesPage() {
                 </label>
               ))}
             </div></fieldset>
+          <label className="text-sm"><span className="mb-1 block font-medium">Supplier</span>
+            <select value={supplier} onChange={(e) => setSupplier(e.target.value)} className="rounded-lg border border-line bg-surface px-3 py-2">
+              <option value="">Any supplier</option>
+              {[...new Set((docs.data ?? []).map((d) => d.supplier_id).filter((x): x is string => !!x))].sort().map((sid) => <option key={sid} value={sid}>{sid}</option>)}
+            </select></label>
           <Button type="submit" busy={busy} disabled={!q.trim()}><Search className="size-4" aria-hidden /> Search evidence</Button>
         </form>
         {err != null && <div className="mt-4"><ErrorState error={err} /></div>}
@@ -106,6 +116,8 @@ export default function PoliciesPage() {
                 <p className="mt-2 text-xs text-muted">Cited: {res.answer.claims[0]!.citation.version_label} · {res.answer.claims[0]!.citation.section}</p>
               </div>
             )}
+            {!!res.results.length && <CitedAnswer key={`${q}|${mode}|${supplier}|${known}|${eff}`} q={q} mode={mode} supplier={supplier || undefined} known={known} eff={eff}
+              onOpen={(version, chunk) => setOpen({ version, highlight: chunk, reveal: true })} />}
             <ol className="space-y-2">
               {res.results.map((r, i) => (
                 <li key={r.chunk_id} className="rounded-xl border border-line p-3">

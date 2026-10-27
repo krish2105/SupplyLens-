@@ -318,9 +318,10 @@ test("J12 inventory filters, search and sorting narrow the table and say so", as
   await page.getByRole("combobox", { name: /^Health/ }).selectOption("shortage_risk");
   await expect(count).not.toHaveText(`${total} of ${total} products`);
   await page.getByRole("combobox", { name: /^Health/ }).selectOption("all");
-  const firstSku = (await page.locator("tbody tr").first().locator(".num").first().textContent())!.trim();
+  const rows = page.getByRole("region", { name: "Inventory table, scrollable" }).locator("tbody tr");   // not the classes table below
+  const firstSku = (await rows.first().locator(".num").first().textContent())!.trim();
   await page.getByPlaceholder(/Search code or description/).fill(firstSku);
-  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(rows).toHaveCount(1);
   const header = page.getByRole("columnheader", { name: /Available/ });
   await header.getByRole("button").click();
   await expect(header).toHaveAttribute("aria-sort", /ascending|descending/);

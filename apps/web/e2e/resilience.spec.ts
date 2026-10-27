@@ -48,11 +48,12 @@ test.describe("WebGL failure", () => {
   test("a lost WebGL context mid-session falls back to the floor plan", async ({ page }) => {
     await signIn(page, "viewer");
     await page.goto("/inventory?ws=uci-research");
-    await expect(page.locator("canvas")).toBeVisible();
-    await page.evaluate(() => {
-      const gl = (document.querySelector("canvas") as HTMLCanvasElement).getContext("webgl2") ?? (document.querySelector("canvas") as HTMLCanvasElement).getContext("webgl");
+    const warehouse = '[aria-label^="3D schematic warehouse"] canvas';     // the classes chart below draws a 2D canvas too
+    await expect(page.locator(warehouse)).toBeVisible();
+    await page.evaluate((sel) => {
+      const gl = (document.querySelector(sel) as HTMLCanvasElement).getContext("webgl2") ?? (document.querySelector(sel) as HTMLCanvasElement).getContext("webgl");
       (gl as WebGLRenderingContext).getExtension("WEBGL_lose_context")!.loseContext();
-    });
+    }, warehouse);
     await expect(page.getByText(/The 3D view stopped working on this device/)).toBeVisible();
     await page.locator("tbody tr").first().click();
     await expect(page.locator("#detail-title")).toBeVisible();

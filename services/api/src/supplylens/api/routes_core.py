@@ -15,6 +15,7 @@ from ..authz import Actor
 from ..config import settings
 from ..db import control_session, tenant_session
 from ..integrations import sandbox_erp
+from ..planning.classes import classify
 from .deps import (
     COOKIE,
     SESSION_MAX_AGE,
@@ -31,6 +32,7 @@ from .schemas import (
     DevUsers,
     Integration,
     Inventory,
+    InventoryClasses,
     Me,
     Ok,
     Overview,
@@ -250,6 +252,19 @@ def inventory(effective_date: date | None = None, limit: int | None = Query(None
         items.append(d)
     return {"effective_date": eff, "items": items, "total": total, "offset": offset,
             "next_offset": offset + len(items) if offset + len(items) < total else None}
+
+
+@router.get("/inventory/classes", response_model=InventoryClasses)
+def inventory_classes(effective_date: date | None = None,
+                      service_a: float = Query(0.98, gt=0.5, lt=1), service_b: float = Query(0.95, gt=0.5, lt=1),
+                      service_c: float = Query(0.90, gt=0.5, lt=1), a: Actor = Depends(actor)):
+    """ABC/XYZ classes, safety stock per class service level and the cost of service (F4)."""
+    a.require("read")
+    with tenant_session(a.tenant_id) as s:
+        eff = effective_date or s.execute(text("SELECT operational_as_of::date FROM tenant_settings")).scalar()
+    if eff is None:
+        return {"effective_date": None}
+    return classify(a.tenant_id, eff, {"A": service_a, "B": service_b, "C": service_c}, replay=effective_date is not None)
 
 
 @router.get("/products/{sku_id}/sales", response_model=ProductSales)

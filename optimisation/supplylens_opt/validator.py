@@ -38,6 +38,11 @@ def validate(req: PlanRequest, result: PlanResult) -> list[str]:
         errors.append("plan total does not equal the sum of lines")
     if total > req.budget_minor:
         errors.append(f"total {total} exceeds budget {req.budget_minor}")
+    if req.co2_cap_grams is not None:
+        grams = sum(line.quantity * (offers[line.term_id].co2_grams_per_unit or 0)
+                    for line in result.lines if line.term_id in offers)
+        if grams > req.co2_cap_grams:
+            errors.append(f"CO2 {grams} g exceeds the cap {req.co2_cap_grams} g")
     for n in req.needs:
         if len(suppliers_per_sku[n.sku_id]) > 1:
             errors.append(f"{n.sku_id}: more than one supplier")

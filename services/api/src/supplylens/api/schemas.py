@@ -197,6 +197,76 @@ class Inventory(Out):
     next_offset: int | None = None
 
 
+class ClassCell(Out):
+    abc: str
+    xyz: str
+    products: int
+    value_share: float
+
+
+class ClassedSku(Out):
+    sku_id: str
+    abc: str
+    xyz: str | None = None
+    cv: float | None = None
+    mean_daily: float
+    sd_daily: float
+    lead_time_days: int | None = None
+    unit_cost_minor: int | None = None
+    service_level: float
+    safety_stock_units: int | None = None
+    holding_cost_minor_per_year: int | None = None
+
+
+class ServicePoint(Out):
+    service_level: float
+    safety_stock_units: int
+    holding_cost_minor_per_year: int
+
+
+class InventoryClasses(Out):
+    """ABC/XYZ classes and statistical safety stock (F4). Derived from sales; holding rate assumed."""
+    effective_date: date | None = None
+    basis: str | None = None
+    currency: str | None = None
+    window_days: int = 365
+    abc_cuts: list[float] = []
+    xyz_cuts: list[float] = []
+    products_classified: int = 0
+    matrix: list[ClassCell] = []
+    policy: dict[str, float] = {}
+    holding_rate_annual: float | None = None
+    stocked: list[ClassedSku] = []
+    curve: list[ServicePoint] = []
+    policy_point: ServicePoint | None = None
+    value_kind: str = "derived"
+    assumptions: list[str] = []
+
+
+class FrontierPoint(Out):
+    cap_share: float | None = None
+    cap_grams: int | None = None
+    status: str
+    spend_minor: int
+    co2_grams: int | None = None
+    units_ordered: int
+    required_units: int
+    shortfall_units: int | None = None
+    service: float | None = None
+
+
+class EmissionsFrontier(Out):
+    """Cost / service / CO2 trade-off by the epsilon-constraint method (F2). CO2 is assumed, the rest simulated."""
+    currency: str
+    budget_minor: int
+    effective_date: date
+    skus_needing_order: int
+    points: list[FrontierPoint]
+    method: str
+    value_kinds: dict[str, str]
+    assumptions: list[str]
+
+
 class SalesPoint(Out):
     day: date
     units: int
@@ -400,6 +470,44 @@ class EvidenceSearch(Out):
     answer: Answer
 
 
+class GeneratedCitation(Out):
+    n: int
+    chunk_id: str
+    document_id: str
+    version_id: str
+    version_label: str
+    title: str
+    section: str
+    char_start: int
+    char_end: int
+
+
+class GeneratedSentence(Out):
+    sentence: str
+    cites: list[int]
+
+
+class Generated(Out):
+    type: str = "generated"
+    model: str
+    abstained: bool
+    reason: str | None = None
+    sentences: list[GeneratedSentence] = []
+    citations: list[GeneratedCitation] = []
+    latency_ms: int | None = None
+
+
+class GeneratedAnswer(Out):
+    """A cited answer written by a local model from retrieved passages (F1, D-094), with the extractive answer beside it.
+    generation: off | not_attempted | withheld | answered."""
+    question: str
+    generation: str
+    message: str | None = None
+    extractive: Answer
+    generated: Generated | None = None
+    results: list[EvidenceResult]
+
+
 # ------------------------------------------------------------------------------------------ forecasting / models / scenarios
 class ForecastPoint(Out):
     sku_id: str
@@ -480,6 +588,7 @@ class SolverInfo(Out):
     num_workers: int
     random_seed: int
     max_time_s: float
+    deterministic: bool | None = None   # False: re-solved by the parallel portfolio (equal-quality plans may differ)
 
 
 class PlanRequestInfo(Out):

@@ -9,6 +9,7 @@ import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
 import { Card, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TabList, TabPanel } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
+import { InventoryClasses } from "@/components/inventory-classes";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
 import { useApi, useWs, type InventoryItem } from "@/lib/queries";
@@ -147,6 +148,7 @@ export default function InventoryPage() {
             </EmptyState>)}</div>}
         </div>
       </Card>
+      <InventoryClasses eff={ctx.eff} />
     </div>
   );
 }

@@ -32,9 +32,10 @@ from ..inline_jobs import drain
 from ..integrations import sandbox_erp
 from ..knowledge import acl
 from ..knowledge import upload as doc_upload
+from ..knowledge.generate import generate
 from ..knowledge.ingest import read_version_text
-from ..knowledge.retrieve import search
-from ..planning.scenario import ScenarioInput, run_scenario
+from ..knowledge.retrieve import Evidence, search
+from ..planning.scenario import ScenarioInput, emissions_frontier, run_scenario
 from ..planning.terms_service import applicable_terms
 from .deps import actor, csrf_guard, idempotent
 from .ratelimit import limit
@@ -47,9 +48,11 @@ from .schemas import (
     DocumentRow,
     DocumentUploaded,
     DocumentVersion,
+    EmissionsFrontier,
     EvidenceSearch,
     FaultInjected,
     ForecastRun,
+    GeneratedAnswer,
     ModelVersion,
     OpenOrderLine,
     OrderCancelled,
@@ -198,6 +201,46 @@ def document_version(version_id: uuid.UUID, a: Actor = Depends(actor)):
 @router.get("/evidence/search", response_model=EvidenceSearch)
 def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: date | None = None,
              mode: str = "effective", supplier_id: str | None = None, k: int = 8, a: Actor = Depends(limit("search", 120))):
+    return _evidence(a, q, knowledge_cutoff, effective_date, mode, supplier_id, k)
+
+
+class AnswerIn(BaseModel):
+    q: str
+    knowledge_cutoff: datetime | None = None
+    effective_date: date | None = None
+    mode: str = "effective"
+    supplier_id: str | None = None
+
+
+@router.post("/evidence/answer", response_model=GeneratedAnswer)
+def evidence_answer(body: AnswerIn, a: Actor = Depends(limit("generate", 20))):
+    """A cited answer written by the local model from the retrieved passages (F1, D-094). Generation runs only where it is
+    enabled and only when the extractive layer found something to answer; every sentence is checked against its sources."""
+    found = _evidence(a, body.q, body.knowledge_cutoff, body.effective_date, body.mode, body.supplier_id, 8)
+    extractive = found["answer"]
+    out = {"question": body.q, "extractive": extractive, "results": found["results"][:5]}
+    if not settings.generation_available:
+        return {**out, "generation": "off", "generated": None,
+                "message": "Generated answers are switched off here; the cited passages are the answer."}
+    if extractive["abstained"]:
+        return {**out, "generation": "not_attempted", "generated": None,
+                "message": extractive.get("message") or "No passage answers this, so nothing was generated."}
+    passages = [Evidence(**{k: v for k, v in r.items() if k in Evidence.__dataclass_fields__}) for r in found["results"]]
+    # Product-level terms differ per product: a question that names no product code, over passages about several
+    # products, has no single answer (G1 found such questions answered with one product's terms). Ask instead.
+    named = [w for w in body.q.replace(",", " ").split() if any(ch.isdigit() for ch in w)]
+    products = sorted({p.section for p in passages[:5] if p.section.lower().startswith("schedule item")})
+    if not named and len(products) > 1:
+        return {**out, "generation": "not_attempted", "generated": None,
+                "message": f"The question does not name a product, and the passages cover {len(products)} products with "
+                           "different terms. Name the product code to get one answer."}
+    g = generate(body.q, passages)
+    return {**out, "generation": "withheld" if g["abstained"] else "answered", "generated": g,
+            "message": g["reason"] if g["abstained"] else None}
+
+
+def _evidence(a: Actor, q: str, knowledge_cutoff: datetime | None, effective_date: date | None, mode: str,
+              supplier_id: str | None, k: int) -> dict:
     a.require("read")
     if mode not in ("effective", "known") or not q.strip() or len(q) > 500:
         raise HTTPException(422, {"code": "invalid_query", "message": "query 1-500 chars; mode effective|known"})
@@ -234,6 +277,15 @@ def evidence(q: str, knowledge_cutoff: datetime | None = None, effective_date: d
 def scenarios(body: ScenarioInput, a: Actor = Depends(limit("scenario", 20))):
     try:
         return run_scenario(a, body)
+    except ValueError as e:
+        raise HTTPException(422, {"code": "scenario_invalid", "message": str(e)}) from e
+
+
+@router.post("/scenarios/emissions-frontier", response_model=EmissionsFrontier)
+def scenarios_emissions_frontier(body: ScenarioInput, a: Actor = Depends(limit("scenario", 20))):
+    """Solve the scenario's plan under falling CO2 caps (nothing is persisted)."""
+    try:
+        return emissions_frontier(a, body)
     except ValueError as e:
         raise HTTPException(422, {"code": "scenario_invalid", "message": str(e)}) from e
 

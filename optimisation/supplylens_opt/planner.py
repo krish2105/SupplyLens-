@@ -25,6 +25,13 @@ from ortools.sat.python import cp_model
 from pydantic import BaseModel, Field
 
 SOLVER_SETTINGS = {"num_workers": 1, "random_seed": 0, "max_time_s": 10.0}
+# Deterministic first: one worker, a short limit. A request it cannot prove optimal in that time (the real UCI scope, 40
+# SKUs under a binding budget, returned UNKNOWN after 16 s) is re-solved by the parallel portfolio, which proved the same
+# optimum in about 0.5 s. Parallel search is not guaranteed to pick the same plan among equally good ones, so the result
+# records which mode produced it; both are checked by the independent validator.
+DETERMINISTIC_TIME_S = 2.0
+PARALLEL_WORKERS = 8
+PROBE_TIME_S = 5.0          # each "would relaxing X make it feasible?" probe
 INT_LIMIT = 2 ** 62          # CP-SAT works in 64-bit integers; stay well inside so sums cannot overflow
 
 
@@ -44,6 +51,8 @@ class Offer(BaseModel):
     document_version_id: str | None = None
     section: str | None = None
     value_kind: str = "observed"
+    # Grams CO2e per unit delivered on this offer's lane (assumed factors, emissions.py). None: not modelled.
+    co2_grams_per_unit: int | None = Field(default=None, ge=0)
 
 
 class Need(BaseModel):
@@ -53,6 +62,8 @@ class Need(BaseModel):
     # Units an offer must cover when its lead time is the key (P1-PLAN-02): a slower supplier protects a longer interval,
     # so it must deliver more. Lead times not listed (or an empty map) fall back to required_units.
     required_units_by_lead_time: dict[int, int] = {}
+    # Weight of each uncovered unit in the coverage objective (fair-allocation reweighing, F3). None: weight 1.
+    shortage_weight: int | None = Field(default=None, ge=1, le=1_000_000)
 
     def required_for(self, lead_time_days: int) -> int:
         return self.required_units_by_lead_time.get(lead_time_days, self.required_units)
@@ -72,6 +83,8 @@ class PlanRequest(BaseModel):
     allow_shortfall: bool = False
     shortage_penalty_minor: int = Field(default=0, ge=0)
     max_units_per_line: int = Field(default=100_000, ge=1)
+    # Hard cap on the plan's CO2e in grams (epsilon-constraint for the cost/service/CO2 trade-off). None: no cap.
+    co2_cap_grams: int | None = Field(default=None, ge=0)
 
 
 class PlanLine(BaseModel):
@@ -109,7 +122,18 @@ class PlanResult(BaseModel):
 
 
 def input_hash(req: PlanRequest) -> str:
-    canonical = json.dumps(req.model_dump(mode="json"), sort_keys=True, separators=(",", ":"))
+    d = req.model_dump(mode="json")
+    # The CO2 fields join the hash only when used, so every request made before they existed keeps its hash (approvals
+    # and replays are bound to it).
+    if d.get("co2_cap_grams") is None:
+        d.pop("co2_cap_grams", None)
+    for o in d["offers"]:
+        if o.get("co2_grams_per_unit") is None:
+            o.pop("co2_grams_per_unit", None)
+    for n in d["needs"]:
+        if n.get("shortage_weight") is None:
+            n.pop("shortage_weight", None)
+    canonical = json.dumps(d, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode()).hexdigest()
 
 
@@ -157,7 +181,7 @@ def _scale(req: PlanRequest, offers: list[Offer], ub: list[int]) -> int:
     return w
 
 
-def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
+def _solve(req: PlanRequest, offers: list[Offer], relax: set[str], workers: int = 1, max_time_s: float | None = None):
     m = cp_model.CpModel()
     ub = _upper_bounds(req, offers)
     qty, use = {}, {}
@@ -192,6 +216,8 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
     purchase = sum(cost_terms) if cost_terms else 0
     if "budget" not in relax:
         m.Add(purchase <= req.budget_minor)
+    if req.co2_cap_grams is not None and "co2" not in relax:
+        m.Add(sum((o.co2_grams_per_unit or 0) * qty[i] for i, o in enumerate(offers)) <= req.co2_cap_grams)
     # Lexicographic, solved in two passes so no weight has to dominate another inside one 64-bit objective:
     # (1) fewest uncovered units, fixed; (2) lowest cost, then fewer units, then supplier order (stable).
     rank = {sid: r for r, sid in enumerate(sorted({o.supplier_id for o in offers}))}
@@ -199,12 +225,13 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str]):
     units = sum(qty.values()) if qty else 0
     w = _scale(req, offers, ub)
     solver = cp_model.CpSolver()
-    solver.parameters.num_workers = SOLVER_SETTINGS["num_workers"]
+    solver.parameters.num_workers = workers
     solver.parameters.random_seed = SOLVER_SETTINGS["random_seed"]
-    solver.parameters.max_time_in_seconds = SOLVER_SETTINGS["max_time_s"]
+    solver.parameters.max_time_in_seconds = max_time_s or SOLVER_SETTINGS["max_time_s"]
     coverage_proven = True
     if shortage:
-        uncovered = sum(shortage.values())
+        weight = {n.sku_id: n.shortage_weight or 1 for n in req.needs}
+        uncovered = sum(weight[k] * v for k, v in shortage.items())
         m.Minimize(uncovered)
         status = solver.Solve(m)
         if status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
@@ -223,13 +250,22 @@ STATUS = {cp_model.OPTIMAL: "OPTIMAL", cp_model.FEASIBLE: "FEASIBLE", cp_model.I
           cp_model.UNKNOWN: "UNKNOWN", cp_model.MODEL_INVALID: "MODEL_INVALID"}
 
 
-def plan(req: PlanRequest) -> PlanResult:
+def plan(req: PlanRequest, deterministic_first: bool = True, explain: bool = True) -> PlanResult:
+    """`deterministic_first=False` (exploratory sweeps, never approved or persisted) goes straight to parallel search;
+    `explain=False` skips the constraint probes that say why a shortfall was forced."""
     offers, excluded = _eligible(req)
-    solver_info = {"name": "OR-Tools CP-SAT", "version": ortools.__version__, **SOLVER_SETTINGS}
+    solver_info = {"name": "OR-Tools CP-SAT", "version": ortools.__version__, **SOLVER_SETTINGS,
+                   "max_time_s": DETERMINISTIC_TIME_S, "deterministic": True}
     base = dict(currency=req.currency, excluded_offers=excluded, input_hash=input_hash(req),
                 solver=solver_info)
     try:
-        solver, status, qty, use, shortage = _solve(req, offers, set())
+        solver, status, qty, use, shortage = (_solve(req, offers, set(), 1, DETERMINISTIC_TIME_S) if deterministic_first
+                                              else (None, cp_model.UNKNOWN, None, None, None))
+        if status != cp_model.OPTIMAL:
+            p = _solve(req, offers, set(), PARALLEL_WORKERS, SOLVER_SETTINGS["max_time_s"])
+            if p[1] == cp_model.OPTIMAL or status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
+                solver, status, qty, use, shortage = p
+                solver_info.update(num_workers=PARALLEL_WORKERS, max_time_s=SOLVER_SETTINGS["max_time_s"], deterministic=False)
     except ScaleError as e:
         return PlanResult(status="MODEL_INVALID", explanation=[str(e)], **base)
     name = STATUS[status]
@@ -250,14 +286,17 @@ def plan(req: PlanRequest) -> PlanResult:
                 document_version_id=o.document_version_id, section=o.section))
     short = {k: solver.Value(v) for k, v in shortage.items() if solver.Value(v)}
     total = sum(line.line_minor for line in lines)
+    co2 = {o.term_id: o.co2_grams_per_unit for o in offers}
     result = PlanResult(
         status=name, lines=lines, total_minor=total, shortfall=short,
         objective={"purchase_minor": total,
                    "shortage_units": sum(short.values()),
                    "shortage_penalty_minor": sum(short.values()) * req.shortage_penalty_minor,
-                   "proven_optimal": name == "OPTIMAL"},
+                   "proven_optimal": name == "OPTIMAL",
+                   **({"co2_grams": sum(line.quantity * (co2.get(line.term_id) or 0) for line in lines)}
+                      if any(v is not None for v in co2.values()) else {})},
         **base)
-    if short:
+    if short and explain:
         # Say which hard constraint forced the gap (coverage-first objective: nothing else can cause one).
         why = [r for r in explain_infeasible(req.model_copy(update={"allow_shortfall": False}))
                if "'coverage'" not in r]
@@ -284,11 +323,14 @@ def explain_infeasible(req: PlanRequest) -> list[str]:
         ("capacity", "Storage capacity is below the minimum orderable quantity", set()),
         ("lead_time", "Only offers that arrive after the need-by date could satisfy the need", {"lead_time"}),
         ("coverage", "Required units cannot be fully covered; a partial order would fit", set()),
+        *([("co2", "The CO2 cap is below the emissions of any order that covers the need", set())]
+          if req.co2_cap_grams is not None else []),
     ]
     for family, message, ignore in checks:
         cand, _ = _eligible(req, ignore) if ignore else (offers, None)
         try:
-            _, status, *_ = _solve(req, cand, {family})
+            # a feasibility probe, not a plan: parallel search, shorter limit
+            _, status, *_ = _solve(req, cand, {family}, PARALLEL_WORKERS, PROBE_TIME_S)
         except ScaleError:          # e.g. an offer excluded for its lead time is too large to model exactly (P3-PLAN-06)
             reasons.append(f"relaxing '{family}' could not be tested: prices too large for exact integer arithmetic")
             continue

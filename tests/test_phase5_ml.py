@@ -324,6 +324,9 @@ def test_P3_PLAN_06_a_solver_timeout_is_reported_without_extra_solves(monkeypatc
 
     from supplylens_opt import planner
     calls = []
-    monkeypatch.setattr(planner, "_solve", lambda req, offers, relax: calls.append(relax) or (None, cp_model.UNKNOWN, {}, {}, {}))
+    monkeypatch.setattr(planner, "_solve", lambda req, offers, relax, workers=1, max_time_s=None:
+                        calls.append((relax, workers)) or (None, cp_model.UNKNOWN, {}, {}, {}))
     r = planner.plan(_plan_req([_offer("ok", 100, 2)]))
-    assert r.status == "UNKNOWN" and "time limit" in r.explanation[0] and calls == [set()]
+    # one deterministic attempt, then one parallel retry (F2: the real UCI scope needs it); never the five probes
+    assert r.status == "UNKNOWN" and "time limit" in r.explanation[0]
+    assert calls == [(set(), 1), (set(), planner.PARALLEL_WORKERS)]

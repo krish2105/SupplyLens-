@@ -10,11 +10,14 @@ from __future__ import annotations
 import json
 import uuid
 from datetime import date, datetime, timedelta
+from types import SimpleNamespace
 from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 from sqlalchemy import text
 
+from supplylens_opt.emissions import ASSUMPTIONS as CO2_ASSUMPTIONS
+from supplylens_opt.emissions import grams_per_unit
 from supplylens_opt.planner import Need, PlanRequest, plan
 from supplylens_opt.replenishment import Position, assess
 
@@ -42,6 +45,8 @@ class ScenarioInput(BaseModel):
     shortage_penalty_minor: int = Field(default=500, ge=0, le=1_000_000)
     currency: str | None = None
     replenishment_basis: Literal["leadtime_demand", "q90_sum", "q50_plus_safety"] | None = None
+    # Hard cap on the plan's CO2e in grams (assumed lane factors, supplylens_opt.emissions). None: no cap.
+    co2_cap_grams: int | None = Field(default=None, ge=0, le=10**12)
 
     @model_validator(mode="after")
     def _controls_match_basis(self):
@@ -54,6 +59,13 @@ class ScenarioInput(BaseModel):
 
 
 def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
+    c = _prepare(actor, inp)
+    result = plan(c.req) if c.to_buy else None
+    return _record(actor, inp, c, result)
+
+
+def _prepare(actor: Actor, inp: ScenarioInput) -> SimpleNamespace:
+    """Everything up to the optimiser call: positions, forecast, terms, needs and the plan request."""
     actor.require("plan.run")
     with tenant_session(actor.tenant_id) as s:
         st = s.execute(text("SELECT operational_as_of, currency, dataset_id, planning FROM tenant_settings")).first()
@@ -87,7 +99,9 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
     # Two applicable terms for one supplier and SKU without a supersession link are a conflict: review required, never
     # pick one (terms.py). The scenario plans without the conflicting terms and reports them (P2-PLAN-05).
     conflicted = sorted({tid for group in res.conflicts for tid in group})
-    offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days})
+    # CO2 per unit follows the lane assumed from the QUOTED lead time (a delay does not move the supplier)
+    offers = [t.model_copy(update={"lead_time_days": t.lead_time_days + inp.supplier_delay_days,
+                                   "co2_grams_per_unit": grams_per_unit(t.lead_time_days)})
               for t in res.applicable if t.currency == currency and t.term_id not in conflicted]
     leads_by_sku: dict[str, set[int]] = {}
     for o in offers:                       # each supplier's lead time sets its own protection interval (P1-PLAN-02)
@@ -122,8 +136,19 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
                                                        required_units_by_lead_time=required_by_lead[k])
                                                   for k, v in to_buy.items()],
                       offers=expand_offers(offers, list(to_buy)), allow_shortfall=inp.allow_shortfall,
-                      shortage_penalty_minor=inp.shortage_penalty_minor)
-    result = plan(req) if to_buy else None
+                      shortage_penalty_minor=inp.shortage_penalty_minor, co2_cap_grams=inp.co2_cap_grams)
+    return SimpleNamespace(st=st, cutoff=cutoff, eff=eff, scope=scope, excluded=excluded, positions=positions,
+                           shares=shares, currency=currency, budget=budget, basis=basis, safety=safety, coverage=coverage,
+                           origin=origin, fr=fr, res=res, conflicted=conflicted, service_level=service_level,
+                           needs=needs, required_by_lead=required_by_lead, to_buy=to_buy, req=req)
+
+
+def _record(actor: Actor, inp: ScenarioInput, c: SimpleNamespace, result) -> dict:
+    """Shape and persist a scenario result (immutable plan run)."""
+    cutoff, eff, scope, excluded, positions, shares = c.cutoff, c.eff, c.scope, c.excluded, c.positions, c.shares
+    currency, budget, basis, safety, coverage, origin = c.currency, c.budget, c.basis, c.safety, c.coverage, c.origin
+    fr, res, conflicted, service_level = c.fr, c.res, c.conflicted, c.service_level
+    needs, required_by_lead, to_buy = c.needs, c.required_by_lead, c.to_buy
     lines = result.lines if result else []
     ordered = {}
     for l in lines:
@@ -171,3 +196,35 @@ def run_scenario(actor: Actor, inp: ScenarioInput) -> dict:
              "h": result.input_hash if result else "no-action", "s": out["plan"]["status"],
              "res": json.dumps(out, default=str), "u": actor.user_id})
     return out
+
+
+FRONTIER_CAPS = (None, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05)   # down to where service is lost
+
+
+def emissions_frontier(actor: Actor, inp: ScenarioInput) -> dict:
+    """Cost, service and CO2 trade-off by the epsilon-constraint method (F2): the scenario's plan request is
+    solved without a CO2 cap, then again under caps at falling shares of that plan's emissions. Shortfall is allowed so
+    a tighter cap shows up as lost service rather than as an infeasible plan. Nothing is persisted."""
+    c = _prepare(actor, inp.model_copy(update={"co2_cap_grams": None}))
+    base = c.req.model_copy(update={"allow_shortfall": True, "co2_cap_grams": None})
+    required = sum(n.required_units for n in base.needs)
+    points, top = [], None
+    for share in FRONTIER_CAPS if base.needs else ():
+        cap = None if share is None else int((top or 0) * share)
+        r = plan(base.model_copy(update={"co2_cap_grams": cap}), deterministic_first=False, explain=False)
+        ok = r.status in ("OPTIMAL", "FEASIBLE")
+        grams = r.objective.get("co2_grams", 0) if ok else None
+        short = r.objective.get("shortage_units", 0) if ok else None
+        if share is None:
+            top = grams or 0
+        points.append({"cap_share": share, "cap_grams": cap, "status": r.status, "spend_minor": r.total_minor,
+                       "co2_grams": grams, "units_ordered": sum(line.quantity for line in r.lines),
+                       "required_units": required, "shortfall_units": short,
+                       "service": None if short is None or not required else round(1 - short / required, 4)})
+        if share is None and not ok:
+            break                       # no uncapped plan: there is nothing to cap
+    return {"currency": c.currency, "budget_minor": c.budget, "effective_date": c.eff.isoformat(),
+            "skus_needing_order": len(c.to_buy), "points": points,
+            "method": "epsilon-constraint: lexicographic plan (coverage, then cost) under a hard CO2 cap",
+            "value_kinds": {"co2": "assumed", "spend": "simulated", "service": "simulated"},
+            "assumptions": CO2_ASSUMPTIONS + ["service = share of required units the plan covers (simulated, not a fill rate)"]}

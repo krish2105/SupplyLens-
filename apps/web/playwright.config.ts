@@ -16,7 +16,7 @@ export default defineConfig({
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } }, testIgnore: /(visual|vitals)\.spec/ },
-    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|a11y|ui-quality)\.spec/ },
+    { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /(layout|a11y|ui-quality|operations)\.spec/ },
     // Lab Web Vitals (UX-011) measure the app, so they run alone and one at a time: run beside other suites they measured
     // the machine's load (QA-4B-01: the INP proxy read 224–232 ms on CI only while other browsers ran; with every core
     // busy, interactions took 0.7–1.7 s with or without WebGL). CI runs them in their own step with --workers 1.
