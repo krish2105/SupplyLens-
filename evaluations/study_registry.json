@@ -122,9 +122,14 @@
       "notes": "(a) UCI AI4I 2020 (CC BY 4.0, synthetic data modelled on a milling process), 10,000 cycles, 339 failures; 60/20/20 random split; threshold chosen on validation by assumed costs (missed failure GBP 2,000, inspection GBP 150). Logistic regression AUC 0.93, average precision 0.43; LightGBM AUC 0.98, average precision 0.86. Heat, power and overstrain failures all caught; tool-wear failures 1 of 10 and random failures 0 of 4, as their causes are random by construction. (b) Simulated fleet, 80 training and 30 test motors; RMSE ridge 18.9, CNN 19.3 cycles: a negative result for deep learning on this signal. Policies on the 30 test motors: run to failure GBP 72,000 (30 failures); fixed interval at the 5th life percentile GBP 18,000 (3 failures, 94 cycles of life discarded on average); replace when predicted life < 20 cycles GBP 12,000 (0 failures, 16 cycles discarded). Costs assumed."
     },
     "QC1-20261030T192258Z": {
+      "status": "superseded",
+      "superseded_by": "QC1-20261030T193358Z",
+      "reason": "occlusion maps measured in probability, which a confident CNN saturates, so scratch and stain maps were blank; the rerun measures the logit. Accuracy and policy results identical"
+    },
+    "QC1-20261030T193358Z": {
       "status": "current",
       "headline": "On generated goods-in images a small CNN flags defects with AUC 0.997 against 0.946 for hand-made features; letting it pass items and checking only what it flags costs 53 % less than inspecting everything, with 98.7 % of defects caught",
-      "notes": "Images generated from stated rules (glaze texture, printed band, uneven light, noise; 30 % carry a scratch, chip or stain, some faint): 6,000 train, 1,500 validation, 3,000 test. Threshold chosen on validation by assumed costs (manual check GBP 0.30, escaped defect GBP 12). CNN: 958 flagged, 11 escapes, precision 0.89; inspect-all GBP 900 vs CNN policy GBP 419. The hand-made-feature baseline reaches the same recall only by flagging 95 % of items. Occlusion maps show the CNN's score depends on the defect region. Generated images are easier than real photographs: a method check."
+      "notes": "Images generated from stated rules (glaze texture, printed band, uneven light, noise; 30 % carry a scratch, chip or stain, some faint): 6,000 train, 1,500 validation, 3,000 test. Threshold chosen on validation by assumed costs (manual check GBP 0.30, escaped defect GBP 12). CNN: 958 flagged, 11 escapes, precision 0.89; inspect-all GBP 900 vs CNN policy GBP 419. The hand-made-feature baseline reaches the same recall only by flagging 95 % of items. Occlusion maps (drop in the CNN's logit when each 8x8 patch is greyed out) show the score depends on the defect region. Generated images are easier than real photographs: a method check."
     }
   }
 }

@@ -1,0 +1,72 @@
+{
+ "experiment_id": "QC1-20261030T193358Z",
+ "study": "QC1",
+ "kind": "simulated images",
+ "question": "Can a small CNN flag surface defects at goods-in well enough to replace inspecting every item by hand?",
+ "data": {
+  "train": 6000,
+  "validation": 1500,
+  "test": 3000,
+  "defect_rate": 0.3,
+  "image": "64x64 greyscale",
+  "test_defects": 862,
+  "test_by_kind": {
+   "scratch": 300,
+   "chip": 255,
+   "stain": 307
+  }
+ },
+ "models": {
+  "handmade_features_logistic": {
+   "auc": 0.9462,
+   "accuracy_at_0_5": 0.937,
+   "recall_by_kind_at_cost_threshold": {
+    "scratch": 0.99,
+    "chip": 1.0,
+    "stain": 1.0
+   },
+   "false_flag_rate_good_items": 0.9373,
+   "policy": {
+    "threshold": 0.009,
+    "flagged": 2863,
+    "escaped_defects": 3,
+    "false_flags": 2004,
+    "recall": 0.9965,
+    "precision": 0.3,
+    "cost_gbp": 894.9
+   }
+  },
+  "cnn": {
+   "auc": 0.9972,
+   "accuracy_at_0_5": 0.9857,
+   "recall_by_kind_at_cost_threshold": {
+    "scratch": 0.97,
+    "chip": 0.992,
+    "stain": 1.0
+   },
+   "false_flag_rate_good_items": 0.05,
+   "policy": {
+    "threshold": 0.1008,
+    "flagged": 958,
+    "escaped_defects": 11,
+    "false_flags": 107,
+    "recall": 0.9872,
+    "precision": 0.8883,
+    "cost_gbp": 419.4
+   }
+  }
+ },
+ "inspect_everything_cost_gbp": 900.0,
+ "costs_assumed": {
+  "manual_inspection_gbp": 0.3,
+  "escaped_defect_gbp": 12.0,
+  "false_flag_gbp": 0.3
+ },
+ "occlusion_examples": "examples.npz (one image per defect type and one good item, with 8x8 occlusion maps)",
+ "seed": 9,
+ "limits": [
+  "images are generated from stated rules, not photographs; real lighting, glare and product variety are harder",
+  "one defect per image; no multi-defect or mislabelled images",
+  "costs are assumed"
+ ]
+}

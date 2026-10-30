@@ -139,23 +139,25 @@ def train_cnn(Xtr, ytr):
             opt.step()
     model.eval()
 
-    def predict(X):
+    def predict(X, logit=False):
         with torch.no_grad():
             out = []
             for i in range(0, len(X), 512):
-                out.append(torch.sigmoid(model(torch.tensor(X[i:i + 512, None]))).squeeze(-1).numpy())
+                z = model(torch.tensor(X[i:i + 512, None])).squeeze(-1)
+                out.append((z if logit else torch.sigmoid(z)).numpy())
             return np.concatenate(out)
     return predict
 
 
 def occlusion(predict, img, patch=8):
-    base = predict(img[None])[0]
+    """Drop in the CNN's logit when each 8x8 patch is greyed out (the logit, because a confident probability barely moves)."""
+    base = predict(img[None], logit=True)[0]
     heat = np.zeros((SIZE // patch, SIZE // patch))
     for i in range(0, SIZE, patch):
         for j in range(0, SIZE, patch):
             x = img.copy()
             x[i:i + patch, j:j + patch] = np.median(img)
-            heat[i // patch, j // patch] = base - predict(x[None])[0]
+            heat[i // patch, j // patch] = base - predict(x[None], logit=True)[0]
     return heat
 
 
