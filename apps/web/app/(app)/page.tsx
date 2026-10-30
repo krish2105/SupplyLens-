@@ -80,7 +80,7 @@ export default function OverviewPage() {
             </Link>
           </div>
         </div>
-        <Card className="overflow-hidden p-0">
+        <Card className="overflow-hidden p-0 xl:self-start">{/* sized to the 3D view: stretched to the headline column it left an empty white band below it */}
           {inv.error ? <div className="p-4"><ErrorState error={inv.error} /></div> :
             gl === null || inv.isLoading ? <Skeleton className="h-[460px]" /> : !items.length ? (
               <div className="p-6"><EmptyState variant="empty_scope" art="empty-inventory" title="No stock positions at this date" compact>
