@@ -34,7 +34,7 @@ export function FloorPlan({ items, selected, onSelect }: { items: InventoryItem[
             {items.filter((i) => i.zone_id === z).sort((a, b) => (a.slot_id ?? "").localeCompare(b.slot_id ?? "")).map((i) => (
               <button key={`${i.sku_id}@${i.location_id}`} onClick={() => onSelect(i.sku_id === selected ? null : i.sku_id)}
                 aria-pressed={i.sku_id === selected}
-                aria-label={`${i.sku_id}, slot ${i.slot_id} at ${i.location_id}, ${i.health.replaceAll("_", " ")}, ${i.days_of_cover == null ? "no sales data" : num(i.days_of_cover) + " days of cover"}`}
+                aria-label={`${i.sku_id}, slot ${i.slot_id} at ${i.location_id}, ${i.health.replaceAll("_", " ")}${i.days_of_cover == null ? (i.health === "no_sales_data" ? "" : ", no sales data") : `, ${num(i.days_of_cover)} days of cover`}`}
                 className={clsx("rounded-md border px-1.5 py-1 text-left", TONE[i.health] ?? TONE.no_sales_data,
                   i.sku_id === selected && "ring-2 ring-accent ring-offset-2 ring-offset-surface")}>
                 <span className="num block truncate text-[11px] font-semibold" title={i.sku_id}>{i.sku_id.slice(prefix.length)}</span>
