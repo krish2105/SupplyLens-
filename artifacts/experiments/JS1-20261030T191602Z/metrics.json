@@ -1,0 +1,1024 @@
+{
+ "experiment_id": "JS1-20261030T191602Z",
+ "study": "JS1",
+ "kind": "simulated",
+ "question": "How much shorter is an optimal receiving-floor schedule than the dispatch rules a floor lead would use?",
+ "check_ft06": {
+  "known_optimum": 55,
+  "cp_sat": 55,
+  "status": "OPTIMAL",
+  "seconds": 0.012,
+  "rules": {
+   "FIFO": 65,
+   "SPT": 88,
+   "EDD": 68,
+   "MWKR": 61
+  }
+ },
+ "setup": {
+  "stations": [
+   "dock",
+   "quality",
+   "label",
+   "put-away"
+  ],
+  "routes": {
+   "road": [
+    "dock",
+    "label",
+    "quality",
+    "put-away"
+   ],
+   "sea": [
+    "dock",
+    "quality",
+    "label",
+    "put-away"
+   ],
+   "express": [
+    "dock",
+    "label",
+    "put-away",
+    "quality"
+   ]
+  },
+  "minutes_per_unit": {
+   "dock": 0.06,
+   "quality": 0.1,
+   "label": 0.04,
+   "put-away": 0.08
+  },
+  "setup_minutes": {
+   "dock": 6,
+   "quality": 4,
+   "label": 2,
+   "put-away": 5
+  },
+  "sizes": [
+   10,
+   20,
+   40
+  ],
+  "repeats": 3,
+  "time_limit_s": 20.0,
+  "seed": 5
+ },
+ "instances": [
+  {
+   "jobs": 10,
+   "repeat": 0,
+   "operations": 40,
+   "cp_sat_makespan": {
+    "makespan": 227,
+    "total_tardiness": 260,
+    "late_jobs": 8,
+    "mean_flow": 128.5,
+    "status": "OPTIMAL",
+    "seconds": 0.529,
+    "lower_bound": 227
+   },
+   "cp_sat_tardiness": {
+    "makespan": 228,
+    "total_tardiness": 120,
+    "late_jobs": 4,
+    "mean_flow": 119.3,
+    "status": "OPTIMAL",
+    "seconds": 0.172
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 250,
+     "total_tardiness": 746,
+     "late_jobs": 7,
+     "mean_flow": 173.3
+    },
+    "SPT": {
+     "makespan": 269,
+     "total_tardiness": 198,
+     "late_jobs": 5,
+     "mean_flow": 118.8
+    },
+    "EDD": {
+     "makespan": 269,
+     "total_tardiness": 152,
+     "late_jobs": 4,
+     "mean_flow": 122.3
+    },
+    "MWKR": {
+     "makespan": 255,
+     "total_tardiness": 971,
+     "late_jobs": 9,
+     "mean_flow": 204.8
+    }
+   }
+  },
+  {
+   "jobs": 10,
+   "repeat": 1,
+   "operations": 40,
+   "cp_sat_makespan": {
+    "makespan": 191,
+    "total_tardiness": 367,
+    "late_jobs": 7,
+    "mean_flow": 125.6,
+    "status": "OPTIMAL",
+    "seconds": 1.65,
+    "lower_bound": 191
+   },
+   "cp_sat_tardiness": {
+    "makespan": 194,
+    "total_tardiness": 163,
+    "late_jobs": 4,
+    "mean_flow": 103.8,
+    "status": "OPTIMAL",
+    "seconds": 16.407
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 205,
+     "total_tardiness": 386,
+     "late_jobs": 5,
+     "mean_flow": 113.3
+    },
+    "SPT": {
+     "makespan": 194,
+     "total_tardiness": 224,
+     "late_jobs": 5,
+     "mean_flow": 97.1
+    },
+    "EDD": {
+     "makespan": 197,
+     "total_tardiness": 265,
+     "late_jobs": 8,
+     "mean_flow": 115.7
+    },
+    "MWKR": {
+     "makespan": 205,
+     "total_tardiness": 683,
+     "late_jobs": 9,
+     "mean_flow": 154.7
+    }
+   }
+  },
+  {
+   "jobs": 10,
+   "repeat": 2,
+   "operations": 40,
+   "cp_sat_makespan": {
+    "makespan": 199,
+    "total_tardiness": 319,
+    "late_jobs": 5,
+    "mean_flow": 130.8,
+    "status": "OPTIMAL",
+    "seconds": 1.19,
+    "lower_bound": 199
+   },
+   "cp_sat_tardiness": {
+    "makespan": 217,
+    "total_tardiness": 180,
+    "late_jobs": 7,
+    "mean_flow": 119.0,
+    "status": "OPTIMAL",
+    "seconds": 8.649
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 225,
+     "total_tardiness": 507,
+     "late_jobs": 9,
+     "mean_flow": 152.9
+    },
+    "SPT": {
+     "makespan": 219,
+     "total_tardiness": 193,
+     "late_jobs": 5,
+     "mean_flow": 116.1
+    },
+    "EDD": {
+     "makespan": 228,
+     "total_tardiness": 243,
+     "late_jobs": 6,
+     "mean_flow": 122.9
+    },
+    "MWKR": {
+     "makespan": 223,
+     "total_tardiness": 708,
+     "late_jobs": 7,
+     "mean_flow": 172.3
+    }
+   }
+  },
+  {
+   "jobs": 20,
+   "repeat": 0,
+   "operations": 80,
+   "cp_sat_makespan": {
+    "makespan": 508,
+    "total_tardiness": 2465,
+    "late_jobs": 15,
+    "mean_flow": 300.6,
+    "status": "FEASIBLE",
+    "seconds": 20.007,
+    "lower_bound": 480
+   },
+   "cp_sat_tardiness": {
+    "makespan": 568,
+    "total_tardiness": 687,
+    "late_jobs": 9,
+    "mean_flow": 207.3,
+    "status": "FEASIBLE",
+    "seconds": 20.4
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 587,
+     "total_tardiness": 4704,
+     "late_jobs": 19,
+     "mean_flow": 416.9
+    },
+    "SPT": {
+     "makespan": 605,
+     "total_tardiness": 1212,
+     "late_jobs": 11,
+     "mean_flow": 214.8
+    },
+    "EDD": {
+     "makespan": 578,
+     "total_tardiness": 988,
+     "late_jobs": 12,
+     "mean_flow": 228.4
+    },
+    "MWKR": {
+     "makespan": 579,
+     "total_tardiness": 5793,
+     "late_jobs": 18,
+     "mean_flow": 469.6
+    }
+   }
+  },
+  {
+   "jobs": 20,
+   "repeat": 1,
+   "operations": 80,
+   "cp_sat_makespan": {
+    "makespan": 471,
+    "total_tardiness": 2928,
+    "late_jobs": 17,
+    "mean_flow": 328.2,
+    "status": "FEASIBLE",
+    "seconds": 20.009,
+    "lower_bound": 446
+   },
+   "cp_sat_tardiness": {
+    "makespan": 584,
+    "total_tardiness": 561,
+    "late_jobs": 5,
+    "mean_flow": 194.9,
+    "status": "FEASIBLE",
+    "seconds": 20.275
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 549,
+     "total_tardiness": 1338,
+     "late_jobs": 15,
+     "mean_flow": 244.5
+    },
+    "SPT": {
+     "makespan": 549,
+     "total_tardiness": 800,
+     "late_jobs": 10,
+     "mean_flow": 196.4
+    },
+    "EDD": {
+     "makespan": 588,
+     "total_tardiness": 985,
+     "late_jobs": 9,
+     "mean_flow": 219.6
+    },
+    "MWKR": {
+     "makespan": 526,
+     "total_tardiness": 4585,
+     "late_jobs": 19,
+     "mean_flow": 415.7
+    }
+   }
+  },
+  {
+   "jobs": 20,
+   "repeat": 2,
+   "operations": 80,
+   "cp_sat_makespan": {
+    "makespan": 414,
+    "total_tardiness": 2257,
+    "late_jobs": 13,
+    "mean_flow": 261.2,
+    "status": "OPTIMAL",
+    "seconds": 2.371,
+    "lower_bound": 414
+   },
+   "cp_sat_tardiness": {
+    "makespan": 446,
+    "total_tardiness": 1107,
+    "late_jobs": 12,
+    "mean_flow": 207.6,
+    "status": "FEASIBLE",
+    "seconds": 20.196
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 465,
+     "total_tardiness": 2393,
+     "late_jobs": 16,
+     "mean_flow": 281.4
+    },
+    "SPT": {
+     "makespan": 459,
+     "total_tardiness": 1338,
+     "late_jobs": 14,
+     "mean_flow": 210.1
+    },
+    "EDD": {
+     "makespan": 451,
+     "total_tardiness": 1577,
+     "late_jobs": 14,
+     "mean_flow": 242.3
+    },
+    "MWKR": {
+     "makespan": 461,
+     "total_tardiness": 3381,
+     "late_jobs": 16,
+     "mean_flow": 330.6
+    }
+   }
+  },
+  {
+   "jobs": 40,
+   "repeat": 0,
+   "operations": 160,
+   "cp_sat_makespan": {
+    "makespan": 767,
+    "total_tardiness": 8217,
+    "late_jobs": 27,
+    "mean_flow": 436.4,
+    "status": "OPTIMAL",
+    "seconds": 10.869,
+    "lower_bound": 767
+   },
+   "cp_sat_tardiness": {
+    "makespan": 888,
+    "total_tardiness": 3512,
+    "late_jobs": 26,
+    "mean_flow": 343.4,
+    "status": "FEASIBLE",
+    "seconds": 20.606
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 864,
+     "total_tardiness": 9671,
+     "late_jobs": 33,
+     "mean_flow": 492.4
+    },
+    "SPT": {
+     "makespan": 880,
+     "total_tardiness": 3664,
+     "late_jobs": 22,
+     "mean_flow": 311.6
+    },
+    "EDD": {
+     "makespan": 885,
+     "total_tardiness": 4225,
+     "late_jobs": 29,
+     "mean_flow": 361.1
+    },
+    "MWKR": {
+     "makespan": 856,
+     "total_tardiness": 15524,
+     "late_jobs": 37,
+     "mean_flow": 649.0
+    }
+   }
+  },
+  {
+   "jobs": 40,
+   "repeat": 1,
+   "operations": 160,
+   "cp_sat_makespan": {
+    "makespan": 867,
+    "total_tardiness": 7315,
+    "late_jobs": 22,
+    "mean_flow": 451.9,
+    "status": "OPTIMAL",
+    "seconds": 1.025,
+    "lower_bound": 867
+   },
+   "cp_sat_tardiness": {
+    "makespan": 941,
+    "total_tardiness": 3199,
+    "late_jobs": 15,
+    "mean_flow": 371.2,
+    "status": "FEASIBLE",
+    "seconds": 20.553
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 932,
+     "total_tardiness": 8858,
+     "late_jobs": 28,
+     "mean_flow": 504.4
+    },
+    "SPT": {
+     "makespan": 900,
+     "total_tardiness": 4120,
+     "late_jobs": 17,
+     "mean_flow": 359.2
+    },
+    "EDD": {
+     "makespan": 901,
+     "total_tardiness": 4741,
+     "late_jobs": 32,
+     "mean_flow": 427.6
+    },
+    "MWKR": {
+     "makespan": 943,
+     "total_tardiness": 14234,
+     "late_jobs": 36,
+     "mean_flow": 669.0
+    }
+   }
+  },
+  {
+   "jobs": 40,
+   "repeat": 2,
+   "operations": 160,
+   "cp_sat_makespan": {
+    "makespan": 735,
+    "total_tardiness": 7016,
+    "late_jobs": 26,
+    "mean_flow": 405.4,
+    "status": "OPTIMAL",
+    "seconds": 0.39,
+    "lower_bound": 735
+   },
+   "cp_sat_tardiness": {
+    "makespan": 735,
+    "total_tardiness": 3938,
+    "late_jobs": 25,
+    "mean_flow": 346.3,
+    "status": "FEASIBLE",
+    "seconds": 21.249
+   },
+   "rules": {
+    "FIFO": {
+     "makespan": 824,
+     "total_tardiness": 9468,
+     "late_jobs": 33,
+     "mean_flow": 485.8
+    },
+    "SPT": {
+     "makespan": 770,
+     "total_tardiness": 4213,
+     "late_jobs": 21,
+     "mean_flow": 318.2
+    },
+    "EDD": {
+     "makespan": 837,
+     "total_tardiness": 4799,
+     "late_jobs": 29,
+     "mean_flow": 374.2
+    },
+    "MWKR": {
+     "makespan": 833,
+     "total_tardiness": 13921,
+     "late_jobs": 37,
+     "mean_flow": 604.4
+    }
+   }
+  }
+ ],
+ "summary": {
+  "makespan_gap_vs_cp_sat": {
+   "FIFO": 0.1191,
+   "SPT": 0.1111,
+   "EDD": 0.13,
+   "MWKR": 0.1138
+  },
+  "tardiness_gap_vs_cp_sat": {
+   "FIFO": 2.4136,
+   "SPT": 0.3218,
+   "EDD": 0.4183,
+   "MWKR": 4.3644
+  },
+  "cp_sat_proven_optimal_makespan": 7,
+  "instances": 9,
+  "best_rule_by_size": {
+   "10": "FIFO",
+   "20": "MWKR",
+   "40": "SPT"
+  }
+ },
+ "gantt_example": {
+  "jobs": [
+   {
+    "lane": "road",
+    "units": 98,
+    "due": 88
+   },
+   {
+    "lane": "road",
+    "units": 58,
+    "due": 108
+   },
+   {
+    "lane": "road",
+    "units": 252,
+    "due": 143
+   },
+   {
+    "lane": "road",
+    "units": 399,
+    "due": 185
+   },
+   {
+    "lane": "road",
+    "units": 71,
+    "due": 74
+   },
+   {
+    "lane": "sea",
+    "units": 101,
+    "due": 68
+   },
+   {
+    "lane": "express",
+    "units": 241,
+    "due": 168
+   },
+   {
+    "lane": "road",
+    "units": 70,
+    "due": 64
+   },
+   {
+    "lane": "sea",
+    "units": 145,
+    "due": 136
+   },
+   {
+    "lane": "road",
+    "units": 75,
+    "due": 84
+   }
+  ],
+  "cp_sat": [
+   [
+    [
+     54,
+     0,
+     12
+    ],
+    [
+     68,
+     2,
+     6
+    ],
+    [
+     74,
+     1,
+     14
+    ],
+    [
+     93,
+     3,
+     13
+    ]
+   ],
+   [
+    [
+     45,
+     0,
+     9
+    ],
+    [
+     56,
+     2,
+     4
+    ],
+    [
+     88,
+     1,
+     10
+    ],
+    [
+     106,
+     3,
+     10
+    ]
+   ],
+   [
+    [
+     66,
+     0,
+     21
+    ],
+    [
+     87,
+     2,
+     12
+    ],
+    [
+     99,
+     1,
+     29
+    ],
+    [
+     128,
+     3,
+     25
+    ]
+   ],
+   [
+    [
+     87,
+     0,
+     30
+    ],
+    [
+     128,
+     2,
+     18
+    ],
+    [
+     146,
+     1,
+     44
+    ],
+    [
+     190,
+     3,
+     37
+    ]
+   ],
+   [
+    [
+     35,
+     0,
+     10
+    ],
+    [
+     46,
+     2,
+     5
+    ],
+    [
+     58,
+     1,
+     11
+    ],
+    [
+     80,
+     3,
+     11
+    ]
+   ],
+   [
+    [
+     117,
+     0,
+     12
+    ],
+    [
+     129,
+     1,
+     14
+    ],
+    [
+     146,
+     2,
+     6
+    ],
+    [
+     153,
+     3,
+     13
+    ]
+   ],
+   [
+    [
+     129,
+     0,
+     20
+    ],
+    [
+     152,
+     2,
+     12
+    ],
+    [
+     166,
+     3,
+     24
+    ],
+    [
+     191,
+     1,
+     28
+    ]
+   ],
+   [
+    [
+     15,
+     0,
+     10
+    ],
+    [
+     25,
+     2,
+     5
+    ],
+    [
+     33,
+     1,
+     11
+    ],
+    [
+     69,
+     3,
+     11
+    ]
+   ],
+   [
+    [
+     0,
+     0,
+     15
+    ],
+    [
+     15,
+     1,
+     18
+    ],
+    [
+     33,
+     2,
+     8
+    ],
+    [
+     41,
+     3,
+     17
+    ]
+   ],
+   [
+    [
+     25,
+     0,
+     10
+    ],
+    [
+     41,
+     2,
+     5
+    ],
+    [
+     46,
+     1,
+     12
+    ],
+    [
+     58,
+     3,
+     11
+    ]
+   ]
+  ],
+  "FIFO": [
+   [
+    [
+     0,
+     0,
+     12
+    ],
+    [
+     12,
+     2,
+     6
+    ],
+    [
+     18,
+     1,
+     14
+    ],
+    [
+     32,
+     3,
+     13
+    ]
+   ],
+   [
+    [
+     12,
+     0,
+     9
+    ],
+    [
+     21,
+     2,
+     4
+    ],
+    [
+     32,
+     1,
+     10
+    ],
+    [
+     45,
+     3,
+     10
+    ]
+   ],
+   [
+    [
+     21,
+     0,
+     21
+    ],
+    [
+     42,
+     2,
+     12
+    ],
+    [
+     54,
+     1,
+     29
+    ],
+    [
+     83,
+     3,
+     25
+    ]
+   ],
+   [
+    [
+     42,
+     0,
+     30
+    ],
+    [
+     72,
+     2,
+     18
+    ],
+    [
+     90,
+     1,
+     44
+    ],
+    [
+     150,
+     3,
+     37
+    ]
+   ],
+   [
+    [
+     72,
+     0,
+     10
+    ],
+    [
+     90,
+     2,
+     5
+    ],
+    [
+     148,
+     1,
+     11
+    ],
+    [
+     200,
+     3,
+     11
+    ]
+   ],
+   [
+    [
+     82,
+     0,
+     12
+    ],
+    [
+     134,
+     1,
+     14
+    ],
+    [
+     148,
+     2,
+     6
+    ],
+    [
+     187,
+     3,
+     13
+    ]
+   ],
+   [
+    [
+     94,
+     0,
+     20
+    ],
+    [
+     114,
+     2,
+     12
+    ],
+    [
+     126,
+     3,
+     24
+    ],
+    [
+     188,
+     1,
+     28
+    ]
+   ],
+   [
+    [
+     114,
+     0,
+     10
+    ],
+    [
+     126,
+     2,
+     5
+    ],
+    [
+     159,
+     1,
+     11
+    ],
+    [
+     211,
+     3,
+     11
+    ]
+   ],
+   [
+    [
+     124,
+     0,
+     15
+    ],
+    [
+     170,
+     1,
+     18
+    ],
+    [
+     188,
+     2,
+     8
+    ],
+    [
+     222,
+     3,
+     17
+    ]
+   ],
+   [
+    [
+     139,
+     0,
+     10
+    ],
+    [
+     154,
+     2,
+     5
+    ],
+    [
+     216,
+     1,
+     12
+    ],
+    [
+     239,
+     3,
+     11
+    ]
+   ]
+  ]
+ },
+ "limits": [
+  "routes, handling times and due slots are assumed; product volumes are real UCI weekly sales",
+  "one shift, no breakdowns or arrivals during the shift (static job shop)",
+  "dispatch rules are non-delay list schedules, the usual hand method"
+ ]
+}

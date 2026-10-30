@@ -110,6 +110,21 @@
       "status": "current",
       "headline": "All 196 generated answers kept every figure in a cited passage, with correct citations; 1 of 67 questions that should get no answer got one (3 before the product check), but the check also declines all 8 questions that name only a supplier",
       "notes": "271 generated questions over simulated and fictional agreements (labels by construction, not human-reviewed); local qwen2.5:7b at temperature 0, median 2.8 s, p95 4.0 s. Answerable 108/108 and reworded 88/88 answered; out-of-scope 0/48 and unknown product 0/10 answered. Ambiguous: 1 of 9 answered from one product's terms (was 3 of 9). Named supplier: 0 of 8 answered (was 3 of 8) because each agreement sets terms per product, so the system asks for a product code; the labels expected an answer, so this counts as over-refusal. The figure check would pass a correct figure next to a wrong one."
+    },
+    "JS1-20261030T191602Z": {
+      "status": "current",
+      "headline": "Each hand dispatch rule (FIFO, SPT, EDD, most work remaining) gives a receiving-floor schedule 11-13 % longer on average than exact CP-SAT; even the best rule chosen after the fact is 8.5 % longer (1.6-13.8 %), and no single rule is best at every size",
+      "notes": "Check: the Fisher-Thompson ft06 instance solves to its known optimum of 55 in 0.01 s (rules 61-88). Nine receiving-floor instances (10, 20, 40 orders x 3) on four stations; routes, handling minutes and due slots ASSUMED, order volumes from real UCI weekly sales. CP-SAT (8 workers, 20 s) proved 7 of 9 makespans optimal. Minimising total tardiness instead, the rules' tardiness is 32 % (SPT) to 436 % (MWKR) higher. Static one-shift job shop; no breakdowns or late arrivals."
+    },
+    "PM1-20261030T192104Z": {
+      "status": "current",
+      "headline": "On the AI4I 2020 dataset LightGBM catches 61 of 71 test failures with 135 inspections (AUC 0.98), cutting expected cost 72 % against running to failure; on a simulated motor fleet, replacing on predicted life avoids every failure at two-thirds the cost of fixed intervals, though a 1D-CNN does not beat a ridge baseline",
+      "notes": "(a) UCI AI4I 2020 (CC BY 4.0, synthetic data modelled on a milling process), 10,000 cycles, 339 failures; 60/20/20 random split; threshold chosen on validation by assumed costs (missed failure GBP 2,000, inspection GBP 150). Logistic regression AUC 0.93, average precision 0.43; LightGBM AUC 0.98, average precision 0.86. Heat, power and overstrain failures all caught; tool-wear failures 1 of 10 and random failures 0 of 4, as their causes are random by construction. (b) Simulated fleet, 80 training and 30 test motors; RMSE ridge 18.9, CNN 19.3 cycles: a negative result for deep learning on this signal. Policies on the 30 test motors: run to failure GBP 72,000 (30 failures); fixed interval at the 5th life percentile GBP 18,000 (3 failures, 94 cycles of life discarded on average); replace when predicted life < 20 cycles GBP 12,000 (0 failures, 16 cycles discarded). Costs assumed."
+    },
+    "QC1-20261030T192258Z": {
+      "status": "current",
+      "headline": "On generated goods-in images a small CNN flags defects with AUC 0.997 against 0.946 for hand-made features; letting it pass items and checking only what it flags costs 53 % less than inspecting everything, with 98.7 % of defects caught",
+      "notes": "Images generated from stated rules (glaze texture, printed band, uneven light, noise; 30 % carry a scratch, chip or stain, some faint): 6,000 train, 1,500 validation, 3,000 test. Threshold chosen on validation by assumed costs (manual check GBP 0.30, escaped defect GBP 12). CNN: 958 flagged, 11 escapes, precision 0.89; inspect-all GBP 900 vs CNN policy GBP 419. The hand-made-feature baseline reaches the same recall only by flagging 95 % of items. Occlusion maps show the CNN's score depends on the defect region. Generated images are easier than real photographs: a method check."
     }
   }
 }

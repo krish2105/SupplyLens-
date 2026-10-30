@@ -6,7 +6,7 @@ import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { Card, Eyebrow, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TableScroll } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { useApi, useWs } from "@/lib/queries";
-import { num } from "@/lib/format";
+import { int, num } from "@/lib/format";
 
 // Study results are JSON documents whose shape differs per study; the cards read named fields from them.
 type Any = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any -- untyped study JSON (see the comment above)
@@ -56,6 +56,7 @@ export default function ResearchPage() {
   const ws = useWs();
   const f1 = useStudy("F1"), s2 = useStudy("S2"), r3 = useStudy("R3"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
   const e1 = useStudy("E1"), fa1 = useStudy("FA1"), g1 = useStudy("G1"), w1 = useStudy("W1"), d1s = useStudy("D1");
+  const js1 = useStudy("JS1"), pm1 = useStudy("PM1"), qc1 = useStudy("QC1");
 
   const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const f1Opt = useMemo(() => {
@@ -302,6 +303,56 @@ export default function ResearchPage() {
             </>
           )}
         </StudyCard>
+      </section>
+
+      <section aria-labelledby="warehouse-studies" className="space-y-6">
+        <h2 id="warehouse-studies" className="display pt-4 text-2xl font-semibold">Running the warehouse: scheduling, maintenance and inspection</h2>
+        <StudyCard id="JS1" q={js1} title="Scheduling the receiving floor"
+          question="How much shorter is an optimal receiving-floor schedule (job shop: dock, quality, label, put-away) than the dispatch rules a floor lead would use?">
+          {js1.data?.summary && (
+            <>
+              <p className="text-sm"><Provenance kind="assumed" /> routes, handling minutes and due slots; real UCI order volumes. Check: classic ft06 solved to its known optimum {js1.data.check_ft06.known_optimum} (CP-SAT {js1.data.check_ft06.cp_sat}, {js1.data.check_ft06.status.toLowerCase()}).</p>
+              <TableScroll label="Dispatch rules against CP-SAT" min={480} className="mt-3"><table className="w-full text-sm"><caption className="sr-only">Average extra length of each dispatch rule&apos;s schedule over CP-SAT</caption>
+                <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 pr-4 font-medium">Rule</th><th className="pr-4 text-right font-medium">Makespan vs CP-SAT</th><th className="text-right font-medium">Total tardiness vs CP-SAT</th></tr></thead>
+                <tbody>{Object.keys(js1.data.summary.makespan_gap_vs_cp_sat as Record<string, number>).map((r) => (
+                  <tr key={r} className="border-b border-line/60"><td className="py-1.5 pr-4">{r}</td><td className="num pr-4 text-right">+{pct(js1.data!.summary.makespan_gap_vs_cp_sat[r])}</td>
+                    <td className="num text-right">+{pct(js1.data!.summary.tardiness_gap_vs_cp_sat[r])}</td></tr>))}</tbody>
+              </table></TableScroll>
+              <p className="mt-2 text-xs text-muted">{js1.data.summary.cp_sat_proven_optimal_makespan} of {js1.data.summary.instances} makespans proved optimal within {js1.data.setup.time_limit_s} s.</p>
+            </>
+          )}
+        </StudyCard>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <StudyCard id="PM1" q={pm1} title="Predictive maintenance"
+            question="Can failures and remaining life be predicted early enough to replace run-to-failure and fixed-interval maintenance?">
+            {pm1.data?.ai4i_2020 && (
+              <>
+                <p className="text-sm">UCI AI4I 2020 ({int(pm1.data.ai4i_2020.rows)} cycles, {int(pm1.data.ai4i_2020.failures)} failures), cost of the test split under each policy:</p>
+                <ul className="mt-2 space-y-1 text-sm">
+                  <li>Run to failure: <span className="num">£{int(pm1.data.ai4i_2020.run_to_failure_cost_gbp)}</span></li>
+                  {Object.entries(pm1.data.ai4i_2020.models as Record<string, Any>).map(([m, v]) => (
+                    <li key={m}>{m.replaceAll("_", " ")} (AUC {num(v.auc, 2)}): <span className="num">£{int(v.policy_on_test.cost_gbp)}</span>, {v.policy_on_test.failures_caught} of {v.policy_on_test.failures_caught + v.policy_on_test.failures_missed} failures caught with {v.policy_on_test.alerts} inspections</li>))}
+                </ul>
+                <p className="mt-3 text-sm"><Provenance kind="simulated" /> motor fleet, remaining-life models: RMSE ridge {num(pm1.data.fleet_rul.accuracy.ridge_window_stats.rmse_all_windows, 1)}, 1D-CNN {num(pm1.data.fleet_rul.accuracy.cnn.rmse_all_windows, 1)} cycles. Replace when predicted life &lt; 20 cycles: <span className="num">£{int(pm1.data.fleet_rul.policies.cnn_rul_below_20.cost_gbp)}</span> and {pm1.data.fleet_rul.policies.cnn_rul_below_20.failures} failures, against <span className="num">£{int(pm1.data.fleet_rul.policies.fixed_interval_p5.cost_gbp)}</span> and {pm1.data.fleet_rul.policies.fixed_interval_p5.failures} for fixed intervals.</p>
+              </>
+            )}
+          </StudyCard>
+          <StudyCard id="QC1" q={qc1} title="Visual inspection at goods-in"
+            question="Can a small CNN flag surface defects well enough to replace inspecting every item by hand? (generated images)">
+            {qc1.data?.models && (
+              <>
+                <TableScroll label="Defect models" min={420}><table className="w-full text-sm"><caption className="sr-only">Defect detection on held-out generated images</caption>
+                  <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 pr-4 font-medium">Model</th><th className="pr-4 text-right font-medium">AUC</th>
+                    <th className="pr-4 text-right font-medium">Recall</th><th className="text-right font-medium">Inspection cost</th></tr></thead>
+                  <tbody>{Object.entries(qc1.data.models as Record<string, Any>).map(([m, v]) => (
+                    <tr key={m} className="border-b border-line/60"><td className="py-1.5 pr-4">{m === "cnn" ? "CNN" : "hand-made features"}</td><td className="num pr-4 text-right">{num(v.auc, 3)}</td>
+                      <td className="num pr-4 text-right">{pct(v.policy.recall)}</td><td className="num text-right">£{num(v.policy.cost_gbp, 0)}</td></tr>))}</tbody>
+                </table></TableScroll>
+                <p className="mt-2 text-sm"><Provenance kind="simulated" /> {int(qc1.data.data.test)} test images. Inspecting every item by hand: <span className="num">£{num(qc1.data.inspect_everything_cost_gbp, 0)}</span>.</p>
+              </>
+            )}
+          </StudyCard>
+        </div>
       </section>
     </div>
   );

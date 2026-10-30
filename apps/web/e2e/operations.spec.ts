@@ -57,6 +57,17 @@ test("research shows the operations studies with their reviewed headlines", asyn
   await expect(section.getByRole("img", { name: /exact front and NSGA-II/ })).toBeVisible();
 });
 
+test("research shows the warehouse studies: scheduling, maintenance and inspection", async ({ page }) => {
+  await signIn(page, "viewer");
+  await page.goto("/research?ws=uci-research");
+  const section = page.getByRole("region", { name: /Running the warehouse/ });
+  await section.scrollIntoViewIfNeeded();
+  for (const id of ["JS1", "PM1", "QC1"]) await expect(section.getByText(`Study ${id}`)).toBeVisible();
+  await expect(section.getByText(/known optimum 55 \(CP-SAT 55, optimal\)/)).toBeVisible();
+  await expect(section.getByRole("table", { name: /dispatch rule/ })).toBeVisible();
+  await expect(section.getByRole("table", { name: /Defect detection/ })).toBeVisible();
+});
+
 test("a control that needs another role says so in the page and switches to that account, back to the same page", async ({ page }) => {
   await signIn(page, "tenant_admin");
   await page.goto("/forecast?ws=uci-research");

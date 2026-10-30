@@ -47,3 +47,11 @@ P7-E08: pytest 505 passed / 6 skipped; ruff, contracts (79 paths), hosted digest
 build; Playwright 42/42 screenshots (no baseline changed), 185 passed / 7 skipped on four projects, 18/18 lab vitals.
 Three Inventory tests were scoped to the warehouse canvas and the stock table because the new classes panel adds a chart
 canvas and a table.
+
+## 5. Warehouse studies (2026-10-30, owner request: cover course weeks 5, 6 and 9)
+| Study | What | Data | Headline |
+|---|---|---|---|
+| JS1 | Receiving-floor job shop: CP-SAT vs FIFO/SPT/EDD/MWKR, ft06 check | Real UCI volumes; assumed routes and times | Rules 11–13 % longer; best rule after the fact 8.5 % longer |
+| PM1 | (a) failure prediction on UCI AI4I 2020; (b) remaining life from sensor windows with a 1D-CNN; maintenance policies | (a) published synthetic dataset (downloaded with owner approval); (b) simulated fleet | (a) −72 % cost vs run to failure; (b) CNN no better than ridge; predictive replacement 0 failures at two-thirds of fixed-interval cost |
+| QC1 | Defect vs non-defect CNN at goods-in, occlusion maps, inspection policy | Generated images | AUC 0.997; −53 % inspection cost at 98.7 % recall |
+Research page section "Running the warehouse". Evidence P7-E15.

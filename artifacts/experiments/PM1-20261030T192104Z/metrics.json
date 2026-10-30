@@ -1,0 +1,704 @@
+{
+ "experiment_id": "PM1-20261030T192104Z",
+ "study": "PM1",
+ "kind": "measured (a: published synthetic dataset) and simulated (b)",
+ "question": "Can failures and remaining life be predicted early enough to replace run-to-failure and fixed-interval maintenance?",
+ "ai4i_2020": {
+  "rows": 10000,
+  "failures": 339,
+  "split": {
+   "train": 6000,
+   "validation": 2000,
+   "test": 2000
+  },
+  "test_failures": 71,
+  "models": {
+   "logistic_regression": {
+    "auc": 0.9283,
+    "average_precision": 0.4342,
+    "policy_on_test": {
+     "threshold": 0.6727,
+     "alerts": 194,
+     "failures_caught": 52,
+     "failures_missed": 19,
+     "precision": 0.268,
+     "recall": 0.732,
+     "cost_gbp": 67100.0
+    }
+   },
+   "lightgbm": {
+    "auc": 0.9795,
+    "average_precision": 0.8644,
+    "policy_on_test": {
+     "threshold": 0.0065,
+     "alerts": 135,
+     "failures_caught": 61,
+     "failures_missed": 10,
+     "precision": 0.452,
+     "recall": 0.859,
+     "cost_gbp": 40250.0
+    }
+   }
+  },
+  "run_to_failure_cost_gbp": 142000.0,
+  "lightgbm_gain_share": {
+   "speed": 0.209,
+   "power": 0.1904,
+   "wear x torque": 0.1668,
+   "torque": 0.1383,
+   "temp difference": 0.124,
+   "tool wear": 0.1167,
+   "process temp": 0.0221,
+   "air temp": 0.0204,
+   "type L": 0.0096,
+   "type M": 0.0026
+  },
+  "recall_by_failure_mode": {
+   "TWF": {
+    "failures": 10,
+    "caught": 1
+   },
+   "HDF": {
+    "failures": 33,
+    "caught": 33
+   },
+   "PWF": {
+    "failures": 14,
+    "caught": 14
+   },
+   "OSF": {
+    "failures": 16,
+    "caught": 16
+   },
+   "RNF": {
+    "failures": 4,
+    "caught": 0
+   }
+  },
+  "costs_assumed": {
+   "missed_failure_gbp": 2000.0,
+   "alert_inspection_gbp": 150.0
+  }
+ },
+ "fleet_rul": {
+  "fleet": {
+   "train_motors": 80,
+   "test_motors": 30,
+   "train_windows": 17431,
+   "test_windows": 6209,
+   "window_cycles": 30,
+   "rul_cap": 125
+  },
+  "accuracy": {
+   "ridge_window_stats": {
+    "rmse_all_windows": 18.9,
+    "rmse_last_50_cycles": 20.8,
+    "phm_score_per_motor": 3164.6
+   },
+   "cnn": {
+    "rmse_all_windows": 19.25,
+    "rmse_last_50_cycles": 19.52,
+    "phm_score_per_motor": 7006.9
+   }
+  },
+  "policies": {
+   "run_to_failure": {
+    "cost_gbp": 72000.0,
+    "failures": 30,
+    "planned": 0,
+    "mean_unused_life_cycles": 0.0
+   },
+   "fixed_interval_p5": {
+    "cost_gbp": 18000.0,
+    "failures": 3,
+    "planned": 27,
+    "mean_unused_life_cycles": 94.3
+   },
+   "fixed_interval_p20": {
+    "cost_gbp": 30000.0,
+    "failures": 9,
+    "planned": 21,
+    "mean_unused_life_cycles": 62.4
+   },
+   "cnn_rul_below_10": {
+    "cost_gbp": 18000.0,
+    "failures": 3,
+    "planned": 27,
+    "mean_unused_life_cycles": 6.0
+   },
+   "ridge_rul_below_10": {
+    "cost_gbp": 16000.0,
+    "failures": 2,
+    "planned": 28,
+    "mean_unused_life_cycles": 9.0
+   },
+   "cnn_rul_below_20": {
+    "cost_gbp": 12000.0,
+    "failures": 0,
+    "planned": 30,
+    "mean_unused_life_cycles": 15.5
+   },
+   "ridge_rul_below_20": {
+    "cost_gbp": 12000.0,
+    "failures": 0,
+    "planned": 30,
+    "mean_unused_life_cycles": 16.6
+   },
+   "cnn_rul_below_30": {
+    "cost_gbp": 12000.0,
+    "failures": 0,
+    "planned": 30,
+    "mean_unused_life_cycles": 23.0
+   },
+   "ridge_rul_below_30": {
+    "cost_gbp": 12000.0,
+    "failures": 0,
+    "planned": 30,
+    "mean_unused_life_cycles": 23.3
+   }
+  },
+  "example_motor": [
+   {
+    "cycle": 30,
+    "true": 125,
+    "cnn": 104.0,
+    "ridge": 98.1
+   },
+   {
+    "cycle": 33,
+    "true": 125,
+    "cnn": 117.1,
+    "ridge": 110.7
+   },
+   {
+    "cycle": 36,
+    "true": 125,
+    "cnn": 117.1,
+    "ridge": 113.6
+   },
+   {
+    "cycle": 39,
+    "true": 125,
+    "cnn": 119.9,
+    "ridge": 115.7
+   },
+   {
+    "cycle": 42,
+    "true": 125,
+    "cnn": 119.1,
+    "ridge": 117.0
+   },
+   {
+    "cycle": 45,
+    "true": 125,
+    "cnn": 102.8,
+    "ridge": 105.0
+   },
+   {
+    "cycle": 48,
+    "true": 125,
+    "cnn": 112.2,
+    "ridge": 109.0
+   },
+   {
+    "cycle": 51,
+    "true": 125,
+    "cnn": 113.8,
+    "ridge": 106.9
+   },
+   {
+    "cycle": 54,
+    "true": 125,
+    "cnn": 115.7,
+    "ridge": 117.8
+   },
+   {
+    "cycle": 57,
+    "true": 125,
+    "cnn": 110.5,
+    "ridge": 109.2
+   },
+   {
+    "cycle": 60,
+    "true": 125,
+    "cnn": 95.2,
+    "ridge": 97.7
+   },
+   {
+    "cycle": 63,
+    "true": 125,
+    "cnn": 109.5,
+    "ridge": 106.1
+   },
+   {
+    "cycle": 66,
+    "true": 125,
+    "cnn": 105.6,
+    "ridge": 103.9
+   },
+   {
+    "cycle": 69,
+    "true": 125,
+    "cnn": 104.0,
+    "ridge": 104.7
+   },
+   {
+    "cycle": 72,
+    "true": 125,
+    "cnn": 108.8,
+    "ridge": 110.4
+   },
+   {
+    "cycle": 75,
+    "true": 125,
+    "cnn": 109.4,
+    "ridge": 108.2
+   },
+   {
+    "cycle": 78,
+    "true": 125,
+    "cnn": 105.5,
+    "ridge": 108.6
+   },
+   {
+    "cycle": 81,
+    "true": 125,
+    "cnn": 102.0,
+    "ridge": 103.9
+   },
+   {
+    "cycle": 84,
+    "true": 125,
+    "cnn": 104.5,
+    "ridge": 105.4
+   },
+   {
+    "cycle": 87,
+    "true": 125,
+    "cnn": 112.0,
+    "ridge": 113.6
+   },
+   {
+    "cycle": 90,
+    "true": 125,
+    "cnn": 101.5,
+    "ridge": 101.8
+   },
+   {
+    "cycle": 93,
+    "true": 125,
+    "cnn": 114.1,
+    "ridge": 114.4
+   },
+   {
+    "cycle": 96,
+    "true": 125,
+    "cnn": 112.5,
+    "ridge": 113.6
+   },
+   {
+    "cycle": 99,
+    "true": 125,
+    "cnn": 125.1,
+    "ridge": 122.4
+   },
+   {
+    "cycle": 102,
+    "true": 125,
+    "cnn": 104.7,
+    "ridge": 110.0
+   },
+   {
+    "cycle": 105,
+    "true": 125,
+    "cnn": 111.6,
+    "ridge": 110.6
+   },
+   {
+    "cycle": 108,
+    "true": 125,
+    "cnn": 112.2,
+    "ridge": 116.3
+   },
+   {
+    "cycle": 111,
+    "true": 125,
+    "cnn": 110.3,
+    "ridge": 111.2
+   },
+   {
+    "cycle": 114,
+    "true": 125,
+    "cnn": 116.0,
+    "ridge": 124.5
+   },
+   {
+    "cycle": 117,
+    "true": 125,
+    "cnn": 124.4,
+    "ridge": 130.4
+   },
+   {
+    "cycle": 120,
+    "true": 125,
+    "cnn": 116.7,
+    "ridge": 121.8
+   },
+   {
+    "cycle": 123,
+    "true": 125,
+    "cnn": 115.9,
+    "ridge": 118.2
+   },
+   {
+    "cycle": 126,
+    "true": 125,
+    "cnn": 113.1,
+    "ridge": 117.6
+   },
+   {
+    "cycle": 129,
+    "true": 125,
+    "cnn": 116.0,
+    "ridge": 118.9
+   },
+   {
+    "cycle": 132,
+    "true": 125,
+    "cnn": 109.8,
+    "ridge": 105.0
+   },
+   {
+    "cycle": 135,
+    "true": 125,
+    "cnn": 115.3,
+    "ridge": 112.9
+   },
+   {
+    "cycle": 138,
+    "true": 125,
+    "cnn": 106.3,
+    "ridge": 104.6
+   },
+   {
+    "cycle": 141,
+    "true": 125,
+    "cnn": 99.2,
+    "ridge": 96.9
+   },
+   {
+    "cycle": 144,
+    "true": 125,
+    "cnn": 104.5,
+    "ridge": 93.0
+   },
+   {
+    "cycle": 147,
+    "true": 125,
+    "cnn": 107.7,
+    "ridge": 106.1
+   },
+   {
+    "cycle": 150,
+    "true": 125,
+    "cnn": 111.5,
+    "ridge": 106.0
+   },
+   {
+    "cycle": 153,
+    "true": 125,
+    "cnn": 95.8,
+    "ridge": 101.6
+   },
+   {
+    "cycle": 156,
+    "true": 125,
+    "cnn": 100.2,
+    "ridge": 99.8
+   },
+   {
+    "cycle": 159,
+    "true": 125,
+    "cnn": 107.7,
+    "ridge": 102.2
+   },
+   {
+    "cycle": 162,
+    "true": 125,
+    "cnn": 97.9,
+    "ridge": 101.9
+   },
+   {
+    "cycle": 165,
+    "true": 125,
+    "cnn": 97.2,
+    "ridge": 102.9
+   },
+   {
+    "cycle": 168,
+    "true": 124,
+    "cnn": 102.5,
+    "ridge": 99.7
+   },
+   {
+    "cycle": 171,
+    "true": 121,
+    "cnn": 99.0,
+    "ridge": 99.7
+   },
+   {
+    "cycle": 174,
+    "true": 118,
+    "cnn": 92.3,
+    "ridge": 100.2
+   },
+   {
+    "cycle": 177,
+    "true": 115,
+    "cnn": 98.5,
+    "ridge": 103.1
+   },
+   {
+    "cycle": 180,
+    "true": 112,
+    "cnn": 104.1,
+    "ridge": 105.7
+   },
+   {
+    "cycle": 183,
+    "true": 109,
+    "cnn": 86.4,
+    "ridge": 96.7
+   },
+   {
+    "cycle": 186,
+    "true": 106,
+    "cnn": 75.4,
+    "ridge": 86.0
+   },
+   {
+    "cycle": 189,
+    "true": 103,
+    "cnn": 82.1,
+    "ridge": 91.2
+   },
+   {
+    "cycle": 192,
+    "true": 100,
+    "cnn": 92.5,
+    "ridge": 100.2
+   },
+   {
+    "cycle": 195,
+    "true": 97,
+    "cnn": 86.7,
+    "ridge": 99.7
+   },
+   {
+    "cycle": 198,
+    "true": 94,
+    "cnn": 79.7,
+    "ridge": 92.6
+   },
+   {
+    "cycle": 201,
+    "true": 91,
+    "cnn": 70.9,
+    "ridge": 86.4
+   },
+   {
+    "cycle": 204,
+    "true": 88,
+    "cnn": 71.8,
+    "ridge": 78.9
+   },
+   {
+    "cycle": 207,
+    "true": 85,
+    "cnn": 69.9,
+    "ridge": 76.7
+   },
+   {
+    "cycle": 210,
+    "true": 82,
+    "cnn": 75.4,
+    "ridge": 78.5
+   },
+   {
+    "cycle": 213,
+    "true": 79,
+    "cnn": 82.5,
+    "ridge": 82.7
+   },
+   {
+    "cycle": 216,
+    "true": 76,
+    "cnn": 79.5,
+    "ridge": 74.3
+   },
+   {
+    "cycle": 219,
+    "true": 73,
+    "cnn": 55.5,
+    "ridge": 62.7
+   },
+   {
+    "cycle": 222,
+    "true": 70,
+    "cnn": 59.6,
+    "ridge": 64.2
+   },
+   {
+    "cycle": 225,
+    "true": 67,
+    "cnn": 59.4,
+    "ridge": 63.7
+   },
+   {
+    "cycle": 228,
+    "true": 64,
+    "cnn": 69.1,
+    "ridge": 72.8
+   },
+   {
+    "cycle": 231,
+    "true": 61,
+    "cnn": 58.5,
+    "ridge": 63.5
+   },
+   {
+    "cycle": 234,
+    "true": 58,
+    "cnn": 61.2,
+    "ridge": 61.7
+   },
+   {
+    "cycle": 237,
+    "true": 55,
+    "cnn": 48.9,
+    "ridge": 47.4
+   },
+   {
+    "cycle": 240,
+    "true": 52,
+    "cnn": 46.4,
+    "ridge": 51.3
+   },
+   {
+    "cycle": 243,
+    "true": 49,
+    "cnn": 45.0,
+    "ridge": 50.7
+   },
+   {
+    "cycle": 246,
+    "true": 46,
+    "cnn": 42.1,
+    "ridge": 51.8
+   },
+   {
+    "cycle": 249,
+    "true": 43,
+    "cnn": 43.3,
+    "ridge": 50.2
+   },
+   {
+    "cycle": 252,
+    "true": 40,
+    "cnn": 39.4,
+    "ridge": 39.8
+   },
+   {
+    "cycle": 255,
+    "true": 37,
+    "cnn": 32.1,
+    "ridge": 27.8
+   },
+   {
+    "cycle": 258,
+    "true": 34,
+    "cnn": 31.6,
+    "ridge": 37.3
+   },
+   {
+    "cycle": 261,
+    "true": 31,
+    "cnn": 28.4,
+    "ridge": 38.1
+   },
+   {
+    "cycle": 264,
+    "true": 28,
+    "cnn": 22.2,
+    "ridge": 26.1
+   },
+   {
+    "cycle": 267,
+    "true": 25,
+    "cnn": 24.2,
+    "ridge": 17.0
+   },
+   {
+    "cycle": 270,
+    "true": 22,
+    "cnn": 25.1,
+    "ridge": 24.1
+   },
+   {
+    "cycle": 273,
+    "true": 19,
+    "cnn": 14.5,
+    "ridge": 6.9
+   },
+   {
+    "cycle": 276,
+    "true": 16,
+    "cnn": 11.0,
+    "ridge": 0.3
+   },
+   {
+    "cycle": 279,
+    "true": 13,
+    "cnn": 11.3,
+    "ridge": 2.7
+   },
+   {
+    "cycle": 282,
+    "true": 10,
+    "cnn": 12.5,
+    "ridge": 6.2
+   },
+   {
+    "cycle": 285,
+    "true": 7,
+    "cnn": 12.0,
+    "ridge": 4.6
+   },
+   {
+    "cycle": 288,
+    "true": 4,
+    "cnn": 9.7,
+    "ridge": 10.7
+   },
+   {
+    "cycle": 291,
+    "true": 1,
+    "cnn": 9.0,
+    "ridge": 0.0
+   }
+  ],
+  "costs_assumed": {
+   "planned_replacement_gbp": 400.0,
+   "failure_gbp": 2400.0
+  }
+ },
+ "seed": 6,
+ "sources": [
+  "Matzka, S. (2020). AI4I 2020 Predictive Maintenance Dataset. UCI Machine Learning Repository. https://doi.org/10.24432/C5HS5C"
+ ],
+ "limits": [
+  "AI4I 2020 is itself synthetic (modelled on a real process), not observed failures",
+  "part (b) fleet, its degradation process and all costs are assumed",
+  "one random split for (a); one simulated fleet for (b)"
+ ]
+}
