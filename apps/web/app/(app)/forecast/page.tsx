@@ -87,7 +87,7 @@ export default function ForecastPage() {
       dataZoom: [{ type: "inside" }, { type: "slider", height: 18, bottom: 8, borderColor: token("--line"), textStyle: { color: token("--muted") } }],
       series: [
         { type: "bar", name: "Recorded unit sales", data: history.map((d) => [d.day, d.units]), itemStyle: { color: token("--accent") }, barMaxWidth: 5,
-          markLine: origin ? { symbol: "none", label: { formatter: "Forecast origin", color: token("--muted") }, lineStyle: { color: token("--muted"), type: "dashed" }, data: [{ xAxis: origin }] } : undefined },
+          markLine: origin ? { symbol: "none", label: { formatter: "Forecast origin", color: token("--muted"), position: "end", align: "right", padding: [0, 4, 0, 0] }, lineStyle: { color: token("--muted"), type: "dashed" }, data: [{ xAxis: origin }] } : undefined },
         { type: "line", name: "10–90% lower", data: pts.map((p) => [p.day, p.q10]), stack: "band", lineStyle: { opacity: 0 }, symbol: "none", tooltip: { show: false } },
         { type: "line", name: "10–90% interval", data: pts.map((p) => [p.day, p.q90 - p.q10]), stack: "band", lineStyle: { opacity: 0 }, symbol: "none", areaStyle: { color: token("--forecast-soft") } },
         { type: "line", name: "Median (q50)", data: pts.map((p) => [p.day, p.q50]), lineStyle: { color: fc, width: 2 }, itemStyle: { color: fc }, symbol: "none" },
@@ -108,7 +108,9 @@ export default function ForecastPage() {
             <option value="">Champion ({FAMILY_LABEL[models.data?.find((m) => m.status === "CHAMPION")?.family ?? "seasonal_naive"]})</option>
             {models.data?.map((m) => <option key={m.id} value={m.family}>{FAMILY_LABEL[m.family] ?? m.family} · {m.status.toLowerCase()}</option>)}
           </select></label><Button onClick={() => create.mutate(sku!)} busy={create.isPending} disabled={!sku || !known || role !== "planner"}
-          title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button></>}>
+          title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button>
+          {/* the tooltip alone is invisible on touch screens: say why the button is off */}
+          {role && role !== "planner" && <span className="text-xs text-muted">Only planners can run forecasts.</span>}</>}>
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
       {create.error && <ErrorState error={create.error} />}

@@ -65,10 +65,11 @@ export default function OverviewPage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-2 2xl:grid-cols-4">
-            <Stat label="At risk" value={int(risk.length)} sub="under 7 days" kind="derived" />
-            <Stat label="Excess" value={int(excess.length)} sub="over 90 days" kind="derived" />
-            <Stat label="Awaiting approval" value={int(pending)} sub="purchase-order drafts" />
-            <Stat label="Policy changes ahead" value={int(upcoming.length)} sub="known, not yet in force" />
+            {/* a count that has not loaded is not zero: show a placeholder until its own request answers */}
+            <Stat label="At risk" value={inv.data ? int(risk.length) : <Skeleton className="h-7 w-10" />} sub="under 7 days" kind="derived" />
+            <Stat label="Excess" value={inv.data ? int(excess.length) : <Skeleton className="h-7 w-10" />} sub="over 90 days" kind="derived" />
+            <Stat label="Awaiting approval" value={o ? int(pending) : <Skeleton className="h-7 w-10" />} sub="purchase-order drafts" />
+            <Stat label="Policy changes ahead" value={docs.data && o ? int(upcoming.length) : <Skeleton className="h-7 w-10" />} sub="known, not yet in force" />
           </div>
           <div className="flex flex-wrap gap-3">
             <Link href={{ pathname: "/runs", query: { ws } }} className="inline-flex h-11 items-center gap-2 rounded-lg bg-accent px-5 text-sm font-semibold text-accent-ink hover:brightness-110">

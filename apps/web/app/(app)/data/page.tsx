@@ -82,7 +82,7 @@ function DatasetView() {
         </div>
         <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
           {parts.map((p) => <Stat key={p.k} label={p.label} value={int(p.v)} sub={`${((p.v / t.input_rows!) * 100).toFixed(2)}% of rows`} />)}
-          <Stat label="Accepted value" value={money(t.accepted_value_minor_gbp, "GBP")} sub="selling price × units, not purchase cost" kind="observed" />
+          <Stat label="Accepted value" value={<span className="whitespace-nowrap text-[clamp(1rem,4.4vw,1.5rem)]">{money(t.accepted_value_minor_gbp, "GBP")}</span>} sub="selling price × units, not purchase cost" kind="observed" />
         </div>
       </Card>
 

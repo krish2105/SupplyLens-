@@ -13,6 +13,21 @@ async function action(page: Page, id: string) {
 }
 
 // ------------------------------------------------------------------------------------- 1. sign-in, sessions, roles
+test("J1 a visitor without a session goes straight to sign-in: no empty dashboard, no data request first", async ({ page }) => {
+  // On a cold hosted API the session check took ~10 s to say 401, and the shell drew zeros meanwhile (hosted demo report).
+  const dataRequests: string[] = [];
+  page.on("request", (r) => { if (/\/api\/v1\/(overview|inventory|me)\b/.test(r.url())) dataRequests.push(r.url()); });
+  const response = await page.goto("/inventory?ws=uci-research");
+  await expect(page).toHaveURL(/\/login\?next=%2Finventory%3Fws%3Duci-research$/);
+  expect(response?.request().redirectedFrom()?.url(), "redirected by the server, before any page code ran").toMatch(/\/inventory\?ws=uci-research$/);
+  expect(dataRequests).toEqual([]);
+  await page.goto("/");
+  await expect(page).toHaveURL(/\/login$/);
+  await signIn(page, "viewer");                                                    // and a session opens the app as before
+  await page.goto("/inventory?ws=uci-research");
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+});
+
 test("J1 sign-out ends the session: the app returns to sign-in and the old session no longer opens it", async ({ page }) => {
   await signIn(page, "viewer");
   await page.goto("/inventory?ws=uci-research");

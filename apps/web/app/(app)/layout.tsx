@@ -220,7 +220,7 @@ function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="mt-auto space-y-3 px-2 pt-4 text-xs text-muted">
             <p>{me.data ? <>Signed in as <span className="text-ink">{me.data.user.display_name}</span>{me.data.user.is_dev_account && <> · <span className="text-risk">dev account</span></>}</> : "Checking your session…"}</p>
-            <p>Role in workspace: <span className="font-semibold text-ink">{role?.replace("_", " ")}</span></p>
+            <p>Role in workspace: <span className="font-semibold text-ink">{role?.replace("_", " ") ?? "…"}</span></p>
           </div>
         </nav>
 
@@ -238,7 +238,7 @@ function AppShell({ children }: { children: ReactNode }) {
                     setCtx({ ws: e.target.value, sku: null, known: null, eff: null, action: null, run: null });
                   }}>
                   {memberships.length ? memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)
-                    : <option value={ctx.ws}>{ctx.ws}</option>}
+                    : <option value={ctx.ws}>Loading…</option>}
                 </select>
               </label>
               {membership && (
