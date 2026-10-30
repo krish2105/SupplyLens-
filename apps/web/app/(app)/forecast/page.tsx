@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
 import { useDecisionClock } from "@/components/clock-rail";
+import { RoleNote } from "@/components/role-note";
 import { Button, Card, Empty, ErrorState, Eyebrow, KV, Mono, PageHeader, Provenance, QueryError, Skeleton, Status, TableScroll } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { apiPost, getTenant } from "@/lib/api";
@@ -109,12 +110,13 @@ export default function ForecastPage() {
             {models.data?.map((m) => <option key={m.id} value={m.family}>{FAMILY_LABEL[m.family] ?? m.family} · {m.status.toLowerCase()}</option>)}
           </select></label><Button onClick={() => create.mutate(sku!)} busy={create.isPending} disabled={!sku || !known || role !== "planner"}
           title={role !== "planner" ? "Only planners can run forecasts" : undefined}><Play className="size-4" aria-hidden /> Run forecast from {day(origin)}</Button>
-          {/* the tooltip alone is invisible on touch screens: say why the button is off */}
-          {role && role !== "planner" && <span className="text-xs text-muted">Only planners can run forecasts.</span>}</>}>
+          </>}>
         The model sees only sales up to the forecast origin (the “Known by” date). Days with no recorded sales are zero sales, not observed zero demand.
       </PageHeader>
+      {/* the button's tooltip is invisible on touch screens: say in the page why it is off */}
+      <RoleNote role={role} need="planner" action="run forecasts" />
       {create.error && <ErrorState error={create.error} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]">{/* grid items get min-w-0 so wide content scrolls inside them on a phone */}
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,9fr)]">{/* grid items get min-w-0 so wide content scrolls inside them on a phone */}
         <Card className="min-w-0 p-4">
           <Eyebrow>Product</Eyebrow>
           {inv.isLoading ? <Skeleton className="mt-2 h-60" /> : inv.error ? <QueryError q={inv} what="products" /> : (
@@ -159,7 +161,7 @@ export default function ForecastPage() {
             </p>
           )}
           {run.data && sameSku && (
-            <div className="grid gap-6 lg:grid-cols-2" data-run-id={run.data.id}>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2" data-run-id={run.data.id}>
               <Card className="p-5">
                 <Eyebrow>Forecast run</Eyebrow>
                 <div className="mt-3"><KV items={[

@@ -114,3 +114,22 @@ def test_the_frontier_trades_cost_service_and_co2_and_is_for_planners(two_lane_w
     viewer = TestClient(app)
     viewer.post("/api/v1/auth/dev-login", json={"email": dev_email("viewer")}, headers=H)
     assert viewer.post("/api/v1/scenarios/emissions-frontier", headers=H, json={}).status_code == 403
+
+
+def test_without_parallel_fallback_the_deterministic_pass_is_the_answer(monkeypatch):
+    """Few-core hosts (the serverless API) sweep the CO2 caps on the deterministic pass alone: no parallel re-solve."""
+    from ortools.sat.python import cp_model
+
+    from supplylens_opt import planner
+    calls = []
+    monkeypatch.setattr(planner, "_solve", lambda req, offers, relax, workers=1, max_time_s=None:
+                        calls.append(workers) or (None, cp_model.UNKNOWN, {}, {}, {}))
+    r = planner.plan(request(), explain=False, parallel_fallback=False)
+    assert r.status == "UNKNOWN" and calls == [1]
+
+
+def test_single_worker_solves_use_the_lp_relaxation():
+    from supplylens_opt import planner
+    assert planner.SOLVER_SETTINGS["linearization_level"] == 2
+    r = planner.plan(request())
+    assert r.solver["deterministic"] is True and r.solver["linearization_level"] == 2

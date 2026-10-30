@@ -15,7 +15,8 @@ export function baseOption(): EChartsCoreOption {
     grid: { left: 52, right: 20, top: 36, bottom: 56 },
     tooltip: { trigger: "axis", backgroundColor: token("--surface"), borderColor: line, textStyle: { color: ink },
       valueFormatter: (v: unknown) => (typeof v === "number" ? v.toLocaleString("en-GB", { maximumFractionDigits: 1 }) : String(v)) },
-    legend: { top: 4, textStyle: { color: muted } },
+    // one line that scrolls when it does not fit: a wrapped legend ran into the axis title and labels on a phone
+    legend: { type: "scroll", top: 4, textStyle: { color: muted }, pageIconColor: muted, pageTextStyle: { color: muted } },
     xAxis: { axisLine: { lineStyle: { color: line } }, axisLabel: { color: muted }, splitLine: { show: false } },
     yAxis: { axisLine: { lineStyle: { color: line } }, axisLabel: { color: muted }, splitLine: { lineStyle: { color: line } } },
   };

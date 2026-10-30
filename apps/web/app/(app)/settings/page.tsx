@@ -18,7 +18,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Settings" title="Appearance, connections and audit" />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <Eyebrow>Appearance</Eyebrow>
           <fieldset className="mt-3">

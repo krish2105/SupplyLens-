@@ -228,34 +228,41 @@ function AppShell({ children }: { children: ReactNode }) {
           {/* Sticky from tablet width up. On a phone the header and decision clock are ~300 px (a third of the screen), so
               they scroll away with the page instead of covering it (Phase 4B). */}
           <div ref={trackHeaderHeight} className="z-30 md:sticky md:top-0">
-            <div className="glass flex flex-wrap items-center gap-3 border-b border-line px-4 py-2.5 md:px-6">
-              <label className="flex items-center gap-2 text-sm">
-                <span className="sr-only">Workspace</span>
-                <select value={ctx.ws} className="rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium"
-                  onChange={(e) => {
-                    qc.cancelQueries();
-                    setTenant(e.target.value);
-                    setCtx({ ws: e.target.value, sku: null, known: null, eff: null, action: null, run: null });
-                  }}>
-                  {memberships.length ? memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)
-                    : <option value={ctx.ws}>Loading…</option>}
-                </select>
-              </label>
-              {membership && (
-                <span className={clsx("rounded-md px-2 py-1 text-[11px] font-semibold",
-                  membership.kind === "demo" ? "bg-sim-soft text-sim" : "bg-accent-soft text-accent")}>
-                  {membership.kind === "demo" ? "Fictional demo data" : membership.slug === "contract-research" ? "Real public contracts & awards" : "Real sales · simulated operations"}
-                </span>
-              )}
-              <nav aria-label="Sections" className="lg:hidden"><SectionsMenu ws={ctx.ws} path={path} /></nav>
-              <div className="ml-auto flex items-center gap-2">
-                <SafeBoundary name="command palette"><CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} /></SafeBoundary>
-                <ThemeSwitch />
-                <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
-                  aria-label="Sign out" title="Sign out"
-                  onClick={signOut}>
-                  <LogOut className="size-4" aria-hidden />
-                </button>
+            {/* Two fixed rows below desktop width (workspace and data label; page menu and tools) instead of one wrapping row:
+                the wrap point used to move with the length of the page title, so the icons jumped between pages. */}
+            <div className="glass flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-4 py-2.5 md:px-6">
+              <div className="flex min-w-0 basis-full items-center gap-2 lg:basis-auto">
+                <label className="flex min-w-0 flex-1 items-center gap-2 text-sm lg:flex-none">
+                  <span className="sr-only">Workspace</span>
+                  <select value={ctx.ws} className="w-full min-w-0 rounded-lg border border-line bg-surface px-2 py-1.5 text-sm font-medium"
+                    onChange={(e) => {
+                      qc.cancelQueries();
+                      setTenant(e.target.value);
+                      setCtx({ ws: e.target.value, sku: null, known: null, eff: null, action: null, run: null });
+                    }}>
+                    {memberships.length ? memberships.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)
+                      : <option value={ctx.ws}>Loading…</option>}
+                  </select>
+                </label>
+                {membership && (
+                  <span className={clsx("shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold",
+                    membership.kind === "demo" ? "bg-sim-soft text-sim" : "bg-accent-soft text-accent")}>
+                    {membership.kind === "demo" ? "Fictional demo data" : membership.slug === "contract-research" ? "Real public contracts & awards"
+                      : <><span className="sm:hidden">Real sales · simulated ops</span><span className="hidden sm:inline">Real sales · simulated operations</span></>}
+                  </span>
+                )}
+              </div>
+              <div className="flex min-w-0 basis-full items-center gap-2 lg:ml-auto lg:basis-auto">
+                <nav aria-label="Sections" className="min-w-0 lg:hidden"><SectionsMenu ws={ctx.ws} path={path} /></nav>
+                <div className="ml-auto flex shrink-0 items-center gap-2">
+                  <SafeBoundary name="command palette"><CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} /></SafeBoundary>
+                  <ThemeSwitch />
+                  <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
+                    aria-label="Sign out" title="Sign out"
+                    onClick={signOut}>
+                    <LogOut className="size-4" aria-hidden />
+                  </button>
+                </div>
               </div>
             </div>
             <ConnectionBanner />

@@ -26,7 +26,7 @@ export function FloorPlan({ items, selected, onSelect }: { items: InventoryItem[
   // the full code stays in the accessible name and the tooltip.
   const prefix = sharedPrefix(items.map((i) => i.sku_id));
   return (
-    <div className="grid gap-4 sm:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {zones.map((z) => (
         <fieldset key={z} className="rounded-xl border border-line p-3">
           <legend className="px-1 text-xs font-semibold text-muted">{z.replace("DEMO-", "").replace("-", " ")}</legend>

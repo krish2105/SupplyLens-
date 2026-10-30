@@ -11,8 +11,6 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
 from sqlalchemy import text
 
 from supplylens_ml.baselines import seasonal_naive
@@ -21,6 +19,10 @@ from supplylens_ml.series import dense_series
 from .. import alerts, telemetry
 from ..config import REPO_ROOT
 from ..db import tenant_session
+from ..lazy import LazyModule
+
+np = LazyModule("numpy")
+pd = LazyModule("pandas")
 
 SEASONAL_NAIVE = ("seasonal_naive", "1.0.0")
 

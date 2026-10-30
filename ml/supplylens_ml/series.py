@@ -3,7 +3,9 @@ from __future__ import annotations
 
 from datetime import date
 
-import pandas as pd
+from .lazy import LazyModule
+
+pd = LazyModule("pandas")
 
 
 def dense_series(daily: pd.DataFrame, sku_id: str, end: date, start: date | None = None) -> pd.Series:

@@ -138,7 +138,7 @@ export default function PoliciesPage() {
         )}
       </Card>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">{/* an explicit column: an implicit one grew to its widest content and pushed the page 10 px past a 360 px phone */}
         <Card className="p-5">
           <Eyebrow>Documents and versions</Eyebrow>
           {docs.data && docs.data.length > 0 && docs.data.some((d) => d.supersedes_version_id) && (
@@ -164,7 +164,7 @@ export default function PoliciesPage() {
                       const inForce = eff ? v.valid_from <= eff && (!v.valid_to || v.valid_to >= eff) : false;
                       return (
                         <li key={v.version_id} className="flex flex-wrap items-center gap-2 text-sm">
-                          <button className="text-accent hover:underline" onClick={() => setOpen({ version: v.version_id, reveal: true })}>{v.version_label}</button>
+                          <button className="inline-flex min-h-6 min-w-6 items-center text-accent hover:underline" onClick={() => setOpen({ version: v.version_id, reveal: true })}>{v.version_label}</button>
                           <span className="text-xs text-muted">known {day(v.known_at)} · from {day(v.valid_from)}{v.valid_to ? ` to ${day(v.valid_to)}` : ""}</span>
                           {!knownYet ? <Status value="NOT_CONFIGURED" /> : inForce ? <Status value="available" /> : null}
                           {!knownYet && <span className="text-xs text-muted">not yet known at cutoff</span>}
@@ -267,7 +267,7 @@ function CompareVersions({ ids, onClose }: { ids: [string, string]; onClose: () 
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between"><Eyebrow>Side-by-side amendment</Eyebrow><Button size="sm" variant="ghost" onClick={onClose}>Close</Button></div>
-      <div className="mt-3 grid gap-3 md:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
         {[a.data, b.data].map((v, i) => (
           <div key={i}>
             <p className="text-sm font-medium">{v.version_label} <span className="text-xs text-muted">in force {day(v.valid_from)}</span></p>
@@ -318,7 +318,7 @@ function AddDocument({ versions, onAdded }: { versions: Doc[]; onAdded: (version
       <p className="mt-1 text-sm text-muted">Plain text (.txt or .md, up to 1 MB). It is known from the moment you add it — earlier replays never cite it —
         and in force from the date you give. Sections start at lines beginning with “#”, “Section”, “Clause” or “Schedule”.</p>
       {locked ? <p role="note" className="mt-3 text-sm text-muted">Adding documents is disabled in the public demo.</p> : (
-        <form className="mt-4 grid gap-3 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setDone(null); add.mutate(); }}>
+        <form className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2" onSubmit={(e) => { e.preventDefault(); setDone(null); add.mutate(); }}>
           <label className="text-sm md:col-span-2"><span className="font-medium">Amends an existing version (optional)</span>
             <select value={f.supersedes_version_id} className={input}
               onChange={(e) => {

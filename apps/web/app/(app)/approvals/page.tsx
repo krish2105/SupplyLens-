@@ -1,4 +1,5 @@
 "use client";
+import { RoleNote } from "@/components/role-note";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, type ReactNode } from "react";
 import { parseAsString, useQueryState } from "nuqs";
@@ -32,7 +33,7 @@ export default function ApprovalsPage() {
       <TabList id="act" label="Action status" value={tab} onChange={setTab} className="flex flex-wrap gap-1"
         tabs={TABS.map((t) => ({ key: t.k, label: t.l }))}
         tabClassName={(on) => clsx("rounded-lg px-3 py-1.5 text-sm", on ? "bg-ink text-bg" : "text-muted hover:bg-surface-2")} />
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         {/* Space is reserved up front and the list scrolls inside the card, so late data never pushes the page down. */}
         <Card className="min-h-[480px] p-3"><TabPanel id="act" value={tab}>
           {list.isLoading ? <Loading /> : list.error ? <ErrorState error={list.error} /> : list.data?.length ? (
@@ -212,8 +213,7 @@ function ActionView({ id, ws }: { id: string; ws: string }) {
               </select>
             </label>
           )}
-          {x.status === "PENDING_APPROVAL" && role === "viewer" && <p className="text-sm text-muted">Viewers cannot approve.</p>}
-          {x.status === "PENDING_APPROVAL" && role === "tenant_admin" && <p className="text-sm text-muted">Tenant administrators do not hold spend authority.</p>}
+          {x.status === "PENDING_APPROVAL" && role !== "approver" && <RoleNote role={role} need="approver" action="approve or reject a draft, and never one they prepared" />}
         </div>
         {m.isPaused && <p role="status" className="mt-3 rounded-lg bg-risk-soft px-3 py-2 text-sm text-risk">Waiting for connection. This request is held and will be sent automatically, once, when you are back online.</p>}
         {m.error && <div className="mt-3"><ErrorState error={m.error}

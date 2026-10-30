@@ -46,7 +46,7 @@ export function InventoryClasses({ eff }: { eff?: string | null }) {
             A makes the first {pct(d.abc_cuts[0]!)}, B the next {pct(d.abc_cuts[1]! - d.abc_cuts[0]!)}. XYZ ranks how steady weekly demand is
             (coefficient of variation below {d.xyz_cuts[0]} is X, below {d.xyz_cuts[1]} Y, otherwise Z).
           </p>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
             <div>
               <table className="w-full table-fixed text-sm" aria-label="Products by ABC and XYZ class">
                 <thead><tr className="text-xs text-muted"><th className="w-10" />{["X", "Y", "Z"].map((x) => <th key={x} className="pb-1 font-medium">{x}</th>)}</tr></thead>

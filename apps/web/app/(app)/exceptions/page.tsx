@@ -45,7 +45,7 @@ export default function ExceptionsPage() {
           label: k === "all" ? `All (${q.data?.items.length ?? 0})` : `${KIND[k]?.label ?? k} (${q.data?.counts[k]})` }))} />
       <TabPanel id="exc" value={kind} className="space-y-3">
       {q.isLoading ? <Loading /> : (
-        <ul className="grid gap-3 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
           {items.map((i, n) => {
             const K = KIND[i.kind] ?? KIND.action_failed!;
             return (
@@ -70,10 +70,10 @@ export default function ExceptionsPage() {
                         {i.severity} severity</span>
                     </div>
                     <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                      {i.sku_id && <Link className="text-accent hover:underline" href={{ pathname: "/inventory", query: { ws, sku: i.sku_id } }}>Inspect {i.sku_id}</Link>}
-                      {i.sku_id && i.kind === "shortage_risk" && <Link className="text-accent hover:underline" href={{ pathname: "/runs", query: { ws, sku: i.sku_id } }}>Investigate</Link>}
-                      {i.kind === "policy_change" && <Link className="text-accent hover:underline" href={{ pathname: "/policies", query: { ws, sku: i.sku_id } }}>Compare versions</Link>}
-                      {i.action_id && <Link className="text-accent hover:underline" href={{ pathname: "/approvals", query: { ws, action: i.action_id } }}>Open draft</Link>}
+                      {i.sku_id && <Link className="inline-flex min-h-6 items-center text-accent hover:underline" href={{ pathname: "/inventory", query: { ws, sku: i.sku_id } }}>Inspect {i.sku_id}</Link>}
+                      {i.sku_id && i.kind === "shortage_risk" && <Link className="inline-flex min-h-6 items-center text-accent hover:underline" href={{ pathname: "/runs", query: { ws, sku: i.sku_id } }}>Investigate</Link>}
+                      {i.kind === "policy_change" && <Link className="inline-flex min-h-6 items-center text-accent hover:underline" href={{ pathname: "/policies", query: { ws, sku: i.sku_id } }}>Compare versions</Link>}
+                      {i.action_id && <Link className="inline-flex min-h-6 items-center text-accent hover:underline" href={{ pathname: "/approvals", query: { ws, action: i.action_id } }}>Open draft</Link>}
                     </div>
                   </div>
                 </Card>

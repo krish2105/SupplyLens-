@@ -16,7 +16,6 @@ import uuid
 from datetime import date, datetime, timedelta
 from typing import Any, TypedDict
 
-from langgraph.graph import END, StateGraph
 from sqlalchemy import text
 from sqlalchemy.exc import IntegrityError
 
@@ -29,10 +28,13 @@ from ..authz import Actor, resolve_actor
 from ..db import tenant_session
 from ..forecasting.service import run_forecast
 from ..knowledge.retrieve import search
+from ..lazy import LazyModule
 from ..planning.demand_history import dependence_by_sku
 from ..planning.grain import demand_shares, expand_offers, restore_line
 from ..planning.positions import MAX_SKUS_PER_RUN, bounded_scope, load_positions
 from ..planning.terms_service import applicable_terms
+
+langgraph_graph = LazyModule("langgraph.graph")
 
 DEFAULT_BUDGET = {"max_tool_calls": 400, "max_seconds": 120, "max_check_loops": 1}
 NODES = ["ACCEPT", "PLAN", "GATHER_EVIDENCE", "COMPUTE", "CHECK", "PREPARE_ACTION"]
@@ -422,7 +424,7 @@ def _after_check(state: RunState) -> str:
 
 
 def build_graph():
-    g = StateGraph(RunState)
+    g = langgraph_graph.StateGraph(RunState)
     g.add_node("ACCEPT", node("ACCEPT", "PLAN"))
     g.add_node("PLAN", node("PLAN", "GATHER_EVIDENCE"))
     g.add_node("GATHER_EVIDENCE", node("GATHER_EVIDENCE", "COMPUTE"))
@@ -433,12 +435,20 @@ def build_graph():
                                   {n: n for n in NODES})
     for n in NODES:
         targets = {x: x for x in NODES}
-        targets["END"] = END
+        targets["END"] = langgraph_graph.END
         g.add_conditional_edges(n, lambda s: s["next_node"], targets)
     return g.compile()
 
 
-GRAPH = build_graph()
+_GRAPH = None
+
+
+def graph():
+    """The compiled graph, built on first use (LangGraph is not loaded at start-up)."""
+    global _GRAPH
+    if _GRAPH is None:
+        _GRAPH = build_graph()
+    return _GRAPH
 
 
 def create_run(actor: Actor, *, mode: str, inp: dict) -> uuid.UUID:
@@ -480,7 +490,7 @@ def execute_run(tenant_id, run_id) -> dict[str, Any]:
     _event(tenant_id, run_id, state.get("next_node") or "ACCEPT", "run_resumed" if resumed else "run_started",
            "Resumed from checkpoint" if resumed else "Run started")
     try:
-        final = GRAPH.invoke(state, {"recursion_limit": 25})
+        final = graph().invoke(state, {"recursion_limit": 25})
     except BudgetExceeded as e:
         state["status"] = "PARTIAL"
         _event(tenant_id, run_id, state.get("next_node", "?"), "budget_exceeded", str(e))

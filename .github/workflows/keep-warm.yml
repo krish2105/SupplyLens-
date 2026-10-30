@@ -1,0 +1,21 @@
+name: keep-warm
+
+# The hosted API is a serverless function that is shut down when idle; the next visitor waited ~8 s for it to start
+# (PERF-P7-02). A light request every ten minutes keeps an instance warm. It calls /api/v1/auth/config, which reads only
+# configuration and never the database, so the database can still suspend and costs no compute hours.
+# Delete this file to stop it.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - name: Ping the hosted API
+        run: curl -fsS -o /dev/null --max-time 60 -w "auth/config %{http_code} in %{time_total}s\n" https://supplylens-self.vercel.app/api/v1/auth/config

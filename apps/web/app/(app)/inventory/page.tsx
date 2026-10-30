@@ -64,7 +64,7 @@ export default function InventoryPage() {
           layouts cover these products only.
         </p>
       )}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
         <Card className="overflow-hidden p-0">
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2">
             <TabList id="layout" label="Layout view" value={view} onChange={setView} className="inline-flex rounded-lg border border-line p-0.5"

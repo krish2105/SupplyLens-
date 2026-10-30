@@ -86,7 +86,7 @@ function DatasetView() {
         </div>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <Card className="p-5">
           <Eyebrow>Provenance and rights</Eyebrow>
           <div className="mt-3">
@@ -122,7 +122,7 @@ function DatasetView() {
           <Eyebrow>Quarantine — why rows were excluded</Eyebrow>
           {reason && <button className="text-sm text-accent hover:underline" onClick={() => setReason(null)}>Show all reasons</button>}
         </div>
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
           {q.data?.summary.map((s) => (
             <button key={s.reason} onClick={() => setReason(s.reason)} aria-pressed={reason === s.reason}
               className={`rounded-xl border p-3 text-left text-sm ${reason === s.reason ? "border-accent bg-accent-soft" : "border-line hover:bg-surface-2"}`}>

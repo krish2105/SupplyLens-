@@ -2,7 +2,7 @@
 import { useRouter } from "next/navigation";
 import { safeNext } from "@/lib/nav";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { KeyRound, ShieldAlert } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { Button, ErrorState, Loading } from "@/components/ui";
@@ -21,6 +21,9 @@ export default function Login() {
   const devOn = cfg.data?.dev_login === true;
   const users = useQuery({ queryKey: ["dev-users"], queryFn: () => apiGet("/api/v1/auth/dev-users"), enabled: devOn });
   const [busy, setBusy] = useState<string | null>(null);
+  // ?as=planner: the page the user came from needs that role (RoleNote's switch): list that account first and mark it
+  const [suggested, setSuggested] = useState<string | null>(null);
+  useEffect(() => setSuggested(new URLSearchParams(window.location.search).get("as")), []); // eslint-disable-line react-hooks/set-state-in-effect -- URL, after mount
   const [err, setErr] = useState<unknown>(null);
 
   async function signIn(email: string) {
@@ -63,11 +66,11 @@ export default function Login() {
               {users.isLoading && <Loading label="Loading accounts" />}
               {users.error && <div className="mt-4"><ErrorState error={users.error} retry={() => users.refetch()} /></div>}
               <ul className="mt-3 space-y-2">
-                {users.data?.users.map((u) => (
+                {[...(users.data?.users ?? [])].sort((a, b) => Number(b.roles[0] === suggested) - Number(a.roles[0] === suggested)).map((u) => (
                   <li key={u.email}>
                     <button onClick={() => signIn(u.email)} disabled={!!busy}
-                      className="block w-full rounded-xl border border-line bg-surface p-3.5 text-left hover:border-accent hover:bg-surface-2 disabled:opacity-60">
-                      <span className="block font-semibold">{u.display_name}</span>
+                      className={`block w-full rounded-xl border bg-surface p-3.5 text-left hover:border-accent hover:bg-surface-2 disabled:opacity-60 ${u.roles[0] === suggested ? "border-accent ring-2 ring-accent/30" : "border-line"}`}>
+                      <span className="block font-semibold">{u.display_name}{u.roles[0] === suggested && <span className="ml-2 rounded-md bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold text-accent">Needed for the page you were on</span>}</span>
                       <span className="block text-sm text-muted">{ROLE_COPY[u.roles[0] ?? ""] ?? u.roles.join(", ")}</span>
                       <span className="num mt-1 block break-all text-xs text-muted">{busy === u.email ? "Signing in…" : u.email}</span>
                     </button>

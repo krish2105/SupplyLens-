@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import math
 
-import numpy as np
-import pandas as pd
+from .lazy import LazyModule
+
+np = LazyModule("numpy")
+pd = LazyModule("pandas")
 
 QUANTILES = (0.1, 0.5, 0.9)
 

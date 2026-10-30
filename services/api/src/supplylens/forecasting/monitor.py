@@ -14,14 +14,16 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-import numpy as np
-import pandas as pd
 from sqlalchemy import text
 
 from supplylens_ml.baselines import seasonal_naive
 from supplylens_ml.series import dense_series
 
 from ..db import tenant_session
+from ..lazy import LazyModule
+
+np = LazyModule("numpy")
+pd = LazyModule("pandas")
 
 MIN_POINTS = 200            # fewer scored points than this: "insufficient evidence", never a recommendation
 DEGRADED_RATIO = 1.0        # champion MAE / shadow-baseline MAE above this on enough points: recommend rollback

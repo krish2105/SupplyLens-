@@ -1,4 +1,5 @@
 "use client";
+import { RoleNote } from "@/components/role-note";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { AlertTriangle } from "lucide-react";
@@ -96,7 +97,7 @@ export default function ScenariosPage() {
         Both run the same forecast, stock snapshot, supplier terms and optimiser. Only the inputs you change differ. Results are simulated.
       </PageHeader>
       {compute.error && <ErrorState error={compute.error} />}
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         <Card className="space-y-5 p-5">
           <Eyebrow>Draft inputs</Eyebrow>
           <fieldset>
@@ -128,7 +129,7 @@ export default function ScenariosPage() {
                     {c.k === "budget_minor" && <span className="text-xs text-muted">{currency}</span>}
                   </span>
                 </div>
-                <input id={c.k} type="range" min={c.min} max={c.max} step={c.step} value={v} disabled={off} className="mt-1 w-full accent-[var(--accent)]"
+                <input id={c.k} type="range" min={c.min} max={c.max} step={c.step} value={v} disabled={off} className="mt-1 h-6 w-full accent-[var(--accent)]"
                   aria-describedby={`${c.k}-help`} onChange={(e) => set(Number(e.target.value))} />
                 <p id={`${c.k}-help`} className="flex flex-wrap items-center gap-2 text-xs text-muted">
                   {off ? <>Not applicable under {BASES.find((b) => b.v === d.replenishment_basis)?.label.toLowerCase()}: this control would not change the result.</>
@@ -142,7 +143,7 @@ export default function ScenariosPage() {
             <Button onClick={() => compute.mutate("draft")} busy={compute.isPending && compute.variables === "draft"} disabled={!canRun}>Compute draft</Button>
             <Button variant="ghost" onClick={() => setDraft(null)}>Reset inputs</Button>
           </div>
-          {!canRun && <p className="text-xs text-muted">Only planners can compute scenarios. You can view saved scenarios below.</p>}
+          {!canRun && <RoleNote role={role} need="planner" action="compute scenarios or trace the CO₂ trade-off; you can still view saved scenarios below" />}
         </Card>
         <div className="space-y-6">
           {stale && (

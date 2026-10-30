@@ -21,7 +21,7 @@ test("reference case: planner drafts, approver approves, sandbox order reconcile
   // The preparer cannot approve; viewers see no approve control.
   await signIn(page, "viewer");
   await page.goto(`/approvals?ws=demo&action=${actionId}`);
-  await expect(page.getByText("Viewers cannot approve.")).toBeVisible();
+  await expect(page.getByTestId("role-note")).toContainText("You are signed in as a viewer. Only an approver can approve");
   await expect(page.getByRole("button", { name: /Approve/ })).toHaveCount(0);
 
   await signIn(page, "approver");

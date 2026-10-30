@@ -43,7 +43,7 @@ export default function OverviewPage() {
 
   return (
     <div className="space-y-6">
-      <section aria-labelledby="hero" className="grid gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      <section aria-labelledby="hero" className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="flex flex-col justify-between gap-6 py-2">
           <div>
             {/* the workspace kind is only stated once the overview says what it holds (a loading UCI workspace is not "fictional") */}
@@ -111,7 +111,7 @@ export default function OverviewPage() {
         </Card>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <Card className="p-5">
           <Eyebrow>Admitted data</Eyebrow>
           {!o ? <Skeleton className="mt-3 h-32" /> : o.dataset ? (
@@ -209,7 +209,7 @@ function ResearchHome({ o, ws, docs }: { o: Overview; ws: string; docs: number }
           This workspace holds openly licensed corpora (CC BY 4.0) for retrieval research and market context. Nothing here is joined to the UCI retailer or to fictional suppliers.
         </p>
       </section>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {links.map((l) => (
           <Link key={l.href} href={{ pathname: l.href, query: { ws } }} className="card group p-5 transition-colors hover:border-accent">
             <p className="display text-xl font-semibold">{l.title} <ArrowRight className="inline size-4 transition-transform group-hover:translate-x-0.5" aria-hidden /></p>
@@ -219,7 +219,7 @@ function ResearchHome({ o, ws, docs }: { o: Overview; ws: string; docs: number }
       </div>
       <Card className="p-5">
         <Eyebrow>What this data can answer</Eyebrow>
-        <ul className="mt-3 grid gap-2 md:grid-cols-2">
+        <ul className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2">
           <li className="text-sm">Clause retrieval and citation research <Status value="available" /></li>
           <li className="text-sm">Public procurement award patterns <Status value="available" /></li>
           <li className="text-sm">Stock, forecasts or purchase orders <Status value="unavailable" /></li>

@@ -20,11 +20,16 @@ import json
 from datetime import date, timedelta
 from typing import Literal
 
-import ortools
-from ortools.sat.python import cp_model
 from pydantic import BaseModel, Field
 
-SOLVER_SETTINGS = {"num_workers": 1, "random_seed": 0, "max_time_s": 10.0}
+from .lazy import LazyModule
+
+ortools = LazyModule("ortools")
+cp_model = LazyModule("ortools.sat.python.cp_model")
+
+# linearization_level 2 adds the LP relaxation to a single worker's search: on the real UCI scope the coverage pass is then
+# proved optimal in ~0.2 s instead of timing out after 16 s, so the deterministic pass rarely needs the parallel fallback.
+SOLVER_SETTINGS = {"num_workers": 1, "random_seed": 0, "max_time_s": 10.0, "linearization_level": 2}
 # Deterministic first: one worker, a short limit. A request it cannot prove optimal in that time (the real UCI scope, 40
 # SKUs under a binding budget, returned UNKNOWN after 16 s) is re-solved by the parallel portfolio, which proved the same
 # optimum in about 0.5 s. Parallel search is not guaranteed to pick the same plan among equally good ones, so the result
@@ -228,6 +233,8 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str], workers: int 
     solver.parameters.num_workers = workers
     solver.parameters.random_seed = SOLVER_SETTINGS["random_seed"]
     solver.parameters.max_time_in_seconds = max_time_s or SOLVER_SETTINGS["max_time_s"]
+    if workers == 1:
+        solver.parameters.linearization_level = SOLVER_SETTINGS["linearization_level"]
     coverage_proven = True
     if shortage:
         weight = {n.sku_id: n.shortage_weight or 1 for n in req.needs}
@@ -246,13 +253,17 @@ def _solve(req: PlanRequest, offers: list[Offer], relax: set[str], workers: int 
     return solver, status, qty, use, shortage
 
 
-STATUS = {cp_model.OPTIMAL: "OPTIMAL", cp_model.FEASIBLE: "FEASIBLE", cp_model.INFEASIBLE: "INFEASIBLE",
-          cp_model.UNKNOWN: "UNKNOWN", cp_model.MODEL_INVALID: "MODEL_INVALID"}
+def status_name(status) -> str:
+    """CP-SAT status code to its name (a function, so OR-Tools loads on the first solve, not at import)."""
+    return {cp_model.OPTIMAL: "OPTIMAL", cp_model.FEASIBLE: "FEASIBLE", cp_model.INFEASIBLE: "INFEASIBLE",
+            cp_model.UNKNOWN: "UNKNOWN", cp_model.MODEL_INVALID: "MODEL_INVALID"}[status]
 
 
-def plan(req: PlanRequest, deterministic_first: bool = True, explain: bool = True) -> PlanResult:
+def plan(req: PlanRequest, deterministic_first: bool = True, explain: bool = True,
+         parallel_fallback: bool = True) -> PlanResult:
     """`deterministic_first=False` (exploratory sweeps, never approved or persisted) goes straight to parallel search;
-    `explain=False` skips the constraint probes that say why a shortfall was forced."""
+    `explain=False` skips the constraint probes that say why a shortfall was forced; `parallel_fallback=False` keeps the
+    deterministic pass's best plan (FEASIBLE when not proven optimal in time) instead of re-solving in parallel."""
     offers, excluded = _eligible(req)
     solver_info = {"name": "OR-Tools CP-SAT", "version": ortools.__version__, **SOLVER_SETTINGS,
                    "max_time_s": DETERMINISTIC_TIME_S, "deterministic": True}
@@ -261,14 +272,14 @@ def plan(req: PlanRequest, deterministic_first: bool = True, explain: bool = Tru
     try:
         solver, status, qty, use, shortage = (_solve(req, offers, set(), 1, DETERMINISTIC_TIME_S) if deterministic_first
                                               else (None, cp_model.UNKNOWN, None, None, None))
-        if status != cp_model.OPTIMAL:
+        if status != cp_model.OPTIMAL and (parallel_fallback or not deterministic_first):
             p = _solve(req, offers, set(), PARALLEL_WORKERS, SOLVER_SETTINGS["max_time_s"])
             if p[1] == cp_model.OPTIMAL or status not in (cp_model.OPTIMAL, cp_model.FEASIBLE):
                 solver, status, qty, use, shortage = p
                 solver_info.update(num_workers=PARALLEL_WORKERS, max_time_s=SOLVER_SETTINGS["max_time_s"], deterministic=False)
     except ScaleError as e:
         return PlanResult(status="MODEL_INVALID", explanation=[str(e)], **base)
-    name = STATUS[status]
+    name = status_name(status)
     if name == "UNKNOWN":
         # time limit reached without a feasible plan: do not spend up to five more time-limited solves explaining it
         return PlanResult(status=name, explanation=[f"no feasible plan found within the {SOLVER_SETTINGS['max_time_s']:.0f} s "
@@ -334,6 +345,6 @@ def explain_infeasible(req: PlanRequest) -> list[str]:
         except ScaleError:          # e.g. an offer excluded for its lead time is too large to model exactly (P3-PLAN-06)
             reasons.append(f"relaxing '{family}' could not be tested: prices too large for exact integer arithmetic")
             continue
-        if STATUS[status] in ("OPTIMAL", "FEASIBLE"):
+        if status_name(status) in ("OPTIMAL", "FEASIBLE"):
             reasons.append(f"{message} (relaxing '{family}' makes the problem feasible)")
     return reasons or ["No single constraint relaxation restores feasibility"]

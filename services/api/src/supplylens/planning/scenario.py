@@ -8,6 +8,7 @@ selected basis is rejected rather than silently ignored (audit F03): `safety_day
 from __future__ import annotations
 
 import json
+import os
 import uuid
 from datetime import date, datetime, timedelta
 from types import SimpleNamespace
@@ -201,6 +202,9 @@ def _record(actor: Actor, inp: ScenarioInput, c: SimpleNamespace, result) -> dic
 FRONTIER_CAPS = (None, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05)   # down to where service is lost
 
 
+MANY_CORES = (os.cpu_count() or 1) >= 8
+
+
 def emissions_frontier(actor: Actor, inp: ScenarioInput) -> dict:
     """Cost, service and CO2 trade-off by the epsilon-constraint method (F2): the scenario's plan request is
     solved without a CO2 cap, then again under caps at falling shares of that plan's emissions. Shortfall is allowed so
@@ -211,7 +215,11 @@ def emissions_frontier(actor: Actor, inp: ScenarioInput) -> dict:
     points, top = [], None
     for share in FRONTIER_CAPS if base.needs else ():
         cap = None if share is None else int((top or 0) * share)
-        r = plan(base.model_copy(update={"co2_cap_grams": cap}), deterministic_first=False, explain=False)
+        # Many cores: the parallel portfolio is fastest (~1.6 s for all caps on a 14-core laptop). One or two cores (a
+        # serverless function): eight workers starve each other (31 s hosted), so each cap gets the deterministic pass
+        # alone and keeps its best plan, marked FEASIBLE when it was not proven optimal within the time limit.
+        r = plan(base.model_copy(update={"co2_cap_grams": cap}), deterministic_first=not MANY_CORES, explain=False,
+                 parallel_fallback=MANY_CORES)
         ok = r.status in ("OPTIMAL", "FEASIBLE")
         grams = r.objective.get("co2_grams", 0) if ok else None
         short = r.objective.get("shortage_units", 0) if ok else None

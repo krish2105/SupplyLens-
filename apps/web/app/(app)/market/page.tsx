@@ -52,7 +52,7 @@ export default function MarketPage() {
             <option value="">All categories</option>{d.by_category.map((c) => <option key={c.procurement_category ?? "none"} value={c.procurement_category ?? ""}>{c.procurement_category ?? "Uncategorised"}</option>)}
           </select></label></Card>
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-5"><Eyebrow>Award value by World Bank fiscal year</Eyebrow>{yearOpt && <Chart option={yearOpt} height={260} label="Bar chart of award value by fiscal year" />}
           <p className="text-xs text-muted">{d.notes[0]}</p></Card>
         <Card className="p-5"><Eyebrow>Concentration by category (HHI)</Eyebrow>
@@ -63,7 +63,7 @@ export default function MarketPage() {
                 <td className="num">{int(c.suppliers)}</td><td className="text-xs text-muted">{c.hhi == null ? "n/a" : c.hhi < 1500 ? "unconcentrated" : c.hhi < 2500 ? "moderately concentrated" : "highly concentrated"}</td></tr>))}</tbody>
           </table><p className="mt-2 text-xs text-muted">{d.notes[1]}</p></Card>
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-5"><Eyebrow>Largest suppliers by award value</Eyebrow>
           <ol className="mt-3 space-y-1.5 text-sm">{d.top_suppliers.slice(0, 12).map((t, i) => (
             <li key={t.supplier_id} className="flex items-center gap-3"><span className="num w-5 text-xs text-muted">{i + 1}</span>

@@ -1,4 +1,5 @@
 "use client";
+import { RoleNote } from "@/components/role-note";
 import Link from "next/link";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -76,10 +77,10 @@ export default function RunsPage() {
           </Button>
         </div>
         {isDemo && <p className="mt-3 text-sm text-muted">Demo workspace: runs the specification&apos;s reference case — 30 units of DEMO-REF-SKU by 22 Oct 2026, budget USD 180. Try “Known by” 19 Oct vs 20 Oct 2026.</p>}
-        {role && role !== "planner" && <p className="mt-3 text-xs text-muted">Your role ({role.replace("_", " ")}) can read runs but not start them.</p>}
+        {role && role !== "planner" && <div className="mt-3"><RoleNote role={role} need="planner" action="start investigations; you can still read every run" /></div>}
         {start.error && <div className="mt-3"><ErrorState error={start.error} /></div>}
       </Card>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]">
         <Card className="p-4">
           <Eyebrow>Runs</Eyebrow>
           {runs.isLoading ? <Loading /> : runs.data?.length ? (
@@ -157,7 +158,7 @@ function RunView({ id, ws }: { id: string; ws: string }) {
         <Card className="p-5">
           <div className="flex flex-wrap items-center justify-between gap-2"><Eyebrow>Plan</Eyebrow>
             <span className="flex gap-2"><Status value={d.plan.status} /><Provenance kind="simulated" /></span></div>
-          <div className="mt-3 grid gap-4 md:grid-cols-4">
+          <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
             <div><Eyebrow>Lines</Eyebrow><p className="num text-xl font-semibold">{int(d.plan.lines?.length)}</p></div>
             <div><Eyebrow>Total</Eyebrow><p className="num text-xl font-semibold">{money(d.plan.total_minor, cur)}</p></div>
             <div><Eyebrow>Budget</Eyebrow><p className="num text-xl font-semibold">{money(d.plan.request?.budget_minor, cur)}</p><Provenance kind="assumed" /></div>

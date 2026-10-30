@@ -1,7 +1,10 @@
 """Forecast metrics. Undefined values are returned as None, never patched with epsilons."""
 from __future__ import annotations
 
-import numpy as np
+from .lazy import LazyModule
+
+np = LazyModule("numpy")
+
 
 
 def mae(y: np.ndarray, yhat: np.ndarray) -> float:

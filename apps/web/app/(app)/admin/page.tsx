@@ -51,7 +51,7 @@ export default function AdminPage() {
           <b className="text-ink">Public demo: administration is read-only.</b> Membership changes, model promotion, data imports, new
           workspaces, exports and deletion are disabled for every role so the shared demo stays intact. Everything here can still
           be viewed, and the audit trail can be exported.</p>)}
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-5"><Eyebrow>Members</Eyebrow>
           {members.error ? <QueryError q={members} what="members" /> : members.data ? <>
             <ul className="mt-3 divide-y divide-line text-sm">{members.data.members.map((m) => (
@@ -77,7 +77,7 @@ export default function AdminPage() {
               <tr key={r} className="border-b border-line/60 align-top"><td className="py-2 pr-3"><Mono>{r}</Mono></td><td className="text-xs text-muted">{ops.join(" · ")}</td></tr>))}</tbody></table>}
         </Card>
       </div>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <OperationsHealth locked={locked} />
         <OrderReconciliation />
       </div>
@@ -100,7 +100,7 @@ export default function AdminPage() {
                     onClick={() => promote.mutate({ id: m.id, status: s })}>{s.toLowerCase()}</Button>))}</td></tr>);
           })}</tbody></table>
       </Card>
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <Card className="p-5"><Eyebrow>Job queue</Eyebrow>
           {jobs.error ? <QueryError q={jobs} what="the job queue" /> : jobs.data ? <>
             <p className="mt-2 text-sm text-muted">{int(Number(jobs.data.usage.runs))} runs · {int(Number(jobs.data.usage.tool_calls))} tool calls · {int(Number(jobs.data.usage.runs_24h))} in 24 h · {String(jobs.data.usage.llm_tokens)} LLM tokens. Limits: {String((jobs.data.usage.budget as { max_runs_per_day: number }).max_runs_per_day)} runs/day, {String((jobs.data.usage.budget as { max_tool_calls_per_run: number }).max_tool_calls_per_run)} tool calls/run.</p>

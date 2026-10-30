@@ -56,3 +56,21 @@ test("research shows the operations studies with their reviewed headlines", asyn
   await expect(section.getByText(/halving CO2 costs 13.8 points of coverage/)).toBeVisible();
   await expect(section.getByRole("img", { name: /exact front and NSGA-II/ })).toBeVisible();
 });
+
+test("a control that needs another role says so in the page and switches to that account, back to the same page", async ({ page }) => {
+  await signIn(page, "tenant_admin");
+  await page.goto("/forecast?ws=uci-research");
+  const run = page.getByRole("button", { name: /Run forecast from/ });
+  await expect(run).toBeDisabled();
+  const note = page.getByTestId("role-note");
+  await expect(note).toContainText("You are signed in as a tenant administrator. Only a planner can run forecasts.");
+  await note.getByRole("button", { name: "Switch to the planner account" }).click();
+  await expect(page).toHaveURL(/\/login\?next=%2Fforecast%3Fws%3Duci-research&as=planner$/);
+  const first = page.getByRole("listitem").first();
+  await expect(first).toContainText("Dev Planner");
+  await expect(first).toContainText("Needed for the page you were on");
+  await first.getByRole("button").click();
+  await expect(page).toHaveURL(/\/forecast\?ws=uci-research$/);
+  await expect(page.getByRole("button", { name: /Run forecast from/ })).toBeEnabled();
+  await expect(page.getByTestId("role-note")).toHaveCount(0);
+});

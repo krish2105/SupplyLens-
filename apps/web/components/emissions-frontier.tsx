@@ -50,7 +50,7 @@ export function EmissionsFrontier({ request, canRun, currency }: { request: Reco
         <h2 id="frontier-title" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Cost, service and CO₂</h2>
         <Provenance kind="assumed" /><Provenance kind="simulated" />
         <Button size="sm" className="ml-auto" onClick={() => run.mutate()} disabled={!canRun || run.isPending}
-          title={canRun ? undefined : "Planners can run the trade-off"}>
+          title={canRun ? undefined : "Only planners can run the trade-off"}>
           <Leaf className="size-4" aria-hidden /> {run.isPending ? "Solving under each cap…" : "Trace the trade-off for the draft"}
         </Button>
       </div>
@@ -70,9 +70,12 @@ export function EmissionsFrontier({ request, canRun, currency }: { request: Reco
             <tbody>{d!.points.map((p) => (
               <tr key={String(p.cap_share)} className="border-b border-line/60"><td className="py-1.5 pr-4">{p.cap_share == null ? "none" : `${Math.round(p.cap_share * 100)} %`}</td>
                 <td className="num pr-4 text-right">{kg(p.co2_grams) ?? "—"}</td><td className="num pr-4 text-right">{money(p.spend_minor, currency)}</td>
-                <td className="num pr-4 text-right">{int(p.units_ordered)}</td><td className="num text-right">{pct(p.service)}</td></tr>))}</tbody>
+                <td className="num pr-4 text-right">{int(p.units_ordered)}</td><td className="num text-right">{pct(p.service)}{p.status === "FEASIBLE" && <sup aria-label="best plan found in the time limit, not proven optimal">*</sup>}</td></tr>))}</tbody>
           </table>
         </TableScroll>
+      )}
+      {d?.points.some((p) => p.status === "FEASIBLE") && (
+        <p className="mt-2 text-xs text-muted">* Best plan found within the solver&apos;s time limit, not proven optimal: the true coverage at that cap can only be the same or slightly higher.</p>
       )}
       {d && <ul className="mt-3 list-disc space-y-0.5 pl-5 text-xs text-muted">{d.assumptions.map((a) => <li key={a}>{a}</li>)}</ul>}
     </Card>

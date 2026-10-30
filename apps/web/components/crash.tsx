@@ -7,8 +7,35 @@ import { useEffect } from "react";
  * can be matched in the server or browser log), and two ways on — render the screen again, or go to the overview. Nothing
  * the user typed in other screens is lost: drafts live in session storage.
  */
+/** A code file from an older deploy (or build) that no longer exists: the tab predates the current version. */
+export function isStaleBuild(error: { name?: string; message?: string }): boolean {
+  return error.name === "ChunkLoadError" || /Failed to load chunk|Loading chunk [\w-]+ failed|Importing a module script failed|Failed to fetch dynamically imported module/i.test(error.message ?? "");
+}
+
+const RELOADED = "supplylens-stale-build-reload";
+
 export function Crash({ error, reset, inShell }: { error: Error & { digest?: string }; reset: () => void; inShell?: boolean }) {
-  useEffect(() => { console.error(error); }, [error]);
+  const stale = isStaleBuild(error);
+  useEffect(() => {
+    console.error(error);
+    // A tab opened before a deploy asks for files the new version no longer has. Reload once to pick up the new version;
+    // the session-storage mark stops a reload loop if the error persists for another reason.
+    if (!stale) return;
+    try {
+      if (sessionStorage.getItem(RELOADED) === window.location.href) return;
+      sessionStorage.setItem(RELOADED, window.location.href);
+    } catch { /* storage blocked: still reload once */ }
+    window.location.reload();
+  }, [error, stale]);
+  if (stale) return (
+    <div role="status" data-testid="render-error" className={inShell ? "space-y-3 py-6" : "mx-auto max-w-xl space-y-3 p-8"}>
+      <h1 className="display text-2xl font-semibold">A new version of SupplyLens is available</h1>
+      <p className="text-sm text-muted">Loading it now. If this page stays, reload it.</p>
+      <button onClick={() => window.location.reload()}
+        className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-medium text-accent-ink hover:brightness-110">
+        <RotateCcw className="size-4" aria-hidden /> Reload</button>
+    </div>
+  );
   return (
     <div role="alert" data-testid="render-error" className={inShell ? "space-y-4 py-6" : "mx-auto max-w-xl space-y-4 p-8"}>
       <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Something went wrong</p>

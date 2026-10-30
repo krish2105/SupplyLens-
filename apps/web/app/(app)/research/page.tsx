@@ -118,7 +118,7 @@ export default function ResearchPage() {
       <StudyCard id="F1" q={f1} title="Forecasting study"
         question="Do LightGBM and a compact quantile TCN improve 28-day daily unit-sales forecasts on UCI Online Retail II?">
         {f1.data?.summary && (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
             {f1Opt && <Chart option={f1Opt} height={240} label="Bar chart comparing MAE, pinball and MASE across three models" />}
             <ul className="space-y-2 text-sm">
               <li>{f1.data.cohort_size} products; test origins {(f1.data.test_origins ?? [f1.data.test_origin]).join(", ")}; selection frozen on validation; chart shows the last origin.</li>
@@ -137,7 +137,7 @@ export default function ResearchPage() {
       <StudyCard id="S2" q={s2} title="Decision study"
         question="Fed through the product's own ordering logic (lead-time demand, MOQ, packs, lead times, budget, open orders), does a more accurate forecaster lower simulated cost?">
         {s2.data?.results && (
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
             {s2Opt && <Chart option={s2Opt} height={240} label="Simulated cost by policy, with and without a budget limit" />}
             <ul className="space-y-2 text-sm">
               <li><Provenance kind="simulated" /> {s2.data.products} products, weekly reviews {s2.data.reviews[0]} → {s2.data.window_end}; terms and costs simulated, demand = recorded sales.</li>
@@ -149,7 +149,7 @@ export default function ResearchPage() {
         )}
       </StudyCard>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <StudyCard id="R2" q={r2} title="Time-aware retrieval study"
           question="On supplier-terms questions, does explicit effective-date and supersession handling change which version is cited?">
           {r2.data?.conditions && (
@@ -213,7 +213,7 @@ export default function ResearchPage() {
       <StudyCard id="AGT" q={agt} title="Investigator study"
         question="Across reference-case dates and budgets, denials, stale approvals, timeouts and crash recovery, does the run end in the oracle's state?">
         {agt.data?.summary && (
-          <div className="grid gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div><Eyebrow>Scenarios × trials</Eyebrow><p className="num text-2xl font-semibold">{agt.data.summary.scenarios} × {agt.data.summary.trials_per_scenario}</p></div>
             <div><Eyebrow>Verified completion</Eyebrow><p className="num text-2xl font-semibold">{pct(agt.data.summary.verified_completion_rate, 0)}</p></div>
             <div><Eyebrow>Unapproved writes</Eyebrow><p className="num text-2xl font-semibold">{agt.data.summary.unauthorized_external_mutations}</p></div>
@@ -227,7 +227,7 @@ export default function ResearchPage() {
         <StudyCard id="E1" q={e1} title="Cost, service and CO₂"
           question="What does cutting the plan's CO₂ cost in service and spend, and does an evolutionary search find the same trade-off as the exact solver?">
           {e1.data?.exact && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
               {e1Opt && <Chart option={e1Opt} height={260} label="Share of required units covered against kg CO2e for the exact front and NSGA-II" />}
               <ul className="space-y-2 text-sm">
                 <li><Provenance kind="assumed" /> CO₂ lane factors and unit weight; <Provenance kind="simulated" /> stock, terms and budget. {e1.data.scope.skus} products, budget {num(e1.data.scope.budget_minor / 100, 0)} {e1.data.scope.currency}.</li>
@@ -240,7 +240,7 @@ export default function ResearchPage() {
         <StudyCard id="FA1" q={fa1} title="Fair allocation across countries"
           question="When the budget binds, are customers in every country group served equally, and what does reweighing change?">
           {fa1.data?.baseline && (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
               {fa1Opt && <Chart option={fa1Opt} height={260} label="Coverage by country group without, with moderate and with full reweighing" />}
               <ul className="space-y-2 text-sm">
                 <li><Provenance kind="simulated" /> plan; country shares are recorded sales ({fa1.data.scope.share_window}).</li>

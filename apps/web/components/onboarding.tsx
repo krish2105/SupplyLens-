@@ -64,7 +64,7 @@ export function Onboarding({ admin }: { admin: boolean }) {
         </div>
         {!admin && <p className="mt-2 text-sm text-muted">Only workspace administrators import data. You can see past imports below.</p>}
         {admin && (
-          <form className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" onSubmit={(e) => { e.preventDefault(); upload.mutate(); }}>
+          <form className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]" onSubmit={(e) => { e.preventDefault(); upload.mutate(); }}>
             <fieldset>
               <legend className="text-sm font-medium">1 · What does the file contain?</legend>
               <div className="mt-2 space-y-1.5">
@@ -108,7 +108,7 @@ export function Onboarding({ admin }: { admin: boolean }) {
               <th className="font-medium">Status</th><th className="font-medium">Valid / quarantined</th><th className="font-medium">Snapshot</th><th className="font-medium">Uploaded</th></tr></thead>
             <tbody>{batches.data.map((b) => (
               <tr key={b.id} className="border-b border-line/60">
-                <td className="py-2"><button className="text-left text-accent hover:underline" onClick={() => openBatch(b.id)}>{b.file_name}</button></td>
+                <td className="py-2"><button className="min-h-6 text-left text-accent hover:underline" onClick={() => openBatch(b.id)}>{b.file_name}</button></td>
                 <td className="capitalize">{b.kind}</td><td><Status value={b.status} /></td>
                 <td className="num">{int(b.rows_valid)} / {int(b.rows_quarantined)}</td>
                 <td><Mono className="text-muted">{b.snapshot_sha256 ? `${short(b.snapshot_sha256, 12)}…` : "—"}</Mono></td>

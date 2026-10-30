@@ -16,11 +16,13 @@ import math
 from datetime import UTC, date, datetime, time
 from statistics import NormalDist
 
-import numpy as np
 from sqlalchemy import text
 
 from ..db import tenant_session
+from ..lazy import LazyModule
 from .terms_service import applicable_terms
+
+np = LazyModule("numpy")
 
 ABC_CUTS = (0.80, 0.95)               # cumulative value share closing A and B
 XYZ_CUTS = (0.5, 1.0)                 # weekly-demand CV closing X and Y
