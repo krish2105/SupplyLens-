@@ -1,6 +1,6 @@
 # SupplyLens project status
 
-**Updated:** 2026-11-10 (UTC), Phase 8 Session 8A · **Commit:** see `git log -1`
+**Updated:** 2026-11-10 (UTC), Phase 8 Session 8A and the course-coverage build · **Commit:** see `git log -1`
 **Verified gate:** P0 demonstrated locally and on a hosted demo — 59 of 80 acceptance items passed locally, 14 partial,
 5 not run (pilot users, support, pricing, production workload), 2 blocked on an ERP sandbox. All 22 CTO-audit findings
 are fixed with correct-behaviour tests (`docs/remediation/REGISTER.md`); S09 is fixed for local and hosted-demo use, not
@@ -20,6 +20,16 @@ demo script, marker guide, AI-use statement for the owner's approval). pytest 53
 8 projects (Firefox runs in CI; it does not start on the development Mac); 26 unit tests. The owner's new illustrations
 wait on a separate pull request for the owner's approval. Phases 5–7 (AI/ML, ERP and operations, operations studies) are
 recorded in `docs/agent-handoff/phases/`.
+
+### Course-coverage build (2026-11-10, owner request)
+Every weekly lab topic of the unit outline now has a project study or module (`docs/course/coverage.md`): FE1 fuel
+inefficiency, W2 LSTM, ET1 arrival times and RT1 last-mile routes (generated data), X1 contract-term extraction, AS1
+status assistant, B1 bias mitigation (SMOTE, re-weighting, threshold moving, adversarial debiasing) and RED1 red team.
+New in the product: the status assistant (header and ⌘K; cited records only; dry-run HubSpot hand-off), Policies ›
+Extracted terms (draft), a section menu and course-week labels on Research, and two defences in generated answers found
+by the red team. pytest 659 passed / 6 skipped; 313 browser tests; references verified in `docs/course/references.md`.
+Still open: the team's contribution record, the lecturer's answers, human-written questions (G2), approval for real
+logistics data, PDF intake and the confirm step for extracted terms, a HubSpot test account.
 
 ## Phase 4 state (production-readiness Phase 4, 2026-10-23)
 Phase 4 (frontend, UX and end-to-end journeys) is recorded in `docs/agent-handoff/phases/PHASE-04.md`: all twelve user
