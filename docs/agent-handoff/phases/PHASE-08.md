@@ -67,7 +67,7 @@ because S2 is exploratory in the registry and so not in metrics.md (STUDY-P8-02)
 the owner tags it at the start of the 48-hour freeze.
 
 ### Illustrations (owner request in this session; brief WP-ART, normally 8B)
-On branch `phase8/illustrations` with an unmerged pull request: A02, A13, A16 shown only in their briefed states; A17
+On branch `phase8/illustrations`, pull request https://github.com/krish2105/SupplyLens-/pull/16 (unmerged): A02, A13, A16 shown only in their briefed states; A17
 and A18 prepared and rendered nowhere until their 8B screens exist; final-deck skeleton with D01–D05. Merging the pull
 request is the owner's approval (proposed D-108). Review findings: content matches the briefs; subjects extend past the
 middle 70 %; faint background-removal residue, not visible at 144 or 96 px on either theme.
