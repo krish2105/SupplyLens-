@@ -1,0 +1,9 @@
+flowchart LR
+  W[Web app: Next.js] --> A[API: FastAPI]
+  A --> D[(PostgreSQL + pgvector, row-level security)]
+  A --> F[Forecasting: LightGBM, TCN]
+  A --> O[Planner: OR-Tools CP-SAT]
+  A --> R[Retrieval: full text + vectors, in force on a date]
+  A --> Q[Worker + outbox]
+  Q --> E[Sandbox ERP adapter, read back before done]
+  N[n8n agent, planner rights] --> A

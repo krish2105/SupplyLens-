@@ -35,7 +35,18 @@ same four the baseline was green.
 | F2 simulated data shown as green "available" | VERIFIED: the overview rendered only `status`; the API's `basis` was dropped | `CapabilityStatus`: status and basis together in the provenance colour ("available · simulated"); observed rows unchanged | `theme.spec.ts` F2 + 2 unit tests |
 | F3 translucent legend over racks | VERIFIED: `bg-surface/90` overlay inside the canvas area | Legend is a footer below the view (same reserved height); hover card opaque; disabled toolbar buttons opaque with muted text (contrast ≥ 4.5:1 both themes) | `theme.spec.ts` F3 (alpha 0.9 and opacity 0.5 before) |
 | F4 sweep | 15 screens × 1440/834/390 px × load light, load dark (opposite system scheme) and runtime switch, Chromium and WebKit: 174 states each, 96 charts, 16 3D checks, 0 problems after the fix | — | Two new screenshot baselines after a runtime switch (Overview, Inventory), darwin and linux; four desktop baselines changed with the legend (reviewed) |
-| F5 hosted check | see "Hosted check" below | — | — |
+| F5 hosted check | see "Push, deploy and hosted check" below | — | — |
+
+### Push, deploy and hosted check (P8-E10 … P8-E13)
+- CI on `phase8/8a` went green 8/8 (run 42772745703) after the Linux screenshots it recorded were reviewed and committed;
+  `main` was then fast-forwarded and pushed (`9f8da12..e272204`); Vercel deployed `e272204` (deployment
+  `dL4FU6xntDo5AdpYvuhNqKX1itvq`).
+- **F5, read-only on the hosted demo** with the demo viewer account (Chromium and WebKit, both themes, system scheme
+  opposite to the app theme, runtime switch both ways): the 3D floor follows the theme, capabilities show their basis,
+  the legend is opaque, every chart follows the theme. Screenshots `docs/screenshots/phase8/hosted-e272204-*.png`.
+- **Rehearsal:** the script's screens all load on the hosted demo (0.1–1.9 s each, warm); the two write steps (Start
+  investigation, Approve) were not clicked on the public demo and were timed on the local stack instead (5.8 s). The
+  spoken run-through against the time limit is the team's, once the limit is known.
 
 ### WP1 — documents (P8-E07)
 README (counts, operations studies with the kind of every number, generation local only, n8n, ABC/XYZ, CO2 cap,

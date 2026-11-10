@@ -12,7 +12,7 @@ style: |
   section.cover p { font-size: 0.8em; }
   h1, h2 { color: #0f6b55; }
   table { font-size: 0.7em; }
-  .kind { font-size: 0.65em; color: #4a5f5a; }
+  blockquote { font-size: 0.6em; color: #4a5f5a; border-left: 4px solid #63c9a8; margin: 0 0 0.6em; padding-left: 0.6em; }
 ---
 
 <!--
@@ -23,8 +23,8 @@ DRAFT for the owner and team (Phase 8, 8A WP9a, 2026-11-10). Not approved.
   130 words per minute and cut slides to fit once the limit is known.
 - Images: only the title uses a generated illustration (D01). The closing illustration D06 is not used: the supplied
   file is truncated (owner to re-export). Charts, diagrams and screenshots are never generated.
-- Export: npx @marp-team/marp-cli docs/course/interim-deck.md --pdf --pptx --allow-local-files (Mermaid diagrams are
-  rendered separately before export).
+- Export: npx @marp-team/marp-cli@4.5.1 docs/course/interim-deck.md --pdf --pptx --allow-local-files < /dev/null. The
+  architecture diagram is an SVG rendered from images/architecture-interim.mmd.
 -->
 
 <!-- _class: cover -->
@@ -80,17 +80,12 @@ Rubric: content quality. Say this before any result: it is the honest frame for 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-  W[Web app: Next.js] --> A[API: FastAPI]
-  A --> D[(PostgreSQL + pgvector, row-level security)]
-  A --> F[Forecasting: LightGBM, TCN]
-  A --> O[Planner: OR-Tools CP-SAT]
-  A --> R[Retrieval: full text + vectors, in force on a date]
-  A --> Q[Worker + outbox]
-  Q --> E[Sandbox ERP adapter, read back before done]
-  N[n8n agent, planner rights] --> A
-```
+![w:1100](images/architecture-interim.svg)
+
+<!--
+Diagram: images/architecture-interim.svg is rendered from images/architecture-interim.mmd (Mermaid 10.9.1); it is
+drawn from that source, not by hand and not generated as an image. Re-render after any change.
+-->
 
 Approvals are bound to the exact payload and expire; purchasing stays deterministic.
 
@@ -119,7 +114,7 @@ Rubric: application of techniques and content quality. This is the live demo pat
 
 ## Result 1 — cost, service and CO2 (E1)
 
-<p class="kind">Simulation: real UCI scope; terms, stock, lanes, CO2 factors and unit weights assumed. Run E1-20261026T200641Z.</p>
+> Data kind: Simulation: real UCI scope; terms, stock, lanes, CO2 factors and unit weights assumed. Run E1-20261026T200641Z.
 
 - Scope: **40** products, **23,980** units required, binding weekly budget.
 - No CO2 cap: **4,565** units short. CO2 capped at **0.95** of that: **4,574** short — a small cut is almost free.
@@ -134,7 +129,7 @@ Rubric: application of techniques (multi-objective optimisation, Week 2). Every 
 
 ## Result 2 — visual inspection at goods-in (QC1)
 
-<p class="kind">Simulation: generated images, assumed costs. Run QC1-20261030T193358Z.</p>
+> Data kind: Simulation: generated images, assumed costs. Run QC1-20261030T193358Z.
 
 - **3,000** test images, **862** with a defect.
 - A small CNN separates defects with AUC **0.9972**; hand-made features reach **0.9462**.
@@ -150,7 +145,7 @@ Rubric: application of techniques (computer vision for quality control, Weeks 6 
 
 ## Result 3 — scheduling the receiving floor (JS1)
 
-<p class="kind">Simulation: real UCI volumes; routes and handling times assumed. Run JS1-20261030T191602Z.</p>
+> Data kind: Simulation: real UCI volumes; routes and handling times assumed. Run JS1-20261030T191602Z.
 
 - **9** receiving-floor instances; exact CP-SAT against the dispatch rules a floor lead would use.
 - Schedules from the rules are longer on average: FIFO **0.1191**, SPT **0.1111**, EDD **0.13**, most work remaining
