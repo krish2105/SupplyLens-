@@ -7,15 +7,17 @@ title: SupplyLens — final group project (MAIB AI 218)
 footer: "SupplyLens · AI in Operations (MAIB AI 218) · AI use: docs/course/ai-use-statement.md"
 style: |
   section { font-family: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif; color: #172b27; }
-  section.cover, section.divider { padding-right: 62%; }
+  section.cover { padding-right: 62%; }
+  section.divider { padding-right: 66%; }
   section.cover h1, section.divider h1 { font-size: 1.9em; line-height: 1.1; color: #0f6b55; }
   h1, h2 { color: #0f6b55; }
-  .skeleton { color: #8a6d1f; font-size: 0.7em; }
+  blockquote { color: #8a6d1f; font-size: 0.7em; border-left: 4px solid #e0b84c; padding-left: 0.6em; }
 ---
 
 <!--
 SKELETON (Phase 8, 2026-11-10; owner chose "create deck skeletons now"). The content is written in Session 8C (WP11):
-12–16 slides; numbers only from docs/course/metrics.md; speaker notes map each slide to the final rubric (unit outline
+12–16 content slides (this skeleton has 17 pages including the title, four dividers and the closing slide); numbers only
+from docs/course/metrics.md; speaker notes map each slide to the final rubric (unit outline
 3.4: research depth, innovation, application of techniques, presentation and reporting).
 Generated images are used only for the title, the four outcome dividers and the closing slide (Phase 8 brief, deck
 visuals). Charts, diagrams and screenshots are never generated: real screenshots, charts from metrics.json, Mermaid.
@@ -38,19 +40,19 @@ Krishna Mathur · Atharva Soundankar · Yash Petkar
 
 ## Problem and UAE context
 
-<p class="skeleton">SKELETON — filled in 8C (WP9 UAE paragraph: "aligned with", each fact verified with its URL).</p>
+> SKELETON — filled in 8C (WP9 UAE paragraph: "aligned with", each fact verified with its URL).
 
 ---
 
 ## Data and its limits
 
-<p class="skeleton">SKELETON — filled in 8C.</p>
+> SKELETON — filled in 8C.
 
 ---
 
 ## Architecture
 
-<p class="skeleton">SKELETON — filled in 8C (Mermaid diagram).</p>
+> SKELETON — filled in 8C (Mermaid diagram).
 
 ---
 
@@ -65,7 +67,7 @@ Apply AI to optimise operations
 
 ## Outcome A — results
 
-<p class="skeleton">SKELETON — filled in 8C (from metrics.md).</p>
+> SKELETON — filled in 8C (from metrics.md).
 
 ---
 
@@ -80,7 +82,7 @@ Evaluate AI's impact on supply chain and logistics
 
 ## Outcome B — results
 
-<p class="skeleton">SKELETON — filled in 8C (from metrics.md).</p>
+> SKELETON — filled in 8C (from metrics.md).
 
 ---
 
@@ -95,7 +97,7 @@ Develop responsible AI-based solutions
 
 ## Outcome C — responsible AI
 
-<p class="skeleton">SKELETON — filled in 8C (docs/course/responsible-ai.md, model cards).</p>
+> SKELETON — filled in 8C (docs/course/responsible-ai.md, model cards).
 
 ---
 
@@ -110,31 +112,31 @@ Integrate generative AI for operational efficiency
 
 ## Outcome D — results
 
-<p class="skeleton">SKELETON — filled in 8C (from metrics.md).</p>
+> SKELETON — filled in 8C (from metrics.md).
 
 ---
 
 ## Results table
 
-<p class="skeleton">SKELETON — filled in 8C (generated from metrics.json).</p>
+> SKELETON — filled in 8C (generated from metrics.json).
 
 ---
 
 ## Business case
 
-<p class="skeleton">SKELETON — filled in 8C (WP10; simulated money stays labelled simulated).</p>
+> SKELETON — filled in 8C (WP10; simulated money stays labelled simulated).
 
 ---
 
 ## Negative results and limitations
 
-<p class="skeleton">SKELETON — filled in 8C.</p>
+> SKELETON — filled in 8C.
 
 ---
 
 ## Next steps and team
 
-<p class="skeleton">SKELETON — filled in 8C (roles only once the team agrees them).</p>
+> SKELETON — filled in 8C (roles only once the team agrees them).
 
 ---
 
@@ -146,4 +148,4 @@ Questions?
 
 AI-use statement: `docs/course/ai-use-statement.md`
 
-<p class="skeleton">Closing illustration D06 to be added when the owner supplies a complete file.</p>
+> Closing illustration D06 to be added when the owner supplies a complete file.
