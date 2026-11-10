@@ -25,8 +25,8 @@ after CI passed on it. **Why 8A:** this file did not exist, so no 8A section was
 pytest 511 passed / 6 skipped; ruff; contracts; web typecheck, lint, 24 unit tests, build; Playwright visual 42/42;
 five projects 190 passed / 29 failed / 7 skipped — 28 of the failures are Firefox failing to start on this Mac
 ("Could not find profile folder", even launched by hand: ENV-P8-01), 1 an intermittent phone header-scroll check
-(QA-P8-01); lab vitals 18/18 alone. The brief's expected "185 / 7 on four projects" counted four projects; with the
-same four the baseline was green.
+(QA-P8-01); lab vitals 18/18 alone. The brief's expected "185 / 7" counted four projects (desktop, mobile, WebKit,
+iPhone-sized WebKit); on those four the baseline was 190 passed, 1 failed (that intermittent check), 7 skipped.
 
 ### WP0 — what the hosted demo showed wrong (P8-E03 … P8-E06)
 | Defect | Cause (label) | Fix | Test (failed before, passes after) |
