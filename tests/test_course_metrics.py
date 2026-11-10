@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -53,3 +54,33 @@ def test_committed_files_match_a_fresh_build():
         "docs/course/metrics.md is stale: run uv run python scripts/course_metrics.py")
     assert json.loads((REPO_ROOT / "docs" / "course" / "metrics.json").read_text()) == json.loads(
         json.dumps(doc, ensure_ascii=False)), "docs/course/metrics.json is stale"
+
+
+COURSE = REPO_ROOT / "docs" / "course"
+QUOTING = ["interim-deck.md", "final-deck.md", "demo-script-5min.md", "marker-guide.md"]
+
+
+def _slide_text(path: Path) -> str:
+    """Slide or script text without front matter and HTML comments (speaker notes, instructions)."""
+    text = path.read_text()
+    if text.startswith("---\n"):
+        text = text.split("\n---\n", 1)[1]
+    return re.sub(r"<!--.*?-->", "", text, flags=re.S)
+
+
+@pytest.mark.parametrize("name", QUOTING)
+def test_course_documents_quote_numbers_only_from_metrics_md(name):
+    path = COURSE / name
+    if not path.exists():
+        pytest.skip(f"{name} not written yet")
+    metrics = (COURSE / "metrics.md").read_text()
+    values = set(re.findall(r"^\| [^|]+ \| ([^|]+?) \| `[^`]+` \|$", metrics, flags=re.M))
+    text = _slide_text(path)
+    # every bold number is a value of metrics.md (bold marks a quoted result; a range quotes two values)
+    for bold in re.findall(r"\*\*([^*]+)\*\*", text):
+        for number in re.findall(r"\d[\d,]*(?:\.\d+)?", bold):
+            assert number in values, f"{name}: **{bold}** quotes {number}, which is not a value in docs/course/metrics.md"
+    # every quoted registry headline (in italics) is in metrics.md word for word
+    for quote in re.findall(r"(?<![*\w])\*([^*]+?)\*(?![*\w])", text):
+        if re.search(r"\d", quote):
+            assert quote.strip(" .") in metrics, f"{name}: *{quote}* is not quoted from docs/course/metrics.md"
