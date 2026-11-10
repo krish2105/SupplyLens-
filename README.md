@@ -9,7 +9,7 @@ approval-bound purchase orders that are reconciled before they count as done.
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![FastAPI](https://img.shields.io/badge/FastAPI-0.158-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-336791)
-![Tests](https://img.shields.io/badge/tests-533%20backend%20%C2%B7%20300%20browser-0F6B55)<!-- source: docs/agent-handoff/EVIDENCE.md P8-E02 (uv run pytest -q; npx playwright test --list) -->
+![Tests](https://img.shields.io/badge/tests-534%20backend%20%C2%B7%20307%20browser-0F6B55)<!-- source: docs/agent-handoff/EVIDENCE.md P8-E02 (uv run pytest -q; npx playwright test --list) -->
 
 <img src="docs/images/overview-dark.png" alt="SupplyLens overview with linked 3D warehouse" width="900" />
 
@@ -148,9 +148,9 @@ levels and measured recovery: [`slo.md`](docs/operations/slo.md); incidents, sup
 ## Testing
 
 ```bash
-uv run pytest -q                       # 533 passed, 7 skipped (6 Keycloak, 1 course document not yet written) against real PostgreSQL, incl. migration/rollback/outage rehearsals
-(cd apps/web && npx playwright test)   # 300 browser tests on 8 projects: journeys, resilience, a11y, theme, layout, 44 screenshots, 18 lab vitals; Chromium, WebKit, Firefox
-(cd apps/web && npm run lint && npm test)   # ESLint (zero warnings) and 26 unit/component tests
+uv run pytest -q                       # 534 passed, 6 skipped (Keycloak) against real PostgreSQL, incl. migration/rollback/outage rehearsals
+(cd apps/web && npx playwright test)   # 307 browser tests on 8 projects: journeys, resilience, a11y, theme, layout, 44 screenshots, 18 lab vitals; Chromium, WebKit, Firefox
+(cd apps/web && npm run lint && npm test)   # ESLint (zero warnings) and 28 unit/component tests
 uv run python scripts/course_metrics.py --check   # course numbers (docs/course/metrics.md) match the study registry
 uv run ruff check .                    # correctness, imports, bugbear and security rules
 ./scripts/check_contracts.sh           # API contract drift (the web client is typed from it)
