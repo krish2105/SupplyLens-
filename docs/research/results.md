@@ -2,7 +2,9 @@
 
 All numbers are copied from `artifacts/experiments/*/metrics.json` (metrics, configs and cohorts are committed; weights
 and per-run outputs are not). Simulated outcomes are labelled. Runs: 2026-10-21 and, after the session-4 audit fixes,
-2026-10-22 (UTC). Status and reviewed headline of every run: `evaluations/study_registry.json`.
+2026-10-22 (UTC); operations studies 2026-10-26/27 and 2026-10-30. Status and reviewed headline of every run:
+`evaluations/study_registry.json`. Course documents quote numbers only from `docs/course/metrics.md`, generated from the
+same files by `scripts/course_metrics.py`.
 Hardware: Apple M4 Pro, 24 GB, macOS 27; Python 3.12.13, LightGBM 4.7.0, PyTorch 2.14.1 (MPS).
 
 ## Research questions
@@ -13,6 +15,9 @@ Hardware: Apple M4 Pro, 24 GB, macOS 27; Python 3.12.13, LightGBM 4.7.0, PyTorch
 4. **R1 / C1** — How do lexical, vector and hybrid retrieval compare on public expert-labelled contract corpora?
 5. **IB** — How does SupplyLens' deterministic replenishment logic score on InventoryBench's official evaluator?
 6. **AGT** — Does the stateful investigator end in the oracle's state across frozen business scenarios without unauthorised writes?
+7. **Operations studies (Phase 7)** — E1 CO2 trade-off, FA1 fair allocation, W1 error measures and weather, D1 delay
+   risk, G1 generated answers, JS1 receiving-floor scheduling, PM1 predictive maintenance, QC1 visual inspection: see
+   [Operations studies](#operations-studies-phase-7).
 
 ## F1 — forecasting, protocol 2.1.0 (`F1-20261023T180239Z`, current)
 
@@ -131,7 +136,9 @@ for identifier-heavy and within-document search and hurts on short semantic quer
 
 ## IB — InventoryBench (`IB-20261021T192006Z`)
 
-1,320 instances, official `eval/evaluate_results.py` at pinned commit 62b1f11, mean normalised reward.
+600 instances scored (`instances` in the run's metrics.json; the three real-trajectory batches found at the pinned
+commit), official `eval/evaluate_results.py` at pinned commit 62b1f11, mean normalised reward. Earlier text said 1,320
+instances; the run's metrics.json does not support that figure (corrected 2026-11-10, DOC-P8-01).
 
 | Policy | Score |
 |---|---|
@@ -238,6 +245,112 @@ words no document uses. So 51 of 172 reworded test questions are now listed as r
 and with lexical search alone (the hosted demo) questions that name a supplier are wrongly flagged as ambiguous (0/4).
 Closing this needs an evaluated reader model and human-reviewed questions (EXT-06), not threshold tuning.
 
+## Operations studies (Phase 7)
+
+Eight studies added on 2026-10-26/27 (E1, FA1, W1, D1, G1) and 2026-10-30 (JS1, PM1, QC1). Each number below is copied
+from the run's `metrics.json` (the source path is in a comment beside it); the kind of each number is stated. None is a
+real business outcome. Course documents quote the same values from `docs/course/metrics.md`.
+
+### E1 — cost, service and CO2 trade-off (`E1-20261026T200641Z`, simulation)
+
+**Question.** What does cutting the plan's CO2 cost in service and spend, and does an evolutionary search find the same
+trade-off as the exact solver?
+**Data.** Real UCI scope: 40 products, two offers each, 23,980 units required, £20,000 weekly budget
+<!-- source: artifacts/experiments/E1-20261026T200641Z/metrics.json scope -->. Terms and stock are simulated; lanes are
+assumed from the quoted lead time; CO2 factors are rounded UK DESNZ freight factors (road 0.1, sea 0.016 kg CO2e per
+tonne-km); unit weight 0.5 kg is assumed (the data records no weights).
+**Method.** Exact ε-constraint with CP-SAT at 21 CO2 caps against NSGA-II (pymoo, 3 seeds); hypervolume against a
+common reference point.
+**Result.** Without a cap the plan leaves 4,565 units short and emits 1,550,646 g CO2e; capping CO2 at 95 % costs 9 more
+units (4,574) <!-- source: exact.points[0..1] -->. The registry's reviewed headline: halving CO2 costs 13.8 points of
+coverage. NSGA-II reaches 98.07–98.49 % of the exact front's hypervolume, but 35–43 of its about 116 front points are
+dominated by exact points <!-- source: nsga2.per_seed -->; the exact solve took 3.1 s <!-- source: exact.seconds -->.
+**Limits.** Simulated terms and stock; assumed lanes, factors and weights; the exact front is sampled at 21 caps, so its
+hypervolume is a lower bound.
+
+### FA1 — fair allocation under a binding budget (`FA1-20261026T200912Z`, simulation)
+
+**Question.** When the budget binds, are customers in every country group served equally, and what does reweighing
+change?
+**Data.** Real UCI scope and recorded country purchase shares over 365 days; stock, terms and budget simulated; demand is
+the champion forecast.
+**Method.** A product's shortfall is attributed to its customers by past purchase share; the coverage objective is
+reweighed by a group weight with strength α; the chosen α is the highest overall coverage among weightings whose
+worst-to-best ratio is at least 0.8 (the four-fifths screen).
+**Result.** Without reweighing the best group gets 82.5 % coverage and the worst 50.8 % (gap 31.69 points, ratio 0.6159)
+<!-- source: baseline.summary -->. α 0.4 cuts the gap to 12.24 points (ratio 0.8484) for 1.39 points of total coverage
+<!-- source: recommended -->. Full reweighing (α 1) over-corrects: overall coverage 73.94 % <!-- source: reweighed.overall_coverage -->.
+**Limits.** One scope, one date, deterministic allocation; the attribution rule is an assumption; shortage weights are
+study-only (D-097, PLAN-P5-01).
+
+### W1 — error measures, Prophet, XGBoost and weather (`W1-20261027T055557Z`, historical backtest)
+
+**Question.** How do Prophet and XGBoost compare on MAE, RMSE, WAPE and MAPE, and does London weather improve the
+forecasts?
+**Data.** UCI daily units; Open-Meteo historical weather for London (CC BY 4.0); 13 weekly origins from 2011-09-05 to
+2011-11-28, 7 days ahead; 91 total-level points and 4,550 product-day points (50 products) <!-- source: results.*.points -->.
+**Method.** Refit at each origin; bootstrap of origins (2,000 resamples) for the weather effect.
+**Result.** On total daily units: WAPE seasonal naive 29.74 %, Prophet 28.04 %, XGBoost 24.55 % <!-- source: results.total.models -->.
+Adding weather made no clear difference to either model (95 % intervals span zero) <!-- source: results.total.weather_effect -->.
+At product level daily demand is intermittent and WAPE is above 100 % for every model (registry notes).
+**Limits.** One retailer, one city's weather, one autumn; observed weather stands in for a forecast (an upper bound);
+MAPE leaves out zero-sales days; Prophet on the total only.
+
+### D1 — supplier delay risk (`D1-20261027T053410Z`, simulation; method check)
+
+**Question.** Can a model trained on past orders flag late deliveries ahead of time?
+**Data.** A generated order history (supplier reliability, sea lanes, December peak, order size): 8,112 training and
+2,392 test orders, temporal split at 2011-07-01 <!-- source: data -->.
+**Result.** AUC: each supplier's past late rate 0.692, logistic regression 0.7674, LightGBM 0.7549
+<!-- source: models.*.auc -->. The models recover the effects that were put into the generator (sea lane and supplier).
+**Limits.** The history is generated, so this checks the method only; real receipts from the ERP receipt feed would
+replace the generator.
+
+### G1 — generated answers that cite or withhold (`G1-20261027T061059Z`, offline evaluation with generated labels)
+
+**Question.** Are generated answers correct and cited, and is nothing generated where no passage answers?
+**Data.** 271 generated questions over simulated and fictional agreements; labels by construction, not human-reviewed
+<!-- source: tasks -->. Local model qwen2.5:7b at temperature 0 (D-094; off in the hosted demo, D-041).
+**Result.** Answerable 108 of 108 and reworded 88 of 88 answered with every asked figure in a cited passage and correct
+citations; out-of-scope 0 of 48 and unknown product 0 of 10 answered; ambiguous 1 of 9 answered; questions naming only a
+supplier 0 of 8 answered (an over-refusal, KNOW-P7-01) <!-- source: categories -->. Latency p50 2.81 s, p95 4.01 s
+<!-- source: latency_seconds -->.
+**Limits.** Generated labels; the figure check would pass a correct figure next to a wrong one; one local model.
+
+### JS1 — receiving-floor scheduling (`JS1-20261030T191602Z`, simulation)
+
+**Question.** How much shorter is an optimal receiving-floor schedule than the dispatch rules a floor lead would use?
+**Data.** Nine instances (10, 20 and 40 orders × 3) on four stations; order volumes from real UCI weekly sales; routes,
+handling minutes and due slots assumed.
+**Method.** CP-SAT (8 workers, 20 s) against FIFO, SPT, EDD and most-work-remaining list schedules; check on the published
+Fisher–Thompson ft06 instance (CP-SAT 55 = known optimum 55) <!-- source: check_ft06 -->.
+**Result.** Average makespan gap against CP-SAT: FIFO 11.91 %, SPT 11.11 %, EDD 13.0 %, most work remaining 11.38 %
+<!-- source: summary.makespan_gap_vs_cp_sat -->; CP-SAT proved 7 of 9 makespans optimal <!-- source: summary -->.
+No single rule is best at every size.
+**Limits.** Static one-shift job shop with no breakdowns or arrivals; assumed routes and times.
+
+### PM1 — predictive maintenance (`PM1-20261030T192104Z`, published synthetic dataset and simulation)
+
+**Question.** Can failures and remaining life be predicted early enough to replace run-to-failure and fixed-interval
+maintenance?
+**Data.** (a) UCI AI4I 2020 (CC BY 4.0; synthetic data modelled on a milling process), 10,000 cycles, 71 failures in the
+test split; (b) a simulated motor fleet <!-- source: ai4i_2020, fleet_rul -->.
+**Result.** (a) LightGBM AUC 0.9795 against logistic regression 0.9283; at a threshold chosen on validation with assumed
+costs it catches 61 of 71 test failures with 135 inspections, £40,250 against £142,000 for running to failure
+<!-- source: ai4i_2020.models, run_to_failure_cost_gbp -->. (b) Remaining-life RMSE: ridge 18.9, 1D-CNN 19.25 cycles: the
+CNN does not beat the simple baseline (a negative result kept) <!-- source: fleet_rul.accuracy -->.
+**Limits.** AI4I 2020 is itself synthetic; the fleet, its degradation and all costs are assumed; one split, one fleet.
+
+### QC1 — visual inspection at goods-in (`QC1-20261030T193358Z`, simulation)
+
+**Question.** Can a small CNN flag surface defects at goods-in well enough to replace inspecting every item by hand?
+**Data.** Images generated from stated rules: 6,000 training, 1,500 validation, 3,000 test, 862 test defects
+<!-- source: data -->.
+**Result.** AUC: CNN 0.9972, hand-made features 0.9462 <!-- source: models.*.auc -->. Checking only what the CNN flags
+catches 98.72 % of defects (11 escapes) at £419.40 against £900 for inspecting everything, with assumed costs
+<!-- source: models.cnn.policy, inspect_everything_cost_gbp -->.
+**Limits.** Generated images are easier than photographs; one defect per image; assumed costs: a method check.
+
 ## Limitations
 
 - Sales are a demand proxy; stockouts and lost sales are unobserved. Cost and term parameters in S1/S2 are assumptions.
@@ -259,6 +372,15 @@ uv run python evaluations/answer_support_study.py                               
 uv run python evaluations/retrieval_study.py
 uv run python evaluations/inventorybench_study.py
 uv run python evaluations/agent_study.py
+uv run --with pymoo==0.6.2 python evaluations/emissions_study.py                       # E1
+uv run python evaluations/fairness_study.py                                             # FA1
+uv run --with prophet==1.5.0 --with xgboost==3.0.2 python evaluations/weather_study.py  # W1 (Open-Meteo archive)
+uv run python evaluations/delay_risk_study.py                                           # D1
+SUPPLYLENS_GENERATION_ENABLED=true uv run python evaluations/generation_study.py        # G1 (local Ollama model, API running)
+uv run python evaluations/scheduling_study.py                                           # JS1
+python3 -I scripts/download_datasets.py --dataset ai4i_2020 && uv run python evaluations/maintenance_study.py  # PM1
+uv run python evaluations/vision_qc_study.py                                            # QC1
+uv run python scripts/course_metrics.py             # docs/course/metrics.md from the registry
 ```
 
 
