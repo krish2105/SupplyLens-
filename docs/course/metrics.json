@@ -1,0 +1,720 @@
+{
+  "generated_by": "scripts/course_metrics.py",
+  "registry": "evaluations/study_registry.json",
+  "registry_reviewed_on": "2026-10-27",
+  "studies": [
+    {
+      "study": "AGT",
+      "run_id": "AGT-20261022T045832Z",
+      "date": "2026-10-22",
+      "status": "current",
+      "data_kind": "simulation (frozen scenarios checked by an oracle, local sandbox ERP)",
+      "headline": "Investigator: every frozen scenario verified, zero unapproved external writes",
+      "notes": "57 scenarios x 3 trials on the corrected code (lookup-first retry, full read-back, explicit zero budget). Deterministic control regression, not a model-capability result.",
+      "n": {
+        "label": "scenarios",
+        "value": 57,
+        "source": "summary.scenarios"
+      },
+      "metrics": [
+        {
+          "label": "trials per scenario",
+          "value": 3,
+          "source": "summary.trials_per_scenario"
+        },
+        {
+          "label": "verified completion rate",
+          "value": 1.0,
+          "source": "summary.verified_completion_rate"
+        },
+        {
+          "label": "unapproved external writes",
+          "value": 0,
+          "source": "summary.unauthorized_external_mutations"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/AGT-20261022T045832Z/metrics.json"
+    },
+    {
+      "study": "C1",
+      "run_id": "C1-20261021T191800Z",
+      "date": "2026-10-21",
+      "status": "current",
+      "data_kind": "human-labelled (CUAD expert clause labels)",
+      "headline": "Hybrid search finds the expert-labelled clause most often within a contract",
+      "notes": "",
+      "n": {
+        "label": "(contract, category) items",
+        "value": 485,
+        "source": "conditions.hybrid_rrf.items"
+      },
+      "metrics": [
+        {
+          "label": "hit@3 lexical",
+          "value": 0.668041237113402,
+          "source": "conditions.lexical.hit@3"
+        },
+        {
+          "label": "hit@3 vector",
+          "value": 0.7216494845360825,
+          "source": "conditions.vector.hit@3"
+        },
+        {
+          "label": "hit@3 hybrid (RRF)",
+          "value": 0.7670103092783506,
+          "source": "conditions.hybrid_rrf.hit@3"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/C1-20261021T191800Z/metrics.json"
+    },
+    {
+      "study": "D1",
+      "run_id": "D1-20261027T053410Z",
+      "date": "2026-10-27",
+      "status": "current",
+      "data_kind": "simulation (generated order history)",
+      "headline": "On a simulated order history, a logistic risk score ranks late deliveries better than each supplier's past late rate (AUC 0.77 vs 0.69); LightGBM adds nothing (0.75)",
+      "notes": "Method check only: the order history is generated from a stated process (supplier reliability, sea lanes, December peak, order size), so the models can only recover effects that were put in, and they do (sea lane and supplier carry the largest coefficients). 8,112 training and 2,392 test orders; temporal split at 2011-07-01. Real receipts from the ERP receipt feed would replace the generator.",
+      "n": {
+        "label": "test orders",
+        "value": 2392,
+        "source": "data.orders_test"
+      },
+      "metrics": [
+        {
+          "label": "AUC supplier's past late rate",
+          "value": 0.692,
+          "source": "models.supplier_late_rate.auc"
+        },
+        {
+          "label": "AUC logistic regression",
+          "value": 0.7674,
+          "source": "models.logistic_regression.auc"
+        },
+        {
+          "label": "AUC LightGBM",
+          "value": 0.7549,
+          "source": "models.lightgbm.auc"
+        },
+        {
+          "label": "training orders",
+          "value": 8112,
+          "source": "data.orders_train"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/D1-20261027T053410Z/metrics.json"
+    },
+    {
+      "study": "E1",
+      "run_id": "E1-20261026T200641Z",
+      "date": "2026-10-26",
+      "status": "current",
+      "data_kind": "simulation (real UCI scope; terms, stock and CO2 factors assumed or simulated)",
+      "headline": "Under a binding budget, a 5% CO2 cut is almost free (9 of 23,980 units), but halving CO2 costs 13.8 points of coverage",
+      "notes": "Real UCI scope (40 SKUs, two offers each, £20,000 weekly budget); CO2 lane factors and unit weights are assumed, terms and stock simulated. Exact epsilon-constraint (CP-SAT, 21 caps, 3.1 s) against NSGA-II (pymoo, 3 seeds): NSGA-II reaches 98.1-98.5% of the exact front's hypervolume but 35-43 of its ~116 front points are dominated by exact points. The exact front is sampled at 21 caps, so its hypervolume is a lower bound.",
+      "n": {
+        "label": "products in scope",
+        "value": 40,
+        "source": "scope.skus"
+      },
+      "metrics": [
+        {
+          "label": "units required",
+          "value": 23980,
+          "source": "scope.required_units"
+        },
+        {
+          "label": "shortfall units, no CO2 cap",
+          "value": 4565,
+          "source": "exact.points[0].shortfall_units"
+        },
+        {
+          "label": "CO2 grams, no CO2 cap",
+          "value": 1550646,
+          "source": "exact.points[0].co2_grams"
+        },
+        {
+          "label": "CO2 cap share, second point",
+          "value": 0.95,
+          "source": "exact.points[1].cap_share"
+        },
+        {
+          "label": "shortfall units at that cap",
+          "value": 4574,
+          "source": "exact.points[1].shortfall_units"
+        },
+        {
+          "label": "NSGA-II hypervolume ratio, seed 1",
+          "value": 0.9807,
+          "source": "nsga2.per_seed[0].hypervolume_ratio"
+        },
+        {
+          "label": "NSGA-II hypervolume ratio, seed 2",
+          "value": 0.9849,
+          "source": "nsga2.per_seed[1].hypervolume_ratio"
+        },
+        {
+          "label": "NSGA-II hypervolume ratio, seed 3",
+          "value": 0.9814,
+          "source": "nsga2.per_seed[2].hypervolume_ratio"
+        },
+        {
+          "label": "exact solve seconds",
+          "value": 3.1,
+          "source": "exact.seconds"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/E1-20261026T200641Z/metrics.json"
+    },
+    {
+      "study": "F1",
+      "run_id": "F1-20261023T180239Z",
+      "date": "2026-10-23",
+      "status": "current",
+      "data_kind": "historical backtest (UCI Online Retail II sales)",
+      "headline": "Trained forecasters cut daily error by about a third against seasonal naive; TCN and LightGBM are not clearly different",
+      "notes": "Protocol 2.1.0 = 2.0.0 with the weekday-corrected TCN; 503 products, rolling test origins 2011-10-13 and 2011-11-10. Pooled per-product MAE: naive 21.35, LightGBM 14.52, TCN 14.32. TCN - naive -7.02 [-8.94, -5.45]; TCN - LightGBM -0.20 [-0.46, +0.03], TCN better on 42% of products (no clear difference). Not an untouched holdout (D-042).",
+      "n": {
+        "label": "products",
+        "value": 503,
+        "source": "cohort_size"
+      },
+      "metrics": [
+        {
+          "label": "pooled MAE seasonal naive",
+          "value": 21.347735018460664,
+          "source": "pooled_mae.seasonal_naive"
+        },
+        {
+          "label": "pooled MAE LightGBM",
+          "value": 14.524685909289289,
+          "source": "pooled_mae.lightgbm"
+        },
+        {
+          "label": "pooled MAE TCN",
+          "value": 14.32419077146254,
+          "source": "pooled_mae.tcn"
+        },
+        {
+          "label": "80% interval coverage TCN",
+          "value": 0.8518886679920478,
+          "source": "summary.tcn.coverage_80"
+        },
+        {
+          "label": "80% interval coverage LightGBM",
+          "value": 0.841948310139165,
+          "source": "summary.lightgbm.coverage_80"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/F1-20261023T180239Z/metrics.json"
+    },
+    {
+      "study": "FA1",
+      "run_id": "FA1-20261026T200912Z",
+      "date": "2026-10-26",
+      "status": "current",
+      "data_kind": "simulation (real UCI scope and country shares; stock, terms and budget simulated)",
+      "headline": "Under a binding budget, rest-of-world customers got 51% coverage against 83% for UK customers; moderate reweighing (alpha 0.4) cuts the gap from 31.7 to 12.2 points for 1.4 points of total coverage",
+      "notes": "Real UCI scope and recorded country shares (365 days); stock, terms and budget simulated; demand is the champion forecast. A product's shortfall is attributed to its customers by past purchase share. Worst-to-best ratio 0.62 before, 0.85 at alpha 0.4 (passes the four-fifths screen). Full inverse-share reweighing (alpha 1) over-corrects: UK falls to 72% and total coverage drops 7 points. One scope, one date; deterministic allocation.",
+      "n": {
+        "label": "products in scope",
+        "value": 40,
+        "source": "scope.skus"
+      },
+      "metrics": [
+        {
+          "label": "coverage best group, no reweighing",
+          "value": 0.825,
+          "source": "baseline.summary.best"
+        },
+        {
+          "label": "coverage worst group, no reweighing",
+          "value": 0.5081,
+          "source": "baseline.summary.worst"
+        },
+        {
+          "label": "gap points, no reweighing",
+          "value": 31.69,
+          "source": "baseline.summary.gap_points"
+        },
+        {
+          "label": "chosen reweighing alpha",
+          "value": 0.4,
+          "source": "recommended.alpha"
+        },
+        {
+          "label": "gap points at that alpha",
+          "value": 12.24,
+          "source": "recommended.summary.gap_points"
+        },
+        {
+          "label": "worst-to-best ratio at that alpha",
+          "value": 0.8484,
+          "source": "recommended.summary.worst_to_best_ratio"
+        },
+        {
+          "label": "total coverage cost, points",
+          "value": 1.39,
+          "source": "recommended.coverage_cost_points"
+        },
+        {
+          "label": "overall coverage at full reweighing (alpha 1)",
+          "value": 0.7394,
+          "source": "reweighed.overall_coverage"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/FA1-20261026T200912Z/metrics.json"
+    },
+    {
+      "study": "G1",
+      "run_id": "G1-20261027T061059Z",
+      "date": "2026-10-27",
+      "status": "current",
+      "data_kind": "offline evaluation with generated labels",
+      "headline": "All 196 generated answers kept every figure in a cited passage, with correct citations; 1 of 67 questions that should get no answer got one (3 before the product check), but the check also declines all 8 questions that name only a supplier",
+      "notes": "271 generated questions over simulated and fictional agreements (labels by construction, not human-reviewed); local qwen2.5:7b at temperature 0, median 2.8 s, p95 4.0 s. Answerable 108/108 and reworded 88/88 answered; out-of-scope 0/48 and unknown product 0/10 answered. Ambiguous: 1 of 9 answered from one product's terms (was 3 of 9). Named supplier: 0 of 8 answered (was 3 of 8) because each agreement sets terms per product, so the system asks for a product code; the labels expected an answer, so this counts as over-refusal. The figure check would pass a correct figure next to a wrong one.",
+      "n": {
+        "label": "generated questions",
+        "value": 271,
+        "source": "tasks"
+      },
+      "metrics": [
+        {
+          "label": "answerable: facts correct rate",
+          "value": 1.0,
+          "source": "categories.answerable.facts_correct.rate"
+        },
+        {
+          "label": "answerable: citation correct rate",
+          "value": 1.0,
+          "source": "categories.answerable.citation_correct.rate"
+        },
+        {
+          "label": "reworded: facts correct rate",
+          "value": 1.0,
+          "source": "categories.paraphrase.facts_correct.rate"
+        },
+        {
+          "label": "out of scope: answered when it should not be",
+          "value": 0,
+          "source": "categories.out_of_scope.wrongly_answered"
+        },
+        {
+          "label": "ambiguous: answered when it should not be",
+          "value": 1,
+          "source": "categories.ambiguous.wrongly_answered"
+        },
+        {
+          "label": "named supplier only: answered rate",
+          "value": 0.0,
+          "source": "categories.named_supplier.answered_rate"
+        },
+        {
+          "label": "latency p50 seconds",
+          "value": 2.81,
+          "source": "latency_seconds.p50"
+        },
+        {
+          "label": "latency p95 seconds",
+          "value": 4.01,
+          "source": "latency_seconds.p95"
+        },
+        {
+          "label": "model",
+          "value": "qwen2.5:7b",
+          "source": "model"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/G1-20261027T061059Z/metrics.json"
+    },
+    {
+      "study": "IB",
+      "run_id": "IB-20261021T192006Z",
+      "date": "2026-10-21",
+      "status": "current",
+      "data_kind": "published benchmark (InventoryBench, official scorer)",
+      "headline": "SupplyLens policy scores highest of three tool-only policies on InventoryBench",
+      "notes": "Deterministic policies only; does not use the forecasting models affected by F01.",
+      "n": {
+        "label": "benchmark instances scored",
+        "value": 600,
+        "source": "instances"
+      },
+      "metrics": [
+        {
+          "label": "score SupplyLens policy",
+          "value": 0.4819708559398085,
+          "source": "policies.supplylens.overall_score"
+        },
+        {
+          "label": "score base-stock",
+          "value": 0.43347587460162224,
+          "source": "policies.base_stock.overall_score"
+        },
+        {
+          "label": "score last value",
+          "value": 0.4532904639694408,
+          "source": "policies.last_value.overall_score"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/IB-20261021T192006Z/metrics.json"
+    },
+    {
+      "study": "JS1",
+      "run_id": "JS1-20261030T191602Z",
+      "date": "2026-10-30",
+      "status": "current",
+      "data_kind": "simulation (assumed routes and handling times; published ft06 check)",
+      "headline": "Each hand dispatch rule (FIFO, SPT, EDD, most work remaining) gives a receiving-floor schedule 11-13 % longer on average than exact CP-SAT; even the best rule chosen after the fact is 8.5 % longer (1.6-13.8 %), and no single rule is best at every size",
+      "notes": "Check: the Fisher-Thompson ft06 instance solves to its known optimum of 55 in 0.01 s (rules 61-88). Nine receiving-floor instances (10, 20, 40 orders x 3) on four stations; routes, handling minutes and due slots ASSUMED, order volumes from real UCI weekly sales. CP-SAT (8 workers, 20 s) proved 7 of 9 makespans optimal. Minimising total tardiness instead, the rules' tardiness is 32 % (SPT) to 436 % (MWKR) higher. Static one-shift job shop; no breakdowns or late arrivals.",
+      "n": {
+        "label": "receiving-floor instances",
+        "value": 9,
+        "source": "summary.instances"
+      },
+      "metrics": [
+        {
+          "label": "makespan gap vs CP-SAT, FIFO",
+          "value": 0.1191,
+          "source": "summary.makespan_gap_vs_cp_sat.FIFO"
+        },
+        {
+          "label": "makespan gap vs CP-SAT, SPT",
+          "value": 0.1111,
+          "source": "summary.makespan_gap_vs_cp_sat.SPT"
+        },
+        {
+          "label": "makespan gap vs CP-SAT, EDD",
+          "value": 0.13,
+          "source": "summary.makespan_gap_vs_cp_sat.EDD"
+        },
+        {
+          "label": "makespan gap vs CP-SAT, most work remaining",
+          "value": 0.1138,
+          "source": "summary.makespan_gap_vs_cp_sat.MWKR"
+        },
+        {
+          "label": "CP-SAT makespans proven optimal",
+          "value": 7,
+          "source": "summary.cp_sat_proven_optimal_makespan"
+        },
+        {
+          "label": "ft06 known optimum",
+          "value": 55,
+          "source": "check_ft06.known_optimum"
+        },
+        {
+          "label": "ft06 CP-SAT",
+          "value": 55,
+          "source": "check_ft06.cp_sat"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/JS1-20261030T191602Z/metrics.json"
+    },
+    {
+      "study": "PM1",
+      "run_id": "PM1-20261030T192104Z",
+      "date": "2026-10-30",
+      "status": "current",
+      "data_kind": "published benchmark (AI4I 2020, a synthetic dataset) and simulation (motor fleet)",
+      "headline": "On the AI4I 2020 dataset LightGBM catches 61 of 71 test failures with 135 inspections (AUC 0.98), cutting expected cost 72 % against running to failure; on a simulated motor fleet, replacing on predicted life avoids every failure at two-thirds the cost of fixed intervals, though a 1D-CNN does not beat a ridge baseline",
+      "notes": "(a) UCI AI4I 2020 (CC BY 4.0, synthetic data modelled on a milling process), 10,000 cycles, 339 failures; 60/20/20 random split; threshold chosen on validation by assumed costs (missed failure GBP 2,000, inspection GBP 150). Logistic regression AUC 0.93, average precision 0.43; LightGBM AUC 0.98, average precision 0.86. Heat, power and overstrain failures all caught; tool-wear failures 1 of 10 and random failures 0 of 4, as their causes are random by construction. (b) Simulated fleet, 80 training and 30 test motors; RMSE ridge 18.9, CNN 19.3 cycles: a negative result for deep learning on this signal. Policies on the 30 test motors: run to failure GBP 72,000 (30 failures); fixed interval at the 5th life percentile GBP 18,000 (3 failures, 94 cycles of life discarded on average); replace when predicted life < 20 cycles GBP 12,000 (0 failures, 16 cycles discarded). Costs assumed.",
+      "n": {
+        "label": "AI4I 2020 machine cycles",
+        "value": 10000,
+        "source": "ai4i_2020.rows"
+      },
+      "metrics": [
+        {
+          "label": "test failures",
+          "value": 71,
+          "source": "ai4i_2020.test_failures"
+        },
+        {
+          "label": "AUC LightGBM",
+          "value": 0.9795,
+          "source": "ai4i_2020.models.lightgbm.auc"
+        },
+        {
+          "label": "AUC logistic regression",
+          "value": 0.9283,
+          "source": "ai4i_2020.models.logistic_regression.auc"
+        },
+        {
+          "label": "LightGBM failures caught",
+          "value": 61,
+          "source": "ai4i_2020.models.lightgbm.policy_on_test.failures_caught"
+        },
+        {
+          "label": "LightGBM inspections (alerts)",
+          "value": 135,
+          "source": "ai4i_2020.models.lightgbm.policy_on_test.alerts"
+        },
+        {
+          "label": "LightGBM policy cost GBP (assumed costs)",
+          "value": 40250.0,
+          "source": "ai4i_2020.models.lightgbm.policy_on_test.cost_gbp"
+        },
+        {
+          "label": "run-to-failure cost GBP (assumed costs)",
+          "value": 142000.0,
+          "source": "ai4i_2020.run_to_failure_cost_gbp"
+        },
+        {
+          "label": "fleet RUL RMSE ridge",
+          "value": 18.9,
+          "source": "fleet_rul.accuracy.ridge_window_stats.rmse_all_windows"
+        },
+        {
+          "label": "fleet RUL RMSE 1D-CNN",
+          "value": 19.25,
+          "source": "fleet_rul.accuracy.cnn.rmse_all_windows"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/PM1-20261030T192104Z/metrics.json"
+    },
+    {
+      "study": "QC1",
+      "run_id": "QC1-20261030T193358Z",
+      "date": "2026-10-30",
+      "status": "current",
+      "data_kind": "simulation (generated images)",
+      "headline": "On generated goods-in images a small CNN flags defects with AUC 0.997 against 0.946 for hand-made features; letting it pass items and checking only what it flags costs 53 % less than inspecting everything, with 98.7 % of defects caught",
+      "notes": "Images generated from stated rules (glaze texture, printed band, uneven light, noise; 30 % carry a scratch, chip or stain, some faint): 6,000 train, 1,500 validation, 3,000 test. Threshold chosen on validation by assumed costs (manual check GBP 0.30, escaped defect GBP 12). CNN: 958 flagged, 11 escapes, precision 0.89; inspect-all GBP 900 vs CNN policy GBP 419. The hand-made-feature baseline reaches the same recall only by flagging 95 % of items. Occlusion maps (drop in the CNN's logit when each 8x8 patch is greyed out) show the score depends on the defect region. Generated images are easier than real photographs: a method check.",
+      "n": {
+        "label": "test images",
+        "value": 3000,
+        "source": "data.test"
+      },
+      "metrics": [
+        {
+          "label": "test defects",
+          "value": 862,
+          "source": "data.test_defects"
+        },
+        {
+          "label": "AUC CNN",
+          "value": 0.9972,
+          "source": "models.cnn.auc"
+        },
+        {
+          "label": "AUC hand-made features",
+          "value": 0.9462,
+          "source": "models.handmade_features_logistic.auc"
+        },
+        {
+          "label": "CNN policy recall",
+          "value": 0.9872,
+          "source": "models.cnn.policy.recall"
+        },
+        {
+          "label": "CNN policy escaped defects",
+          "value": 11,
+          "source": "models.cnn.policy.escaped_defects"
+        },
+        {
+          "label": "CNN policy cost GBP (assumed costs)",
+          "value": 419.4,
+          "source": "models.cnn.policy.cost_gbp"
+        },
+        {
+          "label": "inspect-everything cost GBP (assumed costs)",
+          "value": 900.0,
+          "source": "inspect_everything_cost_gbp"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/QC1-20261030T193358Z/metrics.json"
+    },
+    {
+      "study": "R1",
+      "run_id": "R1-20261022T161030Z",
+      "date": "2026-10-22",
+      "status": "current",
+      "data_kind": "human-labelled (ACORD graded relevance judgements)",
+      "headline": "On ACORD, vector search beats the hybrid — a negative result we keep",
+      "notes": "All 57 judged test queries (one was wrongly excluded before, DEF-04); search restricted to the ACORD clause corpus. nDCG@10: vector 0.108, hybrid 0.089, lexical 0.061. Absolute scores are low and were not compared with published ACORD baselines.",
+      "n": {
+        "label": "judged test queries",
+        "value": 57,
+        "source": "conditions.vector.queries"
+      },
+      "metrics": [
+        {
+          "label": "nDCG@10 lexical",
+          "value": 0.061191395329212625,
+          "source": "conditions.lexical.ndcg@10"
+        },
+        {
+          "label": "nDCG@10 vector",
+          "value": 0.10761567204591686,
+          "source": "conditions.vector.ndcg@10"
+        },
+        {
+          "label": "nDCG@10 hybrid (RRF)",
+          "value": 0.08913327406049229,
+          "source": "conditions.hybrid_rrf.ndcg@10"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/R1-20261022T161030Z/metrics.json"
+    },
+    {
+      "study": "R2",
+      "run_id": "R2-20261022T045503Z",
+      "date": "2026-10-22",
+      "status": "current",
+      "data_kind": "offline evaluation with generated labels",
+      "headline": "Effective-date filtering and supersession reranking each remove wrong-version citations; together they reach 100%",
+      "notes": "2x2 factorial on 118 synthetic questions (not human-reviewed): temporal main effect +3.2 points, rerank main effect +4.2 points, interaction +0.9 points. Measures the mechanism, not real-world contract understanding.",
+      "n": {
+        "label": "generated questions",
+        "value": 118,
+        "source": "questions"
+      },
+      "metrics": [
+        {
+          "label": "top-1 citation accuracy, neither mechanism",
+          "value": 0.9259259259259259,
+          "source": "conditions.temporal_off_rerank_off.top1_citation_accuracy"
+        },
+        {
+          "label": "top-1 citation accuracy, both mechanisms",
+          "value": 1.0,
+          "source": "conditions.temporal_on_rerank_on.top1_citation_accuracy"
+        },
+        {
+          "label": "main effect, effective-date filtering",
+          "value": 0.03240740740740744,
+          "source": "factorial.main_effect_temporal"
+        },
+        {
+          "label": "main effect, supersession reranking",
+          "value": 0.04166666666666663,
+          "source": "factorial.main_effect_rerank"
+        },
+        {
+          "label": "answerable questions",
+          "value": 108,
+          "source": "conditions.temporal_on_rerank_on.answerable_questions"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/R2-20261022T045503Z/metrics.json"
+    },
+    {
+      "study": "R3",
+      "run_id": "R3-20261023T181121Z",
+      "date": "2026-10-23",
+      "status": "current",
+      "data_kind": "offline evaluation with generated labels",
+      "headline": "Answer-support rules flag ambiguity and some unanswerable questions, at a cost on reworded questions",
+      "notes": "535 generated questions (labels by construction, not human-reviewed), thresholds fitted on the development half. Test half, hybrid: out-of-scope abstention 0/26 -> 10/26, ambiguity 0/4 -> 3/4, answerable 45/45 kept, paraphrases answered 172/172 -> 121/172, named supplier 4/4 -> 3/4. Lexical-only (hosted demo): named supplier 4/4 -> 0/4 (false ambiguity). Retrieval-only signals cannot tell out-of-scope from reworded in-scope questions.",
+      "n": {
+        "label": "generated questions (dev and test)",
+        "value": 535,
+        "source": "tasks"
+      },
+      "metrics": [
+        {
+          "label": "test out-of-scope declined, before",
+          "value": 0,
+          "source": "results.test.baseline_hybrid.categories.out_of_scope.correct"
+        },
+        {
+          "label": "test out-of-scope declined, after",
+          "value": 10,
+          "source": "results.test.chosen_hybrid.categories.out_of_scope.correct"
+        },
+        {
+          "label": "test out-of-scope questions",
+          "value": 26,
+          "source": "results.test.chosen_hybrid.categories.out_of_scope.n"
+        },
+        {
+          "label": "test ambiguous flagged, after",
+          "value": 3,
+          "source": "results.test.chosen_hybrid.categories.ambiguous.correct"
+        },
+        {
+          "label": "test ambiguous questions",
+          "value": 4,
+          "source": "results.test.chosen_hybrid.categories.ambiguous.n"
+        },
+        {
+          "label": "test reworded answered, after",
+          "value": 121,
+          "source": "results.test.chosen_hybrid.categories.paraphrase.correct"
+        },
+        {
+          "label": "test reworded questions",
+          "value": 172,
+          "source": "results.test.chosen_hybrid.categories.paraphrase.n"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/R3-20261023T181121Z/metrics.json"
+    },
+    {
+      "study": "W1",
+      "run_id": "W1-20261027T055557Z",
+      "date": "2026-10-27",
+      "status": "current",
+      "data_kind": "historical backtest (UCI sales; Open-Meteo weather)",
+      "headline": "On total daily units, XGBoost beats Prophet and a seasonal naive (WAPE 24.6% vs 28.0% and 29.7%); adding London weather makes no clear difference to either (95% intervals span zero)",
+      "notes": "13 weekly origins from 2011-09-05 to 2011-11-28, 7 days ahead, 91 total-level points and 4,550 product-day points (50 products). Product-level daily demand is intermittent, so WAPE is above 100% for every model (XGBoost 110%, naive 114%) and MAPE is taken over non-zero days only. Weather on the target day is the observed value, so any gain would be an upper bound. Daily correlation of units with mean temperature -0.03 and with rainfall 0.05. Weather: Open-Meteo historical API, CC BY 4.0.",
+      "n": {
+        "label": "total-level test points",
+        "value": 91,
+        "source": "results.total.points"
+      },
+      "metrics": [
+        {
+          "label": "WAPE seasonal naive (total units)",
+          "value": 0.2974,
+          "source": "results.total.models.seasonal_naive.wape"
+        },
+        {
+          "label": "WAPE Prophet (total units)",
+          "value": 0.2804,
+          "source": "results.total.models.prophet.wape"
+        },
+        {
+          "label": "WAPE XGBoost (total units)",
+          "value": 0.2455,
+          "source": "results.total.models.xgboost.wape"
+        },
+        {
+          "label": "RMSE XGBoost (total units)",
+          "value": 7498.421,
+          "source": "results.total.models.xgboost.rmse"
+        },
+        {
+          "label": "weather effect clear for Prophet",
+          "value": false,
+          "source": "results.total.weather_effect.prophet.clear"
+        },
+        {
+          "label": "weather effect clear for XGBoost",
+          "value": false,
+          "source": "results.total.weather_effect.xgboost.clear"
+        },
+        {
+          "label": "product-day test points",
+          "value": 4550,
+          "source": "results.skus.points"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/W1-20261027T055557Z/metrics.json"
+    }
+  ],
+  "not_included": [
+    "AGT-20261021T192432Z",
+    "F1-20261021T190101Z",
+    "F1-20261022T090206Z",
+    "F2-20261023T182141Z",
+    "G1-20261027T054918Z",
+    "QC1-20261030T192258Z",
+    "R1-20261021T191153Z",
+    "R2-20261021T191153Z",
+    "S1-20261021T193239Z",
+    "S1-20261022T092040Z",
+    "S2-20261023T183015Z"
+  ]
+}
