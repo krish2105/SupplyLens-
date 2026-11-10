@@ -85,3 +85,6 @@ apps/web/.next-build/
 
 # Weather and other public data the studies download themselves (Open-Meteo CC BY 4.0; hash recorded in each study)
 data/external/
+
+# Owner-only course material (unit outline, answers, notes); never committed (Phase 8)
+private/
