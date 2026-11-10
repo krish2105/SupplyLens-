@@ -7,6 +7,8 @@ import { signIn } from "./helpers";
 // run. Esc closes the drawer and focus returns to the header button. Nothing here changes a business record.
 
 const LABEL = "Ask about an order or stock";
+// An answer takes about 20 ms on an idle stack; with four browser projects in parallel the API queues it for seconds (QA-P8-04).
+const SERVER = { timeout: 15_000 };
 
 test("J13 a viewer asks the status assistant about stock, is refused a change, and hands off to a person (dry run)", async ({ page }) => {
   await signIn(page, "viewer");
@@ -22,7 +24,7 @@ test("J13 a viewer asks the status assistant about stock, is refused a change, a
   await drawer.getByLabel("Your question").fill("stock of SYN001");
   await drawer.getByRole("button", { name: "Ask", exact: true }).click();
   const answer = drawer.getByTestId("assistant-answer");
-  await expect(answer).toBeVisible();
+  await expect(answer).toBeVisible(SERVER);
   await expect(drawer.locator("[data-illustration]")).toHaveCount(0);           // the art is for first use only
   const links = answer.getByRole("link");
   expect(await links.count()).toBeGreaterThan(0);
@@ -30,10 +32,10 @@ test("J13 a viewer asks the status assistant about stock, is refused a change, a
 
   await drawer.getByLabel("Your question").fill("cancel the order for SYN001");
   await drawer.getByRole("button", { name: "Ask", exact: true }).click();
-  await expect(drawer.getByTestId("assistant-withheld")).toContainText("only reads records");
+  await expect(drawer.getByTestId("assistant-withheld")).toContainText("only reads records", SERVER);
 
   await drawer.getByRole("button", { name: "Talk to a person" }).click();
-  await expect(drawer.getByTestId("assistant-handoff")).toHaveText("Dry run: ticket not sent — HubSpot is not connected.");
+  await expect(drawer.getByTestId("assistant-handoff")).toHaveText("Dry run: ticket not sent — HubSpot is not connected.", SERVER);
 
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();
@@ -54,5 +56,5 @@ test("J13 the command palette opens the assistant, and the drawer fits a phone s
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await drawer.getByLabel("Your question").fill("RETRO");                       // several fixture products may match
   await drawer.getByRole("button", { name: "Ask", exact: true }).click();
-  await expect(drawer.getByTestId("assistant-answer").or(drawer.getByTestId("assistant-choose")).or(drawer.getByTestId("assistant-withheld"))).toBeVisible();
+  await expect(drawer.getByTestId("assistant-answer").or(drawer.getByTestId("assistant-choose")).or(drawer.getByTestId("assistant-withheld"))).toBeVisible(SERVER);
 });

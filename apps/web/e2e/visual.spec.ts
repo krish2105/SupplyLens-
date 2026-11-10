@@ -50,6 +50,34 @@ for (const [wname, ctx] of Object.entries(WIDTHS)) for (const theme of ["light",
       });
     }
 
+    // Phase 8: the status assistant drawer (first use with its art; a refused change request) and Policies › Extracted
+    // terms on the fictional Demo agreement. Fixed text only: an answered question shows live stock, which other suites change.
+    test("status assistant", async ({ page }) => {
+      await open(page, theme, "/settings", "uci-research", "viewer", "Appearance, connections and audit");
+      await page.getByRole("button", { name: "Ask about an order or stock" }).click();
+      const drawer = page.getByRole("dialog", { name: "Ask about an order or stock" });
+      const art = drawer.locator('img[data-illustration="assistant-ready"]');
+      await expect(art).toBeVisible();
+      await expect.poll(() => art.evaluate((i: HTMLImageElement) => i.complete && i.naturalWidth > 0)).toBe(true);
+      await expect(page).toHaveScreenshot(`assistant-first-${wname}-${theme}.png`, SHOT(page));
+      await drawer.getByLabel("Your question").fill("cancel the order for SYN001");
+      await drawer.getByRole("button", { name: "Ask", exact: true }).click();
+      await expect(drawer.getByTestId("assistant-withheld")).toBeVisible({ timeout: 15_000 });
+      await expect(page).toHaveScreenshot(`assistant-withheld-${wname}-${theme}.png`, SHOT(page));
+    });
+
+    test("extracted terms", async ({ page }) => {
+      await open(page, theme, "/policies", "demo", "viewer", "Supplier terms, versions and citations");
+      const entry = page.locator("li").filter({ hasText: "Reference Supplier A agreement" }).first();
+      await entry.getByRole("button", { name: "v1", exact: true }).click();
+      const reader = page.getByRole("region", { name: "Document reader" });
+      await reader.getByRole("tab", { name: "Extracted terms" }).click();
+      const panel = reader.getByTestId("extracted-terms");
+      await expect(panel.getByRole("row").nth(1)).toBeVisible();
+      await panel.scrollIntoViewIfNeeded();
+      await expect(page).toHaveScreenshot(`extracted-terms-${wname}-${theme}.png`, SHOT(page));
+    });
+
     if (wname === "phone") test("sections menu open", async ({ page }) => {
       await open(page, theme, "/inventory", "uci-research", "viewer", "Stock positions by product");
       await page.getByRole("navigation", { name: "Sections" }).getByRole("button").click();

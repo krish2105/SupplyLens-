@@ -27,6 +27,14 @@ export function DraftBadge() {
   return <span className="inline-flex items-center rounded-md bg-risk-soft px-2 py-0.5 text-[11px] font-semibold tracking-wide text-risk">DRAFT</span>;
 }
 
+function ShowButton({ f, onShow, className }: { f: ExtractedField; onShow: (f: ExtractedField) => void; className?: string }) {
+  return (
+    <Button size="sm" variant="outline" className={clsx("whitespace-nowrap", className)} onClick={() => onShow(f)}>
+      Show in text<span className="sr-only">: {fieldLabel(f.field)}, characters {f.start} to {f.end}</span>
+    </Button>
+  );
+}
+
 export function ExtractedTerms({ versionId, shown, onShow }: {
   versionId: string; shown: ExtractedField | null; onShow: (f: ExtractedField) => void;
 }) {
@@ -47,15 +55,15 @@ export function ExtractedTerms({ versionId, shown, onShow }: {
           minimum order quantity and lead time, and found none in this text. Read the document text to check.
         </EmptyState>
       ) : (
-        <TableScroll label="Extracted terms" min={520}>
+        <TableScroll label="Extracted terms" min={280}>
           <table className="w-full text-sm">
             <caption className="sr-only">Extracted terms (draft), one row per field found</caption>
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted">
                 <th scope="col" className="py-2 pr-3 font-medium">Field</th>
                 <th scope="col" className="pr-3 font-medium">Value</th>
-                <th scope="col" className="pr-3 font-medium">Source</th>
-                <th scope="col" className="font-medium"><span className="sr-only">Cited span</span></th>
+                <th scope="col" className="hidden pr-3 font-medium sm:table-cell">Source</th>
+                <th scope="col" className="hidden font-medium sm:table-cell"><span className="sr-only">Cited span</span></th>
               </tr>
             </thead>
             <tbody>
@@ -64,14 +72,12 @@ export function ExtractedTerms({ versionId, shown, onShow }: {
                   <th scope="row" className="py-2 pr-3 text-left font-medium">{fieldLabel(f.field)}</th>
                   <td className="py-2 pr-3">
                     <span className="[overflow-wrap:anywhere]">{f.value}</span>
-                    <span className="num mt-0.5 block whitespace-nowrap text-[11px] text-muted">characters {f.start}–{f.end}</span>
+                    <span className="num mt-0.5 block whitespace-nowrap text-[11px] text-muted">characters {f.start}–{f.end}<span className="sm:hidden"> · {f.source}</span></span>
+                    {/* phones: two columns, the action under the value (no sideways scrolling inside the card) */}
+                    <ShowButton f={f} onShow={onShow} className="mt-1.5 sm:hidden" />
                   </td>
-                  <td className="py-2 pr-3"><Mono>{f.source}</Mono></td>
-                  <td className="py-2 text-right">
-                    <Button size="sm" variant="outline" className="whitespace-nowrap" onClick={() => onShow(f)}>
-                      Show in text<span className="sr-only">: {fieldLabel(f.field)}, characters {f.start} to {f.end}</span>
-                    </Button>
-                  </td>
+                  <td className="hidden py-2 pr-3 sm:table-cell"><Mono>{f.source}</Mono></td>
+                  <td className="hidden py-2 text-right sm:table-cell"><ShowButton f={f} onShow={onShow} /></td>
                 </tr>
               ))}
             </tbody>
