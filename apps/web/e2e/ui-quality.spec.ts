@@ -77,7 +77,9 @@ test("a workspace that holds only documents says it has no operational date; a f
   await page.route("**/api/v1/overview", (r) => r.fulfill({ status: 500, contentType: "application/json",
     body: JSON.stringify({ code: "server_error", message: "The server hit an unexpected error.", reference: "e2e" }) }));
   await page.goto("/?ws=uci-research");
-  await expect(page.getByText("The server hit an unexpected error.")).toBeVisible();
+  // the client retries a 5xx twice with back-off (1 s, 2 s) before it shows the error, so the default 5 s wait was too
+  // tight under parallel load (QA-P8-02); the same allowance as the 403 state in remediation.spec.ts
+  await expect(page.getByText("The server hit an unexpected error.")).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/No operational date in this workspace/)).toHaveCount(0);
 });
 

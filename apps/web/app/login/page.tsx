@@ -84,8 +84,11 @@ export default function Login() {
           )}
           <p className="mt-6 text-xs text-muted">Signing in sets an HttpOnly session cookie for this browser only.</p>
         </div>
-        <div className="hidden items-center justify-center bg-surface-2/60 p-6 md:flex">
-          <Illustration art="welcome" size={520} className="w-full max-w-[560px]" />
+        <div className="hidden items-center justify-center bg-surface-2/60 p-4 md:flex">
+          {/* A01's subject fills the right 62 % of its canvas; the left part was left empty for text laid over the art,
+              and this page puts the text beside it. A square crop anchored right shows the whole subject at the panel's
+              full width, centred, instead of a small picture pushed to one side (owner, 2026-11-10). */}
+          <Illustration art="welcome" size={560} fit="cover" eager className="aspect-square w-full object-[100%_50%]" />
         </div>
       </div>
     </main>

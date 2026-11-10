@@ -25,17 +25,21 @@ export const FILE: Record<Art, string> = {
   "empty-extraction": "sl-empty-extraction", "assistant-ready": "sl-assistant-ready",
 };
 
-/** Decorative illustration with reserved space; a failed image load collapses to nothing (text carries the meaning). */
-export function Illustration({ art, size = 144, className }: { art: Art; size?: number; className?: string }) {
+/** Decorative illustration with reserved space; a failed image load collapses to nothing (text carries the meaning).
+ *  `fit="cover"` crops instead of letterboxing (the sign-in panel shows only A01's subject); `eager` for art above the
+ *  fold. */
+export function Illustration({ art, size = 144, className, fit = "contain", eager = false }: {
+  art: Art; size?: number; className?: string; fit?: "contain" | "cover"; eager?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
   const wide = art === "welcome";
   return (
     // eslint-disable-next-line @next/next/no-img-element -- pre-optimised static WebP; next/image adds nothing here
     <img src={`/illustrations/supplylens/${FILE[art]}.webp`} alt="" aria-hidden="true" draggable={false}
-      width={wide ? size : size} height={wide ? Math.round(size * 2 / 3) : size} loading="lazy" decoding="async"
+      width={wide ? size : size} height={wide ? Math.round(size * 2 / 3) : size} loading={eager ? "eager" : "lazy"} decoding="async"
       onError={() => setFailed(true)} data-illustration={art}
-      className={clsx("pointer-events-none shrink-0 select-none object-contain", className)} />
+      className={clsx("pointer-events-none shrink-0 select-none", fit === "cover" ? "object-cover" : "object-contain", className)} />
   );
 }
 

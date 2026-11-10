@@ -72,6 +72,10 @@ and A18 prepared and rendered nowhere until their 8B screens exist; final-deck s
 owner and merged on 2026-11-10 (D-108); deployed and checked on the hosted demo (P8-E16).** Review findings: content matches the briefs; subjects extend past the
 middle 70 %; faint background-removal residue, not visible at 144 or 96 px on either theme.
 
+### Sign-in illustration (owner screenshot, 2026-11-10, P8-E19)
+The welcome art showed small in the lower right of its panel; it now fills the panel as a square crop of its subject,
+centred, from a native-resolution file (FE-P8-04).
+
 ### Not done or blocked
 - Lecturer's answers (8A.1b) not obtained; Week 6 date, limit and format unknown; deck length not yet checked against a
   limit. The AI-use statement is a draft. Teammates' consent to be named publicly and their AI tools: open.

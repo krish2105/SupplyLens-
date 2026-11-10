@@ -25,7 +25,7 @@ MANIFEST = ROOT / "apps" / "web" / "lib" / "illustrations.json"
 EXCLUDED: dict[str, str] = {}
 # Prepared for screens that do not exist yet (Phase 8 WP6, WP7): published as files, rendered nowhere until then.
 RESERVED = {"A17", "A18"}
-USAGE = {"A01": "login page (sign-in), 360-560 px, hidden below 768 px", "A03": "inventory: authorized empty scope",
+USAGE = {"A01": "login page (sign-in): square crop of the subject filling the art panel (about 450-470 px), hidden below 768 px", "A03": "inventory: authorized empty scope",
          "A04": "policies: authorized library has no documents", "A05": "forecast lab: no forecast run for the context",
          "A06": "scenario studio: no saved scenarios", "A07": "filtered lists: zero matches",
          "A08": "approvals/exceptions: zero pending items in the visible filters",
@@ -60,7 +60,9 @@ def main() -> None:
             entries.append({**entry, "published": False, "review": f"not published: {EXCLUDED[a['id']]}",
                             "fallback": "HTML text with a lucide icon"})
             continue
-        width = 1120 if a["id"] == "A01" else 360
+        # A01 at its native 1536 px: the sign-in page crops it to the subject (about two thirds of the width) at ~470 CSS
+        # px, which needs ~940 source pixels on a 2x screen
+        width = 1536 if a["id"] == "A01" else 360
         with Image.open(src) as im:
             im = im.convert("RGBA")
             h = round(im.height * width / im.width)

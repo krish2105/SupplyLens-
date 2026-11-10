@@ -4,13 +4,13 @@ Sources: `design/source-assets/supplylens/` holds the 18 supplied PNGs byte-for-
 `source_manifest.json` by the build script). They are never served.
 
 Derivatives: `uv run python scripts/optimize_illustrations.py` writes lossless-alpha WebP files (2× the largest display
-size: 1120 px wide for A01, 360 px square for the rest) to `apps/web/public/illustrations/supplylens/` and the app
+size: 1536 px wide (native) for A01, 360 px square for the rest) to `apps/web/public/illustrations/supplylens/` and the app
 manifest `apps/web/lib/illustrations.json` (source hash, derivative hash, size, usage, review note, whether it is rendered).
-Total ≈ 391 KB (391,378 bytes).
+Total ≈ 433 KB (433,260 bytes).
 
 | ID | Shown in | Condition |
 |---|---|---|
-| A01 welcome | Sign-in page (≥768 px) | Sign-in only; an e2e test asserts it never appears on the populated overview |
+| A01 welcome | Sign-in page (≥768 px): a square crop of the subject fills the art panel | Sign-in only; an e2e test asserts it never appears on the populated overview |
 | A03 empty inventory | Inventory, overview 3D panel | Successful response with no stock records (copy says missing records are not zero stock) |
 | A04 empty evidence | Policies | Library returns no documents the reader may see |
 | A05 forecast setup | Forecast lab | History exists but no forecast run for the product/origin/model |
