@@ -108,3 +108,9 @@ STUDY-P8-04, DATA-P8-01.
 Not done, and why: confirming an extracted field (needs migration 0012; hosted database stays at 0010) and PDF intake
 (D-076); a real HubSpot call (no test account chosen); real logistics data (no approval); human-written questions (must
 come from people); the team's who-did-what record (the team's to fill in).
+
+Push and deploy: branch `phase8/coverage` CI 42817578552 recorded the Linux Research baselines (reviewed, committed);
+CI 42821143262 **8/8 success**; `main` fast-forwarded `5334b8b..22fc9f6`; Vercel deployment
+`dpl_5UC687ngXPzHBTJwCMnXpkC23KZU` Ready; hosted read-only check P8-E26 passed on Chromium and WebKit in both themes.
+Local before the push (P8-E25): pytest 659 passed / 6 skipped; four browser projects 216 passed / 7 skipped; visual 44
+(4 Research baselines changed as intended); Firefox 27 passed / 1 skipped; vitals 18/18.
