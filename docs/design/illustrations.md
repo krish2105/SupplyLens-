@@ -1,11 +1,12 @@
-# Illustrations (asset pack A01–A16)
+# Illustrations (asset pack A01–A18)
 
-Sources: `design/source-assets/supplylens/` holds the 16 supplied PNGs byte-for-byte (SHA-256 checked against
+Sources: `design/source-assets/supplylens/` holds the 18 supplied PNGs byte-for-byte (SHA-256 checked against
 `source_manifest.json` by the build script). They are never served.
 
 Derivatives: `uv run python scripts/optimize_illustrations.py` writes lossless-alpha WebP files (2× the largest display
 size: 1120 px wide for A01, 360 px square for the rest) to `apps/web/public/illustrations/supplylens/` and the app
-manifest `apps/web/lib/illustrations.json` (source hash, derivative hash, size, usage, review note). Total ≈ 290 KB.
+manifest `apps/web/lib/illustrations.json` (source hash, derivative hash, size, usage, review note, whether it is rendered).
+Total ≈ 391 KB (391,378 bytes).
 
 | ID | Shown in | Condition |
 |---|---|---|
@@ -22,10 +23,23 @@ manifest `apps/web/lib/illustrations.json` (source hash, derivative hash, size, 
 | A12 policy change | Policies | At least one document version supersedes another |
 | A14 empty research | Research study cards | No experiment recorded for that study |
 | A15 decision history | Investigations | No runs in the workspace |
+| A02 import data *(Phase 8, pending owner approval)* | Data admission | No admitted dataset **and** no import batch yet **and** the user is a tenant admin outside the locked public demo; the page waits for the role and the batch list, so the art never shows and then goes |
+| A13 empty suppliers *(Phase 8, pending owner approval)* | Supplier market | No award data imported **in the Contract research workspace**, the one that holds it; other workspaces keep the text and icon, because there the data exists elsewhere |
+| A16 empty value study *(Phase 8, pending owner approval)* | Value | The value ledger has no study; never over a populated ledger |
+| A17 empty extraction *(Phase 8, reserved)* | Policies › Extracted terms (8B WP7) | Prepared only: rendered nowhere until that screen exists (unit test) |
+| A18 assistant ready *(Phase 8, reserved)* | Status assistant drawer (8B WP6) | Prepared only: rendered nowhere until that drawer exists (unit test) |
 
-Not published (owner decision D-040): **A02** import data (document lines and a pie chart instead of a blank sheet),
-**A13** empty suppliers (joined suppliers instead of unjoined connectors), **A16** value study (kraft cartons read as a
-value signal). Their states use text with an icon.
+Phase 8 (2026-11-10): the owner supplied new **A02**, **A13** and **A16** for the Phase 8 briefs
+(`docs/design/image-prompts-phase8.md`; the earlier files were withheld under D-040: document lines and a pie chart,
+joined suppliers, kraft cartons) and new **A17**, **A18**. They are integrated on a review branch and published only when
+the owner approves it (proposed decision D-108). Review findings, recorded per file in `source_manifest.json`
+(`phase8_review`, `quality_notes`):
+- Content matches each brief; no text, numbers, logos, people or charts.
+- Framing: no subject stays inside the middle 70 % the brief asks for (nearest edge 29–74 px against 154 px). Shown with
+  `object-contain`, so nothing is cut.
+- Edge residue from background removal: 1,898–27,935 faint pixels outside each subject. Not visible at 144 px or 96 px
+  on the light (#f4f8f6) or dark (#0d1517) background (2× pixel density review, 1440/834/390 px).
+- A02 and A18 have one corner pixel at alpha 1 (the brief asks for 0); not visible.
 
 Rules in code (`apps/web/components/illustration.tsx`): decorative only (`alt=""`, `aria-hidden`), semantic HTML
 carries the title and actions, a failed image load collapses to nothing, and errors/loading never use empty-state art.

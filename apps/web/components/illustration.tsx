@@ -1,8 +1,9 @@
 "use client";
-// Illustrations and empty/error states (UX asset pack A01-A16). Rules from docs/design/illustrations.md:
+// Illustrations and empty/error states (UX asset pack A01-A18). Rules from docs/design/illustrations.md:
 // art is decorative (alt=""), sits beside semantic HTML text and actions, never carries data, never appears above a
-// populated work queue, and each piece is shown only in the state it was briefed for. Three pack items are not
-// published (A02, A13, A16); their states use an icon instead.
+// populated work queue, and each piece is shown only in the state it was briefed for. Phase 8: A02, A13 and A16 were
+// replaced by the owner's files (withheld before, D-040); A17 and A18 are prepared for screens that do not exist yet
+// (Extracted terms, status assistant) and are used nowhere until then.
 import clsx from "clsx";
 import { AlertTriangle, Ban, Clock3, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -10,15 +11,18 @@ import { useState, type ReactNode } from "react";
 export type Art =
   | "welcome" | "empty-inventory" | "empty-evidence" | "forecast-setup" | "empty-scenarios" | "no-results"
   | "no-pending-work" | "connection-paused" | "restricted-access" | "empty-integrations" | "policy-change"
-  | "empty-research" | "empty-decision-history";
+  | "empty-research" | "empty-decision-history" | "import-data" | "empty-suppliers" | "empty-value-study"
+  | "empty-extraction" | "assistant-ready";
 
-const FILE: Record<Art, string> = {
+export const FILE: Record<Art, string> = {
   welcome: "sl-welcome", "empty-inventory": "sl-empty-inventory", "empty-evidence": "sl-empty-evidence",
   "forecast-setup": "sl-forecast-setup", "empty-scenarios": "sl-empty-scenarios", "no-results": "sl-no-results",
   "no-pending-work": "sl-no-pending-work", "connection-paused": "sl-connection-paused",
   "restricted-access": "sl-restricted-access", "empty-integrations": "sl-empty-integrations",
   "policy-change": "sl-policy-change", "empty-research": "sl-empty-research",
-  "empty-decision-history": "sl-empty-decision-history",
+  "empty-decision-history": "sl-empty-decision-history", "import-data": "sl-import-data",
+  "empty-suppliers": "sl-empty-suppliers", "empty-value-study": "sl-empty-value-study",
+  "empty-extraction": "sl-empty-extraction", "assistant-ready": "sl-assistant-ready",
 };
 
 /** Decorative illustration with reserved space; a failed image load collapses to nothing (text carries the meaning). */

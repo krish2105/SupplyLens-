@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Stat, Status } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
 import { Onboarding } from "@/components/onboarding";
-import { useApi, useMe, useWs } from "@/lib/queries";
+import { useApi, useDemoLockdown, useMe, useWs } from "@/lib/queries";
 import { dateTime, day, int, money } from "@/lib/format";
 
 
@@ -22,7 +23,7 @@ export default function DataPage() {
   const admin = me.data?.memberships.find((m) => m.slug === ws)?.role === "tenant_admin";
   return (
     <div className="space-y-10">
-      <DatasetView />
+      <DatasetView admin={admin} roleKnown={!!me.data} />
       <section aria-labelledby="onb-h" className="space-y-3">
         <h2 id="onb-h" className="display text-2xl font-semibold">Onboard data</h2>
         <Onboarding admin={admin} />
@@ -31,23 +32,31 @@ export default function DataPage() {
   );
 }
 
-function DatasetView() {
+function DatasetView({ admin, roleKnown }: { admin: boolean; roleKnown: boolean }) {
   const ds = useApi(["datasets"], "/api/v1/datasets");
+  const locked = useDemoLockdown();
+  const batches = useApi(["import-batches"], "/api/v1/onboarding/batches");     // same query as the import panel below
   const d = ds.data?.[0];
   const [reason, setReason] = useState<string | null>(null);
   const q = useApi(["quarantine", d?.id, reason], d ? "/api/v1/datasets/{dataset_id}/quarantine" : null, { path: { dataset_id: d?.id ?? "" }, query: { limit: 25, reason } });
 
   if (ds.isLoading) return <Loading label="Loading datasets" />;
   if (ds.error) return <ErrorState error={ds.error} retry={() => ds.refetch()} />;
-  if (!d) return (
-    <>
-      <PageHeader eyebrow="Data admission" title="No dataset admitted in this workspace" />
-      {/* A02 (import illustration) is not published; this state uses text only (DECISIONS D-040). */}
-      <Empty title="Add your first dataset">
-        Administrators import sales, stock and supplier terms below from CSV templates. Until a sales file is published, this workspace has no history to forecast from.
-      </Empty>
-    </>
-  );
+  if (!d) {
+    // A02 only in its briefed state (Phase 8): nothing admitted, no import batch yet, and this user may import (tenant
+    // admin, outside the locked public demo). Wait for the role and the batch list, so the art never shows and then goes.
+    const canImport = admin && !locked;
+    if (!roleKnown || (canImport && batches.isLoading)) return <Loading label="Loading datasets" />;
+    const copy = "Administrators import sales, stock and supplier terms below from CSV templates. Until a sales file is published, this workspace has no history to forecast from.";
+    return (
+      <>
+        <PageHeader eyebrow="Data admission" title="No dataset admitted in this workspace" />
+        {canImport && batches.data?.length === 0
+          ? <EmptyState variant="first_run" art="import-data" title="Add your first dataset">{copy}</EmptyState>
+          : <Empty title="Add your first dataset">{copy}</Empty>}
+      </>
+    );
+  }
   if (!d.report.totals) return (
     <>
       <PageHeader eyebrow="Data admission" title={d.name}>Published from a CSV import. The batch below is frozen; its snapshot hash identifies exactly what was loaded.</PageHeader>

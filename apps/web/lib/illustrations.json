@@ -20,22 +20,32 @@
       "bytes": 86110,
       "sha256": "b68b68fcec5dc1a678b49d24184aff7da9dfa34c06156358e8c32223eb8d20bf",
       "usage": "login page (sign-in), 360-560 px, hidden below 768 px",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A02",
       "source": "design/source-assets/supplylens/sl-import-data.png",
-      "source_sha256": "3841754ece4124899cb024914d54679e9b005c948bd8f3c3384fb81aae33e87b",
-      "show_only_when": "No admitted dataset and the user has permission to import",
+      "source_sha256": "ac9cf0f4002c055ddd5b1d34acea37045acded42278bb30f5a7736cb2758cf0c",
+      "show_only_when": "No admitted dataset, no import batches yet, and the user may import (tenant admin, not the locked public demo)",
       "alt": "",
       "decorative": true,
       "pack_quality_notes": [
-        "Visual review of the supplied preview shows document-like lines and a pie-chart symbol, unlike the blank-sheet brief.",
-        "Preserve the supplied source. Obtain a corrected or explicitly accepted variant before claiming brief-compliant import artwork."
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [142, 100, 912, 950], 74 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 27935 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners alpha [1, 0, 0, 0] (the brief asks for 0)."
       ],
-      "published": false,
-      "review": "not published: shows document lines and a pie chart; the brief asked for a blank sheet",
-      "fallback": "HTML text with a lucide icon"
+      "published": true,
+      "path": "/illustrations/supplylens/sl-import-data.webp",
+      "width": 360,
+      "height": 360,
+      "bytes": 20874,
+      "sha256": "b55872a54518e953b20ce4a39d2191dca365e8f9905bf0181d16f2364c022760",
+      "usage": "data admission: no dataset and no import batches, user may import (tenant admin, not the locked demo)",
+      "rendered": true,
+      "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A03",
@@ -52,6 +62,7 @@
       "bytes": 24652,
       "sha256": "c4beb2f4f6a26795c700c34681ad3b11a4f1c936f4b3eb64c8ed9f90736955fd",
       "usage": "inventory: authorized empty scope",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -72,6 +83,7 @@
       "bytes": 13462,
       "sha256": "155c4f331b32efe72d5a71b025d6b77cf1332896b6af76b4d47c1f2103662b8a",
       "usage": "policies: authorized library has no documents",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -89,6 +101,7 @@
       "bytes": 20708,
       "sha256": "e010627bb38d462a5eae3fd9ade73723c309b429a6fecd782ba074ed342d02cc",
       "usage": "forecast lab: no forecast run for the context",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -108,6 +121,7 @@
       "bytes": 20064,
       "sha256": "a8c4e48ebda91c451e033032d346f01edfcc1bd53ced917ec0cb6142ab623e63",
       "usage": "scenario studio: no saved scenarios",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -125,6 +139,7 @@
       "bytes": 16204,
       "sha256": "a04af3c36c17435596bfc4954387906f71be574109e23106a510e14b4d4b2eca",
       "usage": "filtered lists: zero matches",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -142,6 +157,7 @@
       "bytes": 14778,
       "sha256": "b4713fac54e2ded48f5123c03c42f0d0655e3928f1f45970b7f63008bb23eba8",
       "usage": "approvals/exceptions: zero pending items in the visible filters",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -161,6 +177,7 @@
       "bytes": 17010,
       "sha256": "927e1cc259bf713616c1a2983a21dcba30957a0dd4c25a48ea9a0aa8c4a13673",
       "usage": "connection banner / error state: detected network failure with retry",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -178,6 +195,7 @@
       "bytes": 14556,
       "sha256": "ae5bf437d472e335c8f57363d655e455ab278e91cbcaf3c907d0513309e034b4",
       "usage": "server-denied access (403/404 restricted)",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -195,6 +213,7 @@
       "bytes": 18814,
       "sha256": "e7f0b2e597fe1c1f4a2f97d33a584977117a3cef5ea7d94de304d79dc2aaab51",
       "usage": "administration: no connectors configured",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -212,22 +231,32 @@
       "bytes": 15180,
       "sha256": "0c94c46f215a13362af5eb5bb0772c09bcc9209a1ca34cb150a29dc924da4f4f",
       "usage": "policies: amendment-impact introduction",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A13",
       "source": "design/source-assets/supplylens/sl-empty-suppliers.png",
-      "source_sha256": "d39d084fac6daa6ccf18edaffacd2ec9232abbe0f9cf7f0df7059ef6caef4e35",
-      "show_only_when": "No authorized source admitted; filtered zero matches should use A07 instead",
+      "source_sha256": "5d2dd0ac261c0b756e0a6f7fa39e8113e7bd9baeb381d73db457f4a301f6f469",
+      "show_only_when": "No public award data imported into the Contract research workspace (the workspace that holds it); filtered zero matches keep their own text",
       "alt": "",
       "decorative": true,
       "pack_quality_notes": [
-        "The supplied preview visibly links the supplier blocks, whereas the source brief requests unjoined connector stubs.",
-        "Do not use this as evidence of configured integrations or real supplier relationships. Review/correct the metaphor before first-run deployment."
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [29, 152, 995, 859], 29 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 15439 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
       ],
-      "published": false,
-      "review": "not published: shows connected suppliers; the brief asked for unjoined connectors",
-      "fallback": "HTML text with a lucide icon"
+      "published": true,
+      "path": "/illustrations/supplylens/sl-empty-suppliers.webp",
+      "width": 360,
+      "height": 360,
+      "bytes": 24742,
+      "sha256": "352b257cd21e03feee410b6be38b5a0ccafe98fc8ac8247a9f2cd392d11213d8",
+      "usage": "supplier market: no award data imported into the Contract research workspace",
+      "rendered": true,
+      "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A14",
@@ -244,6 +273,7 @@
       "bytes": 13540,
       "sha256": "3efb4caad90df69abe15640d21747b59544cdb4ecd25e0c4ba7937afb1c3be3c",
       "usage": "research: no experiments recorded",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
@@ -264,21 +294,80 @@
       "bytes": 13452,
       "sha256": "1ebede46016b4b756bb2e1f5b01d83765096d0034c9f32d2ab4fa60b777ee542",
       "usage": "investigations: no runs in authorized scope",
+      "rendered": true,
       "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A16",
       "source": "design/source-assets/supplylens/sl-empty-value-study.png",
-      "source_sha256": "932fdc9331aa47893775cbe52e157fa1f2e87e2d22d2d24112b37d4377e651ad",
-      "show_only_when": "No scenario value comparison; never represents realized savings or financial performance",
+      "source_sha256": "5b5ca2b68ef89266f0fb8bbbc8496699e27636bdbb4c022a4006d82d55f139d5",
+      "show_only_when": "The value ledger has no study yet; never represents realised savings or financial performance",
       "alt": "",
       "decorative": true,
       "pack_quality_notes": [
-        "The supplied cartons are kraft-colored rather than the matte off-white cartons in the brief. Preserve source and review stylistic consistency."
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [48, 150, 957, 845], 48 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 22411 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
       ],
-      "published": false,
-      "review": "not published: kraft cartons read as a business-value signal; the brief asked for neutral off-white",
-      "fallback": "HTML text with a lucide icon"
+      "published": true,
+      "path": "/illustrations/supplylens/sl-empty-value-study.webp",
+      "width": 360,
+      "height": 360,
+      "bytes": 22120,
+      "sha256": "b7cd3e49bf0cfbcccd8000159e48a77e935d41dc815407469aea4c8fb6af8d51",
+      "usage": "value: the ledger has no study yet",
+      "rendered": true,
+      "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
+    },
+    {
+      "id": "A17",
+      "source": "design/source-assets/supplylens/sl-empty-extraction.png",
+      "source_sha256": "b4d2282e7cc084832ab6b5b4d0f5a4337c7d3a26d8b8489203aee21d30b11e11",
+      "show_only_when": "No contract fields extracted yet for the open document (first use); never for errors, loading or withheld extraction",
+      "alt": "",
+      "decorative": true,
+      "pack_quality_notes": [
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [104, 101, 849, 971], 53 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 1898 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
+      ],
+      "published": true,
+      "path": "/illustrations/supplylens/sl-empty-extraction.webp",
+      "width": 360,
+      "height": 360,
+      "bytes": 16420,
+      "sha256": "3dfcf788744f72ae8d75400f10952a1a91074811bc84e738b308f394a230c420",
+      "usage": "reserved: Policies > Extracted terms, nothing extracted yet (8B WP7); not rendered until that screen exists",
+      "rendered": false,
+      "review": "prepared at the documented size; not rendered until its screen exists"
+    },
+    {
+      "id": "A18",
+      "source": "design/source-assets/supplylens/sl-assistant-ready.png",
+      "source_sha256": "91871d3104191204280f5a41c7625ee0fef8c564d680a4c227a2dde2ef309530",
+      "show_only_when": "Status assistant opened for the first time with no question asked yet; never for errors, loading or withheld answers",
+      "alt": "",
+      "decorative": true,
+      "pack_quality_notes": [
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [66, 259, 981, 816], 43 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 8967 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners alpha [1, 0, 0, 0] (the brief asks for 0)."
+      ],
+      "published": true,
+      "path": "/illustrations/supplylens/sl-assistant-ready.webp",
+      "width": 360,
+      "height": 360,
+      "bytes": 18692,
+      "sha256": "42610789f12486575ada15dc29d1d7959221d6bad4e817ebb91f79ea8cf94213",
+      "usage": "reserved: status assistant drawer, first use (8B WP6); not rendered until that drawer exists",
+      "rendered": false,
+      "review": "prepared at the documented size; not rendered until its screen exists"
     }
   ]
 }

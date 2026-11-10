@@ -2,8 +2,8 @@
   "project": "SupplyLens",
   "manifest_kind": "current_pack_inventory_not_application_approval",
   "supersedes_for_asset_availability": "image_prompts/asset_manifest.json (historical prompt-only inventory)",
-  "count": 16,
-  "scope": "Six prior standalone delivered files plus ten atlas-derived files; no new generation or image editing in this update.",
+  "count": 18,
+  "scope": "Sixteen earlier files (six standalone, ten atlas-derived) plus the owner's Phase 8 files (2026-11-10): A02, A13 and A16 replaced, A17 and A18 added. Files are copied unchanged; no image is generated or edited here.",
   "assets": [
     {
       "id": "A01",
@@ -60,17 +60,17 @@
     {
       "id": "A02",
       "filename": "sl-import-data.png",
-      "package_path": "assets/png/sl-import-data.png",
-      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-import-data.png",
-      "ui_area": "Data onboarding",
-      "show_only_when": "No admitted dataset and the user has permission to import",
-      "suggested_css_size": "140-180px",
+      "package_path": "design/source-assets/supplylens/sl-import-data.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-import-data.webp",
+      "ui_area": "Data admission",
+      "show_only_when": "No admitted dataset, no import batches yet, and the user may import (tenant admin, not the locked public demo)",
+      "suggested_css_size": "144px (EmptyState)",
       "example_html_heading": "Add your first dataset",
-      "brief": "Create a shallow precision-built import tray with three blank, gently rounded data sheets aligned above it, ready to be placed inside. Give one sheet a subtle unmarked square-cell texture, not a readable spreadsheet. Place one small mint upward arrow beside the tray as a simple decorative upload cue. The sheets are not yet processed: no check mark, completion badge, numbers, file extension, fake validation result, or floating upload UI. Compact square composition, confident and orderly, transparent background.",
-      "priority": "first_batch",
+      "brief": "Phase 8 brief A02 (docs/design/image-prompts-phase8.md): an empty deep-teal intake tray, two or three blank off-white sheets shown by their edges only, a short mint upward arrow; nothing imported yet. No boxes, cartons or kraft brown.",
+      "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_actual_application_review",
-      "suggested_integration_disposition": "review_brief_deviation_before_use",
+      "final_ui_approval_status": "pending_owner_approval",
+      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -81,32 +81,54 @@
           255
         ],
         "corner_alpha": [
-          0,
+          1,
           0,
           0,
           0
         ],
-        "transparent_pixel_count": 570631,
-        "partially_transparent_pixel_count": 475644,
+        "transparent_pixel_count": 575277,
+        "partially_transparent_pixel_count": 472078,
         "alpha_nonzero_bbox": [
           0,
-          20,
-          1013,
-          983
+          0,
+          1024,
+          1024
         ]
       },
-      "size_bytes": 685576,
-      "sha256": "3841754ece4124899cb024914d54679e9b005c948bd8f3c3384fb81aae33e87b",
-      "source_pack_production_claim": "individual-generation",
+      "size_bytes": 602261,
+      "sha256": "ac9cf0f4002c055ddd5b1d34acea37045acded42278bb30f5a7736cb2758cf0c",
+      "source_pack_production_claim": "owner-generated (Phase 8 briefs)",
       "sheet_derived": false,
-      "native_source_resolution_verified": false,
+      "native_source_resolution_verified": true,
       "source_preserved_without_pixel_changes": true,
       "default_decorative_alt": "",
-      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "theme_strategy": "One transparent asset; reviewed on the light and dark themes in the running app.",
+      "phase8_review": {
+        "solid_bbox_alpha_ge_200": [
+          142,
+          100,
+          912,
+          950
+        ],
+        "inside_middle_70_percent": false,
+        "nonzero_alpha_pixels_outside_solid_bbox": 27935,
+        "min_margin_px": 74
+      },
       "quality_notes": [
-        "Visual review of the supplied preview shows document-like lines and a pie-chart symbol, unlike the blank-sheet brief.",
-        "Preserve the supplied source. Obtain a corrected or explicitly accepted variant before claiming brief-compliant import artwork."
-      ]
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [142, 100, 912, 950], 74 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 27935 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners alpha [1, 0, 0, 0] (the brief asks for 0)."
+      ],
+      "replaces": {
+        "sha256": "3841754ece4124899cb024914d54679e9b005c948bd8f3c3384fb81aae33e87b",
+        "reason_withheld": [
+          "Visual review of the supplied preview shows document-like lines and a pie-chart symbol, unlike the blank-sheet brief.",
+          "Preserve the supplied source. Obtain a corrected or explicitly accepted variant before claiming brief-compliant import artwork."
+        ],
+        "decision": "D-040"
+      }
     },
     {
       "id": "A03",
@@ -598,17 +620,17 @@
     {
       "id": "A13",
       "filename": "sl-empty-suppliers.png",
-      "package_path": "assets/png/sl-empty-suppliers.png",
-      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-suppliers.png",
-      "ui_area": "Supplier market first-run state",
-      "show_only_when": "No authorized source admitted; filtered zero matches should use A07 instead",
-      "suggested_css_size": "120-160px",
-      "example_html_heading": "Add a supported supplier data source",
-      "brief": "Create one small generic warehouse form surrounded by three separate unbranded modular supplier blocks. Leave their short connector stubs visibly unjoined. The arrangement hints at a network still to be configured. No map, globe, country borders, flags, real company logos, supplier identities, risk scores, or implication of verified business relationships. Balanced, restrained engineered forms on a square transparent canvas.",
-      "priority": "optional",
+      "package_path": "design/source-assets/supplylens/sl-empty-suppliers.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-suppliers.webp",
+      "ui_area": "Supplier market",
+      "show_only_when": "No public award data imported into the Contract research workspace (the workspace that holds it); filtered zero matches keep their own text",
+      "suggested_css_size": "144px (EmptyState)",
+      "example_html_heading": "Not in this workspace",
+      "brief": "Phase 8 brief A13 (docs/design/image-prompts-phase8.md): three separate supplier building blocks on pale mint, connector stubs that do not meet, no lines between buildings, nothing in the doorways; no supplier network recorded yet.",
+      "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_actual_application_review",
-      "suggested_integration_disposition": "review_brief_deviation_before_use",
+      "final_ui_approval_status": "pending_owner_approval",
+      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -624,27 +646,49 @@
           0,
           0
         ],
-        "transparent_pixel_count": 882479,
-        "partially_transparent_pixel_count": 165358,
+        "transparent_pixel_count": 674733,
+        "partially_transparent_pixel_count": 372306,
         "alpha_nonzero_bbox": [
-          104,
-          339,
-          920,
-          685
+          0,
+          0,
+          1024,
+          1024
         ]
       },
-      "size_bytes": 262921,
-      "sha256": "d39d084fac6daa6ccf18edaffacd2ec9232abbe0f9cf7f0df7059ef6caef4e35",
-      "source_pack_production_claim": "extracted-from-generated-atlas",
-      "sheet_derived": true,
-      "native_source_resolution_verified": false,
+      "size_bytes": 539202,
+      "sha256": "5d2dd0ac261c0b756e0a6f7fa39e8113e7bd9baeb381d73db457f4a301f6f469",
+      "source_pack_production_claim": "owner-generated (Phase 8 briefs)",
+      "sheet_derived": false,
+      "native_source_resolution_verified": true,
       "source_preserved_without_pixel_changes": true,
       "default_decorative_alt": "",
-      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "theme_strategy": "One transparent asset; reviewed on the light and dark themes in the running app.",
+      "phase8_review": {
+        "solid_bbox_alpha_ge_200": [
+          29,
+          152,
+          995,
+          859
+        ],
+        "inside_middle_70_percent": false,
+        "nonzero_alpha_pixels_outside_solid_bbox": 15439,
+        "min_margin_px": 29
+      },
       "quality_notes": [
-        "The supplied preview visibly links the supplier blocks, whereas the source brief requests unjoined connector stubs.",
-        "Do not use this as evidence of configured integrations or real supplier relationships. Review/correct the metaphor before first-run deployment."
-      ]
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [29, 152, 995, 859], 29 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 15439 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
+      ],
+      "replaces": {
+        "sha256": "d39d084fac6daa6ccf18edaffacd2ec9232abbe0f9cf7f0df7059ef6caef4e35",
+        "reason_withheld": [
+          "The supplied preview visibly links the supplier blocks, whereas the source brief requests unjoined connector stubs.",
+          "Do not use this as evidence of configured integrations or real supplier relationships. Review/correct the metaphor before first-run deployment."
+        ],
+        "decision": "D-040"
+      }
     },
     {
       "id": "A14",
@@ -748,17 +792,17 @@
     {
       "id": "A16",
       "filename": "sl-empty-value-study.png",
-      "package_path": "assets/png/sl-empty-value-study.png",
-      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-value-study.png",
-      "ui_area": "Business value first-run state",
-      "show_only_when": "No scenario value comparison; never represents realized savings or financial performance",
-      "suggested_css_size": "120-160px",
-      "example_html_heading": "Compare value under explicit assumptions",
-      "brief": "Create a perfectly balanced minimalist comparison instrument with two identical shallow trays, each holding one identical unbranded carton. Use a restrained forest-teal central support, pale-mint trays, and matte off-white cartons. Equal height, equal visual weight, and no favored side. No currency, coins, banknotes, percentage, growth arrow, trophies, numeric markings, projected savings, or apparent financial outcome. Square transparent canvas.",
-      "priority": "optional",
+      "package_path": "design/source-assets/supplylens/sl-empty-value-study.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-value-study.webp",
+      "ui_area": "Value",
+      "show_only_when": "The value ledger has no study yet; never represents realised savings or financial performance",
+      "suggested_css_size": "144px (EmptyState)",
+      "example_html_heading": "No simulation study yet",
+      "brief": "Phase 8 brief A16 (docs/design/image-prompts-phase8.md): a neutral light-grey balance scale on a deep-teal base, both pans empty and level, beside an empty off-white ledger board; nothing measured yet, not a judgement. No coins, cartons, arrows or kraft brown.",
+      "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_actual_application_review",
-      "suggested_integration_disposition": "candidate_for_state_scoped_integration",
+      "final_ui_approval_status": "pending_owner_approval",
+      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -774,25 +818,177 @@
           0,
           0
         ],
-        "transparent_pixel_count": 858001,
-        "partially_transparent_pixel_count": 189322,
+        "transparent_pixel_count": 638381,
+        "partially_transparent_pixel_count": 408411,
         "alpha_nonzero_bbox": [
-          104,
-          311,
-          920,
-          712
+          0,
+          12,
+          995,
+          1024
         ]
       },
-      "size_bytes": 279321,
-      "sha256": "932fdc9331aa47893775cbe52e157fa1f2e87e2d22d2d24112b37d4377e651ad",
-      "source_pack_production_claim": "extracted-from-generated-atlas",
-      "sheet_derived": true,
-      "native_source_resolution_verified": false,
+      "size_bytes": 570362,
+      "sha256": "5b5ca2b68ef89266f0fb8bbbc8496699e27636bdbb4c022a4006d82d55f139d5",
+      "source_pack_production_claim": "owner-generated (Phase 8 briefs)",
+      "sheet_derived": false,
+      "native_source_resolution_verified": true,
       "source_preserved_without_pixel_changes": true,
       "default_decorative_alt": "",
-      "theme_strategy": "One transparent asset first; only add matched light/dark derivatives when actual UI review requires them.",
+      "theme_strategy": "One transparent asset; reviewed on the light and dark themes in the running app.",
+      "phase8_review": {
+        "solid_bbox_alpha_ge_200": [
+          48,
+          150,
+          957,
+          845
+        ],
+        "inside_middle_70_percent": false,
+        "nonzero_alpha_pixels_outside_solid_bbox": 22411,
+        "min_margin_px": 48
+      },
       "quality_notes": [
-        "The supplied cartons are kraft-colored rather than the matte off-white cartons in the brief. Preserve source and review stylistic consistency."
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [48, 150, 957, 845], 48 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 22411 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
+      ],
+      "replaces": {
+        "sha256": "932fdc9331aa47893775cbe52e157fa1f2e87e2d22d2d24112b37d4377e651ad",
+        "reason_withheld": [
+          "The supplied cartons are kraft-colored rather than the matte off-white cartons in the brief. Preserve source and review stylistic consistency."
+        ],
+        "decision": "D-040"
+      }
+    },
+    {
+      "id": "A17",
+      "filename": "sl-empty-extraction.png",
+      "package_path": "design/source-assets/supplylens/sl-empty-extraction.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-empty-extraction.webp",
+      "ui_area": "Policies > document > Extracted terms (Phase 8 WP7, not built yet)",
+      "show_only_when": "No contract fields extracted yet for the open document (first use); never for errors, loading or withheld extraction",
+      "suggested_css_size": "144px (EmptyState)",
+      "example_html_heading": "No terms extracted yet",
+      "brief": "Phase 8 brief A17 (docs/design/image-prompts-phase8.md): one blank off-white sheet on a deep-teal reading stand, a light-grey inspection lens, three empty pale-mint field holders; no fields extracted yet.",
+      "priority": "phase8",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_owner_approval",
+      "suggested_integration_disposition": "staged_until_its_screen_exists",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 587285,
+        "partially_transparent_pixel_count": 459362,
+        "alpha_nonzero_bbox": [
+          0,
+          26,
+          1023,
+          1024
+        ]
+      },
+      "size_bytes": 603796,
+      "sha256": "b4d2282e7cc084832ab6b5b4d0f5a4337c7d3a26d8b8489203aee21d30b11e11",
+      "source_pack_production_claim": "owner-generated (Phase 8 briefs)",
+      "sheet_derived": false,
+      "native_source_resolution_verified": true,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset; reviewed on the light and dark themes in the running app.",
+      "phase8_review": {
+        "solid_bbox_alpha_ge_200": [
+          104,
+          101,
+          849,
+          971
+        ],
+        "inside_middle_70_percent": false,
+        "nonzero_alpha_pixels_outside_solid_bbox": 1898,
+        "min_margin_px": 53
+      },
+      "quality_notes": [
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [104, 101, 849, 971], 53 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 1898 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners fully transparent."
+      ]
+    },
+    {
+      "id": "A18",
+      "filename": "sl-assistant-ready.png",
+      "package_path": "design/source-assets/supplylens/sl-assistant-ready.png",
+      "suggested_app_public_path": "apps/web/public/illustrations/supplylens/sl-assistant-ready.webp",
+      "ui_area": "Status assistant drawer (Phase 8 WP6, not built yet)",
+      "show_only_when": "Status assistant opened for the first time with no question asked yet; never for errors, loading or withheld answers",
+      "suggested_css_size": "144px (EmptyState)",
+      "example_html_heading": "Ask about an order or stock",
+      "brief": "Phase 8 brief A18 (docs/design/image-prompts-phase8.md): an empty mint speech bubble on a deep-teal base beside a two-shelf teal and grey rack with one plain kraft carton; ask a question about an order or stock.",
+      "priority": "phase8",
+      "file_status": "present_and_binary_validated",
+      "final_ui_approval_status": "pending_owner_approval",
+      "suggested_integration_disposition": "staged_until_its_screen_exists",
+      "actual": {
+        "width": 1024,
+        "height": 1024,
+        "format": "PNG",
+        "mode": "RGBA",
+        "alpha_extrema": [
+          0,
+          255
+        ],
+        "corner_alpha": [
+          1,
+          0,
+          0,
+          0
+        ],
+        "transparent_pixel_count": 657955,
+        "partially_transparent_pixel_count": 388559,
+        "alpha_nonzero_bbox": [
+          0,
+          0,
+          1023,
+          1024
+        ]
+      },
+      "size_bytes": 513448,
+      "sha256": "91871d3104191204280f5a41c7625ee0fef8c564d680a4c227a2dde2ef309530",
+      "source_pack_production_claim": "owner-generated (Phase 8 briefs)",
+      "sheet_derived": false,
+      "native_source_resolution_verified": true,
+      "source_preserved_without_pixel_changes": true,
+      "default_decorative_alt": "",
+      "theme_strategy": "One transparent asset; reviewed on the light and dark themes in the running app.",
+      "phase8_review": {
+        "solid_bbox_alpha_ge_200": [
+          66,
+          259,
+          981,
+          816
+        ],
+        "inside_middle_70_percent": false,
+        "nonzero_alpha_pixels_outside_solid_bbox": 8967,
+        "min_margin_px": 43
+      },
+      "quality_notes": [
+        "Owner-generated for the Phase 8 briefs (2026-11-10); file copied unchanged.",
+        "Content check: matches the brief (no text, numbers, logos, people or charts seen at full size).",
+        "Framing: the solid subject (alpha >= 200) spans [66, 259, 981, 816], 43 px from the nearest edge; the brief asks for the middle 70 % (154 px margins): not met. Displayed with object-contain at 144 px, so nothing is cut.",
+        "Edge residue: 8967 faint pixels (alpha 1-199) lie outside the subject's solid box, left by background removal; check on the dark theme.",
+        "Corners alpha [1, 0, 0, 0] (the brief asks for 0)."
       ]
     }
   ]

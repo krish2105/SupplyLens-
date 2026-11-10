@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
+import { EmptyState } from "@/components/illustration";
 import { Button, Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, Stat } from "@/components/ui";
 import { apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
@@ -35,7 +36,11 @@ export default function MarketPage() {
   }
   if (s.isLoading) return <Loading label="Loading awards" />;
   if (s.error) return <ErrorState error={s.error} />;
-  if (!s.data?.available) return <><PageHeader eyebrow="Supplier market" title="Public procurement awards" /><Empty title="Not in this workspace">{s.data?.message}</Empty></>;
+  // A13 only where it is true that no supplier data was recorded: the Contract research workspace holds the awards, so
+  // there "not available" means not imported yet; elsewhere the data exists in that workspace and the text says so.
+  if (!s.data?.available) return <><PageHeader eyebrow="Supplier market" title="Public procurement awards" />{ws === "contract-research"
+    ? <EmptyState variant="empty_scope" art="empty-suppliers" title="Not in this workspace">{s.data?.message}</EmptyState>
+    : <Empty title="Not in this workspace">{s.data?.message}</Empty>}</>;
   const d = s.data;
   const total = d.by_year.reduce((a, r) => a + (r.usd ?? 0), 0), n = d.by_year.reduce((a, r) => a + r.n, 0);
   return (

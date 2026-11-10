@@ -1,7 +1,8 @@
 "use client";
 import { useMemo, useState } from "react";
 import { baseOption, Chart, token, useChartTheme } from "@/components/chart";
-import { Card, Empty, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, TableScroll } from "@/components/ui";
+import { EmptyState } from "@/components/illustration";
+import { Card, ErrorState, Eyebrow, Loading, Mono, PageHeader, Provenance, TableScroll } from "@/components/ui";
 import { useApi } from "@/lib/queries";
 import { money, num } from "@/lib/format";
 
@@ -30,7 +31,7 @@ export default function ValuePage() {
   return (
     <div className="space-y-6">
       <PageHeader eyebrow="Value" title="A value ledger that keeps simulated and realised money apart">{d.disclaimer}</PageHeader>
-      {!d.ledger.length ? <Empty title="No simulation study yet">Run evaluations/simulation_study.py.</Empty> : (
+      {!d.ledger.length ? <EmptyState variant="empty_scope" art="empty-value-study" title="No simulation study yet">Run evaluations/simulation_study.py.</EmptyState> : (
         <Card className="p-5">
           <Eyebrow>Ledger</Eyebrow>
           <TableScroll label="Value ledger items" min={680} className="mt-3"><table className="w-full text-sm"><caption className="sr-only">Value ledger items</caption>
