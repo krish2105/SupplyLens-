@@ -32,8 +32,13 @@ test("phone: the header scrolls away instead of covering a third of the screen",
   await signIn(page, "planner");
   await page.goto("/exceptions?ws=uci-research");
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-  await page.mouse.wheel(0, 900);
-  await expect.poll(async () => (await page.getByLabel("Workspace").boundingBox())?.y ?? 0).toBeLessThan(0);
+  // Scroll again on every poll: the list below the heading may still be loading, and until it is the page is too short to
+  // scroll 900 px (QA-P8-01: the header stayed 6-10 px from the top once locally and once in CI). A header that never
+  // scrolls away still fails.
+  await expect.poll(async () => {
+    await page.mouse.wheel(0, 900);
+    return (await page.getByLabel("Workspace").boundingBox())?.y ?? 0;
+  }, { timeout: 15_000 }).toBeLessThan(0);
 });
 
 test("sign-in fits the screen: no horizontal scroll and every account is fully visible", async ({ page }) => {
