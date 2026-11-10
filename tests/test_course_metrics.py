@@ -41,11 +41,16 @@ def test_a_missing_field_is_an_error_not_a_blank():
         cm.lookup(doc, "a.b[5]")
 
 
-def test_only_current_runs_are_presentation_evidence():
+def test_current_runs_are_evidence_and_exploratory_runs_are_kept_apart():
+    reg = json.loads((REPO_ROOT / "evaluations" / "study_registry.json").read_text())["experiments"]
     doc = cm.build()
     assert [s["run_id"] for s in doc["studies"]] == sorted(current_runs(), key=lambda r: r.split("-")[0])
     assert all(s["status"] == "current" for s in doc["studies"])
-    assert not set(doc["not_included"]) & {s["run_id"] for s in doc["studies"]}
+    assert sorted(s["run_id"] for s in doc["exploratory"]) == sorted(k for k, v in reg.items() if v.get("status") == "exploratory")
+    assert all(s["status"] == "exploratory" and "exploratory" in s["data_kind"] for s in doc["exploratory"])
+    shown = {s["run_id"] for s in doc["studies"] + doc["exploratory"]}
+    assert not set(doc["not_included"]) & shown
+    assert all(reg[r]["status"] == "superseded" for r in doc["not_included"])
 
 
 def test_committed_files_match_a_fresh_build():
@@ -74,13 +79,22 @@ def test_course_documents_quote_numbers_only_from_metrics_md(name):
     if not path.exists():
         pytest.skip(f"{name} not written yet")
     metrics = (COURSE / "metrics.md").read_text()
-    values = set(re.findall(r"^\| [^|]+ \| ([^|]+?) \| `[^`]+` \|$", metrics, flags=re.M))
-    text = _slide_text(path)
-    # every bold number is a value of metrics.md (bold marks a quoted result; a range quotes two values)
-    for bold in re.findall(r"\*\*([^*]+)\*\*", text):
-        for number in re.findall(r"\d[\d,]*(?:\.\d+)?", bold):
-            assert number in values, f"{name}: **{bold}** quotes {number}, which is not a value in docs/course/metrics.md"
-    # every quoted registry headline (in italics) is in metrics.md word for word
-    for quote in re.findall(r"(?<![*\w])\*([^*]+?)\*(?![*\w])", text):
-        if re.search(r"\d", quote):
-            assert quote.strip(" .") in metrics, f"{name}: *{quote}* is not quoted from docs/course/metrics.md"
+    current, _, rest = metrics.partition("\n# Exploratory runs")
+    exploratory = rest.partition("\n# Not presentation evidence")[0]
+    cell = r"^\| [^|]+ \| ([^|]+?) \| `[^`]+` \|$"
+    cur_values = set(re.findall(cell, current, flags=re.M))
+    exp_values = set(re.findall(cell, exploratory, flags=re.M))
+    # per slide (or section): an exploratory number or headline may appear only where the slide says "exploratory"
+    for slide in _slide_text(path).split("\n---\n"):
+        labelled = "exploratory" in slide.lower()
+        values = cur_values | (exp_values if labelled else set())
+        source = current + (exploratory if labelled else "")
+        # every bold number is a value of metrics.md (bold marks a quoted result; a range quotes two values)
+        for bold in re.findall(r"\*\*([^*]+)\*\*", slide):
+            for number in re.findall(r"\d[\d,]*(?:\.\d+)?", bold):
+                assert number in values, (f"{name}: **{bold}** quotes {number}, which is not a value in docs/course/metrics.md"
+                                          + ("" if labelled else " (exploratory values need the word \"exploratory\" on the slide)"))
+        # every quoted registry headline (in italics) is in metrics.md word for word
+        for quote in re.findall(r"(?<![*\w])\*([^*]+?)\*(?![*\w])", slide):
+            if re.search(r"\d", quote):
+                assert quote.strip(" .") in source, f"{name}: *{quote}* is not quoted from docs/course/metrics.md"

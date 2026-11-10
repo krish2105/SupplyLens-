@@ -52,8 +52,7 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 
 ## Next actions (Phase 8, after Session 8A)
 0. Owner: approve or correct `docs/course/ai-use-statement.md`; ask the lecturer the 8A.1b questions; give the Week 6
-   date, limit and format; confirm teammates agree to be named publicly; re-export the truncated D06 image; decide whether S2 is promoted
-   (STUDY-P8-02); tag `course-interim` at the start of the 48-hour freeze.
+   date, limit and format; confirm teammates agree to be named publicly; re-export the truncated D06 image; tag `course-interim` at the start of the 48-hour freeze.
 1. Session 8B (after Week 6): fill `private/owner-answers-8B.md` first (datasets, HubSpot, PDF and OCR, reviewers).
    Choose a new id for the ETA study (STUDY-P8-01). Re-check DOC-P8-01 against the pinned InventoryBench repository.
 2. Carried from Phase 7: hosted database migration (OPS-P6-03, owner chose to wait: D-104), PLAN-P5-01, P1-OPS-01.

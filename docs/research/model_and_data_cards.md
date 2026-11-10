@@ -21,7 +21,7 @@
 | ACORD (Atticus) | CC BY 4.0 | Retrieval benchmark R1 | 3,931 clauses, 114 queries |
 | CUAD v1 (Atticus) | CC BY 4.0 | 73 supply/distribution contracts + 2,176 expert labels; study C1 | 73 documents |
 | World Bank IPF awards | CC BY 4.0 | Supplier market module | 295,058 awards, FY2020–FY2027 |
-| InventoryBench @62b1f11 | MIT code; H&M-derived data, terms unreviewed | Policy benchmark IB | 1,320 instances |
+| InventoryBench @62b1f11 | MIT code; H&M-derived data, terms unreviewed | Policy benchmark IB | 1,320 instances (600 real-trajectory, 720 synthetic; IB scored the 600 real-trajectory ones) |
 | Execution-pack fixtures | Fictional | Demo workspace, tests | — |
 
 ## Model card — quantile TCN (`tcn_quantile` 2.1.0, champion by validation)

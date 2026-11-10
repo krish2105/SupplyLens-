@@ -75,7 +75,7 @@ All figures come from experiment artifacts in `artifacts/experiments/` (status o
 | Answer support (535 generated questions) <!-- source: artifacts/experiments/R3-20261023T181121Z/metrics.json --> | Ambiguous multi-supplier questions are no longer answered with one clause; ~40% of out-of-scope questions declined; 30% of reworded questions now listed as related passages instead of answered |
 | Time-aware retrieval (118 synthetic questions, 2×2) <!-- source: artifacts/experiments/R2-20261022T045503Z/metrics.json --> | Top-1 citation accuracy 92.6% with neither mechanism → 100% with effective-date filtering and supersession reranking; each contributes (+3.2 and +4.2 points) |
 | Clause localisation (73 CUAD contracts, 485 contract-category items) <!-- source: artifacts/experiments/C1-20261021T191800Z/metrics.json --> | Hybrid hit@3 76.7% vs vector 72.2% vs lexical 66.8% |
-| InventoryBench (official evaluator, 600 instances scored) <!-- source: artifacts/experiments/IB-20261021T192006Z/metrics.json "instances"; earlier text said 1,320 (DOC-P8-01) --> | SupplyLens policy 0.482 vs base-stock 0.433 |
+| InventoryBench (official evaluator, its 600 real-trajectory instances; the 720 synthetic ones were not scored) <!-- source: artifacts/experiments/IB-20261021T192006Z/metrics.json "instances"; benchmark tree at 62b1f11 counted 2026-11-10: 1,320 = 600 real + 720 synthetic (DOC-P8-01, IB-P8-01) --> | SupplyLens policy 0.482 vs base-stock 0.433 |
 | Investigator scenarios <!-- source: artifacts/experiments/AGT-20261022T045832Z/metrics.json --> | 57 scenarios × 3 trials, 100% oracle-verified, 0 unapproved external writes |
 
 ### Operations studies
@@ -150,6 +150,7 @@ levels and measured recovery: [`slo.md`](docs/operations/slo.md); incidents, sup
 ```bash
 uv run pytest -q                       # 534 passed, 6 skipped (Keycloak) against real PostgreSQL, incl. migration/rollback/outage rehearsals
 (cd apps/web && npx playwright test)   # 307 browser tests on 8 projects: journeys, resilience, a11y, theme, layout, 44 screenshots, 18 lab vitals; Chromium, WebKit, Firefox
+scripts/e2e_firefox_docker.sh          # the Firefox project in Playwright's Linux image (Playwright's Firefox does not start on macOS 27)
 (cd apps/web && npm run lint && npm test)   # ESLint (zero warnings) and 28 unit/component tests
 uv run python scripts/course_metrics.py --check   # course numbers (docs/course/metrics.md) match the study registry
 uv run ruff check .                    # correctness, imports, bugbear and security rules

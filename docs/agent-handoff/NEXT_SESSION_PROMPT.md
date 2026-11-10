@@ -26,5 +26,8 @@ Do ONLY "Session 8B": follow the "Common header", then the 8B block, in this ord
 Rules: never do my individual work (no lab reports, exercise or quiz answers). Never invent numbers, team members, references or results. Never weaken security, approvals or the demo lockdown. Never generate images. Never push to main in the 48 hours before a presentation. Commits carry no AI mention (D-101); course documents carry the AI-use statement. If the brief conflicts with the repository, tell me and ask before acting.
 ```
 
-Known before 8B starts: the id "L1" is taken by the lead-time demand study (STUDY-P8-01); Firefox does not start on the
-owner's Mac (ENV-P8-01, CI covers it); A17 and A18 are prepared and rendered nowhere until WP7 and WP6 build their screens.
+Known before 8B starts: the id "L1" is taken by the lead-time demand study (STUDY-P8-01); Playwright's Firefox does not
+start on the owner's Mac, so run that project with `scripts/e2e_firefox_docker.sh` (ENV-P8-01); A17 and A18 are
+prepared and rendered nowhere until WP7 and WP6 build their screens; IB scored only the 600 real-trajectory
+instances (IB-P8-01); exploratory runs may be quoted only with their label (D-109); the outline check is
+`docs/course/outline-check.md`.

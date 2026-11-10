@@ -112,7 +112,23 @@ Rubric: application of techniques and content quality. This is the live demo pat
 
 ---
 
-## Result 1 — cost, service and CO2 (E1)
+## Result 1 — better accuracy did not mean better value (S2, exploratory)
+
+> Data kind: simulation on real UCI demand and forecasts; assumed terms and costs. **Exploratory**: it reuses F1's last test window, so it is not confirmatory. Run S2-20261023T183015Z.
+
+- **503** products, four weekly reviews. Forecast error (MAE): seasonal naive **21.0631**, LightGBM **15.4437**, TCN **14.9027** — the trained models are more accurate.
+- Through the product's own ordering logic, no budget limit, total simulated cost: a base-stock rule with no forecast **£11,982.68**, seasonal naive **£12,957.35**, TCN **£13,672.77**, LightGBM **£19,842.31**.
+- Registry headline: *Through the product's own ordering logic, lower forecast error did not mean lower simulated cost.*
+
+<!--
+Rubric: content quality and application of techniques (demand forecasting, Week 3; inventory, Week 4). The point the
+brief asked for: accuracy is not value. Numbers from the exploratory section of metrics.md (D-109): say "exploratory"
+aloud, as the slide does.
+-->
+
+---
+
+## Result 2 — cost, service and CO2 (E1)
 
 > Data kind: Simulation: real UCI scope; terms, stock, lanes, CO2 factors and unit weights assumed. Run E1-20261026T200641Z.
 
@@ -127,13 +143,13 @@ Rubric: application of techniques (multi-objective optimisation, Week 2). Every 
 
 ---
 
-## Result 2 — visual inspection at goods-in (QC1)
+## Result 3 — visual inspection at goods-in (QC1)
 
 > Data kind: Simulation: generated images, assumed costs. Run QC1-20261030T193358Z.
 
 - **3,000** test images, **862** with a defect.
 - A small CNN separates defects with AUC **0.9972**; hand-made features reach **0.9462**.
-- Checking only what the CNN flags: recall **0.9872** (**11** escaped defects), cost **£419.4** against **£900** for
+- Checking only what the CNN flags: recall **0.9872** (**11** escaped defects), cost **£419.40** against **£900.00** for
   inspecting everything.
 - Generated images are easier than photographs: this is a method check, not a factory result.
 
@@ -143,22 +159,6 @@ Rubric: application of techniques (computer vision for quality control, Weeks 6 
 
 ---
 
-## Result 3 — scheduling the receiving floor (JS1)
-
-> Data kind: Simulation: real UCI volumes; routes and handling times assumed. Run JS1-20261030T191602Z.
-
-- **9** receiving-floor instances; exact CP-SAT against the dispatch rules a floor lead would use.
-- Schedules from the rules are longer on average: FIFO **0.1191**, SPT **0.1111**, EDD **0.13**, most work remaining
-  **0.1138** (share longer than CP-SAT).
-- CP-SAT proved **7** of **9** schedules optimal; on the published ft06 check it finds the known optimum, **55**.
-
-<!--
-Rubric: application of techniques (job shop scheduling, Week 5). Numbers from metrics.md, JS1.
-Note for the owner: the brief suggested S2 ("accuracy is not value") here; S2 is marked exploratory in the registry, so
-it is not in metrics.md and is not shown. Promote it in the registry first if the team wants it.
--->
-
----
 
 ## Plan to the final project
 

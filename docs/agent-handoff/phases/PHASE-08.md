@@ -51,8 +51,8 @@ iPhone-sized WebKit); on those four the baseline was 190 passed, 1 failed (that 
 ### WP1 — documents (P8-E07)
 README (counts, operations studies with the kind of every number, generation local only, n8n, ABC/XYZ, CO2 cap,
 negative results, a source comment beside every number); results.md (eight new study sections); coverage.md (week →
-study → screen → evidence → status, project only). InventoryBench corrected from "1,320 instances" to the 600 its
-metrics.json records (DOC-P8-01).
+study → screen → evidence → status, project only). InventoryBench: the score covers the 600 real-trajectory
+instances its metrics.json records, not all 1,320 the benchmark holds (DOC-P8-01, fixed in P8-E18; IB-P8-01 open).
 
 ### WP2 — one source for numbers (P8-E08)
 `scripts/course_metrics.py` → `docs/course/metrics.md` and `metrics.json` (15 current studies; superseded and
@@ -61,8 +61,8 @@ field is missing, the files are stale, or a course document quotes a bold number
 
 ### WP9a — interim pack (P8-E09)
 Drafts for the owner: `ai-use-statement.md`, `interim-deck.md` (Marp, 10 slides, D01 title), `demo-script-5min.md`,
-`marker-guide.md`, `CONTRIBUTIONS.md` (names only). The brief's "S2 accuracy ≠ value" slide is replaced by JS1
-because S2 is exploratory in the registry and so not in metrics.md (STUDY-P8-02). Deck illustrations D01–D05 committed;
+`marker-guide.md`, `CONTRIBUTIONS.md` (names only). Results: S2 "accuracy ≠ value" (labelled exploratory, from
+metrics.md's exploratory section, D-109), E1 and QC1, as the brief planned (STUDY-P8-02 fixed in P8-E18). Deck illustrations D01–D05 committed;
 **D06 is truncated** (70.8 % of its pixel data, no end chunk) and not used (ART-P8-01). Not tagged `course-interim`:
 the owner tags it at the start of the 48-hour freeze.
 
@@ -75,6 +75,7 @@ middle 70 %; faint background-removal residue, not visible at 144 or 96 px on ei
 ### Not done or blocked
 - Lecturer's answers (8A.1b) not obtained; Week 6 date, limit and format unknown; deck length not yet checked against a
   limit. The AI-use statement is a draft. Teammates' consent to be named publicly and their AI tools: open.
-- Firefox could not run locally (ENV-P8-01); CI covers it on Linux.
+- Playwright's Firefox does not start on macOS 27.2 (ENV-P8-01); locally it now runs in Playwright's Linux image
+  (`scripts/e2e_firefox_docker.sh`), as in CI.
 - 8B items found now: the study id "L1" is already used by the lead-time demand study in results.md, so the 8B ETA study
   needs another id (STUDY-P8-01).

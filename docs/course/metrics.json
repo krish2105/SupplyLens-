@@ -704,17 +704,106 @@
       "metrics_file": "artifacts/experiments/W1-20261027T055557Z/metrics.json"
     }
   ],
+  "exploratory": [
+    {
+      "study": "F2",
+      "run_id": "F2-20261023T182141Z",
+      "date": "2026-10-23",
+      "status": "exploratory",
+      "data_kind": "historical backtest; exploratory (test windows already seen by earlier protocols)",
+      "headline": "Segment-wise model choice and validation-fitted interval scaling changed nothing on this cohort",
+      "notes": "Rules frozen on validation: Syntetos-Boylan classes put every product in 'lumpy' (94%) or 'erratic' (6%) at daily grain and TCN won both on validation, so the composite equals TCN; symmetric interval scaling stays at 1.0 because 39% of product-days are zero and any narrowing drops them out of the interval. Medians sum to 42-50% of realised volume (trained models). Test windows already seen.",
+      "n": {
+        "label": "products",
+        "value": 503,
+        "source": "cohort_size"
+      },
+      "metrics": [
+        {
+          "label": "products classed lumpy at the last origin",
+          "value": 474,
+          "source": "segment_counts.2011-11-10.lumpy"
+        },
+        {
+          "label": "products classed erratic at the last origin",
+          "value": 29,
+          "source": "segment_counts.2011-11-10.erratic"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/F2-20261023T182141Z/metrics.json"
+    },
+    {
+      "study": "S2",
+      "run_id": "S2-20261023T183015Z",
+      "date": "2026-10-23",
+      "status": "exploratory",
+      "data_kind": "simulation (real UCI demand and forecasts; assumed terms and costs); exploratory (reuses F1's last test window)",
+      "headline": "Through the product's own ordering logic, lower forecast error did not mean lower simulated cost",
+      "notes": "Simulated, assumed terms and costs, 503 products, four weekly reviews 2011-11-10..2011-12-08. Unconstrained budget: a no-forecast base-stock rule cost GBP 11,983, product+naive 12,957, product+TCN 13,673 (vs naive +1.42/product [-1.64, 4.82]), product+LightGBM 19,842 (vs naive +13.69 [4.67, 25.08]). Under the workspace-scaled budget the planner rations; TCN's smaller requirements fit the budget (13,673 vs naive 78,442), an interaction with budget allocation rather than proof of forecast value.",
+      "n": {
+        "label": "products",
+        "value": 503,
+        "source": "products"
+      },
+      "metrics": [
+        {
+          "label": "forecast MAE over the review windows, seasonal naive",
+          "value": 21.06313902300483,
+          "source": "context_forecast_mae.seasonal_naive"
+        },
+        {
+          "label": "forecast MAE over the review windows, LightGBM",
+          "value": 15.443748015427019,
+          "source": "context_forecast_mae.lightgbm"
+        },
+        {
+          "label": "forecast MAE over the review windows, TCN",
+          "value": 14.902711827541655,
+          "source": "context_forecast_mae.tcn"
+        },
+        {
+          "label": "total cost GBP, no budget limit, base-stock rule without a forecast",
+          "value": 11982.682369863014,
+          "source": "results.unconstrained.simple_base_stock.total_cost"
+        },
+        {
+          "label": "total cost GBP, no budget limit, product + seasonal naive",
+          "value": 12957.34745890411,
+          "source": "results.unconstrained.product_seasonal_naive.total_cost"
+        },
+        {
+          "label": "total cost GBP, no budget limit, product + TCN",
+          "value": 13672.765561643835,
+          "source": "results.unconstrained.product_tcn.total_cost"
+        },
+        {
+          "label": "total cost GBP, no budget limit, product + LightGBM",
+          "value": 19842.307952054794,
+          "source": "results.unconstrained.product_lightgbm.total_cost"
+        },
+        {
+          "label": "review weeks",
+          "value": [
+            "2011-11-10",
+            "2011-11-17",
+            "2011-11-24",
+            "2011-12-01"
+          ],
+          "source": "reviews"
+        }
+      ],
+      "metrics_file": "artifacts/experiments/S2-20261023T183015Z/metrics.json"
+    }
+  ],
   "not_included": [
     "AGT-20261021T192432Z",
     "F1-20261021T190101Z",
     "F1-20261022T090206Z",
-    "F2-20261023T182141Z",
     "G1-20261027T054918Z",
     "QC1-20261030T192258Z",
     "R1-20261021T191153Z",
     "R2-20261021T191153Z",
     "S1-20261021T193239Z",
-    "S1-20261022T092040Z",
-    "S2-20261023T183015Z"
+    "S1-20261022T092040Z"
   ]
 }

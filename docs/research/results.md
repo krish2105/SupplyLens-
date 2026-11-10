@@ -136,9 +136,11 @@ for identifier-heavy and within-document search and hurts on short semantic quer
 
 ## IB — InventoryBench (`IB-20261021T192006Z`)
 
-600 instances scored (`instances` in the run's metrics.json; the three real-trajectory batches found at the pinned
-commit), official `eval/evaluate_results.py` at pinned commit 62b1f11, mean normalised reward. Earlier text said 1,320
-instances; the run's metrics.json does not support that figure (corrected 2026-11-10, DOC-P8-01).
+600 instances scored: the benchmark's real-trajectory instances (3 lead-time settings × 200; `instances` in the run's
+metrics.json), official `eval/evaluate_results.py` at pinned commit 62b1f11, mean normalised reward. The benchmark has
+1,320 instances at that commit (counted from its file tree on 2026-11-10): the other 720 are synthetic trajectories
+(3 × 240), one folder level deeper, which the study's file pattern (`benchmark/*/*/*/test.csv`) did not reach, so they
+were never scored. Earlier text said the score covered all 1,320 (corrected, DOC-P8-01; the synthetic part is IB-P8-01).
 
 | Policy | Score |
 |---|---|

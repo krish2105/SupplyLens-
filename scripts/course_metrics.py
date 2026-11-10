@@ -1,11 +1,13 @@
 """One source for every number in the course documents (Phase 8, WP2).
 
-Reads evaluations/study_registry.json (experiments with status "current" only) and each run's committed
-artifacts/experiments/<run>/metrics.json, and writes docs/course/metrics.md and docs/course/metrics.json. Every deck,
-script, report or marker guide quotes numbers only from these two files.
+Reads evaluations/study_registry.json and each run's committed artifacts/experiments/<run>/metrics.json, and writes
+docs/course/metrics.md and docs/course/metrics.json. Every deck, script, report or marker guide quotes numbers only from
+these two files. Runs the registry marks "current" are the evidence; runs it marks "exploratory" are listed in their own
+section and may be quoted only with the word "exploratory" beside them (D-109; their status is not changed here).
+Superseded runs are only named.
 
-Deterministic: no clock, sorted output, values taken from the files as they are (metrics.md shows them to at most
-four decimal places; metrics.json keeps the exact values). A value that is computed here, not read, says so in its
+Deterministic: no clock, sorted output, values taken from the files as they are (metrics.md shows money in GBP to two
+decimal places and other numbers to at most four; metrics.json keeps the exact values). A value that is computed here, not read, says so in its
 label ("derived"). Fails if a current run has no metrics.json or a listed field is missing.
 
     uv run python scripts/course_metrics.py          # write
@@ -41,6 +43,9 @@ DATA_KIND = {
     "R2": "offline evaluation with generated labels",
     "R3": "offline evaluation with generated labels",
     "W1": "historical backtest (UCI sales; Open-Meteo weather)",
+    # exploratory runs (D-109): quoted only with the label
+    "F2": "historical backtest; exploratory (test windows already seen by earlier protocols)",
+    "S2": "simulation (real UCI demand and forecasts; assumed terms and costs); exploratory (reuses F1's last test window)",
 }
 
 # Per study: the size of the evaluation (label, path) and the key metrics (label, path). Paths are dotted keys into the
@@ -53,8 +58,19 @@ N = {
     "PM1": ("AI4I 2020 machine cycles", "ai4i_2020.rows"), "QC1": ("test images", "data.test"),
     "R1": ("judged test queries", "conditions.vector.queries"), "R2": ("generated questions", "questions"),
     "R3": ("generated questions (dev and test)", "tasks"), "W1": ("total-level test points", "results.total.points"),
+    "F2": ("products", "cohort_size"), "S2": ("products", "products"),
 }
 METRICS = {
+    "F2": [("products classed lumpy at the last origin", "segment_counts.2011-11-10.lumpy"),
+           ("products classed erratic at the last origin", "segment_counts.2011-11-10.erratic")],
+    "S2": [("forecast MAE over the review windows, seasonal naive", "context_forecast_mae.seasonal_naive"),
+           ("forecast MAE over the review windows, LightGBM", "context_forecast_mae.lightgbm"),
+           ("forecast MAE over the review windows, TCN", "context_forecast_mae.tcn"),
+           ("total cost GBP, no budget limit, base-stock rule without a forecast", "results.unconstrained.simple_base_stock.total_cost"),
+           ("total cost GBP, no budget limit, product + seasonal naive", "results.unconstrained.product_seasonal_naive.total_cost"),
+           ("total cost GBP, no budget limit, product + TCN", "results.unconstrained.product_tcn.total_cost"),
+           ("total cost GBP, no budget limit, product + LightGBM", "results.unconstrained.product_lightgbm.total_cost"),
+           ("review weeks", "reviews")],
     "AGT": [("trials per scenario", "summary.trials_per_scenario"),
             ("verified completion rate", "summary.verified_completion_rate"),
             ("unapproved external writes", "summary.unauthorized_external_mutations")],
@@ -152,7 +168,12 @@ def lookup(doc: object, path: str) -> object:
     return cur
 
 
-def show(v: object) -> str:
+def show(v: object, money: bool = False) -> str:
+    """Display form in metrics.md: money (a label naming GBP) to 2 decimals, other numbers to at most 4."""
+    if isinstance(v, list):
+        return ", ".join(show(x) for x in v)
+    if money and isinstance(v, (int, float)) and not isinstance(v, bool):
+        return f"{v:,.2f}"
     if isinstance(v, bool):
         return "yes" if v else "no"
     if isinstance(v, int):
@@ -166,9 +187,9 @@ def show(v: object) -> str:
 
 def build() -> dict:
     reg = json.loads(REGISTRY.read_text())
-    studies = []
+    studies, exploratory = [], []
     for run, review in sorted(reg["experiments"].items()):
-        if review.get("status") != "current":
+        if review.get("status") not in ("current", "exploratory"):
             continue
         study = run.split("-")[0]
         path = EXPERIMENTS / run / "metrics.json"
@@ -179,7 +200,7 @@ def build() -> dict:
             raise SystemExit(f"{run}: study {study} has no entry in scripts/course_metrics.py; add its data kind and metrics")
         stamp = run.split("-", 1)[1]
         n_label, n_path = N[study]
-        studies.append({
+        (studies if review["status"] == "current" else exploratory).append({
             "study": study, "run_id": run, "date": f"{stamp[0:4]}-{stamp[4:6]}-{stamp[6:8]}", "status": review["status"],
             "data_kind": DATA_KIND[study], "headline": review.get("headline", ""), "notes": review.get("notes", ""),
             "n": {"label": n_label, "value": lookup(m, n_path), "source": n_path},
@@ -187,9 +208,10 @@ def build() -> dict:
             "metrics_file": str(path.relative_to(ROOT)),
         })
     studies.sort(key=lambda s: s["study"])
+    exploratory.sort(key=lambda s: s["study"])
     return {"generated_by": "scripts/course_metrics.py", "registry": str(REGISTRY.relative_to(ROOT)),
-            "registry_reviewed_on": reg.get("reviewed_on"), "studies": studies,
-            "not_included": sorted(k for k, v in reg["experiments"].items() if v.get("status") != "current")}
+            "registry_reviewed_on": reg.get("reviewed_on"), "studies": studies, "exploratory": exploratory,
+            "not_included": sorted(k for k, v in reg["experiments"].items() if v.get("status") not in ("current", "exploratory"))}
 
 
 def render(doc: dict) -> str:
@@ -200,8 +222,9 @@ def render(doc: dict) -> str:
         " Do not edit by hand: run `uv run python scripts/course_metrics.py`. -->",
         "",
         "Every number in the course documents (decks, demo scripts, report, marker guide) is quoted from this file."
-        " Only runs the registry marks **current** are listed; superseded and exploratory runs are named at the end"
-        " and are not presentation evidence. Values are shown to at most four decimal places; exact values are in"
+        " Runs the registry marks **current** are the evidence. Runs it marks **exploratory** are in their own section"
+        " further down and may be quoted only with the word \"exploratory\" beside them; superseded runs are only"
+        " named at the end. Values are shown to at most four decimal places; exact values are in"
         " `metrics.json` next to this file. No study measures a real business outcome yet: every number below is a"
         " historical backtest, a simulation, a published benchmark, or an offline evaluation, as its data kind says.",
         "",
@@ -213,17 +236,26 @@ def render(doc: dict) -> str:
     for s in doc["studies"]:
         out.append(f"| {s['study']} | {s['data_kind']} | {show(s['n']['value'])} {s['n']['label']} | {s['headline']} |"
                    f" `{s['run_id']}` ({s['date']}) |")
-    for s in doc["studies"]:
-        out += ["", f"## {s['study']} — `{s['run_id']}`", "", f"Data kind: {s['data_kind']}. Source: `{s['metrics_file']}`.",
-                "", f"Headline (registry review): {s['headline']}", ""]
+    def section(s: dict, label: str) -> list[str]:
+        rows = ["", f"## {s['study']}{label} — `{s['run_id']}`", "",
+                f"Data kind: {s['data_kind']}. Source: `{s['metrics_file']}`.", "", f"Headline (registry review): {s['headline']}", ""]
         if s["notes"]:
-            out += [f"Notes (registry review): {s['notes']}", ""]
-        out += ["| Metric | Value | Field in metrics.json |", "|---|---|---|",
-                f"| n: {s['n']['label']} | {show(s['n']['value'])} | `{s['n']['source']}` |"]
-        out += [f"| {m['label']} | {show(m['value'])} | `{m['source']}` |" for m in s["metrics"]]
-    out += ["", "## Not presentation evidence", "",
-            "Superseded or exploratory runs (see the registry for the reason): "
-            + ", ".join(f"`{r}`" for r in doc["not_included"]) + ".", ""]
+            rows += [f"Notes (registry review): {s['notes']}", ""]
+        rows += ["| Metric | Value | Field in metrics.json |", "|---|---|---|",
+                 f"| n: {s['n']['label']} | {show(s['n']['value'])} | `{s['n']['source']}` |"]
+        return rows + [f"| {m['label']} | {show(m['value'], 'GBP' in m['label'])} | `{m['source']}` |" for m in s["metrics"]]
+    for s in doc["studies"]:
+        out += section(s, "")
+    out += ["", "# Exploratory runs — quote only with the label \"exploratory\"", "",
+            "These runs are kept as the registry reviewed them; they are not confirmatory (see each run's notes). A course"
+            " document may quote them only on a slide or paragraph that says \"exploratory\" (tests/test_course_metrics.py).",
+            "", "| Study | Data kind | n | Reviewed headline | Run |", "|---|---|---|---|---|"]
+    out += [f"| {s['study']} | {s['data_kind']} | {show(s['n']['value'])} {s['n']['label']} | {s['headline']} |"
+            f" `{s['run_id']}` ({s['date']}) |" for s in doc["exploratory"]]
+    for s in doc["exploratory"]:
+        out += section(s, " (exploratory)")
+    out += ["", "# Not presentation evidence", "",
+            "Superseded runs (see the registry for the reason): " + ", ".join(f"`{r}`" for r in doc["not_included"]) + ".", ""]
     return "\n".join(out)
 
 
@@ -240,7 +272,8 @@ def main(argv: list[str]) -> int:
     OUT_MD.parent.mkdir(parents=True, exist_ok=True)
     OUT_MD.write_text(md)
     OUT_JSON.write_text(js)
-    print(f"wrote {OUT_MD.relative_to(ROOT)} and {OUT_JSON.relative_to(ROOT)}: {len(doc['studies'])} current studies")
+    print(f"wrote {OUT_MD.relative_to(ROOT)} and {OUT_JSON.relative_to(ROOT)}: {len(doc['studies'])} current, "
+          f"{len(doc['exploratory'])} exploratory")
     return 0
 
 

@@ -199,7 +199,7 @@ export default function ResearchPage() {
           )}
         </StudyCard>
         <StudyCard id="IB" q={ib} title="InventoryBench study"
-          question="Scored by the benchmark's own evaluator on all 1,320 instances (pinned commit), normalised reward vs perfect foresight.">
+          question="Scored by the benchmark's own evaluator on its 600 real-trajectory instances (pinned commit; the 720 synthetic ones were not scored), normalised reward vs perfect foresight.">
           {ib.data?.policies && (
             <TableScroll label="InventoryBench scores" min={360}><table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
               <thead><tr className="border-b border-line text-left text-xs text-muted"><th className="py-2 font-medium">Policy</th><th className="font-medium">Mean normalised reward</th></tr></thead>
