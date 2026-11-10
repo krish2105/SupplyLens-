@@ -4,7 +4,13 @@ Session 8A is complete (2026-11-10, `phases/PHASE-08.md`). The next session is *
 `docs/agent-handoff/PHASE-08_COURSE_PROMPT_v4.md` (paste its common header, then the 8B block); the per-session prompt
 below is the short form from `PHASE-08_SHORT_PROMPTS.md`, adjusted to v4 (no v5 brief exists: D-100).
 
-Before starting: fill `private/owner-answers-8B.md` (never committed) and decide on the illustrations pull request.
+**Update 2026-11-10:** most of 8B was done early at the owner's request (`phases/PHASE-08.md`, "Course-coverage build"):
+WP3 (ET1, RT1 on generated data), WP4 (W2), WP5 (B1), WP6 (AS1, dry-run HubSpot hand-off), WP7 (X1, Extracted terms; no
+PDF intake, no confirm step), WP8 (RED1) and A17/A18. What 8B still holds: KNOW-P7-01 for the evidence answer, G2
+(human-written questions, written by people), PDF intake and the confirm step (migration 0012, owner decision on the
+hosted database), real logistics data (owner approval), and a real HubSpot test account if the owner wants one. Then 8C.
+
+Before starting: fill `private/owner-answers-8B.md` (never committed).
 
 ```text
 You are starting with zero context. The repository in this folder (SupplyLens, github.com/krish2105/SupplyLens-) is the only source of truth.

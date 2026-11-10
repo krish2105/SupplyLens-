@@ -241,7 +241,8 @@ export function TabPanel({ id, value, children, className }: { id: string; value
  *  (Phase 4B). Focusable, so the scroll works from the keyboard; `min` is the width below which it scrolls. */
 export function TableScroll({ label, min = 560, children, className }: { label: string; min?: number; children: ReactNode; className?: string }) {
   return (
-    <div role="region" aria-label={`${label}, scrollable`} tabIndex={0} className={clsx("max-w-full overflow-x-auto", className)}>
+    // relative: visually hidden (absolute) text inside the table stays inside the scroll box instead of widening the page
+    <div role="region" aria-label={`${label}, scrollable`} tabIndex={0} className={clsx("relative max-w-full overflow-x-auto", className)}>
       <div style={{ minWidth: min }}>{children}</div>
     </div>
   );

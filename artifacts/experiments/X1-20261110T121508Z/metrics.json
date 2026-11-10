@@ -1,0 +1,1545 @@
+{
+ "experiment_id": "X1-20261110T121508Z",
+ "study": "X1",
+ "kind": "human-labelled (CUAD expert labels)",
+ "question": "On 73 real supply, distribution and manufacturing contracts, how many of the clauses and fields that CUAD's experts labelled does a rule-based extractor find, with what precision, and how does that compare with picking the top BM25 paragraphs for each field?",
+ "commit": "5334b8bbb26f748102199227a3276760b4db661c",
+ "uncommitted_changes_in_method_files": true,
+ "data": {
+  "source": "CUAD v1 (CC BY 4.0), data/raw/core/cuad/extracted/data/CUADv1.json",
+  "selection": "title contains SUPPLY, DISTRIBUT or MANUFACTUR (as ingest/cuad.py and C1)",
+  "contracts": 73,
+  "labels": 2176,
+  "labels_in_scored_categories": 805,
+  "label_offset_mismatches": 0
+ },
+ "mapping": {
+  "parties": "Parties",
+  "agreement_date": "Agreement Date",
+  "effective_date": "Effective Date",
+  "expiry_date": "Expiration Date",
+  "renewal": "Renewal Term",
+  "termination_for_convenience": "Termination For Convenience",
+  "exclusivity": "Exclusivity",
+  "minimum_commitment": "Minimum Commitment",
+  "price": "Price Restrictions",
+  "moq": null,
+  "lead_time": null
+ },
+ "mapping_notes": {
+  "price": "approximate: CUAD 'Price Restrictions' labels only restrictions on changing prices; the price field also returns price amounts, which CUAD does not label, so its precision against this category understates it",
+  "effective_date": "CUAD labels the effective date separately from the agreement date; both are scored separately",
+  "moq": "no CUAD category of its own: CUAD folds per-order minimums into Minimum Commitment, which is scored through minimum_commitment; the moq field returns the quantity only",
+  "lead_time": "no CUAD category for delivery lead time"
+ },
+ "cuad_categories_not_scored": [
+  "Notice Period To Terminate Renewal",
+  "Volume Restriction",
+  "and the 27 other CUAD categories"
+ ],
+ "methods": {
+  "rules": {
+   "code": "services/api/src/supplylens/knowledge/extract.py",
+   "version": "rules-v1",
+   "max_per_field": 3,
+   "max_parties": 8,
+   "can_abstain": true
+  },
+  "lexical_topk": {
+   "k": [
+    1,
+    3
+   ],
+   "scoring": "BM25 k1=1.5 b=0.75, idf over the contract's own paragraphs",
+   "units": "blank-line paragraphs; over 2,800 characters cut into 1,400-character pieces",
+   "query": "CUAD category name + description (category_descriptions.csv), as in C1",
+   "tokens": "lower-case alphanumeric, small stop-word list, no stemming",
+   "can_abstain": false
+  },
+  "vector_or_model": "not run: no embedding model installed locally (Ollama lists only qwen2.5:7b); generation-model extraction not attempted in X1"
+ },
+ "matching": {
+  "overlap": "spans share at least one character",
+  "jaccard50": "CUAD evaluate.py rule: word-set Jaccard >= 0.5 (Parties: or gold text inside the prediction); compares texts, not positions, as CUAD's own evaluation does",
+  "exact": "the same character span, ignoring surrounding whitespace and punctuation",
+  "precision": "matched predictions / predictions",
+  "recall": "matched gold spans / gold spans",
+  "contract_hit_rate": "contracts with a label where at least one prediction overlaps a gold span",
+  "false_alarm_rate": "contracts without a label where the method still returned a span"
+ },
+ "per_field": {
+  "parties": {
+   "cuad_category": "Parties",
+   "gold_spans": 331,
+   "contracts_with_label": 73,
+   "rules": {
+    "predictions": 280,
+    "overlap": {
+     "precision": 0.575,
+     "recall": 0.5952,
+     "f1": 0.5849
+    },
+    "jaccard50": {
+     "precision": 0.8893,
+     "recall": 0.7039,
+     "f1": 0.7858
+    },
+    "exact": {
+     "precision": 0.4821,
+     "recall": 0.4109,
+     "f1": 0.4437
+    },
+    "contract_hit_rate": 0.9041,
+    "contracts_without_label": 0,
+    "false_alarm_rate": null
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.0274,
+     "recall": 0.0121,
+     "f1": 0.0168
+    },
+    "jaccard50": {
+     "precision": 0.3836,
+     "recall": 0.1662,
+     "f1": 0.2319
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.0274,
+    "contracts_without_label": 0,
+    "false_alarm_rate": null
+   },
+   "lexical_top3": {
+    "predictions": 216,
+    "overlap": {
+     "precision": 0.0324,
+     "recall": 0.0574,
+     "f1": 0.0414
+    },
+    "jaccard50": {
+     "precision": 0.4537,
+     "recall": 0.3414,
+     "f1": 0.3896
+    },
+    "exact": {
+     "precision": 0.0046,
+     "recall": 0.003,
+     "f1": 0.0037
+    },
+    "contract_hit_rate": 0.0959,
+    "contracts_without_label": 0,
+    "false_alarm_rate": null
+   }
+  },
+  "agreement_date": {
+   "cuad_category": "Agreement Date",
+   "gold_spans": 67,
+   "contracts_with_label": 65,
+   "rules": {
+    "predictions": 51,
+    "overlap": {
+     "precision": 0.6863,
+     "recall": 0.5224,
+     "f1": 0.5932
+    },
+    "jaccard50": {
+     "precision": 0.7647,
+     "recall": 0.5821,
+     "f1": 0.661
+    },
+    "exact": {
+     "precision": 0.549,
+     "recall": 0.4179,
+     "f1": 0.4746
+    },
+    "contract_hit_rate": 0.5385,
+    "contracts_without_label": 8,
+    "false_alarm_rate": 0.375
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.0822,
+     "recall": 0.0896,
+     "f1": 0.0857
+    },
+    "jaccard50": {
+     "precision": 0.0137,
+     "recall": 0.0149,
+     "f1": 0.0143
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.0923,
+    "contracts_without_label": 8,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 219,
+    "overlap": {
+     "precision": 0.0685,
+     "recall": 0.2239,
+     "f1": 0.1049
+    },
+    "jaccard50": {
+     "precision": 0.0183,
+     "recall": 0.0448,
+     "f1": 0.0259
+    },
+    "exact": {
+     "precision": 0.0046,
+     "recall": 0.0149,
+     "f1": 0.007
+    },
+    "contract_hit_rate": 0.2308,
+    "contracts_without_label": 8,
+    "false_alarm_rate": 1.0
+   }
+  },
+  "effective_date": {
+   "cuad_category": "Effective Date",
+   "gold_spans": 60,
+   "contracts_with_label": 56,
+   "rules": {
+    "predictions": 68,
+    "overlap": {
+     "precision": 0.5147,
+     "recall": 0.5667,
+     "f1": 0.5394
+    },
+    "jaccard50": {
+     "precision": 0.5735,
+     "recall": 0.6333,
+     "f1": 0.6019
+    },
+    "exact": {
+     "precision": 0.3971,
+     "recall": 0.45,
+     "f1": 0.4219
+    },
+    "contract_hit_rate": 0.6071,
+    "contracts_without_label": 17,
+    "false_alarm_rate": 0.4118
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.2329,
+     "recall": 0.2833,
+     "f1": 0.2556
+    },
+    "jaccard50": {
+     "precision": 0.0411,
+     "recall": 0.05,
+     "f1": 0.0451
+    },
+    "exact": {
+     "precision": 0.0274,
+     "recall": 0.0333,
+     "f1": 0.0301
+    },
+    "contract_hit_rate": 0.3036,
+    "contracts_without_label": 17,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 216,
+    "overlap": {
+     "precision": 0.1296,
+     "recall": 0.4667,
+     "f1": 0.2029
+    },
+    "jaccard50": {
+     "precision": 0.0139,
+     "recall": 0.05,
+     "f1": 0.0217
+    },
+    "exact": {
+     "precision": 0.0093,
+     "recall": 0.0333,
+     "f1": 0.0145
+    },
+    "contract_hit_rate": 0.5,
+    "contracts_without_label": 17,
+    "false_alarm_rate": 1.0
+   }
+  },
+  "expiry_date": {
+   "cuad_category": "Expiration Date",
+   "gold_spans": 70,
+   "contracts_with_label": 63,
+   "rules": {
+    "predictions": 82,
+    "overlap": {
+     "precision": 0.5854,
+     "recall": 0.6857,
+     "f1": 0.6316
+    },
+    "jaccard50": {
+     "precision": 0.5732,
+     "recall": 0.6714,
+     "f1": 0.6184
+    },
+    "exact": {
+     "precision": 0.3902,
+     "recall": 0.4571,
+     "f1": 0.4211
+    },
+    "contract_hit_rate": 0.746,
+    "contracts_without_label": 10,
+    "false_alarm_rate": 0.3
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.5479,
+     "recall": 0.5714,
+     "f1": 0.5594
+    },
+    "jaccard50": {
+     "precision": 0.2466,
+     "recall": 0.2571,
+     "f1": 0.2517
+    },
+    "exact": {
+     "precision": 0.0137,
+     "recall": 0.0143,
+     "f1": 0.014
+    },
+    "contract_hit_rate": 0.6349,
+    "contracts_without_label": 10,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 217,
+    "overlap": {
+     "precision": 0.2719,
+     "recall": 0.8429,
+     "f1": 0.4111
+    },
+    "jaccard50": {
+     "precision": 0.1336,
+     "recall": 0.4,
+     "f1": 0.2003
+    },
+    "exact": {
+     "precision": 0.0092,
+     "recall": 0.0286,
+     "f1": 0.0139
+    },
+    "contract_hit_rate": 0.9048,
+    "contracts_without_label": 10,
+    "false_alarm_rate": 1.0
+   }
+  },
+  "renewal": {
+   "cuad_category": "Renewal Term",
+   "gold_spans": 46,
+   "contracts_with_label": 40,
+   "rules": {
+    "predictions": 54,
+    "overlap": {
+     "precision": 0.6481,
+     "recall": 0.7391,
+     "f1": 0.6907
+    },
+    "jaccard50": {
+     "precision": 0.6296,
+     "recall": 0.7391,
+     "f1": 0.68
+    },
+    "exact": {
+     "precision": 0.5,
+     "recall": 0.587,
+     "f1": 0.54
+    },
+    "contract_hit_rate": 0.8,
+    "contracts_without_label": 33,
+    "false_alarm_rate": 0.0909
+   },
+   "lexical_top1": {
+    "predictions": 72,
+    "overlap": {
+     "precision": 0.4583,
+     "recall": 0.7174,
+     "f1": 0.5593
+    },
+    "jaccard50": {
+     "precision": 0.25,
+     "recall": 0.3913,
+     "f1": 0.3051
+    },
+    "exact": {
+     "precision": 0.0417,
+     "recall": 0.0652,
+     "f1": 0.0508
+    },
+    "contract_hit_rate": 0.825,
+    "contracts_without_label": 33,
+    "false_alarm_rate": 0.9697
+   },
+   "lexical_top3": {
+    "predictions": 211,
+    "overlap": {
+     "precision": 0.1943,
+     "recall": 0.913,
+     "f1": 0.3204
+    },
+    "jaccard50": {
+     "precision": 0.1043,
+     "recall": 0.4565,
+     "f1": 0.1698
+    },
+    "exact": {
+     "precision": 0.019,
+     "recall": 0.087,
+     "f1": 0.0311
+    },
+    "contract_hit_rate": 0.925,
+    "contracts_without_label": 33,
+    "false_alarm_rate": 0.9697
+   }
+  },
+  "termination_for_convenience": {
+   "cuad_category": "Termination For Convenience",
+   "gold_spans": 34,
+   "contracts_with_label": 25,
+   "rules": {
+    "predictions": 37,
+    "overlap": {
+     "precision": 0.4865,
+     "recall": 0.5294,
+     "f1": 0.507
+    },
+    "jaccard50": {
+     "precision": 0.5135,
+     "recall": 0.5882,
+     "f1": 0.5483
+    },
+    "exact": {
+     "precision": 0.2432,
+     "recall": 0.2647,
+     "f1": 0.2535
+    },
+    "contract_hit_rate": 0.64,
+    "contracts_without_label": 48,
+    "false_alarm_rate": 0.125
+   },
+   "lexical_top1": {
+    "predictions": 64,
+    "overlap": {
+     "precision": 0.1562,
+     "recall": 0.2941,
+     "f1": 0.2041
+    },
+    "jaccard50": {
+     "precision": 0.0312,
+     "recall": 0.0588,
+     "f1": 0.0408
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.4,
+    "contracts_without_label": 48,
+    "false_alarm_rate": 0.8125
+   },
+   "lexical_top3": {
+    "predictions": 178,
+    "overlap": {
+     "precision": 0.0955,
+     "recall": 0.5,
+     "f1": 0.1604
+    },
+    "jaccard50": {
+     "precision": 0.0225,
+     "recall": 0.1176,
+     "f1": 0.0377
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.6,
+    "contracts_without_label": 48,
+    "false_alarm_rate": 0.8125
+   }
+  },
+  "exclusivity": {
+   "cuad_category": "Exclusivity",
+   "gold_spans": 83,
+   "contracts_with_label": 34,
+   "rules": {
+    "predictions": 112,
+    "overlap": {
+     "precision": 0.3482,
+     "recall": 0.4699,
+     "f1": 0.4
+    },
+    "jaccard50": {
+     "precision": 0.3571,
+     "recall": 0.4699,
+     "f1": 0.4058
+    },
+    "exact": {
+     "precision": 0.1518,
+     "recall": 0.2048,
+     "f1": 0.1744
+    },
+    "contract_hit_rate": 0.7647,
+    "contracts_without_label": 39,
+    "false_alarm_rate": 0.3846
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.0685,
+     "recall": 0.0964,
+     "f1": 0.0801
+    },
+    "jaccard50": {
+     "precision": 0.0137,
+     "recall": 0.012,
+     "f1": 0.0128
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.1471,
+    "contracts_without_label": 39,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 219,
+    "overlap": {
+     "precision": 0.0868,
+     "recall": 0.3253,
+     "f1": 0.137
+    },
+    "jaccard50": {
+     "precision": 0.0228,
+     "recall": 0.0602,
+     "f1": 0.0331
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.4706,
+    "contracts_without_label": 39,
+    "false_alarm_rate": 1.0
+   }
+  },
+  "minimum_commitment": {
+   "cuad_category": "Minimum Commitment",
+   "gold_spans": 101,
+   "contracts_with_label": 42,
+   "rules": {
+    "predictions": 80,
+    "overlap": {
+     "precision": 0.3625,
+     "recall": 0.2772,
+     "f1": 0.3142
+    },
+    "jaccard50": {
+     "precision": 0.35,
+     "recall": 0.2772,
+     "f1": 0.3094
+    },
+    "exact": {
+     "precision": 0.2,
+     "recall": 0.1584,
+     "f1": 0.1768
+    },
+    "contract_hit_rate": 0.5,
+    "contracts_without_label": 31,
+    "false_alarm_rate": 0.2581
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.274,
+     "recall": 0.2673,
+     "f1": 0.2706
+    },
+    "jaccard50": {
+     "precision": 0.1096,
+     "recall": 0.099,
+     "f1": 0.104
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.4762,
+    "contracts_without_label": 31,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 212,
+    "overlap": {
+     "precision": 0.1651,
+     "recall": 0.4158,
+     "f1": 0.2364
+    },
+    "jaccard50": {
+     "precision": 0.0613,
+     "recall": 0.1584,
+     "f1": 0.0884
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.619,
+    "contracts_without_label": 31,
+    "false_alarm_rate": 1.0
+   }
+  },
+  "price": {
+   "cuad_category": "Price Restrictions",
+   "gold_spans": 13,
+   "contracts_with_label": 5,
+   "rules": {
+    "predictions": 88,
+    "overlap": {
+     "precision": 0.0682,
+     "recall": 0.4615,
+     "f1": 0.1188
+    },
+    "jaccard50": {
+     "precision": 0.0682,
+     "recall": 0.4615,
+     "f1": 0.1188
+    },
+    "exact": {
+     "precision": 0.0227,
+     "recall": 0.1538,
+     "f1": 0.0396
+    },
+    "contract_hit_rate": 1.0,
+    "contracts_without_label": 68,
+    "false_alarm_rate": 0.5441
+   },
+   "lexical_top1": {
+    "predictions": 73,
+    "overlap": {
+     "precision": 0.0274,
+     "recall": 0.1538,
+     "f1": 0.0465
+    },
+    "jaccard50": {
+     "precision": 0.0274,
+     "recall": 0.1538,
+     "f1": 0.0465
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.4,
+    "contracts_without_label": 68,
+    "false_alarm_rate": 1.0
+   },
+   "lexical_top3": {
+    "predictions": 212,
+    "overlap": {
+     "precision": 0.0236,
+     "recall": 0.4615,
+     "f1": 0.0449
+    },
+    "jaccard50": {
+     "precision": 0.0094,
+     "recall": 0.1538,
+     "f1": 0.0178
+    },
+    "exact": {
+     "precision": 0.0,
+     "recall": 0.0,
+     "f1": 0.0
+    },
+    "contract_hit_rate": 0.8,
+    "contracts_without_label": 68,
+    "false_alarm_rate": 1.0
+   }
+  }
+ },
+ "overall": {
+  "rules": {
+   "overlap": {
+    "micro": {
+     "precision": 0.4765,
+     "recall": 0.5453,
+     "f1": 0.5086
+    },
+    "macro": {
+     "precision": 0.475,
+     "recall": 0.5386,
+     "f1": 0.4866
+    }
+   },
+   "jaccard50": {
+    "micro": {
+     "precision": 0.588,
+     "recall": 0.6012,
+     "f1": 0.5946
+    },
+    "macro": {
+     "precision": 0.5243,
+     "recall": 0.5696,
+     "f1": 0.5255
+    }
+   },
+   "exact": {
+    "micro": {
+     "precision": 0.3439,
+     "recall": 0.3652,
+     "f1": 0.3542
+    },
+    "macro": {
+     "precision": 0.3262,
+     "recall": 0.345,
+     "f1": 0.3273
+    }
+   }
+  },
+  "lexical_top1": {
+   "overlap": {
+    "micro": {
+     "precision": 0.2087,
+     "recall": 0.1826,
+     "f1": 0.1948
+    },
+    "macro": {
+     "precision": 0.2083,
+     "recall": 0.2762,
+     "f1": 0.2309
+    }
+   },
+   "jaccard50": {
+    "micro": {
+     "precision": 0.1252,
+     "recall": 0.1366,
+     "f1": 0.1307
+    },
+    "macro": {
+     "precision": 0.1241,
+     "recall": 0.1337,
+     "f1": 0.1169
+    }
+   },
+   "exact": {
+    "micro": {
+     "precision": 0.0093,
+     "recall": 0.0075,
+     "f1": 0.0083
+    },
+    "macro": {
+     "precision": 0.0092,
+     "recall": 0.0125,
+     "f1": 0.0105
+    }
+   }
+  },
+  "lexical_top3": {
+   "overlap": {
+    "micro": {
+     "precision": 0.1189,
+     "recall": 0.3168,
+     "f1": 0.173
+    },
+    "macro": {
+     "precision": 0.1186,
+     "recall": 0.4674,
+     "f1": 0.1844
+    }
+   },
+   "jaccard50": {
+    "micro": {
+     "precision": 0.0947,
+     "recall": 0.2422,
+     "f1": 0.1362
+    },
+    "macro": {
+     "precision": 0.0933,
+     "recall": 0.1981,
+     "f1": 0.1094
+    }
+   },
+   "exact": {
+    "micro": {
+     "precision": 0.0053,
+     "recall": 0.0124,
+     "f1": 0.0074
+    },
+    "macro": {
+     "precision": 0.0052,
+     "recall": 0.0185,
+     "f1": 0.0078
+    }
+   }
+  }
+ },
+ "held_out_check": {
+  "contracts": 437,
+  "labels_scored": 4456,
+  "note": "CUAD contracts outside the 73 (other contract types); the rules were not read against these",
+  "per_field": {
+   "parties": {
+    "cuad_category": "Parties",
+    "gold_spans": 2223,
+    "contracts_with_label": 436,
+    "rules": {
+     "predictions": 1763,
+     "overlap": {
+      "precision": 0.5899,
+      "recall": 0.5412,
+      "f1": 0.5645
+     },
+     "jaccard50": {
+      "precision": 0.8276,
+      "recall": 0.5812,
+      "f1": 0.6828
+     },
+     "exact": {
+      "precision": 0.4759,
+      "recall": 0.3774,
+      "f1": 0.421
+     },
+     "contract_hit_rate": 0.8601,
+     "contracts_without_label": 1,
+     "false_alarm_rate": 1.0
+    },
+    "lexical_top1": {
+     "predictions": 427,
+     "overlap": {
+      "precision": 0.0328,
+      "recall": 0.0247,
+      "f1": 0.0282
+     },
+     "jaccard50": {
+      "precision": 0.3841,
+      "recall": 0.1498,
+      "f1": 0.2155
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.0321,
+     "contracts_without_label": 1,
+     "false_alarm_rate": 1.0
+    },
+    "lexical_top3": {
+     "predictions": 1236,
+     "overlap": {
+      "precision": 0.0251,
+      "recall": 0.0477,
+      "f1": 0.0329
+     },
+     "jaccard50": {
+      "precision": 0.4353,
+      "recall": 0.2861,
+      "f1": 0.3453
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.0711,
+     "contracts_without_label": 1,
+     "false_alarm_rate": 1.0
+    }
+   },
+   "agreement_date": {
+    "cuad_category": "Agreement Date",
+    "gold_spans": 409,
+    "contracts_with_label": 405,
+    "rules": {
+     "predictions": 313,
+     "overlap": {
+      "precision": 0.8211,
+      "recall": 0.6284,
+      "f1": 0.7119
+     },
+     "jaccard50": {
+      "precision": 0.8626,
+      "recall": 0.6601,
+      "f1": 0.7479
+     },
+     "exact": {
+      "precision": 0.7252,
+      "recall": 0.555,
+      "f1": 0.6288
+     },
+     "contract_hit_rate": 0.6346,
+     "contracts_without_label": 32,
+     "false_alarm_rate": 0.3125
+    },
+    "lexical_top1": {
+     "predictions": 436,
+     "overlap": {
+      "precision": 0.0505,
+      "recall": 0.0538,
+      "f1": 0.0521
+     },
+     "jaccard50": {
+      "precision": 0.0092,
+      "recall": 0.0098,
+      "f1": 0.0095
+     },
+     "exact": {
+      "precision": 0.0023,
+      "recall": 0.0024,
+      "f1": 0.0024
+     },
+     "contract_hit_rate": 0.0543,
+     "contracts_without_label": 32,
+     "false_alarm_rate": 1.0
+    },
+    "lexical_top3": {
+     "predictions": 1290,
+     "overlap": {
+      "precision": 0.0659,
+      "recall": 0.2078,
+      "f1": 0.1001
+     },
+     "jaccard50": {
+      "precision": 0.007,
+      "recall": 0.022,
+      "f1": 0.0106
+     },
+     "exact": {
+      "precision": 0.0008,
+      "recall": 0.0024,
+      "f1": 0.0012
+     },
+     "contract_hit_rate": 0.2099,
+     "contracts_without_label": 32,
+     "false_alarm_rate": 1.0
+    }
+   },
+   "effective_date": {
+    "cuad_category": "Effective Date",
+    "gold_spans": 387,
+    "contracts_with_label": 334,
+    "rules": {
+     "predictions": 353,
+     "overlap": {
+      "precision": 0.5042,
+      "recall": 0.4548,
+      "f1": 0.4782
+     },
+     "jaccard50": {
+      "precision": 0.5581,
+      "recall": 0.4651,
+      "f1": 0.5074
+     },
+     "exact": {
+      "precision": 0.3824,
+      "recall": 0.3488,
+      "f1": 0.3649
+     },
+     "contract_hit_rate": 0.521,
+     "contracts_without_label": 103,
+     "false_alarm_rate": 0.3592
+    },
+    "lexical_top1": {
+     "predictions": 425,
+     "overlap": {
+      "precision": 0.1835,
+      "recall": 0.2016,
+      "f1": 0.1921
+     },
+     "jaccard50": {
+      "precision": 0.0824,
+      "recall": 0.0904,
+      "f1": 0.0862
+     },
+     "exact": {
+      "precision": 0.0282,
+      "recall": 0.031,
+      "f1": 0.0296
+     },
+     "contract_hit_rate": 0.2335,
+     "contracts_without_label": 103,
+     "false_alarm_rate": 0.8835
+    },
+    "lexical_top3": {
+     "predictions": 1242,
+     "overlap": {
+      "precision": 0.1264,
+      "recall": 0.4083,
+      "f1": 0.193
+     },
+     "jaccard50": {
+      "precision": 0.0378,
+      "recall": 0.1214,
+      "f1": 0.0577
+     },
+     "exact": {
+      "precision": 0.0129,
+      "recall": 0.0413,
+      "f1": 0.0196
+     },
+     "contract_hit_rate": 0.4521,
+     "contracts_without_label": 103,
+     "false_alarm_rate": 0.8835
+    }
+   },
+   "expiry_date": {
+    "cuad_category": "Expiration Date",
+    "gold_spans": 397,
+    "contracts_with_label": 350,
+    "rules": {
+     "predictions": 372,
+     "overlap": {
+      "precision": 0.5188,
+      "recall": 0.4887,
+      "f1": 0.5033
+     },
+     "jaccard50": {
+      "precision": 0.5108,
+      "recall": 0.4786,
+      "f1": 0.4941
+     },
+     "exact": {
+      "precision": 0.3495,
+      "recall": 0.3275,
+      "f1": 0.3381
+     },
+     "contract_hit_rate": 0.54,
+     "contracts_without_label": 87,
+     "false_alarm_rate": 0.1149
+    },
+    "lexical_top1": {
+     "predictions": 425,
+     "overlap": {
+      "precision": 0.44,
+      "recall": 0.4887,
+      "f1": 0.4631
+     },
+     "jaccard50": {
+      "precision": 0.1859,
+      "recall": 0.199,
+      "f1": 0.1922
+     },
+     "exact": {
+      "precision": 0.0188,
+      "recall": 0.0202,
+      "f1": 0.0195
+     },
+     "contract_hit_rate": 0.5343,
+     "contracts_without_label": 87,
+     "false_alarm_rate": 0.8621
+    },
+    "lexical_top3": {
+     "predictions": 1240,
+     "overlap": {
+      "precision": 0.2097,
+      "recall": 0.6725,
+      "f1": 0.3197
+     },
+     "jaccard50": {
+      "precision": 0.0968,
+      "recall": 0.3023,
+      "f1": 0.1466
+     },
+     "exact": {
+      "precision": 0.0089,
+      "recall": 0.0277,
+      "f1": 0.0134
+     },
+     "contract_hit_rate": 0.72,
+     "contracts_without_label": 87,
+     "false_alarm_rate": 0.8621
+    }
+   },
+   "renewal": {
+    "cuad_category": "Renewal Term",
+    "gold_spans": 164,
+    "contracts_with_label": 136,
+    "rules": {
+     "predictions": 177,
+     "overlap": {
+      "precision": 0.565,
+      "recall": 0.5976,
+      "f1": 0.5808
+     },
+     "jaccard50": {
+      "precision": 0.5311,
+      "recall": 0.5793,
+      "f1": 0.5541
+     },
+     "exact": {
+      "precision": 0.452,
+      "recall": 0.4878,
+      "f1": 0.4692
+     },
+     "contract_hit_rate": 0.6618,
+     "contracts_without_label": 301,
+     "false_alarm_rate": 0.0698
+    },
+    "lexical_top1": {
+     "predictions": 416,
+     "overlap": {
+      "precision": 0.1947,
+      "recall": 0.561,
+      "f1": 0.2891
+     },
+     "jaccard50": {
+      "precision": 0.0913,
+      "recall": 0.2378,
+      "f1": 0.132
+     },
+     "exact": {
+      "precision": 0.0048,
+      "recall": 0.0122,
+      "f1": 0.0069
+     },
+     "contract_hit_rate": 0.5956,
+     "contracts_without_label": 301,
+     "false_alarm_rate": 0.9302
+    },
+    "lexical_top3": {
+     "predictions": 1214,
+     "overlap": {
+      "precision": 0.0997,
+      "recall": 0.7866,
+      "f1": 0.1769
+     },
+     "jaccard50": {
+      "precision": 0.0453,
+      "recall": 0.3415,
+      "f1": 0.08
+     },
+     "exact": {
+      "precision": 0.0025,
+      "recall": 0.0183,
+      "f1": 0.0044
+     },
+     "contract_hit_rate": 0.8309,
+     "contracts_without_label": 301,
+     "false_alarm_rate": 0.9302
+    }
+   },
+   "termination_for_convenience": {
+    "cuad_category": "Termination For Convenience",
+    "gold_spans": 212,
+    "contracts_with_label": 158,
+    "rules": {
+     "predictions": 289,
+     "overlap": {
+      "precision": 0.4083,
+      "recall": 0.5708,
+      "f1": 0.4761
+     },
+     "jaccard50": {
+      "precision": 0.4083,
+      "recall": 0.5519,
+      "f1": 0.4694
+     },
+     "exact": {
+      "precision": 0.2837,
+      "recall": 0.3868,
+      "f1": 0.3273
+     },
+     "contract_hit_rate": 0.6646,
+     "contracts_without_label": 279,
+     "false_alarm_rate": 0.2832
+    },
+    "lexical_top1": {
+     "predictions": 382,
+     "overlap": {
+      "precision": 0.1283,
+      "recall": 0.2736,
+      "f1": 0.1747
+     },
+     "jaccard50": {
+      "precision": 0.0288,
+      "recall": 0.0519,
+      "f1": 0.037
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.3101,
+     "contracts_without_label": 279,
+     "false_alarm_rate": 0.81
+    },
+    "lexical_top3": {
+     "predictions": 1054,
+     "overlap": {
+      "precision": 0.0835,
+      "recall": 0.467,
+      "f1": 0.1417
+     },
+     "jaccard50": {
+      "precision": 0.0209,
+      "recall": 0.1038,
+      "f1": 0.0348
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.519,
+     "contracts_without_label": 279,
+     "false_alarm_rate": 0.81
+    }
+   },
+   "exclusivity": {
+    "cuad_category": "Exclusivity",
+    "gold_spans": 327,
+    "contracts_with_label": 146,
+    "rules": {
+     "predictions": 542,
+     "overlap": {
+      "precision": 0.2786,
+      "recall": 0.4679,
+      "f1": 0.3492
+     },
+     "jaccard50": {
+      "precision": 0.2601,
+      "recall": 0.4434,
+      "f1": 0.3279
+     },
+     "exact": {
+      "precision": 0.1384,
+      "recall": 0.2294,
+      "f1": 0.1726
+     },
+     "contract_hit_rate": 0.7123,
+     "contracts_without_label": 291,
+     "false_alarm_rate": 0.4089
+    },
+    "lexical_top1": {
+     "predictions": 432,
+     "overlap": {
+      "precision": 0.0486,
+      "recall": 0.0795,
+      "f1": 0.0603
+     },
+     "jaccard50": {
+      "precision": 0.0139,
+      "recall": 0.0214,
+      "f1": 0.0168
+     },
+     "exact": {
+      "precision": 0.0023,
+      "recall": 0.0031,
+      "f1": 0.0026
+     },
+     "contract_hit_rate": 0.1438,
+     "contracts_without_label": 291,
+     "false_alarm_rate": 0.9828
+    },
+    "lexical_top3": {
+     "predictions": 1271,
+     "overlap": {
+      "precision": 0.0386,
+      "recall": 0.1957,
+      "f1": 0.0644
+     },
+     "jaccard50": {
+      "precision": 0.0157,
+      "recall": 0.0642,
+      "f1": 0.0253
+     },
+     "exact": {
+      "precision": 0.0024,
+      "recall": 0.0092,
+      "f1": 0.0038
+     },
+     "contract_hit_rate": 0.2877,
+     "contracts_without_label": 291,
+     "false_alarm_rate": 0.9828
+    }
+   },
+   "minimum_commitment": {
+    "cuad_category": "Minimum Commitment",
+    "gold_spans": 323,
+    "contracts_with_label": 123,
+    "rules": {
+     "predictions": 102,
+     "overlap": {
+      "precision": 0.2745,
+      "recall": 0.0898,
+      "f1": 0.1353
+     },
+     "jaccard50": {
+      "precision": 0.2745,
+      "recall": 0.0805,
+      "f1": 0.1245
+     },
+     "exact": {
+      "precision": 0.1765,
+      "recall": 0.0557,
+      "f1": 0.0847
+     },
+     "contract_hit_rate": 0.1789,
+     "contracts_without_label": 314,
+     "false_alarm_rate": 0.0414
+    },
+    "lexical_top1": {
+     "predictions": 428,
+     "overlap": {
+      "precision": 0.0701,
+      "recall": 0.1115,
+      "f1": 0.0861
+     },
+     "jaccard50": {
+      "precision": 0.0397,
+      "recall": 0.0557,
+      "f1": 0.0464
+     },
+     "exact": {
+      "precision": 0.007,
+      "recall": 0.0093,
+      "f1": 0.008
+     },
+     "contract_hit_rate": 0.2439,
+     "contracts_without_label": 314,
+     "false_alarm_rate": 0.9713
+    },
+    "lexical_top3": {
+     "predictions": 1245,
+     "overlap": {
+      "precision": 0.0498,
+      "recall": 0.2384,
+      "f1": 0.0824
+     },
+     "jaccard50": {
+      "precision": 0.0249,
+      "recall": 0.1022,
+      "f1": 0.04
+     },
+     "exact": {
+      "precision": 0.004,
+      "recall": 0.0155,
+      "f1": 0.0064
+     },
+     "contract_hit_rate": 0.4309,
+     "contracts_without_label": 314,
+     "false_alarm_rate": 0.9713
+    }
+   },
+   "price": {
+    "cuad_category": "Price Restrictions",
+    "gold_spans": 14,
+    "contracts_with_label": 10,
+    "rules": {
+     "predictions": 142,
+     "overlap": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "jaccard50": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.0,
+     "contracts_without_label": 427,
+     "false_alarm_rate": 0.1897
+    },
+    "lexical_top1": {
+     "predictions": 420,
+     "overlap": {
+      "precision": 0.0024,
+      "recall": 0.0714,
+      "f1": 0.0046
+     },
+     "jaccard50": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.1,
+     "contracts_without_label": 427,
+     "false_alarm_rate": 0.9602
+    },
+    "lexical_top3": {
+     "predictions": 1226,
+     "overlap": {
+      "precision": 0.0008,
+      "recall": 0.0714,
+      "f1": 0.0016
+     },
+     "jaccard50": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "exact": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+     },
+     "contract_hit_rate": 0.1,
+     "contracts_without_label": 427,
+     "false_alarm_rate": 0.9602
+    }
+   }
+  },
+  "overall": {
+   "rules": {
+    "overlap": {
+     "micro": {
+      "precision": 0.5095,
+      "recall": 0.5007,
+      "f1": 0.505
+     },
+     "macro": {
+      "precision": 0.44,
+      "recall": 0.4266,
+      "f1": 0.4221
+     }
+    },
+    "jaccard50": {
+     "micro": {
+      "precision": 0.6161,
+      "recall": 0.5195,
+      "f1": 0.5637
+     },
+     "macro": {
+      "precision": 0.4703,
+      "recall": 0.4267,
+      "f1": 0.4342
+     }
+    },
+    "exact": {
+     "micro": {
+      "precision": 0.3913,
+      "recall": 0.3559,
+      "f1": 0.3728
+     },
+     "macro": {
+      "precision": 0.3315,
+      "recall": 0.3076,
+      "f1": 0.3118
+     }
+    }
+   },
+   "lexical_top1": {
+    "overlap": {
+     "micro": {
+      "precision": 0.1274,
+      "recall": 0.1261,
+      "f1": 0.1268
+     },
+     "macro": {
+      "precision": 0.1279,
+      "recall": 0.2073,
+      "f1": 0.15
+     }
+    },
+    "jaccard50": {
+     "micro": {
+      "precision": 0.0934,
+      "recall": 0.118,
+      "f1": 0.1043
+     },
+     "macro": {
+      "precision": 0.0928,
+      "recall": 0.0906,
+      "f1": 0.0817
+     }
+    },
+    "exact": {
+     "micro": {
+      "precision": 0.0071,
+      "recall": 0.0061,
+      "f1": 0.0065
+     },
+     "macro": {
+      "precision": 0.007,
+      "recall": 0.0087,
+      "f1": 0.0077
+     }
+    }
+   },
+   "lexical_top3": {
+    "overlap": {
+     "micro": {
+      "precision": 0.0775,
+      "recall": 0.2213,
+      "f1": 0.1148
+     },
+     "macro": {
+      "precision": 0.0777,
+      "recall": 0.3439,
+      "f1": 0.1236
+     }
+    },
+    "jaccard50": {
+     "micro": {
+      "precision": 0.0764,
+      "recall": 0.2118,
+      "f1": 0.1123
+     },
+     "macro": {
+      "precision": 0.076,
+      "recall": 0.1493,
+      "f1": 0.0823
+     }
+    },
+    "exact": {
+     "micro": {
+      "precision": 0.0035,
+      "recall": 0.0088,
+      "f1": 0.005
+     },
+     "macro": {
+      "precision": 0.0035,
+      "recall": 0.0127,
+      "f1": 0.0054
+     }
+    }
+   }
+  }
+ },
+ "limits": [
+  "in-sample: the rules were written after reading about ten expert labels per category from these 73 contracts and adjusted against their scores; the held-out check on the other CUAD contracts is the fairer estimate, but those are other contract types",
+  "overlap is lenient: a whole paragraph that touches a one-line label counts as a match; exact and jaccard50 are reported to show how far the spans are from the experts' spans",
+  "the lexical baseline always returns k paragraphs, so its precision falls with label rarity and its false-alarm rate is 100% wherever a term appears in the text",
+  "price is scored against Price Restrictions (only 13 labels in 5 contracts); moq and lead_time are not scored because CUAD has no matching category (checked only on the fictional demo contracts in tests/test_extraction.py)",
+  "English, SEC-filed contracts in plain text; no PDF or OCR intake was measured (uploads stay plain text, D-076)",
+  "one annotator team's labels (CUAD); no inter-annotator agreement is reported here",
+  "no embedding model and no generation model were used"
+ ],
+ "seconds": 28.4
+}

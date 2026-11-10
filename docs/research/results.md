@@ -353,6 +353,116 @@ catches 98.72 % of defects (11 escapes) at £419.40 against £900 for inspecting
 <!-- source: models.cnn.policy, inspect_everything_cost_gbp -->.
 **Limits.** Generated images are easier than photographs; one defect per image; assumed costs: a method check.
 
+## Course coverage studies (Phase 8)
+
+Added on 2026-11-10 so that every weekly lab topic of the unit has a project study (see `docs/course/coverage.md`). As
+above, each number is copied from the run's `metrics.json` (source path in a comment) and its kind is stated; none is a
+real business outcome. Real logistics data (LaDe, Amazon Last Mile) needs the owner's approval, so FE1, ET1 and RT1 run on
+generated data.
+
+### FE1 — fuel-inefficient trips (`FE1-20261110T120111Z`, simulation; method check)
+
+**Question.** Can trip telemetry flag fuel-inefficient trips, and predict litres per 100 km, better than a fleet-average rule?
+**Data.** 15,965 generated trips (60 vehicles in three classes, 72 drivers, 12 months); train months 1-8, validation 9-10,
+test 11-12 (2,662 trips) <!-- source: data -->. Inefficient = measured L/100 km above 1.15 x the class-and-payload reference.
+**Result.** L/100 km MAE: class average 2.05, ridge 0.91, LightGBM 0.85 <!-- source: models.regression_test -->. Flagging:
+AUC fleet-average rule 0.886, logistic regression 0.956, LightGBM 0.953; F1 0.62, 0.76, 0.76; share of the test months'
+excess fuel on flagged trips 46 %, 38 %, 40 % <!-- source: models.classification_test -->. Excess fuel 7,301.6 L, or
+18,253.9 kg CO2 at an assumed 2.5 kg per litre <!-- source: data.test_excess -->.
+**Limits.** Generated data recovers only the effects put in (idle time, driver, speed, stops, cold); LightGBM does not
+beat logistic regression; the rule captures more excess litres because it sees the measured fuel and long heavy trips
+carry most of the excess. No real telematics or fuel-card data.
+
+### W2 — LSTM forecasting (`W2-20261110T120750Z`, historical backtest)
+
+**Question.** Does a small LSTM forecast total daily units better than XGBoost, Prophet and seasonal naive?
+**Data.** UCI Online Retail II (same file as F1 and W1), W1's protocol: 13 Monday origins 2011-09-05 to 2011-11-28, 7 days
+ahead, refitted at each origin, 91 points; no weather <!-- source: protocol -->. Seasonal naive reproduces W1's values
+exactly <!-- source: results.seasonal_naive_reproduced.check -->.
+**Result.** WAPE: LSTM 0.2651 +/- 0.0132 (5 seeds), XGBoost 0.2455 and Prophet 0.2804 (from W1, without weather),
+seasonal naive 0.2974; RMSE 7,666.7, 7,498.4, 7,617.4 and 8,909.4 <!-- source: results -->. No seed beat XGBoost on WAPE;
+the LSTM's gain over seasonal naive has a 95 % interval of -1,555.8 to 63.5 units, so it is not clear
+<!-- source: results.lstm_vs_seasonal_naive -->.
+**Limits.** One target series and 91 points; only the loss (Huber) was chosen, on 9 earlier validation origins; W1 stored no
+per-day forecasts, so the comparison with XGBoost and Prophet is not paired.
+
+### B1 — bias mitigation for a failure classifier (`B1-20261110T120717Z`, published synthetic dataset)
+
+**Question.** Do re-weighting, SMOTE, threshold moving and adversarial debiasing lower cost and narrow the gap in recall
+between machine types?
+**Data.** UCI AI4I 2020 with PM1's split and assumed costs (missed failure GBP 2,000, inspection GBP 150); 71 test failures:
+Type L 46, M 18, H 7 <!-- source: data -->. PM1's logistic result is reproduced exactly <!-- source: split_check -->.
+**Result.** Logistic regression, expected cost: no correction GBP 118,550; class weights 65,350; group-and-class weights
+70,100 (recall gap 0.036); SMOTE 70,000 (recall gap 0.814); threshold moving 74,700 <!-- source: methods.logistic_regression -->.
+Adversarial debiasing (Zhang et al., 2018; 5 seeds, strength 0.03 chosen on validation): recall gap 0.1133 +/- 0.0188
+against 0.2205 with the adversary off, at GBP 72,540 against 65,110 <!-- source: adversarial -->.
+**Limits.** Type H has 7 test failures, so one failure moves its recall by 14 points; SMOTE made 28 of 5,602 synthetic
+failures Type H <!-- source: smote -->; debiasing narrows the gaps mainly by raising false alarms; for LightGBM the methods
+differ within noise. Type is a product variant, not a protected human attribute.
+
+### ET1 — delivery arrival times (`ET1-20261110T120540Z`, simulation)
+
+**Question.** How close can a model get to the delivery time, and how honest are its intervals for new couriers?
+**Data.** A generated delivery history (couriers, regions, hour, distance, stops ahead, weekday); January-April train,
+May-June test (66,197-67,296 test parcels per seed, 3 seeds); 4 couriers join in the test period <!-- source: data -->.
+**Result.** MAE: region-by-hour average 30.59 min, LightGBM 12.37, the generator's own expected time 10.39 (the floor);
+within 30 minutes 59 % and 92 % <!-- source: results.summary_over_seeds -->. New couriers: LightGBM MAE 27.13 min. The
+80 % quantile interval covers 74 % overall, 78 % for known couriers and 34 % for new ones (mean width 31.8 min).
+**Limits.** Generated data and straight-line distances; the cold start is where the method fails.
+
+### RT1 — last-mile routes with windows and capacity (`RT1-20261110T120815Z`, simulation)
+
+**Question.** How much shorter and more punctual is an OR-Tools plan than simple heuristics?
+**Data.** 15 generated delivery days (20, 40, 80 stops x 5 seeds) with van capacity and time windows <!-- source: data -->.
+**Result.** Late stops: OR-Tools 0, window-aware nearest neighbour 4, nearest neighbour ignoring windows 225, fixed angle
+order 240 <!-- source: results.summary -->. Distance saving against the window-aware nearest neighbour: 30.5 %, 34.4 %,
+39.4 % at 20, 40, 80 stops; against the fixed order 2.1 %, 8.6 %, 28.2 %; the nearest neighbour that ignores windows is
+12.0 % and 9.5 % shorter at 20 and 40 stops and level at 80. Vans at 80 stops: 4 against 5.8.
+**Limits.** Straight-line distances; the fixed order is a stand-in, not a real driver's sequence; fuel (9 L/100 km) and
+CO2 (E1's 0.1 kg per tonne-km, 0.5 t payload) are assumed, so van CO2 is probably understated; wall-clock solver limit.
+
+### X1 — contract-term extraction (`X1-20261110T121508Z`, human-labelled)
+
+**Question.** How many of the clauses and fields CUAD's experts labelled does a rule-based extractor find, and how does it
+compare with picking the top BM25 paragraphs for each field?
+**Data.** CUAD v1 (CC BY 4.0): the 73 supply, distribution and manufacturing contracts, 805 expert labels in the nine
+scored categories (parties, agreement and effective dates, expiry, renewal, termination for convenience, exclusivity,
+minimum commitment, price restrictions) <!-- source: data, mapping -->.
+**Result.** Micro overlap F1: rules 0.5086 (precision 0.4765, recall 0.5453), top BM25 paragraph 0.1948, top three
+0.173; exact-span F1: rules 0.3542 <!-- source: overall -->. On 437 other CUAD contracts (4,456 labels) the rules score
+overlap F1 0.505 <!-- source: held_out_check -->. The top three paragraphs recall more expiry (0.84 vs 0.69), renewal
+(0.91 vs 0.74) and minimum-commitment (0.42 vs 0.28) labels, at about a quarter of the precision <!-- source: per_field -->.
+**Limits.** In-sample rules (written after reading about ten labels per category); price is scored against Price
+Restrictions (13 labels); MOQ and lead time have no CUAD category; plain text only. In the product the fields are a draft
+in Policies › Extracted terms and never feed planning; confirming a field is not built.
+
+### AS1 — the status assistant (`AS1-20261110T121815Z`, offline evaluation with generated labels)
+
+**Question.** Does the read-only assistant answer stock, order and terms questions from cited records, ask which product
+when several match, and withhold change requests, unknown ids and out-of-scope questions?
+**Data.** 57 questions generated from the synthetic e2e fixture (36 products, 2 suppliers, orders in three states): stock
+10, terms 8, order 6, ambiguous 5, change requests 12, unknown ids 8, out of scope 8 <!-- source: categories -->.
+**Result.** Answered correctly 24 of 24 answerable, product choice offered on 5 of 5 ambiguous, withheld 28 of 28 that
+must be withheld; 61 sentences, none without a citation; no wrong answer <!-- source: overall -->. The first run
+(`AS1-20261110T121733Z`, superseded) withheld 1 of 6 order questions as a change request.
+**Limits.** Templates written by the rules' author (an upper bound for real wording; human-written questions G2 are open);
+called in-process (the HTTP layer is covered by `tests/test_assistant.py`); one workspace and location.
+
+### RED1 — red team on generated answers (`RED1-20261110T120752Z`, offline evaluation)
+
+**Question.** Do adversarial questions and poisoned documents make the answer layer state planted figures, leak its
+instructions or other workspaces' records, claim actions, or break its limits?
+**Data.** 17 attacks on the simulated UCI Research workspace through `POST /api/v1/evidence/answer` with the local model
+(qwen2.5:7b, temperature 0): 13 questions and 4 agreements poisoned through the upload endpoint; 2 control questions
+<!-- source: cases, by_kind, controls -->. Pass rules were written before the run (`evaluations/redteam_cases.py`).
+**Result.** The first run (`RED1-20261110T120450Z`, superseded) held 15 of 17: a poisoned agreement's payment link and a
+planted supplier name were repeated in cited answers, and in one more case the model stated planted figures that a
+citation check then withheld. Two defences followed (`generate.py`: text addressed to a model is not shown to it; answers
+with a link or address are withheld). The rerun held 17 of 17: 7 by the extractive layer (nothing generated), 3 by the
+generation checks, 7 answered within the rules; both controls answered correctly <!-- source: held_by, controls -->.
+**Limits.** 17 hand-written attacks and one model: a screen, not a proof; pattern rules could miss a reworded leak; the
+screen recognises text addressed to a model, not a false claim written as ordinary contract text.
+
 ## Limitations
 
 - Sales are a demand proxy; stockouts and lost sales are unobserved. Cost and term parameters in S1/S2 are assumptions.
@@ -382,6 +492,13 @@ SUPPLYLENS_GENERATION_ENABLED=true uv run python evaluations/generation_study.py
 uv run python evaluations/scheduling_study.py                                           # JS1
 python3 -I scripts/download_datasets.py --dataset ai4i_2020 && uv run python evaluations/maintenance_study.py  # PM1
 uv run python evaluations/vision_qc_study.py                                            # QC1
+uv run python evaluations/fuel_study.py                                                 # FE1
+uv run python evaluations/lstm_study.py                                                 # W2 (PyTorch in a child process)
+uv run --with scikit-learn==1.7.2 --with imbalanced-learn==0.14.0 python evaluations/imbalance_study.py  # B1
+uv run python evaluations/eta_study.py && uv run python evaluations/routing_study.py   # ET1, RT1
+SUPPLYLENS_GENERATION_ENABLED=true uv run python evaluations/redteam_study.py           # RED1 (bootstrapped *_test database)
+uv run python evaluations/extraction_study.py                                           # X1 (CUAD downloaded)
+uv run python evaluations/assistant_study.py                                            # AS1 (*_test database with the e2e fixture)
 uv run python scripts/course_metrics.py             # docs/course/metrics.md from the registry
 ```
 

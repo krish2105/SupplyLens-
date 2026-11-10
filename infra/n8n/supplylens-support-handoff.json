@@ -1,0 +1,128 @@
+{
+  "name": "SupplyLens: support hand-off to a HubSpot ticket",
+  "nodes": [
+    {
+      "name": "Hand-off received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "supplylens-handoff",
+        "responseMode": "responseNode",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SET-IN-N8N",
+          "name": "SupplyLens webhook secret (set in n8n)"
+        }
+      },
+      "id": "9321e8f5-19d5-5cb7-a0ca-f85895415631"
+    },
+    {
+      "name": "Check the payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        0
+      ],
+      "parameters": {
+        "jsCode": "// The body is the payload SupplyLens returns from POST /api/v1/assistant/handoff (\"payload\"): HubSpot's ticket shape.\n// Refuse anything else, so the webhook cannot be used to send arbitrary objects to HubSpot.\nconst body = $input.first().json.body ?? {};\nconst p = body.properties ?? {};\nconst allowed = ['subject', 'content', 'hs_pipeline', 'hs_pipeline_stage', 'hs_ticket_priority'];\nif (typeof p.subject !== 'string' || !p.subject.startsWith('SupplyLens: ') || typeof p.hs_pipeline_stage !== 'string') {\n  throw new Error('not a SupplyLens hand-off payload');\n}\nconst properties = Object.fromEntries(Object.entries(p).filter(([k]) => allowed.includes(k)).map(([k, v]) => [k, String(v).slice(0, 5000)]));\nreturn [{ json: { properties } }];"
+      },
+      "id": "c1c5767f-2260-51cb-a19e-9b5200762546"
+    },
+    {
+      "name": "Create HubSpot ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hubapi.com/crm/objects/2026-09/tickets",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ properties: $json.properties }) }}",
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "SET-IN-N8N",
+          "name": "HubSpot service key: Authorization: Bearer \u2026 (set in n8n)"
+        }
+      },
+      "id": "8bb11dd6-83ef-553e-96f3-30c05461e9f4"
+    },
+    {
+      "name": "Reply with the ticket id",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        0
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ sent: true, ticket_id: $json.id }) }}",
+        "options": {}
+      },
+      "id": "65bf8397-a460-59c4-869c-cbc3a5978db7"
+    }
+  ],
+  "connections": {
+    "Hand-off received": {
+      "main": [
+        [
+          {
+            "node": "Check the payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check the payload": {
+      "main": [
+        [
+          {
+            "node": "Create HubSpot ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create HubSpot ticket": {
+      "main": [
+        [
+          {
+            "node": "Reply with the ticket id",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "note": "Inactive by default. No secrets: both credentials are placeholders to create in n8n. SupplyLens does not call this workflow; see infra/n8n/README.md."
+  },
+  "id": "94e15fe8-22eb-57"
+}

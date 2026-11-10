@@ -341,9 +341,9 @@
       "height": 360,
       "bytes": 16420,
       "sha256": "3dfcf788744f72ae8d75400f10952a1a91074811bc84e738b308f394a230c420",
-      "usage": "reserved: Policies > Extracted terms, nothing extracted yet (8B WP7); not rendered until that screen exists",
-      "rendered": false,
-      "review": "prepared at the documented size; not rendered until its screen exists"
+      "usage": "Policies > document reader > Extracted terms: the rules found no field in this version (empty_scope); never for loading or errors",
+      "rendered": true,
+      "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     },
     {
       "id": "A18",
@@ -365,9 +365,9 @@
       "height": 360,
       "bytes": 18692,
       "sha256": "42610789f12486575ada15dc29d1d7959221d6bad4e817ebb91f79ea8cf94213",
-      "usage": "reserved: status assistant drawer, first use (8B WP6); not rendered until that drawer exists",
-      "rendered": false,
-      "review": "prepared at the documented size; not rendered until its screen exists"
+      "usage": "Status assistant drawer, before the first question (first_run); never for answers, withheld answers or errors",
+      "rendered": true,
+      "review": "integrated at the documented size; reviewed in light and dark themes in the running app"
     }
   ]
 }

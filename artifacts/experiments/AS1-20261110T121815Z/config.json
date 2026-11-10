@@ -1,0 +1,47 @@
+{
+ "workspace": "uci-research",
+ "dataset": "SYNTHETIC e2e fixture",
+ "as_of": "2011-12-08 23:59:00+00:00",
+ "effective_date": "2011-12-08",
+ "stock_skus": [
+  "SYN001",
+  "SYN005",
+  "SYN012",
+  "SYN020",
+  "SYN033"
+ ],
+ "terms_skus": [
+  "SYN002",
+  "SYN007",
+  "SYN018",
+  "SYN027"
+ ],
+ "orders": {
+  "sent": {
+   "id": "b35c8a76-24bb-4c9f-9eb6-f08faf948a7a",
+   "status": "RECONCILED",
+   "external_ref": "SBX-PO-100002"
+  },
+  "pending": {
+   "id": "0f7dfe58-28d8-4c4e-a804-bc72c2c07adf",
+   "status": "PENDING_APPROVAL",
+   "external_ref": null
+  },
+  "rejected": {
+   "id": "df11c5bc-bef2-405d-8373-734019fda26c",
+   "status": "REJECTED",
+   "external_ref": null
+  }
+ },
+ "orders_made_by_this_run": [],
+ "other_workspace": "demo (ids used as unknown_id questions)",
+ "caller": "assistant.answer.ask as the viewer, in-process",
+ "base_commit": "5334b8bbb26f748102199227a3276760b4db661c",
+ "source_sha256": {
+  "services/api/src/supplylens/assistant/parse.py": "a76a48aa198b87fbbe949a9db9fd6cd2e8fd1fdc1155d09f690fddf887f27830",
+  "services/api/src/supplylens/assistant/answer.py": "71fd203a4e70b335051e1e5975ab84488894f0bb9ddfe0882a65596e1b7d447f",
+  "evaluations/assistant_study.py": "f8e7c57fac6218b1fda4c0081def427797b8afc8573726ab402c281d8395f234"
+ },
+ "generation": "off (deterministic and extractive)",
+ "date": "2026-11-10"
+}

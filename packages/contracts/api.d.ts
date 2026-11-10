@@ -462,6 +462,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/assistant/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask
+         * @description Answer from this workspace's records with a citation on every sentence, ask which product when several match, or
+         *     withhold with the reason. Deterministic and extractive: no model is called, nothing is changed.
+         */
+        post: operations["ask_api_v1_assistant_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/assistant/handoff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Hand Off
+         * @description A support ticket for a person. Dry run (payload returned and audited, nothing sent) unless HubSpot is enabled.
+         */
+        post: operations["hand_off_api_v1_assistant_handoff_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/audit": {
         parameters: {
             query?: never;
@@ -672,6 +713,27 @@ export interface paths {
         };
         /** Document Version */
         get: operations["document_version_api_v1_documents_versions__version_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/documents/versions/{version_id}/extracted-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Extracted Terms
+         * @description Draft contract terms read from a version's text by rules (Phase 8 WP7). The same authentication, workspace scope
+         *     (row-level security) and role check as reading the version itself; computed on request, nothing is written.
+         */
+        get: operations["extracted_terms_api_v1_documents_versions__version_id__extracted_terms_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1782,6 +1844,116 @@ export interface components {
             /** Payload Hash */
             payload_hash: string;
         };
+        /** AskIn */
+        AskIn: {
+            /** Question */
+            question: string;
+        };
+        /**
+         * AssistantAnswer
+         * @description POST /assistant/ask. status: answered (every sentence cites records) | withheld (reason, no sentences) | choose
+         *     (several products match; up to five choices). reason_code: read_only | out_of_scope | unknown_id | no_match | ambiguous.
+         *     Deterministic and extractive: `generated` is always false.
+         */
+        AssistantAnswer: {
+            /** As Of */
+            as_of: string | null;
+            /** Choices */
+            choices: components["schemas"]["AssistantChoice"][];
+            /**
+             * Choices Total
+             * @default 0
+             */
+            choices_total: number;
+            /**
+             * Generated
+             * @default false
+             */
+            generated: boolean;
+            /**
+             * Mode
+             * @default records
+             * @constant
+             */
+            mode: "records";
+            /** Question */
+            question: string;
+            /** Reason */
+            reason: string | null;
+            /** Reason Code */
+            reason_code: string | null;
+            /** Sentences */
+            sentences: components["schemas"]["AssistantSentence"][];
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "answered" | "withheld" | "choose";
+        } & {
+            [key: string]: unknown;
+        };
+        /** AssistantChoice */
+        AssistantChoice: {
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * AssistantCitation
+         * @description A record the sentence came from: its id and the screen that shows it (the client adds the workspace).
+         */
+        AssistantCitation: {
+            /** Href */
+            href: string;
+            /** Id */
+            id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "product" | "stock" | "order" | "action" | "terms";
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * AssistantHandoff
+         * @description POST /assistant/handoff. mode dry_run: nothing sent (payload returned and audited); mode hubspot: ticket created.
+         */
+        AssistantHandoff: {
+            /** Endpoint */
+            endpoint: string;
+            /** Message */
+            message: string;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "dry_run" | "hubspot";
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /** Reason */
+            reason: string | null;
+            /** Sent */
+            sent: boolean;
+            /** Ticket Id */
+            ticket_id: string | null;
+        } & {
+            [key: string]: unknown;
+        };
+        /** AssistantSentence */
+        AssistantSentence: {
+            /** Citations */
+            citations: components["schemas"]["AssistantCitation"][];
+            /** Text */
+            text: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** AssumptionSetInfo */
         AssumptionSetInfo: {
             /** Name */
@@ -2706,6 +2878,42 @@ export interface components {
         } & {
             [key: string]: unknown;
         };
+        /** ExtractedField */
+        ExtractedField: {
+            /** End */
+            end: number;
+            /** Field */
+            field: string;
+            /** Source */
+            source: string;
+            /** Start */
+            start: number;
+            /** Value */
+            value: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /** ExtractedTerms */
+        ExtractedTerms: {
+            /** Extractor */
+            extractor: string;
+            /** Fields */
+            fields: components["schemas"]["ExtractedField"][];
+            /** Note */
+            note: string;
+            /**
+             * Status
+             * @constant
+             */
+            status: "draft";
+            /**
+             * Version Id
+             * Format: uuid
+             */
+            version_id: string;
+        } & {
+            [key: string]: unknown;
+        };
         /** FamilySelection */
         FamilySelection: {
             /**
@@ -3030,6 +3238,18 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HandoffIn */
+        HandoffIn: {
+            /**
+             * Answer Status
+             * @enum {string}
+             */
+            answer_status: "answered" | "withheld" | "choose" | "error" | "not_asked";
+            /** Note */
+            note?: string | null;
+            /** Question */
+            question: string;
         };
         /** Health */
         Health: {
@@ -6249,6 +6469,80 @@ export interface operations {
             };
         };
     };
+    ask_api_v1_assistant_ask_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantAnswer"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hand_off_api_v1_assistant_handoff_post: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HandoffIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AssistantHandoff"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     audit_api_v1_audit_get: {
         parameters: {
             query?: {
@@ -6625,6 +6919,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DocumentVersion"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    extracted_terms_api_v1_documents_versions__version_id__extracted_terms_get: {
+        parameters: {
+            query?: {
+                ws?: string | null;
+            };
+            header?: {
+                "x-supplylens-tenant"?: string | null;
+            };
+            path: {
+                version_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ExtractedTerms"];
                 };
             };
             /** @description Validation Error */

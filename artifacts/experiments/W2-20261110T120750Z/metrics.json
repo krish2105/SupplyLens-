@@ -1,0 +1,447 @@
+{
+ "experiment_id": "W2-20261110T120750Z",
+ "study": "W2",
+ "kind": "measured (backtest)",
+ "question": "Does a small LSTM beat seasonal naive, Prophet and XGBoost on WAPE, MAPE (non-zero actuals) and RMSE for UCI total daily units, under W1's rolling-origin protocol?",
+ "data": {
+  "sales": "UCI Online Retail II daily units: accepted sales lines (supplylens_ml.uci, uci-v1), summed over all products per calendar day, zero on non-trading days; read from the raw zip, not the database",
+  "sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+  "weather": "not used (file not available locally)",
+  "accepted_lines": 1003214,
+  "accepted_units": 11187774,
+  "first_day": "2009-12-01",
+  "last_day": "2011-12-09",
+  "series_used": [
+   "2009-12-01",
+   "2011-12-05"
+  ]
+ },
+ "protocol": {
+  "origins": [
+   "2011-09-05",
+   "2011-09-12",
+   "2011-09-19",
+   "2011-09-26",
+   "2011-10-03",
+   "2011-10-10",
+   "2011-10-17",
+   "2011-10-24",
+   "2011-10-31",
+   "2011-11-07",
+   "2011-11-14",
+   "2011-11-21",
+   "2011-11-28"
+  ],
+  "horizon_days": 7,
+  "refit_each_origin": true,
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "device": "cpu, 1 thread per seed, torch.use_deterministic_algorithms(True)",
+  "target": "total daily units (W1 target (a))",
+  "window_days": 56,
+  "inputs": "last 56 days of units divided by their 28-day mean (covers XGBoost's lag7, lag14, mean7, mean28 and same-weekday mean of 4 weeks) + weekday one-hot per input day; for each of the 7 target days weekday one-hot, sin/cos day of year and days to Christmas (W1 XGBoost: dow, doy, month, to_xmas). No weather, no holiday calendar (W1 Prophet had UK holidays).",
+  "model": "LSTM(8->32, 1 layer) final state + 7x10 target calendar -> MLP(64) -> 7 outputs (direct multi-horizon)",
+  "training_samples_per_origin": [
+   582,
+   589,
+   596,
+   603,
+   610,
+   617,
+   624,
+   631,
+   638,
+   645,
+   652,
+   659,
+   666
+  ],
+  "config": {
+   "hidden": 32,
+   "head": 64,
+   "layers": 1,
+   "dropout": 0.0,
+   "epochs": 150,
+   "batch": 64,
+   "lr": 0.002,
+   "weight_decay": 0.0001,
+   "grad_clip": 1.0,
+   "threads": 1,
+   "device": "cpu",
+   "loss": "huber",
+   "huber_delta": 1.0
+  },
+  "hyperparameters": "fixed in advance except the loss, which was chosen between ['mse', 'huber'] by mean validation WAPE over the seeds before the test origins were scored; test origins scored once, not tuned on",
+  "loss_chosen_on_validation": {
+   "loss": "huber",
+   "huber_delta": 1.0
+  },
+  "validation_origins": [
+   "2011-07-04",
+   "2011-07-11",
+   "2011-07-18",
+   "2011-07-25",
+   "2011-08-01",
+   "2011-08-08",
+   "2011-08-15",
+   "2011-08-22",
+   "2011-08-29"
+  ],
+  "parameters": 12423,
+  "torch": "2.14.1",
+  "determinism_check": {
+   "what": "seed 0, first test origin fitted twice in the same process",
+   "max_abs_diff_scaled": 0.0,
+   "deterministic": true
+  },
+  "seed_sd": "sample standard deviation across seeds (ddof=1)"
+ },
+ "results": {
+  "lstm": {
+   "wape": {
+    "mean": 0.2651,
+    "sd": 0.0132,
+    "min": 0.2455,
+    "max": 0.2751,
+    "runs": [
+     0.2573,
+     0.2455,
+     0.2742,
+     0.2732,
+     0.2751
+    ]
+   },
+   "mape_nonzero_days": {
+    "mean": 0.285,
+    "sd": 0.0173,
+    "min": 0.2625,
+    "max": 0.3052,
+    "runs": [
+     0.2761,
+     0.2625,
+     0.2989,
+     0.3052,
+     0.2823
+    ]
+   },
+   "rmse": {
+    "mean": 7666.674,
+    "sd": 336.214,
+    "min": 7237.831,
+    "max": 8069.307,
+    "runs": [
+     7461.561,
+     7237.831,
+     7918.927,
+     7645.743,
+     8069.307
+    ]
+   },
+   "mae": {
+    "mean": 5729.589,
+    "sd": 284.505,
+    "min": 5307.044,
+    "max": 5945.857,
+    "runs": [
+     5561.657,
+     5307.044,
+     5927.65,
+     5905.736,
+     5945.857
+    ]
+   }
+  },
+  "lstm_seed_average_forecast": {
+   "mae": 5358.805,
+   "rmse": 7152.249,
+   "wape": 0.2479,
+   "mape_nonzero_days": 0.2681
+  },
+  "seasonal_naive_reproduced": {
+   "mae": 6428.418,
+   "rmse": 8909.444,
+   "wape": 0.2974,
+   "mape_nonzero_days": 0.3306,
+   "check": {
+    "w1_recorded": {
+     "wape": 0.2974,
+     "mape_nonzero_days": 0.3306,
+     "rmse": 8909.444,
+     "mae": 6428.418
+    },
+    "difference": {
+     "wape": 0.0,
+     "mape_nonzero_days": 0.0,
+     "rmse": 0.0,
+     "mae": 0.0
+    },
+    "match": true
+   },
+   "points": 91
+  },
+  "from_w1": {
+   "run": "W1-20261027T055557Z",
+   "points": 91,
+   "xgboost": {
+    "mae": 5306.825,
+    "rmse": 7498.421,
+    "wape": 0.2455,
+    "mape_nonzero_days": 0.2632,
+    "label": "from W1, without weather"
+   },
+   "prophet": {
+    "mae": 6061.42,
+    "rmse": 7617.37,
+    "wape": 0.2804,
+    "mape_nonzero_days": 0.268,
+    "label": "from W1, without weather"
+   },
+   "seasonal_naive": {
+    "mae": 6428.418,
+    "rmse": 8909.444,
+    "wape": 0.2974,
+    "mape_nonzero_days": 0.3306,
+    "label": "from W1 (no weather input)"
+   },
+   "xgboost_weather": {
+    "mae": 6153.854,
+    "rmse": 9114.56,
+    "wape": 0.2847,
+    "mape_nonzero_days": 0.3241,
+    "label": "from W1, with observed weather"
+   },
+   "prophet_weather": {
+    "mae": 6051.61,
+    "rmse": 7611.699,
+    "wape": 0.28,
+    "mape_nonzero_days": 0.2664,
+    "label": "from W1, with observed weather"
+   }
+  },
+  "lstm_vs_seasonal_naive": {
+   "mean_abs_error_change": -698.829,
+   "ci95": [
+    -1555.848,
+    63.522
+   ],
+   "relative_to_b": -0.1087,
+   "clear": false,
+   "basis": "absolute error averaged over seeds, paired by day; 95 % bootstrap over the 13 origins"
+  },
+  "lstm_standing": {
+   "xgboost": {
+    "metric": "wape",
+    "lstm_seed_mean": 0.2651,
+    "other": 0.2455,
+    "lstm_better_on_mean": false,
+    "seeds_better": 0,
+    "seeds": 5,
+    "rmse": {
+     "lstm_seed_mean": 7666.674,
+     "other": 7498.421,
+     "lstm_better_on_mean": false
+    }
+   },
+   "prophet": {
+    "metric": "wape",
+    "lstm_seed_mean": 0.2651,
+    "other": 0.2804,
+    "lstm_better_on_mean": true,
+    "seeds_better": 5,
+    "seeds": 5,
+    "rmse": {
+     "lstm_seed_mean": 7666.674,
+     "other": 7617.37,
+     "lstm_better_on_mean": false
+    }
+   },
+   "seasonal_naive": {
+    "metric": "wape",
+    "lstm_seed_mean": 0.2651,
+    "other": 0.2974,
+    "lstm_better_on_mean": true,
+    "seeds_better": 5,
+    "seeds": 5,
+    "rmse": {
+     "lstm_seed_mean": 7666.674,
+     "other": 8909.444,
+     "lstm_better_on_mean": true
+    }
+   }
+  },
+  "validation": {
+   "note": "9 Monday origins 2011-07-04..2011-08-29 (targets end 2011-09-05, before the test targets); same model and seeds; used only to choose the loss",
+   "points": 63,
+   "seasonal_naive": {
+    "mae": 4773.381,
+    "rmse": 7241.382,
+    "wape": 0.3444,
+    "mape_nonzero_days": 0.3854
+   },
+   "candidates": [
+    {
+     "candidate": {
+      "loss": "mse"
+     },
+     "lstm": {
+      "wape": {
+       "mean": 0.3756,
+       "sd": 0.0353,
+       "min": 0.3409,
+       "max": 0.4184,
+       "runs": [
+        0.3409,
+        0.3464,
+        0.3652,
+        0.4071,
+        0.4184
+       ]
+      },
+      "mape_nonzero_days": {
+       "mean": 0.3925,
+       "sd": 0.0596,
+       "min": 0.3271,
+       "max": 0.4629,
+       "runs": [
+        0.3532,
+        0.3271,
+        0.3719,
+        0.4473,
+        0.4629
+       ]
+      },
+      "rmse": {
+       "mean": 7493.609,
+       "sd": 401.732,
+       "min": 7065.26,
+       "max": 7945.59,
+       "runs": [
+        7065.26,
+        7110.549,
+        7520.919,
+        7825.729,
+        7945.59
+       ]
+      },
+      "mae": {
+       "mean": 5206.812,
+       "sd": 489.66,
+       "min": 4725.379,
+       "max": 5800.527,
+       "runs": [
+        4725.379,
+        4802.303,
+        5062.693,
+        5643.156,
+        5800.527
+       ]
+      }
+     },
+     "lstm_vs_seasonal_naive": {
+      "mean_abs_error_change": 433.431,
+      "ci95": [
+       -1377.201,
+       2062.89
+      ],
+      "relative_to_b": 0.0908,
+      "clear": false
+     }
+    },
+    {
+     "candidate": {
+      "loss": "huber",
+      "huber_delta": 1.0
+     },
+     "lstm": {
+      "wape": {
+       "mean": 0.3442,
+       "sd": 0.0169,
+       "min": 0.3192,
+       "max": 0.361,
+       "runs": [
+        0.3357,
+        0.3491,
+        0.361,
+        0.3559,
+        0.3192
+       ]
+      },
+      "mape_nonzero_days": {
+       "mean": 0.376,
+       "sd": 0.0269,
+       "min": 0.3338,
+       "max": 0.4074,
+       "runs": [
+        0.3727,
+        0.3795,
+        0.4074,
+        0.3864,
+        0.3338
+       ]
+      },
+      "rmse": {
+       "mean": 6911.135,
+       "sd": 226.262,
+       "min": 6645.668,
+       "max": 7253.157,
+       "runs": [
+        6796.464,
+        6971.727,
+        7253.157,
+        6888.657,
+        6645.668
+       ]
+      },
+      "mae": {
+       "mean": 4771.006,
+       "sd": 233.717,
+       "min": 4425.132,
+       "max": 5004.184,
+       "runs": [
+        4654.015,
+        4838.792,
+        5004.184,
+        4932.908,
+        4425.132
+       ]
+      }
+     },
+     "lstm_vs_seasonal_naive": {
+      "mean_abs_error_change": -2.375,
+      "ci95": [
+       -1707.734,
+       1699.977
+      ],
+      "relative_to_b": -0.0005,
+      "clear": false
+     }
+    }
+   ],
+   "chosen": {
+    "loss": "huber",
+    "huber_delta": 1.0
+   }
+  }
+ },
+ "limits": [
+  "one retailer, one autumn test period: 13 origins x 7 days = 91 points",
+  "no weather: W1's weather file is not available locally, so W2 is compared with W1's no-weather Prophet and XGBoost; W1's with-weather rows are shown for reference only",
+  "Prophet and XGBoost numbers are read from W1's metrics.json, not re-run; per-day forecasts were not stored by W1, so no paired test against them is possible, only the point comparison",
+  "the TCN of F1 is not comparable: it forecasts quantiles per product on a different cohort and window",
+  "MAPE leaves out zero-sales days (Saturdays); WAPE is the comparable figure",
+  "a single small architecture; only the loss was chosen on validation; a tuned or larger network might do differently",
+  "582-666 training windows per origin (under two years of daily history, one previous autumn), which favours simpler models",
+  "a few bulk-order days (maximum 125,468 units against a median trading day of 14,996 before 2011-09-05) sit in the training history; returns are not netted (W1 had the same series)"
+ ],
+ "seconds": 242,
+ "environment": {
+  "python": "3.12.13",
+  "platform": "macOS-27.2-arm64-arm-64bit",
+  "torch": "2.14.1"
+ }
+}

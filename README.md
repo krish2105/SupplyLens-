@@ -9,7 +9,7 @@ approval-bound purchase orders that are reconciled before they count as done.
 
 ![Python](https://img.shields.io/badge/Python-3.12-3776AB) ![FastAPI](https://img.shields.io/badge/FastAPI-0.158-009688)
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17%20%2B%20pgvector-336791)
-![Tests](https://img.shields.io/badge/tests-534%20backend%20%C2%B7%20307%20browser-0F6B55)<!-- source: docs/agent-handoff/EVIDENCE.md P8-E02 (uv run pytest -q; npx playwright test --list) -->
+![Tests](https://img.shields.io/badge/tests-665%20backend%20%C2%B7%20313%20browser-0F6B55)<!-- source: docs/agent-handoff/EVIDENCE.md P8-E25 (uv run pytest --collect-only -q: 665; npx playwright test --list: 313) -->
 
 <img src="docs/images/overview-dark.png" alt="SupplyLens overview with linked 3D warehouse" width="900" />
 
@@ -80,7 +80,7 @@ All figures come from experiment artifacts in `artifacts/experiments/` (status o
 
 ### Operations studies
 
-Added in Phase 7 (2026-10-26/27 and 2026-10-30). The kind of each number is stated; none is a real business outcome.
+Added in Phase 7 (2026-10-26/27 and 2026-10-30) and Phase 8 (2026-11-10: FE1, W2, B1, ET1, RT1, X1, AS1, RED1). The kind of each number is stated; none is a real business outcome.
 Course documents quote these values only from [`docs/course/metrics.md`](docs/course/metrics.md), generated from the
 same files.
 
@@ -94,10 +94,19 @@ same files.
 | JS1 receiving-floor scheduling <!-- source: artifacts/experiments/JS1-20261030T191602Z/metrics.json --> | Dispatch rules give schedules 11.11–13.0 % longer than CP-SAT on average; CP-SAT proved 7 of 9 optimal; ft06 solved to its known optimum (55) | Simulation: real UCI volumes; routes and times assumed |
 | PM1 predictive maintenance <!-- source: artifacts/experiments/PM1-20261030T192104Z/metrics.json --> | AI4I 2020: LightGBM AUC 0.9795 catches 61 of 71 test failures with 135 inspections, £40,250 vs £142,000 running to failure (assumed costs); simulated fleet: a 1D-CNN (RMSE 19.25 cycles) does not beat ridge (18.9) | Published synthetic dataset (AI4I 2020) and simulation |
 | QC1 visual inspection <!-- source: artifacts/experiments/QC1-20261030T193358Z/metrics.json --> | CNN AUC 0.9972 vs hand-made features 0.9462; checking only what the CNN flags catches 98.72 % of defects at £419.40 vs £900 inspecting everything (assumed costs) | Simulation: generated images |
+| FE1 fuel-inefficient trips <!-- source: artifacts/experiments/FE1-20261110T120111Z/metrics.json --> | Flagging inefficient trips, AUC: fleet-average rule 0.886, logistic regression 0.956, LightGBM 0.953; L/100 km MAE 2.05 (class average) → 0.85 (LightGBM); the rule still captures more of the excess fuel (46 % vs 40 %) | Simulation: generated trip telemetry; CO2 factor assumed |
+| W2 LSTM forecasting <!-- source: artifacts/experiments/W2-20261110T120750Z/metrics.json --> | Total daily units, WAPE: LSTM 0.2651 ± 0.0132 (5 seeds) vs XGBoost 0.2455, Prophet 0.2804 (W1, without weather) and seasonal naive 0.2974; the gain over seasonal naive is not clear | Historical backtest (UCI sales, no weather) |
+| B1 bias mitigation <!-- source: artifacts/experiments/B1-20261110T120717Z/metrics.json --> | Logistic failure model, expected cost: none £118,550, class weights £65,350, SMOTE £70,000, threshold moving £74,700; SMOTE widens the recall gap between machine types to 0.81; adversarial debiasing halves the gap (0.22 → 0.11) for more cost | Published synthetic dataset (AI4I 2020); costs assumed |
+| ET1 delivery arrival times <!-- source: artifacts/experiments/ET1-20261110T120540Z/metrics.json --> | MAE: region-by-hour average 30.59 min, LightGBM 12.37, generator floor 10.39; new couriers 27.13 min with 34 % interval coverage | Simulation: generated delivery history |
+| RT1 last-mile routes <!-- source: artifacts/experiments/RT1-20261110T120815Z/metrics.json --> | Late stops over 15 days: OR-Tools 0, window-aware nearest neighbour 4, nearest neighbour ignoring windows 225, fixed order 240; 31–39 % less distance than the window-aware nearest neighbour | Simulation: generated delivery days; straight-line distances; fuel and CO2 assumed |
+| X1 contract-term extraction <!-- source: artifacts/experiments/X1-20261110T121508Z/metrics.json --> | Overlap F1 with CUAD expert labels: rules 0.51 (exact span 0.35; 0.51 on 437 held-out contracts) vs top BM25 paragraph 0.19; shown as a draft in Policies › Extracted terms | Human-labelled (CUAD) |
+| AS1 status assistant <!-- source: artifacts/experiments/AS1-20261110T121815Z/metrics.json --> | 24/24 answerable questions answered from cited records, 5/5 ambiguous given a product choice, 28/28 change requests, unknown ids and out-of-scope questions withheld | Offline evaluation with generated labels (synthetic fixture) |
+| RED1 red team <!-- source: artifacts/experiments/RED1-20261110T120752Z/metrics.json --> | 17 of 17 attacks held, both controls answered; the first run held 15 of 17 (a planted link and a planted supplier repeated), which led to passage screening and link withholding | Offline evaluation: hand-written attacks on simulated agreements; local model |
 
 Negative results are kept: vector-only retrieval beats the hybrid on ACORD; accuracy-optimal medians under-stock on
 heavy-tailed sales; lower forecast error did not mean lower simulated cost (S2); weather adds nothing clear (W1); the
-1D-CNN does not beat a ridge baseline for remaining life (PM1).
+1D-CNN does not beat a ridge baseline for remaining life (PM1); the LSTM does not beat XGBoost (W2); SMOTE widens a
+group recall gap (B1); the red team's first run broke on 2 of 17 attacks (RED1).
 
 ## Data
 

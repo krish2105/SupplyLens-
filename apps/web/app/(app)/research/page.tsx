@@ -29,12 +29,12 @@ function bars(categories: string[], series: { name: string; data: number[]; colo
 
 /** The headline is the reviewed one from evaluations/study_registry.json, never a string fixed in this page (audit S16).
  *  `fallback` is shown only as the question's topic when no reviewed headline exists. */
-function StudyCard({ id, title: fallback, question, children, q }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any; error: unknown; refetch: () => unknown } }) {
+function StudyCard({ id, title: fallback, question, children, q, week }: { id: string; title: string; question: string; children: React.ReactNode; q: { isLoading: boolean; data?: Any; error: unknown; refetch: () => unknown }; week?: string }) {
   const review = q.data?.review as { status: string; headline?: string | null; notes?: string | null; superseded?: { experiment_id: string; reason?: string }[] } | undefined;
   return (
     <Card className="min-w-0 p-5">{/* a grid item: without min-w-0 a wide table stretches the card past a phone screen */}
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div><Eyebrow>Study {id}</Eyebrow>
+        <div><Eyebrow>Study {id}{week && <span className="font-normal"> · course week {week}</span>}</Eyebrow>
           <h2 className="display mt-1 text-xl font-semibold">{review?.headline ?? (q.data?.available ? `${fallback} — headline not yet reviewed` : fallback)}</h2>
           <p className="mt-1 text-sm text-muted">{question}</p></div>
         <div className="flex flex-col items-end gap-1">
@@ -52,11 +52,29 @@ function StudyCard({ id, title: fallback, question, children, q }: { id: string;
   );
 }
 
+/** A plain results table: first column is the row name, the rest are right-aligned numbers. */
+function MetricTable({ label, caption, cols, rows, min, className }: { label: string; caption: string; cols: string[]; rows: React.ReactNode[][]; min: number; className?: string }) {
+  return (
+    <TableScroll label={label} min={min} className={className}><table className="w-full text-sm"><caption className="sr-only">{caption}</caption>
+      <thead><tr className="border-b border-line text-left text-xs text-muted">{cols.map((c, i) => <th key={c} className={i ? "pr-4 text-right font-medium last:pr-0" : "py-2 pr-4 font-medium"}>{c}</th>)}</tr></thead>
+      <tbody>{rows.map((r, i) => <tr key={i} className="border-b border-line/60">{r.map((v, j) => <td key={j} className={j ? "num pr-4 text-right last:pr-0" : "py-1.5 pr-4"}>{v}</td>)}</tr>)}</tbody>
+    </table></TableScroll>
+  );
+}
+
+const SECTIONS: [string, string][] = [
+  ["forecast-studies", "Forecasting and supplier documents"], ["operations-studies", "Operations trade-offs"],
+  ["warehouse-studies", "Running the warehouse"], ["transport-studies", "Moving goods"], ["documents-studies", "Documents and answers"],
+];
+const gbp = (v: number | null | undefined) => (v == null ? "—" : `£${int(Math.round(v))}`);
+
 export default function ResearchPage() {
   const ws = useWs();
   const f1 = useStudy("F1"), s2 = useStudy("S2"), r3 = useStudy("R3"), r1 = useStudy("R1"), r2 = useStudy("R2"), c1 = useStudy("C1"), ib = useStudy("IB"), agt = useStudy("AGT");
   const e1 = useStudy("E1"), fa1 = useStudy("FA1"), g1 = useStudy("G1"), w1 = useStudy("W1"), d1s = useStudy("D1");
   const js1 = useStudy("JS1"), pm1 = useStudy("PM1"), qc1 = useStudy("QC1");
+  const fe1 = useStudy("FE1"), w2 = useStudy("W2"), b1 = useStudy("B1"), et1 = useStudy("ET1"), rt1 = useStudy("RT1");
+  const x1 = useStudy("X1"), as1 = useStudy("AS1"), red1 = useStudy("RED1");
 
   const chartTheme = useChartTheme();     // chart colours follow the theme (audit S17)
   const f1Opt = useMemo(() => {
@@ -115,8 +133,13 @@ export default function ResearchPage() {
       <PageHeader eyebrow="Research" title="Measured results, including the ones that didn't go our way">
         Every number here is read from an experiment artifact under <Mono>artifacts/experiments/</Mono>. Simulated outcomes are labelled as such. Nothing is typed in by hand.
       </PageHeader>
+      <nav aria-label="On this page" className="flex flex-wrap gap-2 text-sm">
+        {SECTIONS.map(([id, label]) => <a key={id} href={`#${id}`} className="inline-flex min-h-9 items-center rounded-full border border-line bg-surface px-3 text-muted hover:text-ink">{label}</a>)}
+      </nav>
 
-      <StudyCard id="F1" q={f1} title="Forecasting study"
+      <section aria-labelledby="forecast-studies" className="space-y-6">
+      <h2 id="forecast-studies" className="display pt-2 text-2xl font-semibold">Forecasting, decisions and supplier documents</h2>
+      <StudyCard id="F1" q={f1} week="3" title="Forecasting study"
         question="Do LightGBM and a compact quantile TCN improve 28-day daily unit-sales forecasts on UCI Online Retail II?">
         {f1.data?.summary && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
@@ -135,7 +158,7 @@ export default function ResearchPage() {
         )}
       </StudyCard>
 
-      <StudyCard id="S2" q={s2} title="Decision study"
+      <StudyCard id="S2" q={s2} week="4" title="Decision study"
         question="Fed through the product's own ordering logic (lead-time demand, MOQ, packs, lead times, budget, open orders), does a more accurate forecaster lower simulated cost?">
         {s2.data?.results && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
@@ -151,7 +174,7 @@ export default function ResearchPage() {
       </StudyCard>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-        <StudyCard id="R2" q={r2} title="Time-aware retrieval study"
+        <StudyCard id="R2" q={r2} week="8" title="Time-aware retrieval study"
           question="On supplier-terms questions, does explicit effective-date and supersession handling change which version is cited?">
           {r2.data?.conditions && (
             <TableScroll label="R2 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">R2 conditions</caption>
@@ -163,7 +186,7 @@ export default function ResearchPage() {
             </table></TableScroll>
           )}
         </StudyCard>
-        <StudyCard id="R3" q={r3} title="Answer support study"
+        <StudyCard id="R3" q={r3} week="8" title="Answer support study"
           question="When should supplier-document search offer one passage as the answer, decline, or say several suppliers match?">
           {r3.data?.results && (
             <TableScroll label="R3 test half" min={480}><table className="w-full text-sm"><caption className="sr-only">R3 test half</caption>
@@ -176,7 +199,7 @@ export default function ResearchPage() {
             </table></TableScroll>
           )}
         </StudyCard>
-        <StudyCard id="C1" q={c1} title="Clause localisation study"
+        <StudyCard id="C1" q={c1} week="8" title="Clause localisation study"
           question="Within 73 real CUAD supply/distribution contracts, does a top-k chunk overlap the clause an expert labelled?">
           {c1.data?.conditions && (
             <TableScroll label="C1 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">C1 conditions</caption>
@@ -187,7 +210,7 @@ export default function ResearchPage() {
             </table></TableScroll>
           )}
         </StudyCard>
-        <StudyCard id="R1" q={r1} title="ACORD retrieval study"
+        <StudyCard id="R1" q={r1} week="8" title="ACORD retrieval study"
           question="Across 56 expert-graded ACORD test queries, how do keyword, vector and hybrid retrieval rank 3,931 clauses?">
           {r1.data?.conditions && (
             <TableScroll label="R1 conditions" min={480}><table className="w-full text-sm"><caption className="sr-only">R1 conditions</caption>
@@ -198,7 +221,7 @@ export default function ResearchPage() {
             </table></TableScroll>
           )}
         </StudyCard>
-        <StudyCard id="IB" q={ib} title="InventoryBench study"
+        <StudyCard id="IB" q={ib} week="4" title="InventoryBench study"
           question="Scored by the benchmark's own evaluator on its 600 real-trajectory instances (pinned commit; the 720 synthetic ones were not scored), normalised reward vs perfect foresight.">
           {ib.data?.policies && (
             <TableScroll label="InventoryBench scores" min={360}><table className="w-full text-sm"><caption className="sr-only">InventoryBench scores</caption>
@@ -211,7 +234,7 @@ export default function ResearchPage() {
         </StudyCard>
       </div>
 
-      <StudyCard id="AGT" q={agt} title="Investigator study"
+      <StudyCard id="AGT" q={agt} week="11" title="Investigator study"
         question="Across reference-case dates and budgets, denials, stale approvals, timeouts and crash recovery, does the run end in the oracle's state?">
         {agt.data?.summary && (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
@@ -223,9 +246,11 @@ export default function ResearchPage() {
         )}
       </StudyCard>
 
+      </section>
+
       <section aria-labelledby="operations-studies" className="space-y-6">
         <h2 id="operations-studies" className="display pt-4 text-2xl font-semibold">Operations studies: trade-offs, fairness, generated answers and weather</h2>
-        <StudyCard id="E1" q={e1} title="Cost, service and CO₂"
+        <StudyCard id="E1" q={e1} week="2" title="Cost, service and CO₂"
           question="What does cutting the plan's CO₂ cost in service and spend, and does an evolutionary search find the same trade-off as the exact solver?">
           {e1.data?.exact && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
@@ -238,7 +263,7 @@ export default function ResearchPage() {
             </div>
           )}
         </StudyCard>
-        <StudyCard id="FA1" q={fa1} title="Fair allocation across countries"
+        <StudyCard id="FA1" q={fa1} week="10" title="Fair allocation across countries"
           question="When the budget binds, are customers in every country group served equally, and what does reweighing change?">
           {fa1.data?.baseline && (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,4fr)]">
@@ -252,7 +277,23 @@ export default function ResearchPage() {
             </div>
           )}
         </StudyCard>
-        <StudyCard id="G1" q={g1} title="Generated answers"
+        <StudyCard id="B1" q={b1} week="10" title="Bias mitigation for a failure classifier"
+          question="Do re-weighting, SMOTE, threshold moving and adversarial debiasing lower cost and narrow the recall gap between machine types?">
+          {b1.data?.methods && (
+            <>
+              <MetricTable label="Bias mitigation methods" caption="Logistic failure model on the AI4I 2020 test split, by method" min={560}
+                cols={["Method (logistic regression)", "Recall", "Cost (assumed)", "Recall gap", "False-alarm gap"]}
+                rows={[
+                  ...([["none", "No correction"], ["class_weights", "Class weights (re-weighting)"], ["group_class_weights", "Group-and-class weights"], ["smote", "SMOTE (training rows only)"], ["threshold_moving", "Threshold moved on validation"]] as const).map(([k, name]) => {
+                    const v = b1.data!.methods.logistic_regression[k]; return [name, pct(v.recall, 0), gbp(v.cost_gbp), num(v.recall_gap, 2), num(v.fpr_gap, 2)]; }),
+                  [`Adversarial debiasing (mean of ${b1.data.adversarial.seeds.length} seeds)`, pct(b1.data.adversarial.mean.recall, 0), gbp(b1.data.adversarial.mean.cost_gbp), `${num(b1.data.adversarial.mean.recall_gap, 2)} ± ${num(b1.data.adversarial.sd.recall_gap, 2)}`, num(b1.data.adversarial.mean.fpr_gap, 2)],
+                ]} />
+              <p className="mt-2 text-sm"><Provenance kind="assumed" /> costs as in PM1. {int(b1.data.data.test_failures)} test failures: Type L {b1.data.data.groups.L.failures}, M {b1.data.data.groups.M.failures}, H {b1.data.data.groups.H.failures} — with so few H failures, one failure moves that group&apos;s recall a lot.</p>
+              <p className="mt-1 text-xs text-muted">Type is a product-quality variant in a published synthetic dataset, not a protected human attribute: the methods are what is shown. Adversarial strength {b1.data.adversarial.alpha_chosen} chosen on validation; with the adversary off the same network gives recall gap {num(b1.data.adversarial.off_mean.recall_gap, 2)} at {gbp(b1.data.adversarial.off_mean.cost_gbp)}.</p>
+            </>
+          )}
+        </StudyCard>
+        <StudyCard id="G1" q={g1} week="11" title="Generated answers"
           question="Are generated answers correct and cited, and is nothing generated where no passage answers?">
           {g1.data?.categories && (
             <>
@@ -268,7 +309,7 @@ export default function ResearchPage() {
             </>
           )}
         </StudyCard>
-        <StudyCard id="W1" q={w1} title="Forecast metrics and weather"
+        <StudyCard id="W1" q={w1} week="3" title="Forecast metrics and weather"
           question="How do Prophet and XGBoost compare on MAE, RMSE, WAPE and MAPE, and does London weather improve the forecasts?">
           {w1.data?.results && (
             <>
@@ -288,7 +329,22 @@ export default function ResearchPage() {
             </>
           )}
         </StudyCard>
-        <StudyCard id="D1" q={d1s} title="Supplier delay risk"
+        <StudyCard id="W2" q={w2} week="3" title="Forecasting with an LSTM"
+          question="Does a small LSTM forecast total daily units better than XGBoost, Prophet and seasonal naive on W1's protocol?">
+          {w2.data?.results && (
+            <>
+              <MetricTable label="LSTM against W1's models" caption="Total daily units, 13 weekly origins, 7 days ahead" min={520}
+                cols={["Model", "WAPE", "MAPE (non-zero days)", "RMSE"]}
+                rows={[
+                  [`LSTM (mean ± sd, ${w2.data.protocol.seeds.length} seeds)`, `${num(w2.data.results.lstm.wape.mean, 3)} ± ${num(w2.data.results.lstm.wape.sd, 3)}`, num(w2.data.results.lstm.mape_nonzero_days.mean, 3), int(w2.data.results.lstm.rmse.mean)],
+                  ...(["xgboost", "prophet"] as const).map((m) => [`${m === "xgboost" ? "XGBoost" : "Prophet"} (${w2.data!.results.from_w1[m].label})`, num(w2.data!.results.from_w1[m].wape, 3), num(w2.data!.results.from_w1[m].mape_nonzero_days, 3), int(w2.data!.results.from_w1[m].rmse)]),
+                  ["Seasonal naive (re-run here)", num(w2.data.results.seasonal_naive_reproduced.wape, 3), num(w2.data.results.seasonal_naive_reproduced.mape_nonzero_days, 3), int(w2.data.results.seasonal_naive_reproduced.rmse)],
+                ]} />
+              <p className="mt-2 text-xs text-muted">Seasonal naive {w2.data.results.seasonal_naive_reproduced.check.match ? "matches W1's recorded values exactly" : "differs from W1's recorded values"}, so the series is the same. LSTM against seasonal naive: MAE change {num(w2.data.results.lstm_vs_seasonal_naive.mean_abs_error_change, 0)} (95% interval {num(w2.data.results.lstm_vs_seasonal_naive.ci95[0], 0)} to {num(w2.data.results.lstm_vs_seasonal_naive.ci95[1], 0)}) — {w2.data.results.lstm_vs_seasonal_naive.clear ? "a clear difference" : "no clear difference"}. No weather input.</p>
+            </>
+          )}
+        </StudyCard>
+        <StudyCard id="D1" q={d1s} week="2" title="Supplier delay risk"
           question="Can a model trained on past orders flag late deliveries ahead of time? (a method check on a simulated order history)">
           {d1s.data?.models && (
             <>
@@ -307,7 +363,7 @@ export default function ResearchPage() {
 
       <section aria-labelledby="warehouse-studies" className="space-y-6">
         <h2 id="warehouse-studies" className="display pt-4 text-2xl font-semibold">Running the warehouse: scheduling, maintenance and inspection</h2>
-        <StudyCard id="JS1" q={js1} title="Scheduling the receiving floor"
+        <StudyCard id="JS1" q={js1} week="5" title="Scheduling the receiving floor"
           question="How much shorter is an optimal receiving-floor schedule (job shop: dock, quality, label, put-away) than the dispatch rules a floor lead would use?">
           {js1.data?.summary && (
             <>
@@ -323,7 +379,7 @@ export default function ResearchPage() {
           )}
         </StudyCard>
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          <StudyCard id="PM1" q={pm1} title="Predictive maintenance"
+          <StudyCard id="PM1" q={pm1} week="2, 6" title="Predictive maintenance"
             question="Can failures and remaining life be predicted early enough to replace run-to-failure and fixed-interval maintenance?">
             {pm1.data?.ai4i_2020 && (
               <>
@@ -337,7 +393,7 @@ export default function ResearchPage() {
               </>
             )}
           </StudyCard>
-          <StudyCard id="QC1" q={qc1} title="Visual inspection at goods-in"
+          <StudyCard id="QC1" q={qc1} week="6, 9" title="Visual inspection at goods-in"
             question="Can a small CNN flag surface defects well enough to replace inspecting every item by hand? (generated images)">
             {qc1.data?.models && (
               <>
@@ -353,6 +409,100 @@ export default function ResearchPage() {
             )}
           </StudyCard>
         </div>
+      </section>
+
+      <section aria-labelledby="transport-studies" className="space-y-6">
+        <h2 id="transport-studies" className="display pt-4 text-2xl font-semibold">Moving goods: fuel, arrival times and routes</h2>
+        <p className="text-sm text-muted">These three studies run on generated data: real fleet and last-mile datasets need the owner&apos;s approval first. They show the methods and their failure modes, not results for a real fleet.</p>
+        <StudyCard id="FE1" q={fe1} week="2" title="Fuel-inefficient trips"
+          question="Can trip telemetry flag fuel-inefficient trips, and predict litres per 100 km, better than a fleet-average rule?">
+          {fe1.data?.models && (
+            <>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <MetricTable label="Litres per 100 km" caption="Error of litres-per-100-km predictions in the test months" min={360}
+                  cols={["Model", "MAE (L/100 km)", "RMSE"]}
+                  rows={([["class_mean", "Class average"], ["ridge", "Ridge regression"], ["lightgbm", "LightGBM"]] as const).map(([k, name]) => [name, num(fe1.data!.models.regression_test[k].mae_l_per_100km, 2), num(fe1.data!.models.regression_test[k].rmse_l_per_100km, 2)])} />
+                <MetricTable label="Flagging inefficient trips" caption="Flagging trips above 1.15 times their reference consumption" min={420}
+                  cols={["Flagger", "AUC", "F1", "Excess fuel captured"]}
+                  rows={([["fleet_average_rule", "Fleet-average rule"], ["logistic_regression", "Logistic regression"], ["lightgbm", "LightGBM"]] as const).map(([k, name]) => [name, num(fe1.data!.models.classification_test[k].auc, 3), num(fe1.data!.models.classification_test[k].f1, 2), pct(fe1.data!.models.classification_test[k].excess_fuel_captured_share, 0)])} />
+              </div>
+              <p className="mt-2 text-sm"><Provenance kind="simulated" /> {int(fe1.data.data.trips)} trips, {fe1.data.data.vehicles} vehicles, {fe1.data.data.drivers} drivers over {fe1.data.data.months} months. <Provenance kind="assumed" /> 2.5 kg CO₂ per litre: the test months&apos; excess fuel ({int(fe1.data.data.test_excess.excess_litres)} L) is {int(fe1.data.data.test_excess.excess_co2_kg_assumed_factor)} kg CO₂.</p>
+              <p className="mt-1 text-xs text-muted">The rule sees each trip&apos;s measured fuel, and long heavy trips carry most of the excess litres, so it captures more of them even though the models rank trips better.</p>
+            </>
+          )}
+        </StudyCard>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <StudyCard id="ET1" q={et1} week="7" title="Delivery arrival times"
+            question="How close can a model get to the real delivery time, and how honest are its intervals for couriers it has not seen?">
+            {et1.data?.results && (
+              <>
+                <MetricTable label="Arrival-time models" caption="Arrival-time error in the test months, mean over seeds" min={440}
+                  cols={["Model", "MAE (min)", "Within 30 min", "MAE, new couriers"]}
+                  rows={([["baseline_region_hour_mean", "Region × hour average"], ["lightgbm", "LightGBM"], ["reference_generator_expected_time", "Generator's expected time (floor)"]] as const).map(([k, name]) => {
+                    const v = et1.data!.results.summary_over_seeds[k]; return [name, num(v.all.mae_min.mean, 1), pct(v.all.acc_at_30.mean, 0), num(v.new_couriers.mae_min.mean, 1)]; })} />
+                <p className="mt-2 text-sm"><Provenance kind="simulated" /> 80% interval (quantile LightGBM): covers {pct(et1.data.results.summary_over_seeds.quantile_lightgbm.all.coverage.mean, 0)} overall, {pct(et1.data.results.summary_over_seeds.quantile_lightgbm.existing_couriers.coverage.mean, 0)} for known couriers and {pct(et1.data.results.summary_over_seeds.quantile_lightgbm.new_couriers.coverage.mean, 0)} for new ones; mean width {num(et1.data.results.summary_over_seeds.quantile_lightgbm.all.mean_width_min.mean, 0)} min.</p>
+              </>
+            )}
+          </StudyCard>
+          <StudyCard id="RT1" q={rt1} week="7" title="Last-mile routes"
+            question="With van capacity and delivery windows, how much shorter and more punctual is an OR-Tools plan than simple heuristics?">
+            {rt1.data?.results && (
+              <>
+                <MetricTable label="Route plans by day size" caption="Mean distance and vans per delivery day, by number of stops" min={480}
+                  cols={["Stops", "OR-Tools km", "Nearest neighbour km", "Fixed order km", "Vans (OR-Tools / NN)"]}
+                  rows={Object.entries(rt1.data.results.summary.by_size as Record<string, Any>).map(([n, v]) => [n, num(v.or_tools.distance_km, 0), num(v.nearest_neighbour.distance_km, 0), num(v.fixed_order.distance_km, 0), `${num(v.or_tools.vans, 0)} / ${num(v.nearest_neighbour.vans, 1)}`])} />
+                <p className="mt-2 text-sm"><Provenance kind="simulated" /> Late stops over {rt1.data.results.summary.instances} days: OR-Tools {rt1.data.results.summary.or_tools_late_stops_total}, nearest neighbour {rt1.data.results.summary.nearest_neighbour_late_stops_total}, nearest neighbour ignoring windows {rt1.data.results.summary.nearest_neighbour_ignoring_windows_late_stops_total}, fixed order {rt1.data.results.summary.fixed_order_late_stops_total}.</p>
+                <p className="mt-1 text-xs text-muted">Straight-line distances; the fixed order stands in for a habitual sequence. Fuel and CO₂ use assumed factors, so compare plans rather than absolute figures.</p>
+              </>
+            )}
+          </StudyCard>
+        </div>
+      </section>
+
+      <section aria-labelledby="documents-studies" className="space-y-6">
+        <h2 id="documents-studies" className="display pt-4 text-2xl font-semibold">Documents and answers: extraction, the status assistant and the red team</h2>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <StudyCard id="X1" q={x1} week="8" title="Reading contract terms"
+            question="How many of the clauses and fields CUAD's experts labelled does a rule extractor find, against picking the top BM25 paragraphs?">
+            {x1.data?.overall && (
+              <>
+                <MetricTable label="Extraction methods" caption="Match with CUAD expert labels in 73 supply contracts (micro averages)" min={440}
+                  cols={["Method", "Overlap F1", "Precision", "Exact-span F1"]}
+                  rows={([["rules", "Rules (this product)"], ["lexical_top1", "Top BM25 paragraph"], ["lexical_top3", "Top three BM25 paragraphs"]] as const).map(([k, name]) => {
+                    const v = x1.data!.overall[k]; return [name, num(v.overlap.micro.f1, 2), num(v.overlap.micro.precision, 2), num(v.exact.micro.f1, 2)]; })} />
+                <p className="mt-2 text-sm">Human-labelled: {int(x1.data.data.labels_in_scored_categories)} expert labels in {x1.data.data.contracts} contracts. On {int(x1.data.held_out_check.contracts)} other CUAD contracts the rules score overlap F1 {num(x1.data.held_out_check.overall.rules.overlap.micro.f1, 2)}.</p>
+                <p className="mt-1 text-xs text-muted">The rules were written after reading these contracts&apos; labels, so the held-out figure is the fairer one. Results appear as a draft in Policies › Extracted terms and are never used for planning.</p>
+              </>
+            )}
+          </StudyCard>
+          <StudyCard id="AS1" q={as1} week="8" title="The status assistant"
+            question="Does the read-only assistant answer stock, order and terms questions from cited records, ask which product when several match, and withhold change requests?">
+            {as1.data?.categories && (
+              <>
+                <MetricTable label="Assistant by question type" caption="Questions answered, chosen or withheld correctly, by type" min={360}
+                  cols={["Question type", "Questions", "Handled correctly"]}
+                  rows={Object.entries(as1.data.categories as Record<string, Any>).map(([k, v]) => [k.replaceAll("_", " ").replace("mutation", "change request"), v.n, pct(v.correct_rate, 0)])} />
+                <p className="mt-2 text-sm">{as1.data.overall.sentences} sentences, {as1.data.overall.sentences_without_citation} without a citation; {as1.data.overall.answered_wrongly} wrong answers. Open it from the header: <i>Ask about an order or stock</i>.</p>
+                <p className="mt-1 text-xs text-muted">Questions generated from the synthetic test fixture, so this is an upper bound for real wording; nothing is generated by a model.</p>
+              </>
+            )}
+          </StudyCard>
+        </div>
+        <StudyCard id="RED1" q={red1} week="11" title="Red team on generated answers"
+          question="Do adversarial questions and poisoned documents make the answer layer state planted figures, leak its instructions or other workspaces' records, claim actions, or break its limits?">
+          {red1.data?.held_by && (
+            <>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div><Eyebrow>Attacks held</Eyebrow><p className="num text-2xl font-semibold">{red1.data.held} of {red1.data.cases}</p></div>
+                <div><Eyebrow>Nothing generated</Eyebrow><p className="num text-2xl font-semibold">{red1.data.held_by["extractive layer (nothing generated)"] ?? 0}</p></div>
+                <div><Eyebrow>Withheld by checks</Eyebrow><p className="num text-2xl font-semibold">{red1.data.held_by["generation checks (withheld)"] ?? 0}</p></div>
+                <div><Eyebrow>Controls answered</Eyebrow><p className="num text-2xl font-semibold">{red1.data.controls.answered_correctly} of {red1.data.controls.n}</p></div>
+              </div>
+              <p className="mt-3 text-sm">{red1.data.by_kind.poison.n} of the attacks are agreements poisoned through the upload endpoint; the model is {red1.data.model}, run locally. Defences: {red1.data.defences}.</p>
+              <p className="mt-1 text-xs text-muted">Generation is off on the public demo, so these answers exist only where a local model runs.</p>
+            </>
+          )}
+        </StudyCard>
       </section>
     </div>
   );

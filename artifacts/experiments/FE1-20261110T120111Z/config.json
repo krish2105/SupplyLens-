@@ -1,0 +1,96 @@
+{
+ "seed": 17,
+ "fleet": {
+  "van": 24,
+  "rigid": 22,
+  "articulated": 14
+ },
+ "class_params": {
+  "van": {
+   "empty": 8.5,
+   "full": 11.5,
+   "km": 90.0,
+   "km_sd": 0.4,
+   "stops": 1.6,
+   "cruise": 58.0
+  },
+  "rigid": {
+   "empty": 20.0,
+   "full": 28.0,
+   "km": 160.0,
+   "km_sd": 0.45,
+   "stops": 0.6,
+   "cruise": 64.0
+  },
+  "articulated": {
+   "empty": 24.0,
+   "full": 36.0,
+   "km": 380.0,
+   "km_sd": 0.35,
+   "stops": 0.12,
+   "cruise": 74.0
+  }
+ },
+ "effects": {
+  "idle_per_share": 0.5,
+  "idle_typical": 0.1,
+  "harsh_per_event": 0.01,
+  "harsh_typical": 4.0,
+  "speed_quadratic": 0.0001,
+  "speed_best_kmh": 65.0,
+  "stops_per_stop": 0.03,
+  "cold_per_c": 0.006,
+  "cold_below_c": 10.0,
+  "heat_per_c": 0.004,
+  "heat_above_c": 25.0,
+  "age_per_year": 0.008,
+  "age_typical": 6.0
+ },
+ "drivers_per_vehicle": 1.2,
+ "weak_share": 0.2,
+ "weak_hidden": 0.09,
+ "driver_sd": 0.02,
+ "noise_sd": 0.05,
+ "trip_prob": 0.85,
+ "inefficient_ratio": 1.15,
+ "co2_kg_per_litre_assumed": 2.5,
+ "months": {
+  "train": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7,
+   8
+  ],
+  "validation": [
+   9,
+   10
+  ],
+  "test": [
+   11,
+   12
+  ]
+ },
+ "penalties": [
+  0.01,
+  0.1,
+  1.0,
+  10.0,
+  100.0,
+  1000.0
+ ],
+ "lightgbm": {
+  "learning_rate": 0.05,
+  "num_leaves": 31,
+  "min_data_in_leaf": 40,
+  "verbose": -1,
+  "deterministic": true,
+  "num_threads": 1,
+  "force_row_wise": true,
+  "max_rounds": 2000,
+  "early_stopping": 100
+ }
+}

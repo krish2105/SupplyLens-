@@ -4,8 +4,8 @@ Sources stay untouched in design/source-assets/supplylens/ (byte-identical to th
 checked against the manifest). Derivatives are lossless-alpha WebP at 2x the largest display size, written to
 apps/web/public/illustrations/supplylens/. Phase 8: the owner replaced A02, A13 and A16 (withheld under D-040: document
 lines and a chart, joined suppliers, kraft cartons) with files made for the Phase 8 briefs and added A17 and A18; the
-owner approved them on 2026-11-10 (D-108). A17 and A18 are prepared for screens that do not exist yet (8B WP7, WP6) and
-are rendered nowhere until then.
+owner approved them on 2026-11-10 (D-108). A17 and A18 were held back until their screens existed; since 2026-11-10 they
+are shown in Policies > Extracted terms (nothing found) and the status assistant drawer (first use).
 
 uv run python scripts/optimize_illustrations.py
 """
@@ -23,8 +23,8 @@ OUT = ROOT / "apps" / "web" / "public" / "illustrations" / "supplylens"
 MANIFEST = ROOT / "apps" / "web" / "lib" / "illustrations.json"
 # Items whose source is present but must not be published, with the reason (none since the Phase 8 replacements).
 EXCLUDED: dict[str, str] = {}
-# Prepared for screens that do not exist yet (Phase 8 WP6, WP7): published as files, rendered nowhere until then.
-RESERVED = {"A17", "A18"}
+# Pieces published as files but not rendered by any screen yet (none since the Phase 8 screens were built).
+RESERVED: set[str] = set()
 USAGE = {"A01": "login page (sign-in): square crop of the subject filling the art panel (about 450-470 px), hidden below 768 px", "A03": "inventory: authorized empty scope",
          "A04": "policies: authorized library has no documents", "A05": "forecast lab: no forecast run for the context",
          "A06": "scenario studio: no saved scenarios", "A07": "filtered lists: zero matches",
@@ -36,8 +36,8 @@ USAGE = {"A01": "login page (sign-in): square crop of the subject filling the ar
          "A02": "data admission: no dataset and no import batches, user may import (tenant admin, not the locked demo)",
          "A13": "supplier market: no award data imported into the Contract research workspace",
          "A16": "value: the ledger has no study yet",
-         "A17": "reserved: Policies > Extracted terms, nothing extracted yet (8B WP7); not rendered until that screen exists",
-         "A18": "reserved: status assistant drawer, first use (8B WP6); not rendered until that drawer exists"}
+         "A17": "Policies > document reader > Extracted terms: the rules found no field in this version (empty_scope); never for loading or errors",
+         "A18": "Status assistant drawer, before the first question (first_run); never for answers, withheld answers or errors"}
 
 
 def sha(p: Path) -> str:

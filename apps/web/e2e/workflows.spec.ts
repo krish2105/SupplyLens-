@@ -222,7 +222,11 @@ test("J6 the exceptions view ranks shortages, filters by type with the keyboard,
 test("J7 a planner computes a baseline and a draft scenario and sees them compared with plan lines", async ({ page }) => {
   await signIn(page, "planner");
   await page.goto("/scenarios?ws=uci-research");
-  await page.getByRole("button", { name: "Compute baseline" }).click();
+  // One solve at a time, as a person would: with parallel browser projects, two solves per test overflowed the API's
+  // compute admission class (4 in flight, 500 ms queue) and the second was refused with 503, as designed (QA-P8-03).
+  const base = page.getByRole("button", { name: "Compute baseline" });
+  await base.click();
+  await expect(base).not.toHaveAttribute("aria-busy", "true", { timeout: 30_000 });
   await page.getByRole("button", { name: "Compute draft" }).click();
   const table = page.getByRole("table", { name: "Scenario metrics compared" });
   await expect(table.getByRole("row").filter({ hasText: "Plan status" })).toContainText(/OPTIMAL|FEASIBLE|INFEASIBLE/, { timeout: 30_000 });

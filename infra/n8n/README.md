@@ -33,3 +33,25 @@ sign-in; a deployed stack signs in through its identity provider instead, with a
 ## Verified (2026-10-27, local CI-equivalent stack)
 Run 1: drafted SYN001, SYN009, SYN029 → run status WAITING_FOR_APPROVAL, one draft order. Run 2: skipped those three and
 drafted SYN002, SYN022, SYN030 (the test copy accepted medium severity; the fixture has no high-severity shortage).
+
+# n8n workflow: support hand-off to a HubSpot ticket (Phase 8 WP6)
+
+`supplylens-support-handoff.json` (inactive by default) is the n8n route for the status assistant's "Talk to a person":
+
+```
+Hand-off received (webhook, header secret) → Check the payload → Create HubSpot ticket → Reply with the ticket id
+```
+
+- SupplyLens does **not** call this workflow. `POST /api/v1/assistant/handoff` returns a dry-run ticket payload (and
+  records it in the audit log) unless HubSpot is switched on in the API itself (`SUPPLYLENS_HUBSPOT_ENABLED=true` and
+  `HUBSPOT_ACCESS_TOKEN`, never in the public demo). A team that prefers n8n to hold the HubSpot key sends that payload
+  to this webhook instead.
+- **Check the payload** accepts only a SupplyLens hand-off (subject starting "SupplyLens: ", a pipeline stage) and passes
+  on only the ticket fields `subject`, `content`, `hs_pipeline`, `hs_pipeline_stage` and `hs_ticket_priority`, so the
+  webhook cannot be used to write other HubSpot objects.
+- **Create HubSpot ticket** posts to `https://api.hubapi.com/crm/objects/2026-09/tickets` (HubSpot's date-versioned CRM
+  path; check the version before enabling). Both credentials are placeholders to create in n8n: a header secret for the
+  webhook and an `Authorization: Bearer …` header with a HubSpot service key that has `crm.objects.tickets.write`.
+  No key is in this repository.
+- Use a HubSpot test account first, as the project rules require for external services. Not run against HubSpot in
+  this repository: the JSON was checked for structure only.

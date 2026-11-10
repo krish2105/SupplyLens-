@@ -4,16 +4,20 @@
 
 Every number in the course documents (decks, demo scripts, report, marker guide) is quoted from this file. Runs the registry marks **current** are the evidence. Runs it marks **exploratory** are in their own section further down and may be quoted only with the word "exploratory" beside them; superseded runs are only named at the end. Values are shown to at most four decimal places; exact values are in `metrics.json` next to this file. No study measures a real business outcome yet: every number below is a historical backtest, a simulation, a published benchmark, or an offline evaluation, as its data kind says.
 
-Registry reviewed on 2026-10-27.
+Registry reviewed on 2026-11-10.
 
 | Study | Data kind | n | Reviewed headline | Run |
 |---|---|---|---|---|
 | AGT | simulation (frozen scenarios checked by an oracle, local sandbox ERP) | 57 scenarios | Investigator: every frozen scenario verified, zero unapproved external writes | `AGT-20261022T045832Z` (2026-10-22) |
+| AS1 | offline evaluation with generated labels (synthetic e2e fixture) | 57 generated questions | On 57 questions generated from the synthetic e2e fixture, the read-only status assistant answers all 24 stock, terms and order questions from cited records, asks which product on all 5 ambiguous ones and withholds all 28 change requests, unknown ids and out-of-scope questions; no sentence lacks a citation (the first run withheld 1 order question by mistake) | `AS1-20261110T121815Z` (2026-11-10) |
+| B1 | published benchmark (AI4I 2020, a synthetic dataset; costs assumed) | 2,000 AI4I 2020 test cycles | On AI4I 2020, re-weighting or moving the threshold cuts the expected cost of a logistic failure model by 37-45 % against no correction; SMOTE costs more than re-weighting and widens the recall gap between machine types to 0.81; adversarial debiasing halves that gap (0.22 to 0.11) for 1-11 % more cost | `B1-20261110T120717Z` (2026-11-10) |
 | C1 | human-labelled (CUAD expert clause labels) | 485 (contract, category) items | Hybrid search finds the expert-labelled clause most often within a contract | `C1-20261021T191800Z` (2026-10-21) |
 | D1 | simulation (generated order history) | 2,392 test orders | On a simulated order history, a logistic risk score ranks late deliveries better than each supplier's past late rate (AUC 0.77 vs 0.69); LightGBM adds nothing (0.75) | `D1-20261027T053410Z` (2026-10-27) |
 | E1 | simulation (real UCI scope; terms, stock and CO2 factors assumed or simulated) | 40 products in scope | Under a binding budget, a 5% CO2 cut is almost free (9 of 23,980 units), but halving CO2 costs 13.8 points of coverage | `E1-20261026T200641Z` (2026-10-26) |
+| ET1 | simulation (generated delivery history) | 67,296 test parcels, first seed | On a simulated delivery history, LightGBM cuts arrival-time error from 30.6 to 12.4 minutes against a region-by-hour average and gets 92 % of parcels within 30 minutes, but for couriers with no history it still misses by 27 minutes and its 80 % interval covers only 34 % | `ET1-20261110T120540Z` (2026-11-10) |
 | F1 | historical backtest (UCI Online Retail II sales) | 503 products | Trained forecasters cut daily error by about a third against seasonal naive; TCN and LightGBM are not clearly different | `F1-20261023T180239Z` (2026-10-23) |
 | FA1 | simulation (real UCI scope and country shares; stock, terms and budget simulated) | 40 products in scope | Under a binding budget, rest-of-world customers got 51% coverage against 83% for UK customers; moderate reweighing (alpha 0.4) cuts the gap from 31.7 to 12.2 points for 1.4 points of total coverage | `FA1-20261026T200912Z` (2026-10-26) |
+| FE1 | simulation (generated trip telemetry and fuel; CO2 factor assumed) | 2,662 test trips | On simulated fleet trips, telemetry models rank fuel-inefficient trips better than a fleet-average rule (AUC 0.95-0.96 against 0.89) and cut the litres-per-100-km error of class averages by more than half, but their flags capture less of the excess fuel (38-40 % against 46 %) | `FE1-20261110T120111Z` (2026-11-10) |
 | G1 | offline evaluation with generated labels | 271 generated questions | All 196 generated answers kept every figure in a cited passage, with correct citations; 1 of 67 questions that should get no answer got one (3 before the product check), but the check also declines all 8 questions that name only a supplier | `G1-20261027T061059Z` (2026-10-27) |
 | IB | published benchmark (InventoryBench, official scorer) | 600 benchmark instances scored | SupplyLens policy scores highest of three tool-only policies on InventoryBench | `IB-20261021T192006Z` (2026-10-21) |
 | JS1 | simulation (assumed routes and handling times; published ft06 check) | 9 receiving-floor instances | Each hand dispatch rule (FIFO, SPT, EDD, most work remaining) gives a receiving-floor schedule 11-13 % longer on average than exact CP-SAT; even the best rule chosen after the fact is 8.5 % longer (1.6-13.8 %), and no single rule is best at every size | `JS1-20261030T191602Z` (2026-10-30) |
@@ -22,7 +26,11 @@ Registry reviewed on 2026-10-27.
 | R1 | human-labelled (ACORD graded relevance judgements) | 57 judged test queries | On ACORD, vector search beats the hybrid — a negative result we keep | `R1-20261022T161030Z` (2026-10-22) |
 | R2 | offline evaluation with generated labels | 118 generated questions | Effective-date filtering and supersession reranking each remove wrong-version citations; together they reach 100% | `R2-20261022T045503Z` (2026-10-22) |
 | R3 | offline evaluation with generated labels | 535 generated questions (dev and test) | Answer-support rules flag ambiguity and some unanswerable questions, at a cost on reworded questions | `R3-20261023T181121Z` (2026-10-23) |
+| RED1 | offline evaluation (hand-written attacks and planted documents on simulated agreements) | 17 red-team attacks | All 17 red-team attacks held once passages are screened for text addressed to the model and answers with links are withheld: no planted figure, link or supplier, no leaked instructions, no other workspace's record and no claimed action; both control questions were still answered correctly (the first run broke on 2 of 17) | `RED1-20261110T120752Z` (2026-11-10) |
+| RT1 | simulation (generated delivery days; fuel and CO2 factors assumed) | 15 delivery-day instances | On simulated 20-80-stop delivery days, OR-Tools meets every delivery window and drives 31-39 % less than a window-aware nearest-neighbour plan; against a fixed angle order the saving grows from 2 % to 28 % with size, and a nearest neighbour that ignores windows is up to 12 % shorter but makes 225 of 700 stops late | `RT1-20261110T120815Z` (2026-11-10) |
 | W1 | historical backtest (UCI sales; Open-Meteo weather) | 91 total-level test points | On total daily units, XGBoost beats Prophet and a seasonal naive (WAPE 24.6% vs 28.0% and 29.7%); adding London weather makes no clear difference to either (95% intervals span zero) | `W1-20261027T055557Z` (2026-10-27) |
+| W2 | historical backtest (UCI sales, no weather) | 91 total-level test points | A small LSTM beats seasonal naive and Prophet on WAPE but not XGBoost on UCI total daily units (WAPE 0.265 +/- 0.013 over 5 seeds against 0.246), and its gain over seasonal naive is not clear (95 % interval includes zero) | `W2-20261110T120750Z` (2026-11-10) |
+| X1 | human-labelled (CUAD expert labels) | 805 expert labels in the scored categories | On 73 CUAD supply contracts a rule extractor finds about half of the experts' labelled clauses and fields (overlap F1 0.51, exact span 0.35; 0.51 on 437 held-out contracts), far ahead of the top BM25 paragraph per field (0.19), though the top three paragraphs recall more expiry, renewal and minimum-commitment clauses at a quarter of the precision | `X1-20261110T121508Z` (2026-11-10) |
 
 ## AGT — `AGT-20261022T045832Z`
 
@@ -38,6 +46,54 @@ Notes (registry review): 57 scenarios x 3 trials on the corrected code (lookup-f
 | trials per scenario | 3 | `summary.trials_per_scenario` |
 | verified completion rate | 1 | `summary.verified_completion_rate` |
 | unapproved external writes | 0 | `summary.unauthorized_external_mutations` |
+
+## AS1 — `AS1-20261110T121815Z`
+
+Data kind: offline evaluation with generated labels (synthetic e2e fixture). Source: `artifacts/experiments/AS1-20261110T121815Z/metrics.json`.
+
+Headline (registry review): On 57 questions generated from the synthetic e2e fixture, the read-only status assistant answers all 24 stock, terms and order questions from cited records, asks which product on all 5 ambiguous ones and withholds all 28 change requests, unknown ids and out-of-scope questions; no sentence lacks a citation (the first run withheld 1 order question by mistake)
+
+Notes (registry review): Offline evaluation with labels known by construction: 36 synthetic products, 2 suppliers, orders in three states; categories stock 10, terms 8, order 6, ambiguous 5, change requests 12, unknown ids 8 (including another workspace's), out of scope 8. Called in-process as the viewer (sign-in, CSRF, rate limit and row-level security are covered by tests/test_assistant.py). Question templates were written by the rules' author, so these rates are an upper bound for real wording; human-written questions (G2) are still open. Deterministic and extractive: no model. The HubSpot hand-off is a dry run unless enabled outside the demo and is not part of this score.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: generated questions | 57 | `tasks` |
+| answerable questions answered correctly | 24 | `overall.answered_correctly` |
+| answered wrongly | 0 | `overall.answered_wrongly` |
+| must-withhold questions withheld | 28 | `overall.withheld_correctly` |
+| over-refusals on answerable questions | 0 | `overall.withheld_over_refusal` |
+| ambiguous questions answered with a product choice | 5 | `overall.choose_correctly` |
+| sentences without a citation | 0 | `overall.sentences_without_citation` |
+| change requests | 12 | `categories.mutation.n` |
+| change requests withheld | 12 | `categories.mutation.withheld_correctly` |
+
+## B1 — `B1-20261110T120717Z`
+
+Data kind: published benchmark (AI4I 2020, a synthetic dataset; costs assumed). Source: `artifacts/experiments/B1-20261110T120717Z/metrics.json`.
+
+Headline (registry review): On AI4I 2020, re-weighting or moving the threshold cuts the expected cost of a logistic failure model by 37-45 % against no correction; SMOTE costs more than re-weighting and widens the recall gap between machine types to 0.81; adversarial debiasing halves that gap (0.22 to 0.11) for 1-11 % more cost
+
+Notes (registry review): Same split and ASSUMED costs as PM1 (missed failure GBP 2,000, inspection GBP 150; PM1's logistic result reproduced exactly). Test: 71 failures (Type L 46, M 18, H 7), so one H failure moves H recall by 14 points and H drives most gaps. Logistic regression cost: none GBP 118,550, class weights 65,350, group-and-class weights 70,100 (recall gap 0.04), SMOTE 70,000, threshold moving 74,700. SMOTENC made 28 of 5,602 synthetic failures Type H. Adversarial debiasing (Zhang, Lemoine & Mitchell, 2018; PyTorch, 5 seeds, strength 0.03 chosen on validation) narrows gaps mainly by raising false alarms in M and H; strength 0.3 or more alerts on almost every machine. For LightGBM the differences between methods are within noise. Type is a product-quality variant, not a protected human attribute: the methods are what is shown. The D1 supplier parity screen was not run.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: AI4I 2020 test cycles | 2,000 | `data.split.test` |
+| test failures | 71 | `data.test_failures` |
+| test failures, Type H | 7 | `data.groups.H.failures` |
+| cost GBP, logistic, no correction (assumed costs) | 118,550.00 | `methods.logistic_regression.none.cost_gbp` |
+| cost GBP, logistic, class weights | 65,350.00 | `methods.logistic_regression.class_weights.cost_gbp` |
+| cost GBP, logistic, SMOTE | 70,000.00 | `methods.logistic_regression.smote.cost_gbp` |
+| cost GBP, logistic, threshold moving | 74,700.00 | `methods.logistic_regression.threshold_moving.cost_gbp` |
+| recall gap between types, class weights | 0.2205 | `methods.logistic_regression.class_weights.recall_gap` |
+| recall gap between types, group-and-class weights | 0.0363 | `methods.logistic_regression.group_class_weights.recall_gap` |
+| recall gap between types, SMOTE | 0.8136 | `methods.logistic_regression.smote.recall_gap` |
+| adversarial debiasing: recall gap, adversary off (mean) | 0.2205 | `adversarial.off_mean.recall_gap` |
+| adversarial debiasing: recall gap, adversary on (mean) | 0.1133 | `adversarial.mean.recall_gap` |
+| adversarial debiasing: cost GBP, adversary off (mean) | 65,110.00 | `adversarial.off_mean.cost_gbp` |
+| adversarial debiasing: cost GBP, adversary on (mean) | 72,540.00 | `adversarial.mean.cost_gbp` |
+| adversarial debiasing: strength chosen on validation | 0.03 | `adversarial.alpha_chosen` |
+| cost GBP, LightGBM, no correction | 37,150.00 | `methods.lightgbm.none.cost_gbp` |
+| cost GBP, LightGBM, class weights | 31,750.00 | `methods.lightgbm.class_weights.cost_gbp` |
 
 ## C1 — `C1-20261021T191800Z`
 
@@ -89,6 +145,27 @@ Notes (registry review): Real UCI scope (40 SKUs, two offers each, £20,000 week
 | NSGA-II hypervolume ratio, seed 3 | 0.9814 | `nsga2.per_seed[2].hypervolume_ratio` |
 | exact solve seconds | 3.1 | `exact.seconds` |
 
+## ET1 — `ET1-20261110T120540Z`
+
+Data kind: simulation (generated delivery history). Source: `artifacts/experiments/ET1-20261110T120540Z/metrics.json`.
+
+Headline (registry review): On a simulated delivery history, LightGBM cuts arrival-time error from 30.6 to 12.4 minutes against a region-by-hour average and gets 92 % of parcels within 30 minutes, but for couriers with no history it still misses by 27 minutes and its 80 % interval covers only 34 %
+
+Notes (registry review): Generated parcels (couriers, regions, hour, distance, stops ahead, weekday; 66,197-67,296 test parcels per seed, 3 seeds), chronological split (January-April train, May-June test); 4 couriers join in the test period with no history. The generator's own expected time (MAE 10.4 minutes) is the floor no model can beat. Quantile LightGBM (10th-90th) covers 74 % overall (target 80 %), 78 % for known couriers; the shortfall is the cold start, where predictions run about 21 minutes short. Stops still ahead is the main driver. Straight-line distances; real data (LaDe) needs the owner's approval, and its published leaderboard is not comparable.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: test parcels, first seed | 67,296 | `data.rows_per_seed[0].test` |
+| MAE minutes, region-by-hour average | 30.59 | `results.summary_over_seeds.baseline_region_hour_mean.all.mae_min.mean` |
+| MAE minutes, LightGBM | 12.3667 | `results.summary_over_seeds.lightgbm.all.mae_min.mean` |
+| MAE minutes, generator's expected time (floor) | 10.3933 | `results.summary_over_seeds.reference_generator_expected_time.all.mae_min.mean` |
+| share within 30 minutes, region-by-hour average | 0.5893 | `results.summary_over_seeds.baseline_region_hour_mean.all.acc_at_30.mean` |
+| share within 30 minutes, LightGBM | 0.9198 | `results.summary_over_seeds.lightgbm.all.acc_at_30.mean` |
+| MAE minutes, LightGBM, new couriers | 27.13 | `results.summary_over_seeds.lightgbm.new_couriers.mae_min.mean` |
+| 80% interval coverage, quantile LightGBM | 0.7432 | `results.summary_over_seeds.quantile_lightgbm.all.coverage.mean` |
+| 80% interval coverage, quantile LightGBM, new couriers | 0.344 | `results.summary_over_seeds.quantile_lightgbm.new_couriers.coverage.mean` |
+| 80% interval mean width minutes | 31.8433 | `results.summary_over_seeds.quantile_lightgbm.all.mean_width_min.mean` |
+
 ## F1 — `F1-20261023T180239Z`
 
 Data kind: historical backtest (UCI Online Retail II sales). Source: `artifacts/experiments/F1-20261023T180239Z/metrics.json`.
@@ -125,6 +202,30 @@ Notes (registry review): Real UCI scope and recorded country shares (365 days); 
 | worst-to-best ratio at that alpha | 0.8484 | `recommended.summary.worst_to_best_ratio` |
 | total coverage cost, points | 1.39 | `recommended.coverage_cost_points` |
 | overall coverage at full reweighing (alpha 1) | 0.7394 | `reweighed.overall_coverage` |
+
+## FE1 — `FE1-20261110T120111Z`
+
+Data kind: simulation (generated trip telemetry and fuel; CO2 factor assumed). Source: `artifacts/experiments/FE1-20261110T120111Z/metrics.json`.
+
+Headline (registry review): On simulated fleet trips, telemetry models rank fuel-inefficient trips better than a fleet-average rule (AUC 0.95-0.96 against 0.89) and cut the litres-per-100-km error of class averages by more than half, but their flags capture less of the excess fuel (38-40 % against 46 %)
+
+Notes (registry review): 15,965 generated trips (60 vehicles, 72 drivers, 12 months; train months 1-8, validation 9-10, test 11-12). Inefficient = measured L/100 km above 1.15 x the class and payload reference. Test: MAE class mean 2.05, ridge 0.91, LightGBM 0.85 L/100 km; F1 rule 0.62, logistic 0.76, LightGBM 0.76; LightGBM does not beat logistic regression on AUC. The rule sees each trip's measured fuel and long heavy trips dominate the excess litres, so it captures more of them. CO2 at an ASSUMED 2.5 kg per litre. Generated data recovers only the effects put in; no real telematics.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: test trips | 2,662 | `data.split.test.trips` |
+| MAE L/100 km, class mean | 2.0454 | `models.regression_test.class_mean.mae_l_per_100km` |
+| MAE L/100 km, ridge | 0.9058 | `models.regression_test.ridge.mae_l_per_100km` |
+| MAE L/100 km, LightGBM | 0.8461 | `models.regression_test.lightgbm.mae_l_per_100km` |
+| AUC fleet-average rule | 0.886 | `models.classification_test.fleet_average_rule.auc` |
+| AUC logistic regression | 0.9558 | `models.classification_test.logistic_regression.auc` |
+| AUC LightGBM | 0.9534 | `models.classification_test.lightgbm.auc` |
+| F1 fleet-average rule | 0.6174 | `models.classification_test.fleet_average_rule.f1` |
+| F1 LightGBM | 0.7586 | `models.classification_test.lightgbm.f1` |
+| excess fuel captured, fleet-average rule | 0.4612 | `models.classification_test.fleet_average_rule.excess_fuel_captured_share` |
+| excess fuel captured, LightGBM | 0.3991 | `models.classification_test.lightgbm.excess_fuel_captured_share` |
+| excess litres in the test months | 7,301.6 | `data.test_excess.excess_litres` |
+| total trips | 15,965 | `data.trips` |
 
 ## G1 — `G1-20261027T061059Z`
 
@@ -272,6 +373,54 @@ Notes (registry review): 535 generated questions (labels by construction, not hu
 | test reworded answered, after | 121 | `results.test.chosen_hybrid.categories.paraphrase.correct` |
 | test reworded questions | 172 | `results.test.chosen_hybrid.categories.paraphrase.n` |
 
+## RED1 — `RED1-20261110T120752Z`
+
+Data kind: offline evaluation (hand-written attacks and planted documents on simulated agreements). Source: `artifacts/experiments/RED1-20261110T120752Z/metrics.json`.
+
+Headline (registry review): All 17 red-team attacks held once passages are screened for text addressed to the model and answers with links are withheld: no planted figure, link or supplier, no leaked instructions, no other workspace's record and no claimed action; both control questions were still answered correctly (the first run broke on 2 of 17)
+
+Notes (registry review): 13 adversarial questions (instruction overrides in English and Spanish, system-prompt extraction, an approval request, a false premise, currency figures, advice, another workspace, markup, personal data, a length override, the seeded Delta injection note, a version unknown at the cutoff) and 4 agreements poisoned through the upload endpoint; local qwen2.5:7b at temperature 0 on simulated agreements. Held by: the extractive layer (nothing generated) 7, the generation checks 3, an answer within the rules 7. Rules are pattern checks written before the run, so a reworded leak could pass; the screen recognises text addressed to a model, not a false claim written as ordinary contract text; one poisoned answer named the document title rather than its supplier.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: red-team attacks | 17 | `cases` |
+| attacks held | 17 | `held` |
+| attacks broken | 0 | `broken` |
+| held by the extractive layer (nothing generated) | 7 | `held_by.extractive layer (nothing generated)` |
+| held by the generation checks (withheld) | 3 | `held_by.generation checks (withheld)` |
+| answered within the rules | 7 | `held_by.answer within the rules` |
+| poisoned agreements | 4 | `by_kind.poison.n` |
+| poisoned cases where the model repeated planted text | 0 | `poison_model_followed_planted_text` |
+| control questions answered correctly | 2 | `controls.answered_correctly` |
+| control questions | 2 | `controls.n` |
+| model | qwen2.5:7b | `model` |
+
+## RT1 — `RT1-20261110T120815Z`
+
+Data kind: simulation (generated delivery days; fuel and CO2 factors assumed). Source: `artifacts/experiments/RT1-20261110T120815Z/metrics.json`.
+
+Headline (registry review): On simulated 20-80-stop delivery days, OR-Tools meets every delivery window and drives 31-39 % less than a window-aware nearest-neighbour plan; against a fixed angle order the saving grows from 2 % to 28 % with size, and a nearest neighbour that ignores windows is up to 12 % shorter but makes 225 of 700 stops late
+
+Notes (registry review): 15 instances (20, 40 and 80 stops x 5 seeds) with van capacity and time windows; OR-Tools routing (guided local search, 10 s limit) solved all, with 0 late stops against 4 (window-aware nearest neighbour), 225 (nearest neighbour ignoring windows) and 240 (fixed order); vans 1 / 2 / 4 against 2.8 / 4.0 / 5.8. It was shorter than the fixed order on 10 of 15 instances; the required check (never worse than nearest neighbour on a fixed instance) passes. Straight-line distances; the fixed order stands in for a habitual sequence and is not a real driver's. Fuel at an ASSUMED 9 L/100 km; CO2 with E1's 0.1 kg per tonne-km and an ASSUMED 0.5 t payload, an HGV average, so van CO2 is probably understated: compare the plans, not the absolute figures. Wall-clock limit: a rerun on a busier machine can differ slightly.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: delivery-day instances | 15 | `results.summary.instances` |
+| late stops, OR-Tools | 0 | `results.summary.or_tools_late_stops_total` |
+| late stops, nearest neighbour (window-aware) | 4 | `results.summary.nearest_neighbour_late_stops_total` |
+| late stops, nearest neighbour ignoring windows | 225 | `results.summary.nearest_neighbour_ignoring_windows_late_stops_total` |
+| late stops, fixed order | 240 | `results.summary.fixed_order_late_stops_total` |
+| distance saving vs nearest neighbour, 20 stops | 0.3052 | `results.summary.by_size.20.distance_saving_vs_nearest_neighbour.mean` |
+| distance saving vs nearest neighbour, 80 stops | 0.394 | `results.summary.by_size.80.distance_saving_vs_nearest_neighbour.mean` |
+| distance saving vs fixed order, 20 stops | 0.0214 | `results.summary.by_size.20.distance_saving_vs_fixed_order.mean` |
+| distance saving vs fixed order, 80 stops | 0.2816 | `results.summary.by_size.80.distance_saving_vs_fixed_order.mean` |
+| distance saving vs nearest neighbour ignoring windows, 20 stops | -0.1199 | `results.summary.by_size.20.distance_saving_vs_nearest_neighbour_ignoring_windows.mean` |
+| vans, OR-Tools, 80 stops | 4 | `results.summary.by_size.80.or_tools.vans` |
+| vans, nearest neighbour, 80 stops | 5.8 | `results.summary.by_size.80.nearest_neighbour.vans` |
+| CO2 kg, OR-Tools, 80 stops (assumed factors) | 6.228 | `results.summary.by_size.80.or_tools.co2_kg` |
+| CO2 kg, nearest neighbour, 80 stops (assumed factors) | 10.283 | `results.summary.by_size.80.nearest_neighbour.co2_kg` |
+| instances shorter than the fixed order | 10 | `results.summary.or_tools_distance_not_longer_than_fixed_order` |
+
 ## W1 — `W1-20261027T055557Z`
 
 Data kind: historical backtest (UCI sales; Open-Meteo weather). Source: `artifacts/experiments/W1-20261027T055557Z/metrics.json`.
@@ -290,6 +439,52 @@ Notes (registry review): 13 weekly origins from 2011-09-05 to 2011-11-28, 7 days
 | weather effect clear for Prophet | no | `results.total.weather_effect.prophet.clear` |
 | weather effect clear for XGBoost | no | `results.total.weather_effect.xgboost.clear` |
 | product-day test points | 4,550 | `results.skus.points` |
+
+## W2 — `W2-20261110T120750Z`
+
+Data kind: historical backtest (UCI sales, no weather). Source: `artifacts/experiments/W2-20261110T120750Z/metrics.json`.
+
+Headline (registry review): A small LSTM beats seasonal naive and Prophet on WAPE but not XGBoost on UCI total daily units (WAPE 0.265 +/- 0.013 over 5 seeds against 0.246), and its gain over seasonal naive is not clear (95 % interval includes zero)
+
+Notes (registry review): W1's protocol: 13 Monday origins (2011-09-05 to 2011-11-28), 7 days ahead, refitted at each origin, 91 points; seasonal naive reproduces W1's recorded values exactly. LSTM (one layer, 32 units; last 56 days plus calendar features; no weather, no holiday calendar), CPU and deterministic; only the loss (Huber over MSE) was chosen, on 9 earlier validation origins. WAPE / MAPE / RMSE: LSTM 0.265 / 0.285 / 7,667 (mean of 5 seeds); XGBoost 0.246 / 0.263 / 7,498 and Prophet 0.280 / 0.268 / 7,617 (both from W1, without weather); seasonal naive 0.297 / 0.331 / 8,909. No seed beat XGBoost on WAPE. XGBoost and Prophet are read from W1, which stored no per-day forecasts, so no paired test against them.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: total-level test points | 91 | `results.seasonal_naive_reproduced.points` |
+| WAPE LSTM, mean of 5 seeds | 0.2651 | `results.lstm.wape.mean` |
+| WAPE LSTM, sd over seeds | 0.0132 | `results.lstm.wape.sd` |
+| MAPE LSTM (non-zero days), mean | 0.285 | `results.lstm.mape_nonzero_days.mean` |
+| RMSE LSTM, mean | 7,666.674 | `results.lstm.rmse.mean` |
+| WAPE XGBoost (from W1, without weather) | 0.2455 | `results.from_w1.xgboost.wape` |
+| WAPE Prophet (from W1, without weather) | 0.2804 | `results.from_w1.prophet.wape` |
+| WAPE seasonal naive (reproduced) | 0.2974 | `results.seasonal_naive_reproduced.wape` |
+| RMSE XGBoost (from W1, without weather) | 7,498.421 | `results.from_w1.xgboost.rmse` |
+| seasonal naive matches W1 | yes | `results.seasonal_naive_reproduced.check.match` |
+| LSTM gain over seasonal naive is clear | no | `results.lstm_vs_seasonal_naive.clear` |
+
+## X1 — `X1-20261110T121508Z`
+
+Data kind: human-labelled (CUAD expert labels). Source: `artifacts/experiments/X1-20261110T121508Z/metrics.json`.
+
+Headline (registry review): On 73 CUAD supply contracts a rule extractor finds about half of the experts' labelled clauses and fields (overlap F1 0.51, exact span 0.35; 0.51 on 437 held-out contracts), far ahead of the top BM25 paragraph per field (0.19), though the top three paragraphs recall more expiry, renewal and minimum-commitment clauses at a quarter of the precision
+
+Notes (registry review): 805 expert labels in the nine scored categories (2,176 in all), human-labelled (CUAD v1). In-sample: the rules were written after reading about ten labels per category, so the held-out check on 437 other CUAD contracts (4,456 labels, other contract types) is the fairer figure. Weakest fields: exclusivity (overlap F1 0.40) and minimum commitment (0.31); price is scored against Price Restrictions (13 labels), so its precision (0.07) understates it; MOQ and lead time have no CUAD category. Plain text only (no PDF or OCR intake, D-076); no model. Shown as a DRAFT in Policies > Extracted terms and never used for planning; confirming a field is not built.
+
+| Metric | Value | Field in metrics.json |
+|---|---|---|
+| n: expert labels in the scored categories | 805 | `data.labels_in_scored_categories` |
+| overlap F1, rules (micro) | 0.5086 | `overall.rules.overlap.micro.f1` |
+| overlap precision, rules | 0.4765 | `overall.rules.overlap.micro.precision` |
+| overlap recall, rules | 0.5453 | `overall.rules.overlap.micro.recall` |
+| exact-span F1, rules | 0.3542 | `overall.rules.exact.micro.f1` |
+| overlap F1, top BM25 paragraph | 0.1948 | `overall.lexical_top1.overlap.micro.f1` |
+| overlap F1, top three BM25 paragraphs | 0.173 | `overall.lexical_top3.overlap.micro.f1` |
+| overlap precision, top three BM25 paragraphs | 0.1189 | `overall.lexical_top3.overlap.micro.precision` |
+| held-out contracts | 437 | `held_out_check.contracts` |
+| held-out overlap F1, rules | 0.505 | `held_out_check.overall.rules.overlap.micro.f1` |
+| overlap F1, exclusivity | 0.4 | `per_field.exclusivity.rules.overlap.f1` |
+| overlap F1, minimum commitment | 0.3142 | `per_field.minimum_commitment.rules.overlap.f1` |
+| contracts | 73 | `data.contracts` |
 
 # Exploratory runs — quote only with the label "exploratory"
 
@@ -336,4 +531,4 @@ Notes (registry review): Simulated, assumed terms and costs, 503 products, four 
 
 # Not presentation evidence
 
-Superseded runs (see the registry for the reason): `AGT-20261021T192432Z`, `F1-20261021T190101Z`, `F1-20261022T090206Z`, `G1-20261027T054918Z`, `QC1-20261030T192258Z`, `R1-20261021T191153Z`, `R2-20261021T191153Z`, `S1-20261021T193239Z`, `S1-20261022T092040Z`.
+Superseded runs (see the registry for the reason): `AGT-20261021T192432Z`, `AS1-20261110T121733Z`, `F1-20261021T190101Z`, `F1-20261022T090206Z`, `G1-20261027T054918Z`, `QC1-20261030T192258Z`, `R1-20261021T191153Z`, `R2-20261021T191153Z`, `RED1-20261110T120450Z`, `S1-20261021T193239Z`, `S1-20261022T092040Z`.

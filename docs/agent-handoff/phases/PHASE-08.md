@@ -83,3 +83,28 @@ centred, from a native-resolution file (FE-P8-04).
   (`scripts/e2e_firefox_docker.sh`), as in CI.
 - 8B items found now: the study id "L1" is already used by the lead-time demand study in results.md, so the 8B ETA study
   needs another id (STUDY-P8-01).
+
+## Course-coverage build (owner request, 2026-11-10; brief 8B work packages done early)
+
+The owner asked for 100 % coverage of the unit outline in this session ("add all I need ... e2e"). Done here, from the
+brief's 8B list: WP3 (logistics, on generated data: ET1, RT1), WP4 (LSTM: W2), WP5 (imbalance and parity: B1, with all
+three of the outline's techniques), WP6 (status assistant AS1 with a HubSpot hand-off as a dry run, n8n workflow), WP7
+(contract-term extraction X1 and the Extracted terms tab), WP8 (red team RED1; human-written questions G2 stay open), plus
+FE1 for the week 2 fuel-inefficiency lab, verified references, case links, model cards, a responsible-AI draft and the
+team-contribution template. Decisions D-110 … D-114; evidence P8-E20 … P8-E25; issues SEC-P8-01 (fixed), STUDY-P8-03,
+STUDY-P8-04, DATA-P8-01.
+
+| Study | Run | Kind | Result in one line (numbers in docs/course/metrics.md) |
+|---|---|---|---|
+| FE1 fuel-inefficient trips | FE1-20261110T120111Z | simulation | models rank trips better than a fleet rule but capture less excess fuel |
+| W2 LSTM | W2-20261110T120750Z | historical backtest | beats seasonal naive and Prophet on WAPE, not XGBoost |
+| B1 bias mitigation | B1-20261110T120717Z | published synthetic dataset | re-weighting and threshold moving cut cost; SMOTE widens the type gap; adversarial debiasing halves it |
+| ET1 arrival times | ET1-20261110T120540Z | simulation | error cut by more than half; fails for couriers with no history |
+| RT1 last-mile routes | RT1-20261110T120815Z | simulation | no late stops and 31–39 % less distance than window-aware nearest neighbour |
+| X1 contract terms | X1-20261110T121508Z | human-labelled | rules find about half the expert labels, far ahead of BM25 paragraphs |
+| AS1 status assistant | AS1-20261110T121815Z | generated labels | 57 of 57 handled correctly (first run 56, superseded) |
+| RED1 red team | RED1-20261110T120752Z | offline evaluation | 17 of 17 held after two defences; the first run broke on 2 (superseded, SEC-P8-01) |
+
+Not done, and why: confirming an extracted field (needs migration 0012; hosted database stays at 0010) and PDF intake
+(D-076); a real HubSpot call (no test account chosen); real logistics data (no approval); human-written questions (must
+come from people); the team's who-did-what record (the team's to fill in).

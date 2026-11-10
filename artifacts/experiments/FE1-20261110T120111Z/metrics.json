@@ -1,0 +1,241 @@
+{
+ "experiment_id": "FE1-20261110T120111Z",
+ "study": "FE1",
+ "kind": "simulated (generated trip telemetry and fuel; a method check, not a measured fleet)",
+ "question": "Can trip telemetry flag fuel-inefficient trips, and predict litres per 100 km, better than a fleet-average rule?",
+ "data": {
+  "trips": 15965,
+  "vehicles": 60,
+  "drivers": 72,
+  "less_efficient_drivers": 13,
+  "months": 12,
+  "by_class": {
+   "van": {
+    "vehicles": 24,
+    "trips": 6428,
+    "inefficient_share": 0.2564,
+    "mean_l_per_100km": 10.976
+   },
+   "rigid": {
+    "vehicles": 22,
+    "trips": 5812,
+    "inefficient_share": 0.1251,
+    "mean_l_per_100km": 25.251
+   },
+   "articulated": {
+    "vehicles": 14,
+    "trips": 3725,
+    "inefficient_share": 0.055,
+    "mean_l_per_100km": 30.775
+   }
+  },
+  "inefficient_share": 0.1616,
+  "label": "actual L/100 km > 1.15 x reference (class/payload base term only)",
+  "excess_fuel": "litres above the reference; includes condition effects (cold, stops, speed) as well as driving",
+  "split": {
+   "train": {
+    "months": [
+     1,
+     8
+    ],
+    "trips": 10621,
+    "inefficient_share": 0.1592
+   },
+   "validation": {
+    "months": [
+     9,
+     10
+    ],
+    "trips": 2682,
+    "inefficient_share": 0.1469
+   },
+   "test": {
+    "months": [
+     11,
+     12
+    ],
+    "trips": 2662,
+    "inefficient_share": 0.186
+   }
+  },
+  "features": [
+   "vehicle_class",
+   "vehicle_age_years",
+   "distance_km",
+   "payload_share",
+   "stops_per_10km",
+   "avg_speed_kmh",
+   "idle_share",
+   "harsh_accel_per_100km",
+   "ambient_temp_c",
+   "driver_id"
+  ],
+  "test_excess": {
+   "trips": 2662,
+   "excess_litres": 7301.6,
+   "excess_share_of_fuel": 0.0542,
+   "excess_co2_kg_assumed_factor": 18253.9,
+   "excess_litres_on_inefficient_trips_share": 0.4323
+  },
+  "class_means_l_per_100km_train": {
+   "van": 10.985,
+   "rigid": 25.18,
+   "articulated": 30.678
+  },
+  "class_medians_l_per_100km_train": {
+   "van": 10.818,
+   "rigid": 24.995,
+   "articulated": 30.482
+  }
+ },
+ "models": {
+  "regression_test": {
+   "class_mean": {
+    "inputs": "vehicle class only (training mean L/100 km per class)",
+    "mae_l_per_100km": 2.0454,
+    "rmse_l_per_100km": 2.7751
+   },
+   "ridge": {
+    "inputs": "telemetry fields, no fuel reading",
+    "penalty": 0.01,
+    "mae_l_per_100km": 0.9058,
+    "rmse_l_per_100km": 1.2279
+   },
+   "lightgbm": {
+    "inputs": "telemetry fields, no fuel reading",
+    "trees": 198,
+    "mae_l_per_100km": 0.8461,
+    "rmse_l_per_100km": 1.1653
+   }
+  },
+  "classification_test": {
+   "fleet_average_rule": {
+    "inputs": "the trip's MEASURED L/100 km against 1.15 x the training class median; ignores payload",
+    "threshold": "l100 > 1.15 x class median",
+    "auc": 0.886,
+    "precision": 0.6575,
+    "recall": 0.5818,
+    "f1": 0.6174,
+    "flagged_trips": 438,
+    "flagged_share": 0.1645,
+    "excess_litres_on_flagged": 3367.8,
+    "excess_fuel_captured_share": 0.4612,
+    "excess_co2_kg_on_flagged_assumed_factor": 8419.5
+   },
+   "fleet_average_rule_f1_tuned": {
+    "inputs": "same score as fleet_average_rule; its line moved to maximise F1 on validation (threshold parity with the models)",
+    "threshold": "l100 >= 1.1324 x class median",
+    "auc": 0.886,
+    "precision": 0.6206,
+    "recall": 0.6444,
+    "f1": 0.6323,
+    "flagged_trips": 514,
+    "flagged_share": 0.1931,
+    "excess_litres_on_flagged": 3716.2,
+    "excess_fuel_captured_share": 0.509,
+    "excess_co2_kg_on_flagged_assumed_factor": 9290.5
+   },
+   "class_share": {
+    "inputs": "vehicle class only (training inefficient share per class)",
+    "threshold": 0.2593,
+    "auc": 0.6395,
+    "precision": 0.2729,
+    "recall": 0.596,
+    "f1": 0.3744,
+    "flagged_trips": 1081,
+    "flagged_share": 0.4061,
+    "excess_litres_on_flagged": 1139.9,
+    "excess_fuel_captured_share": 0.1561,
+    "excess_co2_kg_on_flagged_assumed_factor": 2849.8
+   },
+   "logistic_regression": {
+    "inputs": "telemetry fields, no fuel reading",
+    "penalty": 0.1,
+    "threshold": 0.4225,
+    "auc": 0.9558,
+    "precision": 0.7515,
+    "recall": 0.7758,
+    "f1": 0.7634,
+    "flagged_trips": 511,
+    "flagged_share": 0.192,
+    "excess_litres_on_flagged": 2747.2,
+    "excess_fuel_captured_share": 0.3763,
+    "excess_co2_kg_on_flagged_assumed_factor": 6868.0
+   },
+   "lightgbm": {
+    "inputs": "telemetry fields, no fuel reading",
+    "trees": 202,
+    "threshold": 0.3128,
+    "auc": 0.9534,
+    "precision": 0.7213,
+    "recall": 0.8,
+    "f1": 0.7586,
+    "flagged_trips": 549,
+    "flagged_share": 0.2062,
+    "excess_litres_on_flagged": 2914.3,
+    "excess_fuel_captured_share": 0.3991,
+    "excess_co2_kg_on_flagged_assumed_factor": 7285.8
+   }
+  },
+  "threshold_rule": "classifier thresholds maximise F1 on the validation months; the fleet-average rule uses its own fixed 1.15 x median line",
+  "tuning": "ridge and logistic L2 penalty from [0.01, 0.1, 1.0, 10.0, 100.0, 1000.0] on validation (MAE / log-loss); LightGBM early stopping (100 rounds) on validation; all fitted on training months only"
+ },
+ "verdict": {
+  "lightgbm_regression_mae_below_class_mean": true,
+  "ridge_regression_mae_below_class_mean": true,
+  "lightgbm_auc_above_fleet_average_rule": true,
+  "lightgbm_f1_above_fleet_average_rule": true,
+  "lightgbm_f1_above_fleet_average_rule_f1_tuned": true,
+  "lightgbm_excess_captured_above_fleet_average_rule": false,
+  "logistic_auc_above_fleet_average_rule": true,
+  "lightgbm_auc_above_logistic": false
+ },
+ "feature_importance": {
+  "lightgbm_regressor_gain_share": {
+   "vehicle_class": 0.8359,
+   "driver_id": 0.1001,
+   "payload_share": 0.0417,
+   "avg_speed_kmh": 0.0051,
+   "idle_share": 0.0048,
+   "vehicle_age_years": 0.0044,
+   "stops_per_10km": 0.0031,
+   "ambient_temp_c": 0.0023,
+   "harsh_accel_per_100km": 0.0021,
+   "distance_km": 0.0005
+  },
+  "lightgbm_classifier_gain_share": {
+   "idle_share": 0.2798,
+   "driver_id": 0.1998,
+   "avg_speed_kmh": 0.1756,
+   "stops_per_10km": 0.0849,
+   "vehicle_age_years": 0.084,
+   "harsh_accel_per_100km": 0.0776,
+   "ambient_temp_c": 0.057,
+   "payload_share": 0.02,
+   "distance_km": 0.0184,
+   "vehicle_class": 0.0028
+  }
+ },
+ "assumptions": [
+  "base rates (L/100 km empty and full) per class are ASSUMED round numbers: {\"van\": [8.5, 11.5], \"rigid\": [20.0, 28.0], \"articulated\": [24.0, 36.0]}",
+  "effect sizes on fuel (idle, harsh acceleration, speed, stops, temperature, age) are ASSUMED: {\"idle_per_share\": 0.5, \"idle_typical\": 0.1, \"harsh_per_event\": 0.01, \"harsh_typical\": 4.0, \"speed_quadratic\": 0.0001, \"speed_best_kmh\": 65.0, \"stops_per_stop\": 0.03, \"cold_per_c\": 0.006, \"cold_below_c\": 10.0, \"heat_per_c\": 0.004, \"heat_above_c\": 25.0, \"age_per_year\": 0.008, \"age_typical\": 6.0}",
+  "20 % of drivers carry a hidden +0.09 fuel share no telemetry field records (ASSUMED), plus more idling and harsh acceleration",
+  "trip noise on the fuel multiplier Normal(0, 0.05) (ASSUMED)",
+  "CO2 factor 2.5 kg CO2 per litre of diesel is ASSUMED (rounded); check the current official conversion factor before external use",
+  "temperate seasonal temperature cycle (4 C January to 18 C July) plus Normal(0, 3.5) weather noise (ASSUMED)"
+ ],
+ "limits": [
+  "the trips are generated: the models can only recover effects that were put in, and their accuracy reflects the chosen noise level",
+  "no real telematics or fuel-card data; replace generate() with recorded trips and fuel readings",
+  "the CO2 factor is assumed, so the CO2 figures are fuel litres times an assumed constant",
+  "the telemetry models do not see the trip's fuel reading while the fleet-average rule does: different information, stated per model",
+  "'inefficient' is measured against the class/payload base term, so cold weather and stop-heavy routes count as excess alongside driving behaviour",
+  "one simulated fleet, one seed, one chronological split (test = months 11-12, colder than most of the training year)",
+  "the label counts trips (ratio to reference) while the excess-captured share weights by litres, so long heavy trips dominate it and the two can rank models differently"
+ ],
+ "seeds": {
+  "generator": 17,
+  "lightgbm": 17
+ },
+ "seconds": 0.9
+}

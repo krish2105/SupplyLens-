@@ -1491,3 +1491,65 @@ class WorkspaceCreated(Out):
 class MembershipChanged(Out):
     email: str
     result: str | None = None
+
+
+# ------------------------------------------------------------------------------------------ status assistant (Phase 8 WP6)
+class AssistantCitation(Out):
+    """A record the sentence came from: its id and the screen that shows it (the client adds the workspace)."""
+    kind: Literal["product", "stock", "order", "action", "terms"]
+    id: str
+    href: str
+
+
+class AssistantSentence(Out):
+    text: str
+    citations: list[AssistantCitation]
+
+
+class AssistantChoice(Out):
+    id: str
+    label: str
+
+
+class AssistantAnswer(Out):
+    """POST /assistant/ask. status: answered (every sentence cites records) | withheld (reason, no sentences) | choose
+    (several products match; up to five choices). reason_code: read_only | out_of_scope | unknown_id | no_match | ambiguous.
+    Deterministic and extractive: `generated` is always false."""
+    mode: Literal["records"] = "records"
+    question: str
+    status: Literal["answered", "withheld", "choose"]
+    sentences: list[AssistantSentence]
+    reason: str | None = None
+    reason_code: str | None = None
+    choices: list[AssistantChoice]
+    choices_total: int = 0
+    as_of: date | None = None
+    generated: bool = False
+
+
+class AssistantHandoff(Out):
+    """POST /assistant/handoff. mode dry_run: nothing sent (payload returned and audited); mode hubspot: ticket created."""
+    mode: Literal["dry_run", "hubspot"]
+    sent: bool
+    ticket_id: str | None = None
+    payload: Json
+    endpoint: str
+    message: str
+    reason: str | None = None
+
+
+# ------------------------------------------------------------------------------------------ extracted terms (WP7)
+class ExtractedField(Out):
+    field: str
+    value: str
+    start: int
+    end: int
+    source: str
+
+
+class ExtractedTerms(Out):
+    status: Literal["draft"]
+    version_id: UUID
+    extractor: str
+    fields: list[ExtractedField]
+    note: str

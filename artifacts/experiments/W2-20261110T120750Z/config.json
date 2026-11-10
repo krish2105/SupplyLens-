@@ -1,0 +1,90 @@
+{
+ "study": "W2",
+ "origins": [
+  "2011-09-05",
+  "2011-09-12",
+  "2011-09-19",
+  "2011-09-26",
+  "2011-10-03",
+  "2011-10-10",
+  "2011-10-17",
+  "2011-10-24",
+  "2011-10-31",
+  "2011-11-07",
+  "2011-11-14",
+  "2011-11-21",
+  "2011-11-28"
+ ],
+ "validation_origins": [
+  "2011-07-04",
+  "2011-07-11",
+  "2011-07-18",
+  "2011-07-25",
+  "2011-08-01",
+  "2011-08-08",
+  "2011-08-15",
+  "2011-08-22",
+  "2011-08-29"
+ ],
+ "horizon": 7,
+ "window": 56,
+ "scale_days": 28,
+ "seeds": [
+  0,
+  1,
+  2,
+  3,
+  4
+ ],
+ "cfg_fixed": {
+  "hidden": 32,
+  "head": 64,
+  "layers": 1,
+  "dropout": 0.0,
+  "epochs": 150,
+  "batch": 64,
+  "lr": 0.002,
+  "weight_decay": 0.0001,
+  "grad_clip": 1.0,
+  "threads": 1,
+  "device": "cpu"
+ },
+ "loss_candidates": [
+  {
+   "loss": "mse"
+  },
+  {
+   "loss": "huber",
+   "huber_delta": 1.0
+  }
+ ],
+ "loss_chosen_on_validation": {
+  "loss": "huber",
+  "huber_delta": 1.0
+ },
+ "cfg_used_on_test": {
+  "hidden": 32,
+  "head": 64,
+  "layers": 1,
+  "dropout": 0.0,
+  "epochs": 150,
+  "batch": 64,
+  "lr": 0.002,
+  "weight_decay": 0.0001,
+  "grad_clip": 1.0,
+  "threads": 1,
+  "device": "cpu",
+  "loss": "huber",
+  "huber_delta": 1.0
+ },
+ "n_step_features": 8,
+ "n_calendar_features": 10,
+ "bootstrap": {
+  "resamples": 2000,
+  "seed": 7
+ },
+ "data_zip": "data/raw/core/online_retail_ii/online_retail_ii.zip",
+ "data_sha256": "572e36277c2390fbfde10664750731e0a86f55e33470d91919085f0408e67bfb",
+ "w1_reference": "artifacts/experiments/W1-20261027T055557Z/metrics.json",
+ "command": "uv run python evaluations/lstm_study.py"
+}

@@ -26,8 +26,8 @@ Total ≈ 433 KB (433,260 bytes).
 | A02 import data *(Phase 8, owner-approved)* | Data admission | No admitted dataset **and** no import batch yet **and** the user is a tenant admin outside the locked public demo; the page waits for the role and the batch list, so the art never shows and then goes |
 | A13 empty suppliers *(Phase 8, owner-approved)* | Supplier market | No award data imported **in the Contract research workspace**, the one that holds it; other workspaces keep the text and icon, because there the data exists elsewhere |
 | A16 empty value study *(Phase 8, owner-approved)* | Value | The value ledger has no study; never over a populated ledger |
-| A17 empty extraction *(Phase 8, owner-approved, reserved)* | Policies › Extracted terms (8B WP7) | Prepared only: rendered nowhere until that screen exists (unit test) |
-| A18 assistant ready *(Phase 8, owner-approved, reserved)* | Status assistant drawer (8B WP6) | Prepared only: rendered nowhere until that drawer exists (unit test) |
+| A17 empty extraction *(Phase 8, owner-approved)* | Policies › document reader › Extracted terms | Only when the rules found no field in the version; never while loading or on errors (unit test: used only in `extracted-terms.tsx`) |
+| A18 assistant ready *(Phase 8, owner-approved)* | Status assistant drawer | Only before the first question; never for answers, withheld answers or errors (unit test: used only in `status-assistant.tsx`) |
 
 Phase 8 (2026-11-10): the owner supplied new **A02**, **A13** and **A16** for the Phase 8 briefs
 (`docs/design/image-prompts-phase8.md`; the earlier files were withheld under D-040: document lines and a pie chart,

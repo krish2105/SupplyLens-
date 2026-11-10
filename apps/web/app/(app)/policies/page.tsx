@@ -4,9 +4,10 @@ import clsx from "clsx";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FilePlus2, Search, ShieldAlert } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
-import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status } from "@/components/ui";
+import { Button, Card, Empty, ErrorState, Eyebrow, KV, Loading, Mono, PageHeader, Provenance, QueryError, Status, TabList, TabPanel } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { CitedAnswer } from "@/components/cited-answer";
+import { DraftBadge, ExtractedTerms, fieldLabel, type ExtractedField } from "@/components/extracted-terms";
 import { api, apiGet } from "@/lib/api";
 import type { Schemas } from "@/lib/contract";
 import { useApi, useDemoLockdown, useMe, useWs } from "@/lib/queries";
@@ -182,7 +183,8 @@ export default function PoliciesPage() {
         <div ref={panel} tabIndex={-1} aria-label="Document reader" role="region"
           className={clsx("scroll-mt-4 space-y-6 outline-none", (compare || open) && "min-h-[85svh] xl:min-h-0")}>
           {compare ? <CompareVersions ids={compare} onClose={() => setCompare(null)} /> :
-            open ? <Viewer id={open.version} highlight={open.highlight} /> :
+            // keyed: another version or passage starts the reader afresh (document text tab, no stale highlight)
+            open ? <Viewer key={`${open.version}:${open.highlight ?? ""}`} id={open.version} highlight={open.highlight} /> :
               <Card className="p-5"><Empty title="Open a document version">Pick a version or a search result to read it with the cited passage highlighted.</Empty></Card>}
         </div>
       </div>
@@ -201,10 +203,30 @@ function Viewer({ id, highlight }: { id: string; highlight?: string }) {
   const v = useVersion(id);
   const labels = useApi(["labels", id], "/api/v1/documents/versions/{version_id}/labels", { path: { version_id: id } });
   const [label, setLabel] = useState<Label | null>(null);
+  // "Extracted terms" (Phase 8 WP7): draft fields read by rules; "Show in text" marks a field's span in the text tab
+  const [tab, setTab] = useState<"text" | "terms">("text");
+  const [term, setTerm] = useState<ExtractedField | null>(null);
+  const pre = useRef<HTMLPreElement>(null);
   if (v.isLoading) return <Card className="p-5"><Loading /></Card>;
   if (v.error || !v.data) return <Card className="p-5"><ErrorState error={v.error} /></Card>;
   const hc = v.data.chunks.find((c) => c.id === highlight);
-  const h = label ? { char_start: label.char_start, char_end: label.char_end } : hc;
+  const h = term ? { char_start: term.start, char_end: term.end } : label ? { char_start: label.char_start, char_end: label.char_end } : hc;
+  const tabsId = `reader-${id}`;
+  // After the text tab renders with the span marked (the mark scrolls the text box to itself), focus the text and bring it
+  // into view, so keyboard and screen-reader users land on the passage they asked for.
+  const showInText = (f: ExtractedField) => {
+    setLabel(null); setTerm(f); setTab("text");
+    requestAnimationFrame(() => {
+      const el = pre.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      el.scrollIntoView({ block: "nearest", behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
+  };
+  const backToTerms = () => {
+    setTab("terms");
+    requestAnimationFrame(() => document.getElementById(`${tabsId}-tab-terms`)?.focus());
+  };
   const t = v.data.text;
   // Expert clause labels (CUAD): one button per category; pressing it marks that clause in the text, pressing it again moves
   // to the category's next occurrence. Document name and parties are bookkeeping, not clauses.
@@ -217,6 +239,7 @@ function Viewer({ id, highlight }: { id: string; highlight?: string }) {
   const pick = (c: string) => {
     const xs = byCat.get(c)!;
     const at = label && label.category === c ? xs.indexOf(label) : -1;
+    setTerm(null);
     setLabel(xs[(at + 1) % xs.length]!);
   };
   return (
@@ -228,8 +251,13 @@ function Viewer({ id, highlight }: { id: string; highlight?: string }) {
         ["Supersedes", v.data.supersedes_version_id ? <Mono key="s">{short(v.data.supersedes_version_id)}</Mono> : "—"],
         ["Embeddings", v.data.embed_model ?? "none (lexical only)"],
       ]} /></div>
+      <TabList id={tabsId} label="Reader view" value={tab} onChange={setTab} className="mt-4 inline-flex flex-wrap rounded-lg border border-line p-0.5"
+        tabs={[{ key: "text", label: "Document text" }, { key: "terms", label: "Extracted terms" }]}
+        tabClassName={(on) => clsx("min-h-8 rounded-md px-3 py-1 text-sm", on ? "bg-accent text-accent-ink" : "text-muted hover:bg-surface-2")} />
+      <TabPanel id={tabsId} value={tab} className="mt-4">
+      {tab === "terms" ? <ExtractedTerms versionId={id} shown={term} onShow={showInText} /> : <>
       {labels.error ? <QueryError q={labels} what="expert clause labels" /> : cats.length > 0 && (
-        <section aria-labelledby={`labels-${id}`} className="mt-4" data-testid="clause-labels">
+        <section aria-labelledby={`labels-${id}`} className="mb-4" data-testid="clause-labels">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 id={`labels-${id}`} className="text-sm font-semibold">Expert clause labels <span className="font-normal text-muted">({labels.data!.length} from {labels.data![0]!.source})</span></h3>
             {label && <Button size="sm" variant="ghost" onClick={() => setLabel(null)}>Clear highlight</Button>}
@@ -248,9 +276,19 @@ function Viewer({ id, highlight }: { id: string; highlight?: string }) {
           {label && <p role="status" className="mt-2 text-xs text-muted">Highlighted: <b className="text-ink">{label.category}</b>, characters {label.char_start}–{label.char_end}.</p>}
         </section>
       )}
-      <pre tabIndex={0} aria-label="Document text, scrollable" className="mt-4 max-h-[460px] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-[13px] leading-relaxed">
-        {h ? <>{t.slice(0, h.char_start)}<mark ref={(el) => { const pre = el?.closest("pre"); if (el && pre) pre.scrollTop = el.offsetTop - pre.offsetTop - 80; }} className="rounded bg-risk-soft px-0.5 text-ink">{t.slice(h.char_start, h.char_end)}</mark>{t.slice(h.char_end)}</> : t}
+      {term && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 text-xs text-muted" data-testid="extracted-highlight">
+          <p role="status" className="flex flex-wrap items-center gap-1.5">Highlighted: <b className="text-ink">{fieldLabel(term.field)}</b> <DraftBadge />
+            <span className="num whitespace-nowrap">characters {term.start}–{term.end}</span></p>
+          <Button size="sm" variant="ghost" onClick={backToTerms}>Back to extracted terms</Button>
+          <Button size="sm" variant="ghost" onClick={() => setTerm(null)}>Clear highlight</Button>
+        </div>
+      )}
+      <pre ref={pre} tabIndex={0} aria-label="Document text, scrollable" className="max-h-[460px] overflow-auto whitespace-pre-wrap rounded-xl bg-surface-2 p-4 text-[13px] leading-relaxed">
+        {h ? <>{t.slice(0, h.char_start)}<mark data-highlight={term ? "extracted" : label ? "label" : "passage"} ref={(el) => { const box = el?.closest("pre"); if (el && box) box.scrollTop = el.offsetTop - box.offsetTop - 80; }} className="rounded bg-risk-soft px-0.5 text-ink">{t.slice(h.char_start, h.char_end)}</mark>{t.slice(h.char_end)}</> : t}
       </pre>
+      </>}
+      </TabPanel>
     </Card>
   );
 }

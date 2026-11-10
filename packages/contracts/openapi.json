@@ -877,6 +877,255 @@
         "title": "ApproveIn",
         "type": "object"
       },
+      "AskIn": {
+        "properties": {
+          "question": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "title": "AskIn",
+        "type": "object"
+      },
+      "AssistantAnswer": {
+        "additionalProperties": true,
+        "description": "POST /assistant/ask. status: answered (every sentence cites records) | withheld (reason, no sentences) | choose\n(several products match; up to five choices). reason_code: read_only | out_of_scope | unknown_id | no_match | ambiguous.\nDeterministic and extractive: `generated` is always false.",
+        "properties": {
+          "as_of": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "As Of"
+          },
+          "choices": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantChoice"
+            },
+            "title": "Choices",
+            "type": "array"
+          },
+          "choices_total": {
+            "default": 0,
+            "title": "Choices Total",
+            "type": "integer"
+          },
+          "generated": {
+            "default": false,
+            "title": "Generated",
+            "type": "boolean"
+          },
+          "mode": {
+            "const": "records",
+            "default": "records",
+            "title": "Mode",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "reason_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason Code"
+          },
+          "sentences": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantSentence"
+            },
+            "title": "Sentences",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "answered",
+              "withheld",
+              "choose"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "question",
+          "status",
+          "sentences",
+          "reason",
+          "reason_code",
+          "choices",
+          "choices_total",
+          "as_of",
+          "generated"
+        ],
+        "title": "AssistantAnswer",
+        "type": "object"
+      },
+      "AssistantChoice": {
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "AssistantChoice",
+        "type": "object"
+      },
+      "AssistantCitation": {
+        "additionalProperties": true,
+        "description": "A record the sentence came from: its id and the screen that shows it (the client adds the workspace).",
+        "properties": {
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "product",
+              "stock",
+              "order",
+              "action",
+              "terms"
+            ],
+            "title": "Kind",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "id",
+          "href"
+        ],
+        "title": "AssistantCitation",
+        "type": "object"
+      },
+      "AssistantHandoff": {
+        "additionalProperties": true,
+        "description": "POST /assistant/handoff. mode dry_run: nothing sent (payload returned and audited); mode hubspot: ticket created.",
+        "properties": {
+          "endpoint": {
+            "title": "Endpoint",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "dry_run",
+              "hubspot"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "sent": {
+            "title": "Sent",
+            "type": "boolean"
+          },
+          "ticket_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ticket Id"
+          }
+        },
+        "required": [
+          "mode",
+          "sent",
+          "ticket_id",
+          "payload",
+          "endpoint",
+          "message",
+          "reason"
+        ],
+        "title": "AssistantHandoff",
+        "type": "object"
+      },
+      "AssistantSentence": {
+        "additionalProperties": true,
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/AssistantCitation"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text",
+          "citations"
+        ],
+        "title": "AssistantSentence",
+        "type": "object"
+      },
       "AssumptionSetInfo": {
         "additionalProperties": true,
         "properties": {
@@ -3272,6 +3521,79 @@
         "title": "ExportRow",
         "type": "object"
       },
+      "ExtractedField": {
+        "additionalProperties": true,
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "integer"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "start": {
+            "title": "Start",
+            "type": "integer"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "value",
+          "start",
+          "end",
+          "source"
+        ],
+        "title": "ExtractedField",
+        "type": "object"
+      },
+      "ExtractedTerms": {
+        "additionalProperties": true,
+        "properties": {
+          "extractor": {
+            "title": "Extractor",
+            "type": "string"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/ExtractedField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          },
+          "status": {
+            "const": "draft",
+            "title": "Status",
+            "type": "string"
+          },
+          "version_id": {
+            "format": "uuid",
+            "title": "Version Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version_id",
+          "extractor",
+          "fields",
+          "note"
+        ],
+        "title": "ExtractedTerms",
+        "type": "object"
+      },
       "FamilySelection": {
         "additionalProperties": true,
         "properties": {
@@ -4090,6 +4412,45 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HandoffIn": {
+        "properties": {
+          "answer_status": {
+            "enum": [
+              "answered",
+              "withheld",
+              "choose",
+              "error",
+              "not_asked"
+            ],
+            "title": "Answer Status",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 1000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "question": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Question",
+            "type": "string"
+          }
+        },
+        "required": [
+          "question",
+          "answer_status"
+        ],
+        "title": "HandoffIn",
         "type": "object"
       },
       "Health": {
@@ -12087,6 +12448,152 @@
         "summary": "Acknowledge"
       }
     },
+    "/api/v1/assistant/ask": {
+      "post": {
+        "description": "Answer from this workspace's records with a citation on every sentence, ask which product when several match, or\nwithhold with the reason. Deterministic and extractive: no model is called, nothing is changed.",
+        "operationId": "ask_api_v1_assistant_ask_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantAnswer"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask"
+      }
+    },
+    "/api/v1/assistant/handoff": {
+      "post": {
+        "description": "A support ticket for a person. Dry run (payload returned and audited, nothing sent) unless HubSpot is enabled.",
+        "operationId": "hand_off_api_v1_assistant_handoff_post",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandoffIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantHandoff"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Hand Off"
+      }
+    },
     "/api/v1/audit": {
       "get": {
         "operationId": "audit_api_v1_audit_get",
@@ -12799,6 +13306,79 @@
           }
         },
         "summary": "Document Version"
+      }
+    },
+    "/api/v1/documents/versions/{version_id}/extracted-terms": {
+      "get": {
+        "description": "Draft contract terms read from a version's text by rules (Phase 8 WP7). The same authentication, workspace scope\n(row-level security) and role check as reading the version itself; computed on request, nothing is written.",
+        "operationId": "extracted_terms_api_v1_documents_versions__version_id__extracted_terms_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Version Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ws",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ws"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-supplylens-tenant",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Supplylens-Tenant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExtractedTerms"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Extracted Terms"
       }
     },
     "/api/v1/documents/versions/{version_id}/labels": {

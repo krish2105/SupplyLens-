@@ -2,8 +2,8 @@
 // Illustrations and empty/error states (UX asset pack A01-A18). Rules from docs/design/illustrations.md:
 // art is decorative (alt=""), sits beside semantic HTML text and actions, never carries data, never appears above a
 // populated work queue, and each piece is shown only in the state it was briefed for. Phase 8: A02, A13 and A16 were
-// replaced by the owner's files (withheld before, D-040); A17 and A18 are prepared for screens that do not exist yet
-// (Extracted terms, status assistant) and are used nowhere until then.
+// replaced by the owner's files (withheld before, D-040); A17 is the Extracted terms empty state and A18 the status
+// assistant's first use.
 import clsx from "clsx";
 import { AlertTriangle, Ban, Clock3, type LucideIcon } from "lucide-react";
 import { useState, type ReactNode } from "react";

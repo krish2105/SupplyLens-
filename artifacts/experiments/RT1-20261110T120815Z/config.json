@@ -1,0 +1,61 @@
+{
+ "sizes": [
+  20,
+  40,
+  80
+ ],
+ "seeds": [
+  1,
+  2,
+  3,
+  4,
+  5
+ ],
+ "time_limit_s": 10,
+ "reference_latlon": [
+  0.0,
+  0.0
+ ],
+ "shift_min_after_0800": 600,
+ "horizon_min_after_0800": 720,
+ "speed_kmh": 25.0,
+ "service_min": 3.0,
+ "service_per_parcel_min": 0.5,
+ "capacity_parcels": 60,
+ "spare_vans": 2,
+ "window_share": 0.5,
+ "windows_min_after_0800": [
+  [
+   60,
+   180
+  ],
+  [
+   180,
+   300
+  ],
+  [
+   300,
+   420
+  ],
+  [
+   420,
+   540
+  ]
+ ],
+ "clusters": 3,
+ "cluster_share": 0.6,
+ "cluster_sd_km": 1.0,
+ "scatter_km": 8.0,
+ "solver": {
+  "first_solution": "PATH_CHEAPEST_ARC",
+  "metaheuristic": "GUIDED_LOCAL_SEARCH",
+  "van_fixed_cost_km": 20,
+  "late_cost_m_per_s": 20,
+  "capacity": "hard",
+  "windows_and_shift_end": "soft upper bounds",
+  "window_open": "hard (wait)"
+ },
+ "payload_t": 0.5,
+ "road_kg_co2e_per_tkm": 0.1,
+ "fuel_l_per_100km": 9.0
+}

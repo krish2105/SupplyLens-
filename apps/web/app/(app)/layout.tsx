@@ -11,6 +11,7 @@ import {
   Moon, Settings2, ShieldCheck, Siren, Sparkles, Sun, Workflow, X,
 } from "lucide-react";
 import { CommandPalette } from "@/components/command-palette";
+import { StatusAssistant } from "@/components/status-assistant";
 import { ClockRail } from "@/components/clock-rail";
 import { SafeBoundary } from "@/components/safe-boundary";
 import { ConnectionBanner } from "@/components/connection-banner";
@@ -256,6 +257,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 <nav aria-label="Sections" className="min-w-0 lg:hidden"><SectionsMenu ws={ctx.ws} path={path} /></nav>
                 <div className="ml-auto flex shrink-0 items-center gap-2">
                   <SafeBoundary name="command palette"><CommandPalette nav={NAV.map(({ href, label, group }) => ({ href, label, group }))} /></SafeBoundary>
+                  <SafeBoundary name="status assistant"><StatusAssistant key={ctx.ws} /></SafeBoundary>
                   <ThemeSwitch />
                   <button className="inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-2 hover:text-ink"
                     aria-label="Sign out" title="Sign out"

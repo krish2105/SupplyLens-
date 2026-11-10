@@ -28,12 +28,14 @@ orders go only to a local sandbox ERP adapter (no real ERP is connected).
 | 2–4 | Exceptions → Investigations (Planner, Demo) | A shortage taken end to end: the investigator's evidence packet (data cutoff, forecast version, cited clause, checks) |
 | 4–5 | Policies & evidence | The cited clause and the two dates: *known by* and *in force on* |
 | 5–7 | Approvals (Approver, Demo) | Approval bound to the exact payload; the order is read back before it counts as done |
-| 7–10 | Research (Viewer, UCI Research) | Each study card with its data kind; the "Operations studies" and "Running the warehouse" sections; negative results kept |
+| 7–9 | Research (Viewer, UCI Research) | The section menu at the top; each card's study id, course week and data kind; "Moving goods" (FE1, ET1, RT1) and "Documents and answers" (X1, AS1, RED1); negative results kept |
+| 9–10 | Header: *Ask about an order or stock*; Policies › a document › *Extracted terms* | The status assistant answers only from cited records and refuses changes; "Talk to a person" is a dry run. Extracted terms are a DRAFT with "Show in text" |
 
 ## What is simulated, and what is not in the demo
 
 - **Simulated:** stock, suppliers, supplier agreements, costs, the delivery history in D1, the motor fleet in PM1, the
-  goods-in images in QC1, routes and handling times in JS1. They are labelled in every screen.
+  goods-in images in QC1, routes and handling times in JS1, the trips in FE1, the deliveries in ET1 and the delivery days
+  in RT1. They are labelled in every screen.
 - **Real:** the UCI Online Retail II sales; public contract corpora (CUAD, ACORD) and World Bank awards; AI4I 2020 (a
   published synthetic dataset).
 - **Not in the public demo:** trained forecasting models (the demo uses the seasonal-naive baseline and says so), the

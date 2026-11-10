@@ -28,6 +28,7 @@ from ..lifecycle import LifecycleError
 from . import (
     admission,
     oidc,
+    routes_assistant,
     routes_core,
     routes_decisions,
     routes_lifecycle,
@@ -61,6 +62,7 @@ app.include_router(routes_market.router)
 app.include_router(routes_ops.router)
 app.include_router(routes_lifecycle.router)
 app.include_router(routes_onboarding.router)
+app.include_router(routes_assistant.router)
 if os.environ.get("SUPPLYLENS_SETUP_TOKEN"):        # hosted one-time setup only (hosting/setup.py)
     app.include_router(routes_setup.router)
 telemetry.setup(app)

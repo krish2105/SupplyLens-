@@ -5,6 +5,11 @@ retriever returned and only after the extractive layer agreed there is something
 least one numbered passage, every cited number must exist, and every figure in a sentence (prices, quantities, days)
 must appear in a passage it cites. An answer that fails any check is withheld and the reason is shown; the passages
 remain the evidence. The public demo never generates (no model there, and the lockdown keeps it off).
+
+Documents are untrusted (RED1): text in a passage that addresses an AI model ("assistant instruction", "ignore previous
+instructions", ...) is not shown to the model, from that sentence to the end of its line, and an answer that carries a
+link or an e-mail address is withheld, because answers about supplier terms never need one. The red team found a planted
+link and a planted supplier name repeated in cited answers before these two checks.
 """
 from __future__ import annotations
 
@@ -25,6 +30,15 @@ SYSTEM = (
     'not answer the question, reply {"answer": [], "insufficient": true}.'
 )
 NUMBER = re.compile(r"\d+(?:[.,]\d+)*")
+ADDRESSED_TO_MODEL = re.compile(
+    r"\b(?:assistant|ai|model|chatbot|llm|system)\s+(?:instruction|prompt|message|note)s?\b"
+    r"|\bignore\s+(?:all\s+|any\s+)?(?:the\s+)?(?:previous|prior|above|earlier)\s+(?:instructions|rules|prompts?)\b"
+    r"|\bdisregard\s+(?:all\s+|any\s+)?(?:the\s+)?(?:previous|prior|above|earlier)\b"
+    r"|\byou\s+are\s+now\b|\b(?:tell|say\s+to)\s+the\s+(?:user|planner|reader)\b"
+    r"|\bwhen\s+(?:anyone|someone|the\s+user|a\s+user)\s+asks?\b|\bend\s+every\s+answer\b", re.I)
+SENTENCE = re.compile(r"(?:[^.!?\n]|[.!?](?!\s|$))+[.!?]*")      # a full stop inside 3.10 or a URL does not end it
+LINK = re.compile(r"https?://|\bwww\.|[\w.+-]+@[\w-]+\.[a-z]{2,}", re.I)
+REMOVED = "[text addressed to an AI model removed]"
 MAX_PASSAGES, MAX_SENTENCES = 5, 4
 
 
@@ -34,6 +48,18 @@ def _norm(n: str) -> str:
 
 def numbers_in(text: str) -> set[str]:
     return {_norm(n) for n in NUMBER.findall(text)}
+
+
+def screened(excerpt: str) -> tuple[str, int]:
+    """The passage as the model sees it: on each line, from the first sentence addressed to a model to the line's end is
+    replaced by a marker. Returns the text and how many lines were cut. Citations and the figure check use the original."""
+    lines, cut = [], 0
+    for line in excerpt.split("\n"):
+        hit = next((m.start() for m in SENTENCE.finditer(line) if ADDRESSED_TO_MODEL.search(m.group(0))), None)
+        if hit is not None:
+            line, cut = line[:hit] + REMOVED, cut + 1
+        lines.append(line)
+    return "\n".join(lines), cut
 
 
 def check(answer: dict, passages: list[Evidence]) -> tuple[list[dict], str | None]:
@@ -50,6 +76,8 @@ def check(answer: dict, passages: list[Evidence]) -> tuple[list[dict], str | Non
             return [], "an empty sentence"
         if not isinstance(cites, list) or not cites or not all(isinstance(c, int) and 1 <= c <= len(passages) for c in cites):
             return [], f"a sentence without a valid citation: {sentence[:80]!r}"
+        if LINK.search(sentence):
+            return [], f"a link or address in the answer (answers about supplier terms never need one): {sentence[:80]!r}"
         cited_numbers = set().union(*(numbers_in(passages[c - 1].excerpt) for c in cites))
         missing = sorted(numbers_in(sentence) - cited_numbers)
         if missing:
@@ -77,7 +105,8 @@ def generate(question: str, passages: list[Evidence], *, model: str | None = Non
     """Ask the local model; return a checked answer or a withheld one with the reason. Never raises for model errors."""
     model, url = model or settings.generation_model, url or settings.ollama_url
     passages = passages[:MAX_PASSAGES]
-    numbered = "\n\n".join(f"[{i}] {p.title} {p.version_label}, {p.section}:\n{p.excerpt}" for i, p in enumerate(passages, 1))
+    numbered = "\n\n".join(f"[{i}] {p.title} {p.version_label}, {p.section}:\n{screened(p.excerpt)[0]}"
+                           for i, p in enumerate(passages, 1))
     body = {"model": model, "stream": False, "format": "json",
             "options": {"temperature": 0, "seed": 0, "num_ctx": 8192},
             "messages": [{"role": "system", "content": SYSTEM},

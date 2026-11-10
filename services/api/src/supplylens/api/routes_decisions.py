@@ -32,6 +32,8 @@ from ..inline_jobs import drain
 from ..integrations import sandbox_erp
 from ..knowledge import acl
 from ..knowledge import upload as doc_upload
+from ..knowledge.extract import EXTRACTOR_VERSION
+from ..knowledge.extract import extract as extract_terms
 from ..knowledge.generate import generate
 from ..knowledge.ingest import read_version_text
 from ..knowledge.retrieve import Evidence, search
@@ -50,6 +52,7 @@ from .schemas import (
     DocumentVersion,
     EmissionsFrontier,
     EvidenceSearch,
+    ExtractedTerms,
     FaultInjected,
     ForecastRun,
     GeneratedAnswer,
@@ -196,6 +199,25 @@ def document_version(version_id: uuid.UUID, a: Actor = Depends(actor)):
     return {**{k: v[k] for k in v.keys() if k not in ("storage_key", "allowed_roles")},
             "text": read_version_text(v["storage_key"]), "chunks": [dict(c) for c in chunks],
             "untrusted_content": True}
+
+
+EXTRACTED_NOTE = ("Draft fields found by deterministic rules in this version's text; each cites its character span "
+                  "[start, end). Not stored and not used for planning: a person must confirm a field before it is used, "
+                  "and confirming is not available yet. Plain-text documents only.")
+
+
+@router.get("/documents/versions/{version_id}/extracted-terms", response_model=ExtractedTerms)
+def extracted_terms(version_id: uuid.UUID, a: Actor = Depends(actor)):
+    """Draft contract terms read from a version's text by rules (Phase 8 WP7). The same authentication, workspace scope
+    (row-level security) and role check as reading the version itself; computed on request, nothing is written."""
+    a.require("read")
+    with tenant_session(a.tenant_id) as s:
+        v = acl.require_version(s, a.role, version_id)
+        if v is None:
+            raise HTTPException(404, {"code": "not_found", "message": "document not found"})
+    body = read_version_text(v["storage_key"])
+    return {"status": "draft", "version_id": version_id, "extractor": EXTRACTOR_VERSION,
+            "fields": [f.as_dict() for f in extract_terms(body)], "note": EXTRACTED_NOTE}
 
 
 @router.get("/evidence/search", response_model=EvidenceSearch)

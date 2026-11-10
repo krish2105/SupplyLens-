@@ -1,5 +1,5 @@
 "use client";
-// ⌘K / Ctrl+K command palette: navigate, jump to a product, switch workspace or theme.
+// ⌘K / Ctrl+K command palette: navigate, jump to a product, ask the status assistant, switch workspace or theme.
 import * as Dialog from "@radix-ui/react-dialog";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { setTenant } from "@/lib/api";
 import { useApi, useMe } from "@/lib/queries";
 import { usePlanningContext } from "@/lib/state";
+import { ASSISTANT_LABEL, openStatusAssistant } from "@/components/status-assistant";
 
 export type NavItem = { href: string; label: string; group: string };
 type Cmd = { id: string; label: string; hint: string; run: () => void };
@@ -39,6 +40,7 @@ export function CommandPalette({ nav }: { nav: NavItem[] }) {
       router.push(`${pathname}?${new URLSearchParams({ ws: ctx.ws, ...query })}`); setOpen(false);
     };
     const all: Cmd[] = [
+      { id: "assistant", label: ASSISTANT_LABEL, hint: "Assistant · records only", run: () => { setOpen(false); openStatusAssistant(); } },
       ...nav.map((n) => ({ id: `nav:${n.href}`, label: n.label, hint: `Go to · ${n.group}`, run: go(n.href) })),
       ...(me.data?.memberships ?? []).filter((m) => m.slug !== ctx.ws).map((m) => ({
         id: `ws:${m.slug}`, label: `Switch to ${m.name}`, hint: "Workspace",

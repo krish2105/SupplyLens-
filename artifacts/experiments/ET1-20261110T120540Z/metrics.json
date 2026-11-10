@@ -1,0 +1,840 @@
+{
+ "experiment_id": "ET1-20261110T120540Z",
+ "study": "ET1",
+ "kind": "simulated delivery history (synthetic generator; no real deliveries)",
+ "question": "How much closer to the actual delivery time does a LightGBM ETA get than a region x hour historical mean, and are its quantile intervals honest? (method check on a SIMULATED last-mile history)",
+ "data": {
+  "label": "SIMULATED",
+  "generator": "evaluations/eta_study.py generate(); parameters in config.json",
+  "rows_per_seed": [
+   {
+    "train": 108448,
+    "test": 67296,
+    "test_new_courier_rows": 6051
+   },
+   {
+    "train": 107837,
+    "test": 66197,
+    "test_new_courier_rows": 5968
+   },
+   {
+    "train": 107236,
+    "test": 66642,
+    "test_new_courier_rows": 5970
+   }
+  ],
+  "split": {
+   "train": "2026-01-05..2026-04-30",
+   "test": "2026-05-01..2026-06-28",
+   "kind": "chronological",
+   "boosting_rounds_chosen_on": "last 14 days of train, then refit on all of train"
+  },
+  "features": [
+   "courier",
+   "region",
+   "hour",
+   "weekday",
+   "dist_km",
+   "stops_ahead"
+  ],
+  "target": "minutes from acceptance to delivery",
+  "distance": "haversine (straight-line) km between synthetic coordinates",
+  "cold_start": "4 couriers start on 2026-05-01 with no training rows"
+ },
+ "results": {
+  "summary_over_seeds": {
+   "baseline_region_hour_mean": {
+    "all": {
+     "mae_min": {
+      "mean": 30.59,
+      "min": 29.84,
+      "max": 31.78
+     },
+     "rmse_min": {
+      "mean": 39.9767,
+      "min": 38.76,
+      "max": 41.55
+     },
+     "acc_at_30": {
+      "mean": 0.5893,
+      "min": 0.5702,
+      "max": 0.6001
+     },
+     "mean_error_min": {
+      "mean": -10.3933,
+      "min": -11.28,
+      "max": -8.79
+     }
+    },
+    "existing_couriers": {
+     "mae_min": {
+      "mean": 29.5833,
+      "min": 28.71,
+      "max": 30.99
+     },
+     "rmse_min": {
+      "mean": 38.4633,
+      "min": 37.25,
+      "max": 40.52
+     },
+     "acc_at_30": {
+      "mean": 0.6015,
+      "min": 0.5809,
+      "max": 0.6156
+     },
+     "mean_error_min": {
+      "mean": -8.7167,
+      "min": -9.22,
+      "max": -8.05
+     }
+    },
+    "new_couriers": {
+     "mae_min": {
+      "mean": 40.8,
+      "min": 37.85,
+      "max": 44.69
+     },
+     "rmse_min": {
+      "mean": 52.68,
+      "min": 48.8,
+      "max": 58.44
+     },
+     "acc_at_30": {
+      "mean": 0.4655,
+      "min": 0.4427,
+      "max": 0.4923
+     },
+     "mean_error_min": {
+      "mean": -27.37,
+      "min": -35.58,
+      "max": -16.23
+     }
+    }
+   },
+   "lightgbm": {
+    "all": {
+     "mae_min": {
+      "mean": 12.3667,
+      "min": 11.56,
+      "max": 12.85
+     },
+     "rmse_min": {
+      "mean": 17.9167,
+      "min": 16.41,
+      "max": 19.23
+     },
+     "acc_at_30": {
+      "mean": 0.9198,
+      "min": 0.9123,
+      "max": 0.9332
+     },
+     "mean_error_min": {
+      "mean": -1.7633,
+      "min": -2.24,
+      "max": -1.39
+     }
+    },
+    "existing_couriers": {
+     "mae_min": {
+      "mean": 10.9067,
+      "min": 10.64,
+      "max": 11.22
+     },
+     "rmse_min": {
+      "mean": 15.06,
+      "min": 14.71,
+      "max": 15.46
+     },
+     "acc_at_30": {
+      "mean": 0.9467,
+      "min": 0.9418,
+      "max": 0.9503
+     },
+     "mean_error_min": {
+      "mean": 0.1367,
+      "min": -0.04,
+      "max": 0.33
+     }
+    },
+    "new_couriers": {
+     "mae_min": {
+      "mean": 27.13,
+      "min": 20.81,
+      "max": 32.97
+     },
+     "rmse_min": {
+      "mean": 35.4067,
+      "min": 28.32,
+      "max": 42.83
+     },
+     "acc_at_30": {
+      "mean": 0.6474,
+      "min": 0.5688,
+      "max": 0.7606
+     },
+     "mean_error_min": {
+      "mean": -21.02,
+      "min": -26.22,
+      "max": -14.98
+     }
+    }
+   },
+   "reference_generator_expected_time": {
+    "all": {
+     "mae_min": {
+      "mean": 10.3933,
+      "min": 10.23,
+      "max": 10.62
+     },
+     "rmse_min": {
+      "mean": 14.4767,
+      "min": 14.24,
+      "max": 14.74
+     },
+     "acc_at_30": {
+      "mean": 0.9524,
+      "min": 0.9492,
+      "max": 0.9548
+     },
+     "mean_error_min": {
+      "mean": 0.0367,
+      "min": 0.01,
+      "max": 0.06
+     }
+    },
+    "existing_couriers": {
+     "mae_min": {
+      "mean": 10.27,
+      "min": 10.11,
+      "max": 10.52
+     },
+     "rmse_min": {
+      "mean": 14.3233,
+      "min": 14.08,
+      "max": 14.64
+     },
+     "acc_at_30": {
+      "mean": 0.9537,
+      "min": 0.9499,
+      "max": 0.9562
+     },
+     "mean_error_min": {
+      "mean": 0.0267,
+      "min": 0.01,
+      "max": 0.04
+     }
+    },
+    "new_couriers": {
+     "mae_min": {
+      "mean": 11.6467,
+      "min": 11.47,
+      "max": 11.79
+     },
+     "rmse_min": {
+      "mean": 15.9833,
+      "min": 15.76,
+      "max": 16.4
+     },
+     "acc_at_30": {
+      "mean": 0.9384,
+      "min": 0.9332,
+      "max": 0.9412
+     },
+     "mean_error_min": {
+      "mean": 0.11,
+      "min": -0.02,
+      "max": 0.33
+     }
+    }
+   },
+   "baseline_region_hour_percentiles": {
+    "all": {
+     "coverage": {
+      "mean": 0.7604,
+      "min": 0.75,
+      "max": 0.7682
+     },
+     "mean_width_min": {
+      "mean": 87.4567,
+      "min": 83.65,
+      "max": 91.04
+     },
+     "below_lower": {
+      "mean": 0.068,
+      "min": 0.0651,
+      "max": 0.0717
+     },
+     "above_upper": {
+      "mean": 0.1716,
+      "min": 0.1602,
+      "max": 0.1849
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    },
+    "existing_couriers": {
+     "coverage": {
+      "mean": 0.7733,
+      "min": 0.7719,
+      "max": 0.7748
+     },
+     "mean_width_min": {
+      "mean": 87.4267,
+      "min": 84.46,
+      "max": 91.38
+     },
+     "below_lower": {
+      "mean": 0.0702,
+      "min": 0.0671,
+      "max": 0.0724
+     },
+     "above_upper": {
+      "mean": 0.1564,
+      "min": 0.154,
+      "max": 0.161
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    },
+    "new_couriers": {
+     "coverage": {
+      "mean": 0.6295,
+      "min": 0.5292,
+      "max": 0.7165
+     },
+     "mean_width_min": {
+      "mean": 87.7233,
+      "min": 75.41,
+      "max": 100.25
+     },
+     "below_lower": {
+      "mean": 0.0455,
+      "min": 0.0275,
+      "max": 0.0645
+     },
+     "above_upper": {
+      "mean": 0.3249,
+      "min": 0.219,
+      "max": 0.4262
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    }
+   },
+   "quantile_lightgbm": {
+    "all": {
+     "coverage": {
+      "mean": 0.7432,
+      "min": 0.7371,
+      "max": 0.7519
+     },
+     "mean_width_min": {
+      "mean": 31.8433,
+      "min": 31.1,
+      "max": 32.7
+     },
+     "below_lower": {
+      "mean": 0.112,
+      "min": 0.1042,
+      "max": 0.1199
+     },
+     "above_upper": {
+      "mean": 0.1448,
+      "min": 0.1363,
+      "max": 0.1552
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    },
+    "existing_couriers": {
+     "coverage": {
+      "mean": 0.7826,
+      "min": 0.7813,
+      "max": 0.7836
+     },
+     "mean_width_min": {
+      "mean": 32.3733,
+      "min": 31.56,
+      "max": 33.47
+     },
+     "below_lower": {
+      "mean": 0.1122,
+      "min": 0.1116,
+      "max": 0.1133
+     },
+     "above_upper": {
+      "mean": 0.1052,
+      "min": 0.1048,
+      "max": 0.1054
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    },
+    "new_couriers": {
+     "coverage": {
+      "mean": 0.344,
+      "min": 0.2894,
+      "max": 0.432
+     },
+     "mean_width_min": {
+      "mean": 26.4833,
+      "min": 24.81,
+      "max": 28.13
+     },
+     "below_lower": {
+      "mean": 0.1096,
+      "min": 0.0281,
+      "max": 0.1864
+     },
+     "above_upper": {
+      "mean": 0.5464,
+      "min": 0.4538,
+      "max": 0.6611
+     },
+     "crossed_share": {
+      "mean": 0.0,
+      "min": 0.0,
+      "max": 0.0
+     }
+    }
+   }
+  },
+  "per_seed": [
+   {
+    "seed": 7,
+    "rows": {
+     "train": 108448,
+     "test": 67296,
+     "test_new_courier_rows": 6051
+    },
+    "test_mean_minutes": 109.06,
+    "models": {
+     "baseline_region_hour_mean": {
+      "all": {
+       "mae_min": 30.15,
+       "rmse_min": 39.62,
+       "acc_at_30": 0.6001,
+       "mean_error_min": -11.28
+      },
+      "existing_couriers": {
+       "mae_min": 28.71,
+       "rmse_min": 37.25,
+       "acc_at_30": 0.6156,
+       "mean_error_min": -8.88
+      },
+      "new_couriers": {
+       "mae_min": 44.69,
+       "rmse_min": 58.44,
+       "acc_at_30": 0.4427,
+       "mean_error_min": -35.58
+      }
+     },
+     "lightgbm": {
+      "all": {
+       "mae_min": 12.85,
+       "rmse_min": 19.23,
+       "acc_at_30": 0.914,
+       "mean_error_min": -1.66
+      },
+      "existing_couriers": {
+       "mae_min": 10.86,
+       "rmse_min": 15.01,
+       "acc_at_30": 0.9481,
+       "mean_error_min": 0.33
+      },
+      "new_couriers": {
+       "mae_min": 32.97,
+       "rmse_min": 42.83,
+       "acc_at_30": 0.5688,
+       "mean_error_min": -21.86
+      }
+     },
+     "reference_generator_expected_time": {
+      "all": {
+       "mae_min": 10.33,
+       "rmse_min": 14.45,
+       "acc_at_30": 0.9531,
+       "mean_error_min": 0.01
+      },
+      "existing_couriers": {
+       "mae_min": 10.18,
+       "rmse_min": 14.25,
+       "acc_at_30": 0.9551,
+       "mean_error_min": 0.01
+      },
+      "new_couriers": {
+       "mae_min": 11.79,
+       "rmse_min": 16.4,
+       "acc_at_30": 0.9332,
+       "mean_error_min": 0.02
+      }
+     }
+    },
+    "intervals_80pct": {
+     "baseline_region_hour_percentiles": {
+      "all": {
+       "coverage": 0.75,
+       "mean_width_min": 83.65,
+       "below_lower": 0.0651,
+       "above_upper": 0.1849,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.7719,
+       "mean_width_min": 84.46,
+       "below_lower": 0.0671,
+       "above_upper": 0.161,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.5292,
+       "mean_width_min": 75.41,
+       "below_lower": 0.0446,
+       "above_upper": 0.4262,
+       "crossed_share": 0.0
+      }
+     },
+     "quantile_lightgbm": {
+      "all": {
+       "coverage": 0.7371,
+       "mean_width_min": 31.73,
+       "below_lower": 0.1199,
+       "above_upper": 0.143,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.7813,
+       "mean_width_min": 32.09,
+       "below_lower": 0.1133,
+       "above_upper": 0.1054,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.2894,
+       "mean_width_min": 28.13,
+       "below_lower": 0.1864,
+       "above_upper": 0.5242,
+       "crossed_share": 0.0
+      }
+     }
+    },
+    "boosting_rounds": {
+     "lightgbm": 185,
+     "quantile_0.1": 293,
+     "quantile_0.9": 180
+    },
+    "lightgbm_gain_share": {
+     "courier": 0.1935,
+     "region": 0.0001,
+     "hour": 0.0279,
+     "weekday": 0.004,
+     "dist_km": 0.0432,
+     "stops_ahead": 0.7312
+    }
+   },
+   {
+    "seed": 8,
+    "rows": {
+     "train": 107837,
+     "test": 66197,
+     "test_new_courier_rows": 5968
+    },
+    "test_mean_minutes": 108.88,
+    "models": {
+     "baseline_region_hour_mean": {
+      "all": {
+       "mae_min": 29.84,
+       "rmse_min": 38.76,
+       "acc_at_30": 0.5975,
+       "mean_error_min": -8.79
+      },
+      "existing_couriers": {
+       "mae_min": 29.05,
+       "rmse_min": 37.62,
+       "acc_at_30": 0.608,
+       "mean_error_min": -8.05
+      },
+      "new_couriers": {
+       "mae_min": 37.85,
+       "rmse_min": 48.8,
+       "acc_at_30": 0.4923,
+       "mean_error_min": -16.23
+      }
+     },
+     "lightgbm": {
+      "all": {
+       "mae_min": 11.56,
+       "rmse_min": 16.41,
+       "acc_at_30": 0.9332,
+       "mean_error_min": -1.39
+      },
+      "existing_couriers": {
+       "mae_min": 10.64,
+       "rmse_min": 14.71,
+       "acc_at_30": 0.9503,
+       "mean_error_min": -0.04
+      },
+      "new_couriers": {
+       "mae_min": 20.81,
+       "rmse_min": 28.32,
+       "acc_at_30": 0.7606,
+       "mean_error_min": -14.98
+      }
+     },
+     "reference_generator_expected_time": {
+      "all": {
+       "mae_min": 10.23,
+       "rmse_min": 14.24,
+       "acc_at_30": 0.9548,
+       "mean_error_min": 0.04
+      },
+      "existing_couriers": {
+       "mae_min": 10.11,
+       "rmse_min": 14.08,
+       "acc_at_30": 0.9562,
+       "mean_error_min": 0.04
+      },
+      "new_couriers": {
+       "mae_min": 11.47,
+       "rmse_min": 15.76,
+       "acc_at_30": 0.9407,
+       "mean_error_min": -0.02
+      }
+     }
+    },
+    "intervals_80pct": {
+     "baseline_region_hour_percentiles": {
+      "all": {
+       "coverage": 0.7682,
+       "mean_width_min": 87.68,
+       "below_lower": 0.0717,
+       "above_upper": 0.1602,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.7733,
+       "mean_width_min": 86.44,
+       "below_lower": 0.0724,
+       "above_upper": 0.1543,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.7165,
+       "mean_width_min": 100.25,
+       "below_lower": 0.0645,
+       "above_upper": 0.219,
+       "crossed_share": 0.0
+      }
+     },
+     "quantile_lightgbm": {
+      "all": {
+       "coverage": 0.7519,
+       "mean_width_min": 31.1,
+       "below_lower": 0.1118,
+       "above_upper": 0.1363,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.7836,
+       "mean_width_min": 31.56,
+       "below_lower": 0.1116,
+       "above_upper": 0.1048,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.432,
+       "mean_width_min": 26.51,
+       "below_lower": 0.1143,
+       "above_upper": 0.4538,
+       "crossed_share": 0.0
+      }
+     }
+    },
+    "boosting_rounds": {
+     "lightgbm": 315,
+     "quantile_0.1": 524,
+     "quantile_0.9": 221
+    },
+    "lightgbm_gain_share": {
+     "courier": 0.2043,
+     "region": 0.0,
+     "hour": 0.0219,
+     "weekday": 0.0029,
+     "dist_km": 0.0237,
+     "stops_ahead": 0.7472
+    }
+   },
+   {
+    "seed": 9,
+    "rows": {
+     "train": 107236,
+     "test": 66642,
+     "test_new_courier_rows": 5970
+    },
+    "test_mean_minutes": 113.43,
+    "models": {
+     "baseline_region_hour_mean": {
+      "all": {
+       "mae_min": 31.78,
+       "rmse_min": 41.55,
+       "acc_at_30": 0.5702,
+       "mean_error_min": -11.11
+      },
+      "existing_couriers": {
+       "mae_min": 30.99,
+       "rmse_min": 40.52,
+       "acc_at_30": 0.5809,
+       "mean_error_min": -9.22
+      },
+      "new_couriers": {
+       "mae_min": 39.86,
+       "rmse_min": 50.8,
+       "acc_at_30": 0.4615,
+       "mean_error_min": -30.3
+      }
+     },
+     "lightgbm": {
+      "all": {
+       "mae_min": 12.69,
+       "rmse_min": 18.11,
+       "acc_at_30": 0.9123,
+       "mean_error_min": -2.24
+      },
+      "existing_couriers": {
+       "mae_min": 11.22,
+       "rmse_min": 15.46,
+       "acc_at_30": 0.9418,
+       "mean_error_min": 0.12
+      },
+      "new_couriers": {
+       "mae_min": 27.61,
+       "rmse_min": 35.07,
+       "acc_at_30": 0.6127,
+       "mean_error_min": -26.22
+      }
+     },
+     "reference_generator_expected_time": {
+      "all": {
+       "mae_min": 10.62,
+       "rmse_min": 14.74,
+       "acc_at_30": 0.9492,
+       "mean_error_min": 0.06
+      },
+      "existing_couriers": {
+       "mae_min": 10.52,
+       "rmse_min": 14.64,
+       "acc_at_30": 0.9499,
+       "mean_error_min": 0.03
+      },
+      "new_couriers": {
+       "mae_min": 11.68,
+       "rmse_min": 15.79,
+       "acc_at_30": 0.9412,
+       "mean_error_min": 0.33
+      }
+     }
+    },
+    "intervals_80pct": {
+     "baseline_region_hour_percentiles": {
+      "all": {
+       "coverage": 0.763,
+       "mean_width_min": 91.04,
+       "below_lower": 0.0672,
+       "above_upper": 0.1698,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.7748,
+       "mean_width_min": 91.38,
+       "below_lower": 0.0711,
+       "above_upper": 0.154,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.6429,
+       "mean_width_min": 87.51,
+       "below_lower": 0.0275,
+       "above_upper": 0.3296,
+       "crossed_share": 0.0
+      }
+     },
+     "quantile_lightgbm": {
+      "all": {
+       "coverage": 0.7407,
+       "mean_width_min": 32.7,
+       "below_lower": 0.1042,
+       "above_upper": 0.1552,
+       "crossed_share": 0.0
+      },
+      "existing_couriers": {
+       "coverage": 0.783,
+       "mean_width_min": 33.47,
+       "below_lower": 0.1116,
+       "above_upper": 0.1054,
+       "crossed_share": 0.0
+      },
+      "new_couriers": {
+       "coverage": 0.3107,
+       "mean_width_min": 24.81,
+       "below_lower": 0.0281,
+       "above_upper": 0.6611,
+       "crossed_share": 0.0
+      }
+     }
+    },
+    "boosting_rounds": {
+     "lightgbm": 262,
+     "quantile_0.1": 430,
+     "quantile_0.9": 282
+    },
+    "lightgbm_gain_share": {
+     "courier": 0.2621,
+     "region": 0.0001,
+     "hour": 0.0298,
+     "weekday": 0.005,
+     "dist_km": 0.033,
+     "stops_ahead": 0.6702
+    }
+   }
+  ],
+  "metric_notes": {
+   "acc_at_30": "share of test parcels predicted within 30 minutes",
+   "coverage": "share of test parcels inside the 80 % interval (target 0.80)",
+   "reference_generator_expected_time": "not a model: the generator's expected minutes given hidden quantities (true courier factors, region-day disturbance); shows the noise no model can remove"
+  }
+ },
+ "assumptions": [
+  "every generator parameter (speeds, service minutes, traffic by hour, weekday effects, growth, noise, detour factor 1.3, new-courier factors) is assumed, not estimated from data",
+  "the queue is summarised by one number (stops ahead) and the traffic of the acceptance hour applies to the whole wait",
+  "couriers work one home region; coordinates are synthetic around an arbitrary reference point"
+ ],
+ "limits": [
+  "synthetic data: the models can only recover effects that were put into the generator, so the accuracy says the pipeline works, not how well it would predict real deliveries",
+  "distances are haversine (straight-line); real road distances and routing are not modelled",
+  "no real courier sequences, addresses or traffic feeds",
+  "the real datasets (LaDe, Amazon Last Mile) need the owner's approval before they can replace the generator; the LaDe paper's leaderboard is not comparable with these numbers and is not reported"
+ ],
+ "seeds": {
+  "generator_and_lightgbm": [
+   7,
+   8,
+   9
+  ]
+ },
+ "seconds": 21.7
+}

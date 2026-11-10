@@ -1,5 +1,5 @@
-// Phase 8 WP-ART: every illustration the app can show is a published, optimised file; pieces prepared for screens that
-// do not exist yet (A17 Extracted terms, A18 status assistant) are rendered nowhere until those screens are built.
+// Phase 8 WP-ART: every illustration the app can show is a published, optimised file, and the Phase 8 pieces appear only on
+// the screen they were briefed for (A17 Extracted terms, A18 status assistant).
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -27,10 +27,11 @@ describe("illustration registry (Phase 8 WP-ART)", () => {
     }
   });
 
-  it("reserved pieces are not rendered anywhere in the app yet", () => {
-    const reserved = assets.filter((a) => a.rendered === false).map((a) => a.id).sort();
-    expect(reserved).toEqual(["A17", "A18"]);
-    const code = [...sources(join(WEB, "app")), ...sources(join(WEB, "components"))].map((p) => readFileSync(p, "utf8")).join("\n");
-    for (const art of ["empty-extraction", "assistant-ready"]) expect(code).not.toContain(`art="${art}"`);
+  it("nothing is held back, and A17 and A18 appear only on their briefed screens", () => {
+    expect(assets.filter((a) => a.rendered === false).map((a) => a.id)).toEqual([]);
+    const files = [...sources(join(WEB, "app")), ...sources(join(WEB, "components"))];
+    const using = (art: string) => files.filter((p) => readFileSync(p, "utf8").includes(`art="${art}"`)).map((p) => p.slice(WEB.length + 1)).sort();
+    expect(using("empty-extraction")).toEqual(["components/extracted-terms.tsx"]);
+    expect(using("assistant-ready")).toEqual(["components/status-assistant.tsx"]);
   });
 });

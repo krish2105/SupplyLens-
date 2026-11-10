@@ -1,0 +1,72 @@
+{
+ "seed": 6,
+ "split": "default_rng(6).permutation(10000): 6000 / 2000 / 2000 (PM1 part a)",
+ "features": "PM1's 10 columns (type L, type M, air, process, difference, speed, torque, power, tool wear, wear x torque)",
+ "logistic_regression": "scikit-learn StandardScaler + LogisticRegression(C=1.0, lbfgs, max_iter=5000)",
+ "lightgbm": {
+  "params": {
+   "objective": "binary",
+   "learning_rate": 0.05,
+   "num_leaves": 15,
+   "min_data_in_leaf": 20,
+   "seed": 6,
+   "verbose": -1
+  },
+  "rounds": 400
+ },
+ "smote": {
+  "sampler": "imblearn SMOTENC(categorical_features=[Type], k_neighbors=5, sampling_strategy='auto')",
+  "space": "raw columns, continuous ones standardised with training statistics",
+  "random_state": 6,
+  "spread_seeds": [
+   6,
+   7,
+   8,
+   9,
+   10
+  ]
+ },
+ "class_weights": "n / (2 n_class)",
+ "group_class_weights": "n_type / (2 n_type_class)",
+ "threshold_rule": "PM1 cost_threshold on validation: minimise 2000 x missed + 150 x alerts",
+ "adversarial": {
+  "seeds": [
+   0,
+   1,
+   2,
+   3,
+   4
+  ],
+  "alphas": [
+   0.01,
+   0.03,
+   0.1,
+   0.3,
+   1.0
+  ],
+  "steps": 3000,
+  "lr": 0.05,
+  "lr_final": 0.0005,
+  "C": 1.0,
+  "cost_slack": 0.1,
+  "predictor": "nn.Linear(10, 1) on standardised features, balanced class weights, L2 as scikit-learn C=1",
+  "adversary": "nn.Linear(3, 3) on [s, s*y, s*(1-y)], s = sigmoid((1+|c|) logit)",
+  "probe": "multinomial logistic on [z, z*y, y], fitted on validation, scored on test"
+ },
+ "min_group_failures": 10,
+ "bootstrap": {
+  "reps": 2000,
+  "seed": 6,
+  "kind": "paired over test rows"
+ },
+ "libraries": {
+  "python": "3.12.13",
+  "numpy": "2.5.4",
+  "lightgbm": "4.7.0",
+  "scikit-learn": "1.7.2",
+  "imbalanced-learn": "0.14.0",
+  "torch": "2.14.1"
+ },
+ "command": "uv run --with scikit-learn==1.7.2 --with imbalanced-learn==0.14.0 python evaluations/imbalance_study.py",
+ "pm1_run_checked": "PM1-20261030T192104Z"
+}
