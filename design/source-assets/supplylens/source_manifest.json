@@ -69,8 +69,8 @@
       "brief": "Phase 8 brief A02 (docs/design/image-prompts-phase8.md): an empty deep-teal intake tray, two or three blank off-white sheets shown by their edges only, a short mint upward arrow; nothing imported yet. No boxes, cartons or kraft brown.",
       "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_owner_approval",
-      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
+      "final_ui_approval_status": "approved_by_owner_2026-11-10",
+      "suggested_integration_disposition": "state_scoped_integration",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -629,8 +629,8 @@
       "brief": "Phase 8 brief A13 (docs/design/image-prompts-phase8.md): three separate supplier building blocks on pale mint, connector stubs that do not meet, no lines between buildings, nothing in the doorways; no supplier network recorded yet.",
       "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_owner_approval",
-      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
+      "final_ui_approval_status": "approved_by_owner_2026-11-10",
+      "suggested_integration_disposition": "state_scoped_integration",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -801,8 +801,8 @@
       "brief": "Phase 8 brief A16 (docs/design/image-prompts-phase8.md): a neutral light-grey balance scale on a deep-teal base, both pans empty and level, beside an empty off-white ledger board; nothing measured yet, not a judgement. No coins, cartons, arrows or kraft brown.",
       "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_owner_approval",
-      "suggested_integration_disposition": "state_scoped_integration_pending_owner_approval",
+      "final_ui_approval_status": "approved_by_owner_2026-11-10",
+      "suggested_integration_disposition": "state_scoped_integration",
       "actual": {
         "width": 1024,
         "height": 1024,
@@ -873,7 +873,7 @@
       "brief": "Phase 8 brief A17 (docs/design/image-prompts-phase8.md): one blank off-white sheet on a deep-teal reading stand, a light-grey inspection lens, three empty pale-mint field holders; no fields extracted yet.",
       "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_owner_approval",
+      "final_ui_approval_status": "approved_by_owner_2026-11-10",
       "suggested_integration_disposition": "staged_until_its_screen_exists",
       "actual": {
         "width": 1024,
@@ -938,7 +938,7 @@
       "brief": "Phase 8 brief A18 (docs/design/image-prompts-phase8.md): an empty mint speech bubble on a deep-teal base beside a two-shelf teal and grey rack with one plain kraft carton; ask a question about an order or stock.",
       "priority": "phase8",
       "file_status": "present_and_binary_validated",
-      "final_ui_approval_status": "pending_owner_approval",
+      "final_ui_approval_status": "approved_by_owner_2026-11-10",
       "suggested_integration_disposition": "staged_until_its_screen_exists",
       "actual": {
         "width": 1024,

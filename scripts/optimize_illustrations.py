@@ -3,9 +3,9 @@
 Sources stay untouched in design/source-assets/supplylens/ (byte-identical to the supplied files; their SHA-256 is
 checked against the manifest). Derivatives are lossless-alpha WebP at 2x the largest display size, written to
 apps/web/public/illustrations/supplylens/. Phase 8: the owner replaced A02, A13 and A16 (withheld under D-040: document
-lines and a chart, joined suppliers, kraft cartons) with files made for the Phase 8 briefs and added A17 and A18; their
-publication waits for the owner's approval of the review branch. A17 and A18 are prepared for screens that do not exist
-yet (8B WP7, WP6) and are rendered nowhere until then.
+lines and a chart, joined suppliers, kraft cartons) with files made for the Phase 8 briefs and added A17 and A18; the
+owner approved them on 2026-11-10 (D-108). A17 and A18 are prepared for screens that do not exist yet (8B WP7, WP6) and
+are rendered nowhere until then.
 
 uv run python scripts/optimize_illustrations.py
 """
