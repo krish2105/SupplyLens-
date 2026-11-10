@@ -58,3 +58,26 @@ for (const [wname, ctx] of Object.entries(WIDTHS)) for (const theme of ["light",
     });
   });
 }
+
+// Phase 8 F4: two critical screens after switching theme at runtime, the path that left the 3D view on the old theme
+// (F1). The system scheme is the opposite of the starting theme, as on the owner's machine. The WebGL scene stays masked
+// (GPU pixels; its colours are asserted in e2e/theme.spec.ts); charts and every DOM surface are compared.
+const SWITCHED: [string, string, "light" | "dark", "light" | "dark", string | RegExp][] = [
+  ["overview", "/", "light", "dark", /stocked products/],
+  ["inventory", "/inventory", "dark", "light", "Stock positions by product"],
+];
+test.describe("desktop after a runtime theme switch", () => {
+  test.use({ ...WIDTHS.desktop, reducedMotion: "reduce" });
+  for (const [name, path, from, to, ready] of SWITCHED) {
+    test(`${name} ${from} → ${to}`, async ({ page }) => {
+      await page.emulateMedia({ colorScheme: to });
+      await open(page, from, path, "uci-research", "planner", ready);
+      await page.getByRole("radio", { name: to === "light" ? "Light theme" : "Dark theme" }).check({ force: true });
+      await expect(page.locator("html")).toHaveClass(new RegExp(`\\b${to}\\b`));
+      // every chart was rebuilt from the new theme's tokens before the capture
+      await expect.poll(() => page.locator("[data-chart-theme]").evaluateAll((els, t) => els.every((e) => e.getAttribute("data-chart-theme") === t), to)).toBe(true);
+      await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+      await expect(page).toHaveScreenshot(`${name}-desktop-switched-${to}.png`, SHOT(page));
+    });
+  }
+});

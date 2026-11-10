@@ -91,9 +91,24 @@ export function Status({ value }: { value: string | null | undefined }) {
   if (!value) return null;
   const tone = STATUS_TONE[value] ?? "muted";
   return (
-    <span className={clsx("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide", TONE_CLASS[tone])}>
+    <span data-tone={tone} className={clsx("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide", TONE_CLASS[tone])}>
       <span aria-hidden className="size-1.5 rounded-full bg-current" />
       {value.replaceAll("_", " ")}
+    </span>
+  );
+}
+
+/** A capability's status together with the basis of the data behind it (Phase 8 F2): a capability that rests on
+ *  simulated, synthetic or assumed data shows that basis in its provenance colour, never the observed-green status. */
+export function CapabilityStatus({ status, basis }: { status: string; basis: string | null | undefined }) {
+  const kind = basis?.toLowerCase();
+  if (!kind || kind === "observed") return <Status value={status} />;
+  const label = status.toLowerCase() === kind ? kind : `${status.replaceAll("_", " ")} · ${kind}`;
+  return (
+    <span data-basis={kind} data-tone={kind} title={`Value kind: ${kind}`}
+      className={clsx("inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2 py-0.5 text-[11px] font-semibold tracking-wide", KIND_STYLE[kind] ?? KIND_STYLE.derived)}>
+      <span aria-hidden className="size-1.5 rounded-full bg-current" />
+      {label}
     </span>
   );
 }

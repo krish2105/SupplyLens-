@@ -5,15 +5,15 @@
 import { Canvas, invalidate, useThree, type ThreeEvent } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { Crosshair, RotateCcw, X } from "lucide-react";
 import type { InventoryItem } from "@/lib/queries";
-import { token } from "./chart-theme";
+import { token, useChartTheme } from "./chart-theme";
 import { Button } from "./ui";
 import { int, num } from "@/lib/format";
 
 const MAX_COVER = 60;
+const TOOL_DISABLED = "disabled:opacity-100! disabled:text-muted";
 const MAX_H = 4.2;
 
 function healthColor(h: string) {
@@ -60,7 +60,7 @@ function Invalidator({ deps }: { deps: unknown[] }) {
 export default function Warehouse3D({ items, selected, onSelect, height = 460, onFail }: {
   items: InventoryItem[]; selected: string | null; onSelect: (sku: string | null) => void; height?: number; onFail?: () => void;
 }) {
-  const { resolvedTheme } = useTheme();
+  const theme = useChartTheme();      // re-reads the colours once the theme class is really on <html> (Phase 8 F1)
   const controls = useRef<OrbitControlsImpl | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
   const placed = items.filter((i) => i.x != null && i.z != null);
@@ -72,7 +72,7 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
   const colors = useMemo(() => ({
     shortage_risk: healthColor("shortage_risk"), excess: healthColor("excess"), healthy: healthColor("healthy"),
     default: healthColor("x"), frame: token("--line-strong"), floor: token("--bg-deep"), grid: token("--line"),
-  }), [resolvedTheme]); // eslint-disable-line react-hooks/exhaustive-deps
+  }), [theme]); // eslint-disable-line react-hooks/exhaustive-deps -- recolour when the theme changes (token() reads CSS variables)
 
   const home: [number, number, number] = [center[0] + 18, 20, center[2] + 26];
   function reset() {
@@ -90,51 +90,57 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
     c.object.position.set(it.x! + 6, 8, it.z! + 9);
     c.update(); invalidate();
   }
-  useEffect(() => { invalidate(); }, [selected, resolvedTheme]);
+  useEffect(() => { invalidate(); }, [selected, theme]);
 
   return (
-    <div className="relative" style={{ height }}>
-      <Canvas frameloop="demand" shadows dpr={[1, 1.75]} camera={{ position: home, fov: 40 }}
-        onPointerMissed={() => onSelect(null)} role="img" aria-label="3D schematic warehouse. The table and floor plan show the same records."
-        // Demand rendering can miss the first frame after a theme remount; request one explicitly.
-        onCreated={(s) => {
-          requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150);
-          // A lost context (GPU reset, tab discarded) cannot be recovered mid-session: hand over to the 2D floor plan.
-          s.gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); onFail?.(); });
-        }}>
-        <Invalidator deps={[colors, items, selected]} />
-        <color attach="background" args={[colors.floor]} />
-        <ambientLight intensity={0.7} />
-        <directionalLight position={[20, 30, 10]} intensity={1.1} castShadow />
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[center[0], -0.01, center[2]]} receiveShadow>
-          <planeGeometry args={[80, 60]} />
-          <meshStandardMaterial color={colors.floor} />
-        </mesh>
-        <gridHelper args={[80, 40, colors.grid, colors.grid]} position={[center[0], 0, center[2]]} />
-        {placed.map((it) => (
-          <Rack key={`${it.sku_id}@${it.location_id}`} item={it} selected={it.sku_id === selected} hover={it.sku_id === hovered} onSelect={onSelect}
-            onHover={setHovered} colors={colors} />
-        ))}
-        <OrbitControls ref={controls as never} target={center} makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.15}
-          minDistance={6} maxDistance={80} onChange={() => invalidate()} />
-      </Canvas>
-      <div className="absolute left-3 top-3 flex flex-wrap gap-2">
-        <Button size="sm" variant="outline" onClick={reset}><RotateCcw className="size-3.5" aria-hidden /> Reset camera</Button>
-        <Button size="sm" variant="outline" onClick={focus} disabled={!selected}><Crosshair className="size-3.5" aria-hidden /> Focus selected</Button>
-        <Button size="sm" variant="outline" onClick={() => onSelect(null)} disabled={!selected}><X className="size-3.5" aria-hidden /> Clear selection</Button>
+    // The legend sits below the view, not over it (Phase 8 F3): as a translucent overlay it covered the nearest racks.
+    // The total height stays `height`, reserved from the first paint.
+    <div className="flex flex-col" style={{ height }}>
+      <div className="relative min-h-0 flex-1">
+        <Canvas frameloop="demand" shadows dpr={[1, 1.75]} camera={{ position: home, fov: 40 }}
+          onPointerMissed={() => onSelect(null)} role="img" aria-label="3D schematic warehouse. The table and floor plan show the same records."
+          // Demand rendering can miss the first frame after a theme remount; request one explicitly.
+          onCreated={(s) => {
+            requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150);
+            // A lost context (GPU reset, tab discarded) cannot be recovered mid-session: hand over to the 2D floor plan.
+            s.gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); onFail?.(); });
+          }}>
+          <Invalidator deps={[colors, items, selected]} />
+          <color attach="background" args={[colors.floor]} />
+          <ambientLight intensity={0.7} />
+          <directionalLight position={[20, 30, 10]} intensity={1.1} castShadow />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[center[0], -0.01, center[2]]} receiveShadow>
+            <planeGeometry args={[80, 60]} />
+            <meshStandardMaterial color={colors.floor} />
+          </mesh>
+          <gridHelper args={[80, 40, colors.grid, colors.grid]} position={[center[0], 0, center[2]]} />
+          {placed.map((it) => (
+            <Rack key={`${it.sku_id}@${it.location_id}`} item={it} selected={it.sku_id === selected} hover={it.sku_id === hovered} onSelect={onSelect}
+              onHover={setHovered} colors={colors} />
+          ))}
+          <OrbitControls ref={controls as never} target={center} makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.15}
+            minDistance={6} maxDistance={80} onChange={() => invalidate()} />
+        </Canvas>
+        <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" onClick={reset}><RotateCcw className="size-3.5" aria-hidden /> Reset camera</Button>
+          {/* over the 3D view a half-transparent disabled button let the floor through and read faintly (Phase 8 F3): keep
+              it opaque and mark it disabled with the muted text colour instead */}
+          <Button size="sm" variant="outline" onClick={focus} disabled={!selected} className={TOOL_DISABLED}><Crosshair className="size-3.5" aria-hidden /> Focus selected</Button>
+          <Button size="sm" variant="outline" onClick={() => onSelect(null)} disabled={!selected} className={TOOL_DISABLED}><X className="size-3.5" aria-hidden /> Clear selection</Button>
+        </div>
+        {(() => {
+          // Plain DOM overlay (outside the WebGL tree) for the hovered or selected rack.
+          const it = placed.find((i) => i.sku_id === (hovered ?? selected));
+          return it ? (
+            <div className="pointer-events-none absolute bottom-3 right-3 max-w-[260px] rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-lg" aria-live="polite">
+              <div className="num font-semibold">{it.sku_id} · slot {it.slot_id}</div>
+              <div className="truncate text-muted">{it.description}</div>
+              <div className="num mt-0.5">{int(it.available)} {it.unit} available · {it.days_of_cover == null ? "no sales data" : `${num(it.days_of_cover)} d cover`}</div>
+            </div>
+          ) : null;
+        })()}
       </div>
-      {(() => {
-        // Plain DOM overlay (outside the WebGL tree) for the hovered or selected rack.
-        const it = placed.find((i) => i.sku_id === (hovered ?? selected));
-        return it ? (
-          <div className="pointer-events-none absolute bottom-3 right-3 max-w-[260px] rounded-lg border border-line bg-surface/95 px-3 py-2 text-xs shadow-lg" aria-live="polite">
-            <div className="num font-semibold">{it.sku_id} · slot {it.slot_id}</div>
-            <div className="truncate text-muted">{it.description}</div>
-            <div className="num mt-0.5">{int(it.available)} {it.unit} available · {it.days_of_cover == null ? "no sales data" : `${num(it.days_of_cover)} d cover`}</div>
-          </div>
-        ) : null;
-      })()}
-      <div className="absolute bottom-3 left-3 rounded-lg border border-line bg-surface/90 px-3 py-2 text-[11px] text-muted">
+      <div className="shrink-0 border-t border-line bg-surface px-3 py-2 text-[11px] text-muted">
         <span className="font-semibold text-ink">Schematic</span> — generated layout, not measured geometry. Column height = days of cover (max {MAX_COVER}).
         <div className="mt-1 flex flex-wrap gap-3">
           {[["shortage_risk", "Under 7 days"], ["healthy", "7–90 days"], ["excess", "Over 90 days"], ["x", "No sales data"]].map(([k, l]) => (

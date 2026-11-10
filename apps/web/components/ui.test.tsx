@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/lib/api";
-import { ErrorState, QueryError, TabList, TabPanel } from "./ui";
+import { CapabilityStatus, ErrorState, QueryError, TabList, TabPanel } from "./ui";
 
 describe("error states (P2-FE-06)", () => {
   it("QueryError renders nothing without an error, and the error with a working retry otherwise", () => {
@@ -49,5 +49,27 @@ describe("tabs (P3-FE-09)", () => {
     expect(screen.getByRole("tabpanel").textContent).toBe("panel c");
     fireEvent.keyDown(gamma, { key: "Home" });
     expect(screen.getByRole("tab", { name: "Alpha" }).getAttribute("aria-selected")).toBe("true");
+  });
+});
+
+describe("capability status (Phase 8 F2)", () => {
+  it("names a simulated, synthetic or assumed basis beside the status and never uses the observed-green tone", () => {
+    for (const [status, basis, text] of [["available", "simulated", "available · simulated"], ["available", "synthetic", "available · synthetic"],
+      ["sandbox only", "simulated", "sandbox only · simulated"], ["assumed", "assumed", "assumed"]] as const) {
+      const { container, unmount } = render(<CapabilityStatus status={status} basis={basis} />);
+      const chip = container.querySelector("[data-basis]");
+      expect(chip?.getAttribute("data-basis")).toBe(basis);
+      expect(chip?.textContent).toBe(text);
+      expect(container.querySelector('[data-tone="ok"]')).toBeNull();
+      unmount();
+    }
+  });
+  it("keeps the plain status for observed data and for unavailable rows", () => {
+    const { container, unmount } = render(<CapabilityStatus status="available" basis="observed" />);
+    expect(container.querySelector('[data-tone="ok"]')?.textContent).toBe("available");
+    expect(container.querySelector("[data-basis]")).toBeNull();
+    unmount();
+    const none = render(<CapabilityStatus status="unavailable" basis={null} />);
+    expect(none.container.querySelector('[data-tone="muted"]')?.textContent).toBe("unavailable");
   });
 });

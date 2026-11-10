@@ -6,7 +6,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ArrowRight, CalendarClock, FileWarning } from "lucide-react";
 import { useDecisionClock } from "@/components/clock-rail";
 import { FloorPlan } from "@/components/floorplan";
-import { Card, ErrorState, Eyebrow, Provenance, QueryError, Skeleton, Stat, Status } from "@/components/ui";
+import { CapabilityStatus, Card, ErrorState, Eyebrow, Provenance, QueryError, Skeleton, Stat, Status } from "@/components/ui";
 import { EmptyState } from "@/components/illustration";
 import { GLBoundary, GLNotice } from "@/components/gl-boundary";
 import { webglAvailable } from "@/lib/webgl";
@@ -138,7 +138,7 @@ export default function OverviewPage() {
             {(o?.capabilities ?? []).map((c) => (
               <li key={c.capability} className="flex items-start justify-between gap-3 text-sm">
                 <span><span className="font-medium">{c.capability}</span><span className="block text-xs text-muted">{c.note}</span></span>
-                <Status value={c.status} />
+                <CapabilityStatus status={c.status} basis={c.basis} />
               </li>
             ))}
           </ul>
