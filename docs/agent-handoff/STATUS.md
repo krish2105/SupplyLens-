@@ -7,7 +7,7 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 ## Current position
 | Field | Value |
 |---|---|
-| Current phase | **Phase 7 complete** (2026-10-27): operations decision studies, see `phases/PHASE-07.md`. Before that, **Phase 6 complete** (2026-10-24): ERP integration and operational excellence (owner brief). Adapter contract with five error classes; connector circuit breaker (outages no longer spend retries, ERP-P6-01 P1); expired-credential stop and probe; business rejections never retried; ERP receipt feed, order-status sync, Cancel order; health and reconciliation reports, Administration cards, metrics, worker heartbeats; 503 on database outage; outage and disk-loss drills with measured RPO/RTO. **No real ERP was connected**: external qualification BLOCKED (EXT-02). Next: Phase 7 only on the owner's instruction. |
+| Current phase | **Phase 8 Session 8A complete** (2026-11-10): course brief v4 (owner), see `phases/PHASE-08.md` — hosted UI fixes F1–F4 with failing-first tests, README/results/coverage truthful, `docs/course/metrics.md` generated from the registry, interim pack drafts awaiting the owner; illustrations on an unmerged pull request for the owner's approval. Next: Session 8B after Week 6 and owner-answers-8B. Before that, **Phase 7 complete** (2026-10-27, warehouse studies 2026-10-30): operations decision studies, see `phases/PHASE-07.md`. Before that, **Phase 6 complete** (2026-10-24): ERP integration and operational excellence (owner brief). Adapter contract with five error classes; connector circuit breaker (outages no longer spend retries, ERP-P6-01 P1); expired-credential stop and probe; business rejections never retried; ERP receipt feed, order-status sync, Cancel order; health and reconciliation reports, Administration cards, metrics, worker heartbeats; 503 on database outage; outage and disk-loss drills with measured RPO/RTO. **No real ERP was connected**: external qualification BLOCKED (EXT-02). Next: Phase 7 only on the owner's instruction. |
 | Branch | `main` (protected: required checks lint, secrets-and-dependencies, backend, contracts-and-web; no force-push/deletion; admins exempt) |
 | Code commits | Phase 6: see `git log` after `e9ed389`. Phase 5: see `git log` after `36f4f9d` (code + Linux Research baselines). Phase 4B: `967ba0b` (changes), `85f9b6b` (Linux screenshot baselines, evidence); evidence commit follows. Phase 4: `bf2c757`, `1f914a8`. Phase 3: `8a0bb4d`, `66cd20a`, `542ca72` |
 | CI | Phase 6: see EVIDENCE P6-E01 and P6-E10. Phase 5: P5-E15, P5-E16. Phase 4B: `967ba0b` run 39905285613: **8/8 success**, browser suites 217 passed / 8 skipped on five projects (P4B-E11); `85f9b6b` run 39906427424: 8/8, screenshot regression compared on Linux, 42 passed (P4B-E14). Earlier: `98c838a` failed one lab-vitals sample (QA-4B-01) |
@@ -28,6 +28,7 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 | 5 | 2026-10-23/24 | AI/ML, retrieval, optimisation, MLOps (owner brief): ML-P5-01 (P1) fixed and F1 2.1.0 (TCN − LightGBM −0.20 [−0.46, +0.03], no clear difference; corrects 2.0.0); P2-ML-01, ML-P5-02, P3-ML-02, KNOW-P5-01 fixed; P2-KNOW-01 partly; promotion gate + monitoring endpoint; S2: no cost benefit from lower MAE (simulated); R3: ambiguity 0/4 → 3/4, out-of-scope 0/26 → 10/26 at a cost on reworded questions; phone overflow on Research/Forecast fixed and its test made able to fail. pytest 447/6; Playwright 191/7 locally; 42 screenshot baselines | `phases/PHASE-05.md` |
 | 6 | 2026-10-24 | ERP and operations (owner brief): adapter contract + conformance suite; ERP-P6-01 (P1) and ERP-P6-02…05, OPS-P6-01/02 fixed against the simulator; runbook, SLO, service-management and ERP-integration documents; outage drill (5 orders, 20 s crash-stop, reconciled 5.3 s after restart, 1 order each); disk-loss drill on 1.29 GB (RPO 59.8 s at archive_timeout 60, 0.4 s at 15; loss → healthy API 7.0 s). pytest 477/6; Playwright 191/7; 42 screenshots. Real ERP BLOCKED | `phases/PHASE-06.md` |
 | 7 | 2026-10-26/27 | Operations decision studies (owner brief): ABC/XYZ classes and cost-of-service curve; CO2 cap (ε-constraint) and exact frontier vs NSGA-II (E1); fairness audit with reweighing (FA1, study-only); RMSE/WAPE/MAPE, Prophet and XGBoost, weather (W1, negative); delay risk (D1, simulated); cited generated answers with a local model, off in the demo (G1, D-094, PD-022); n8n planner-only agent; deterministic-first solve (D-096). pytest 505/6; Playwright 185/7 + 42 screenshots + 18 vitals | `phases/PHASE-07.md` |
+| 8A | 2026-11-10 | Course brief, session 8A: F1 (3D/chart theme race) and F2/F3 fixed with tests that failed first; light/dark sweep 174 states × 2 engines, 0 problems; README, results.md, coverage.md truthful (InventoryBench 600 instances); metrics.md from the registry (15 current studies); interim deck, demo script, marker guide, AI-use statement drafted. pytest 533/7; 300 browser tests; Firefox local-only failure (ENV-P8-01) | `phases/PHASE-08.md` |
 
 ## Open P0/P1 after Phase 6
 - P0: none open. Phase 6 found and fixed one P1 (ERP-P6-01); Phase 5 one (ML-P5-01).
@@ -48,6 +49,15 @@ new session, paste the prompt in `NEXT_SESSION_PROMPT.md`. Update this file at t
 2. Carried: PLAN-P5-01, P3-PLAN-06 rest, ML-P5-05, KNOW-P5-03, P2-REL-03; SEC-P2-12, SEC-P2-13, P3-SEC-03, P2-PRIV-01
    backfill, P3-ONB-01 rest, D-056, PERF-P3-09; OPS-P6-04.
 3. Watch FE-P4-08. Review the Dependabot PRs. DOC-4B-15 (duplicate version labels) is a small API proposal.
+
+## Next actions (Phase 8, after Session 8A)
+0. Owner: approve or correct `docs/course/ai-use-statement.md`; ask the lecturer the 8A.1b questions; give the Week 6
+   date, limit and format; confirm teammates agree to be named publicly; re-export the truncated D06 image; decide on
+   the illustrations pull request (merging it is the approval, proposed D-108); decide whether S2 is promoted
+   (STUDY-P8-02); tag `course-interim` at the start of the 48-hour freeze.
+1. Session 8B (after Week 6): fill `private/owner-answers-8B.md` first (datasets, HubSpot, PDF and OCR, reviewers).
+   Choose a new id for the ETA study (STUDY-P8-01). Re-check DOC-P8-01 against the pinned InventoryBench repository.
+2. Carried from Phase 7: hosted database migration (OPS-P6-03, owner chose to wait: D-104), PLAN-P5-01, P1-OPS-01.
 
 ## Notes for the next session
 - Re-verify HEAD and CI before trusting anything here (`git rev-parse HEAD`, `gh run list --workflow ci.yml --branch main`).

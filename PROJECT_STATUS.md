@@ -1,6 +1,6 @@
 # SupplyLens project status
 
-**Updated:** 2026-10-22 (UTC) · **Commit:** see `git log -1`
+**Updated:** 2026-11-10 (UTC), Phase 8 Session 8A · **Commit:** see `git log -1`
 **Verified gate:** P0 demonstrated locally and on a hosted demo — 59 of 80 acceptance items passed locally, 14 partial,
 5 not run (pilot users, support, pricing, production workload), 2 blocked on an ERP sandbox. All 22 CTO-audit findings
 are fixed with correct-behaviour tests (`docs/remediation/REGISTER.md`); S09 is fixed for local and hosted-demo use, not
@@ -9,7 +9,19 @@ fictional and public data; `docs/operations/hosted-demo.md`). Still open: field 
 throttled mobile LCP, the manual screen-reader pass, human review of retrieval questions, the declared 8 vCPU load
 profile, a corporate identity provider and an ERP sandbox.
 
-## Current state (production-readiness Phase 4, 2026-10-23)
+## Current state (Phase 8 Session 8A, 2026-11-10)
+SupplyLens is also the group project for the MAIB unit *AI in Operations* (MAIB AI 218). Phase 8 follows the owner's
+course brief (`docs/agent-handoff/PHASE-08_COURSE_PROMPT_v4.md`; record in `docs/agent-handoff/phases/PHASE-08.md`).
+Session 8A fixed three defects the owner saw on the hosted demo (3D view and charts keeping the other theme's colours,
+simulated capabilities shown as observed-green "available", a translucent 3D legend), swept every screen in both themes
+at three widths, brought README and the research results up to date with the Phase 7 studies, made
+`docs/course/metrics.md` the one generated source of presentation numbers, and drafted the interim pack (deck, five-minute
+demo script, marker guide, AI-use statement for the owner's approval). pytest 533 passed / 7 skipped; 300 browser tests on
+8 projects (Firefox runs in CI; it does not start on the development Mac); 26 unit tests. The owner's new illustrations
+wait on a separate pull request for the owner's approval. Phases 5–7 (AI/ML, ERP and operations, operations studies) are
+recorded in `docs/agent-handoff/phases/`.
+
+## Phase 4 state (production-readiness Phase 4, 2026-10-23)
 Phase 4 (frontend, UX and end-to-end journeys) is recorded in `docs/agent-handoff/phases/PHASE-04.md`: all twelve user
 journeys pass in the browser (sign-in to receipts and replanning), including a new document upload with amendment history.
 The web app reconciles the workspace with the user's memberships, shows inventory per SKU and location, contains render

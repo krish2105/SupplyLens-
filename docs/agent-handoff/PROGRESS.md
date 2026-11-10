@@ -83,8 +83,15 @@ OPS-P6-04. EXT-02 (real ERP) unchanged: BLOCKED. See ISSUES.md "Phase 6 resoluti
    duplicate warning, PERF-P3-09 (with the retrieval studies re-run).
 4. **Phase 7 — production platform and operations:** P1-OPS-01 (IaC, staging, secrets manager, replicas, SLOs,
    dashboards), P2-PERF-01 rest (declared profile), PERF-P3-08/10, Docker digests, distributed sign-in throttle; rerun drills and load test there.
-5. **Phase 8 — identity and SaaS:** P1-IAM-01, P1-SAAS-01 (owner decisions first; EXT-01).
-6. **Owner actions, any time:** scope Neon integration variables (P1-SEC-02), review the 7 Dependabot PRs, decide on the
+5. **Phase 7 — done as operations decision studies** (owner brief; PHASE-07). The production-platform items above stay
+   open for a later phase.
+6. **Phase 8 — course coverage, responsible AI and the presentation pack** (owner brief v4; PHASE-08): **8A done
+   2026-11-10** (hosted UI fixes, documents, metrics source, interim pack drafts); 8B (Weeks 6–10: LSTM, imbalance and
+   parity, logistics, document extraction, status assistant, red team) and 8C (Weeks 10–12: responsible AI, business
+   case, final pack) next, each after the owner's answers file for that session.
+7. **Phase 9 — identity and SaaS:** P1-IAM-01, P1-SAAS-01 (owner decisions first; EXT-01). Moved from Phase 8 by the
+   owner's course brief.
+8. **Owner actions, any time:** scope Neon integration variables (P1-SEC-02), review the 7 Dependabot PRs, decide on the
    branch-protection admin exemption, pursue EXT-01…EXT-10.
 
 ## What is NOT on GitHub (by design) and how to recreate it

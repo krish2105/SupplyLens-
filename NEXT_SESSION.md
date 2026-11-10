@@ -1,6 +1,6 @@
 # Next session
 
-Start from `main`. To open a new working session, paste `docs/agent-handoff/NEXT_SESSION_PROMPT.md`. Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
+Start from `main`. To open a new working session, paste `docs/agent-handoff/NEXT_SESSION_PROMPT.md` (Phase 8, Session 8B). Read `docs/agent-handoff/STATUS.md` first (current phase, last commit, blockers), then
 `docs/agent-handoff/ISSUES.md` (open issues with acceptance criteria), `EVIDENCE.md` and `DECISIONS.md`. Root
 `PROJECT_STATUS.md`, `docs/remediation/REGISTER.md` and `DECISIONS.md` (D-001 … D-072) hold the history.
 
@@ -31,8 +31,9 @@ https://supplylens-self.vercel.app — every push to `main` deploys it (Vercel G
 reloads are in `docs/operations/hosted-demo.md`.
 
 ## Things that are easy to get wrong
-- Never mention any AI assistant in commits or files (owner instruction). Commit as
-  `Krishna Mathur <113384784+krish2105@users.noreply.github.com>`.
+- Never mention any AI assistant in commits (owner instruction, confirmed for Phase 8: D-101). Commit as
+  `Krishna Mathur <113384784+krish2105@users.noreply.github.com>`. Course documents under `docs/course/` are the
+  exception: they carry the AI-use statement (`docs/course/ai-use-statement.md`), which is never removed or softened.
 - `SupplyLens_Updated_Pack_With_Images/` is reference material, git-ignored; source art lives in
   `design/source-assets/supplylens/`, web derivatives come only from `scripts/optimize_illustrations.py`.
 - The e2e suite releases open Demo orders in `e2e/global-setup.ts`; without that the reference case is already covered
