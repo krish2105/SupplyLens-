@@ -88,3 +88,6 @@ data/external/
 
 # Owner-only course material (unit outline, answers, notes); never committed (Phase 8)
 private/
+
+# Course submission pack built locally (deck, report, screenshots); shared by the team, not published here
+/submissions/

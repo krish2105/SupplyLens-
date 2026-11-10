@@ -4,6 +4,22 @@ import { breakWebGL, createDraft, expectReconciled, getJson, signIn } from "./he
 // EXE-010 / UX-009 / BUS-008: the reference workflow stays usable when WebGL fails and when the network drops.
 
 test.describe("WebGL failure", () => {
+  test("choosing the 2D floor plan is not a failure: no warning, and the 3D view can be chosen again", async ({ page }) => {
+    test.skip((page.viewportSize()?.width ?? 0) < 768, "phones start on the floor plan");
+    await signIn(page, "viewer");
+    await page.goto("/inventory?ws=uci-research");
+    const three = page.getByRole("tab", { name: "3D schematic" }), two = page.getByRole("tab", { name: "2D floor plan" });
+    await expect(three).toHaveAttribute("aria-selected", "true");
+    await expect(page.locator("canvas").first()).toBeVisible({ timeout: 15_000 });
+    await two.click();
+    await expect(two).toHaveAttribute("aria-selected", "true");
+    await page.waitForTimeout(500);                     // the canvas is disposed: its context loss is ours, not a failure
+    await expect(page.getByText("The 3D view stopped working on this device")).toHaveCount(0);
+    await expect(three).toBeEnabled();
+    await three.click();
+    await expect(page.locator("canvas").first()).toBeVisible({ timeout: 15_000 });
+  });
+
   test("WebGL unavailable from the start: 2D floor plan, same records, selection still works", async ({ page }) => {
     await breakWebGL(page);
     await signIn(page, "viewer");

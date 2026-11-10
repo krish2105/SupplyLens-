@@ -62,6 +62,10 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
 }) {
   const theme = useChartTheme();      // re-reads the colours once the theme class is really on <html> (Phase 8 F1)
   const controls = useRef<OrbitControlsImpl | null>(null);
+  // Leaving the 3D view disposes its canvas, which itself fires "webglcontextlost": only a loss while this view is still
+  // on screen is a failure (FE-P8-08: choosing the 2D floor plan showed "stopped working" and locked the 3D tab).
+  const mounted = useRef(false);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [hovered, setHovered] = useState<string | null>(null);
   const placed = items.filter((i) => i.x != null && i.z != null);
   const center = useMemo(() => {
@@ -103,7 +107,10 @@ export default function Warehouse3D({ items, selected, onSelect, height = 460, o
           onCreated={(s) => {
             requestAnimationFrame(() => s.invalidate()); setTimeout(() => s.invalidate(), 150);
             // A lost context (GPU reset, tab discarded) cannot be recovered mid-session: hand over to the 2D floor plan.
-            s.gl.domElement.addEventListener("webglcontextlost", (e) => { e.preventDefault(); onFail?.(); });
+            s.gl.domElement.addEventListener("webglcontextlost", (e) => {
+              e.preventDefault();
+              setTimeout(() => { if (mounted.current) onFail?.(); }, 0);    // after this commit: unmounting has set mounted false
+            });
           }}>
           <Invalidator deps={[colors, items, selected]} />
           <color attach="background" args={[colors.floor]} />
