@@ -114,3 +114,14 @@ CI 42821143262 **8/8 success**; `main` fast-forwarded `5334b8b..22fc9f6`; Vercel
 `dpl_5UC687ngXPzHBTJwCMnXpkC23KZU` Ready; hosted read-only check P8-E26 passed on Chromium and WebKit in both themes.
 Local before the push (P8-E25): pytest 659 passed / 6 skipped; four browser projects 216 passed / 7 skipped; visual 44
 (4 Research baselines changed as intended); Firefox 27 passed / 1 skipped; vitals 18/18.
+
+## Sign-in on opening the site, and slow starts (owner report, 2026-11-10; FE-P8-07)
+
+Opening the hosted site after a break showed an empty dashboard ("Checking your session…") before sign-in. Causes: a
+development session ends after 2 h unused but its cookie lived 12 h, so the proxy let the page render and the browser
+waited for a cold API (6.2 s measured) to say 401; and the keep-warm job ran every few hours, not every ten minutes.
+Fixed: the cookie lives as long as the idle window (refreshed on use, never past 12 h) and a dead session's 401 deletes it,
+so the next visit is redirected to sign-in in about 140 ms; a notice explains any wait over 1.5 s on the app and the
+sign-in page; keep-warm minutes moved off the hour. A signed-in user with a live session still opens straight into the
+app, as before. Evidence P8-E28, P8-E29; QA-P8-01 fixed on the way.
+
