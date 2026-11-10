@@ -1,6 +1,6 @@
 "use client";
-import { useSyncExternalStore } from "react";
-import { Hourglass, WifiOff } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { Hourglass, Loader2, WifiOff } from "lucide-react";
 import { busySignal } from "@/lib/api";
 
 const subscribe = (cb: () => void) => {
@@ -18,15 +18,35 @@ export function useServiceBusy() {
   return useSyncExternalStore(busySignal.subscribe, busySignal.snapshot, () => false);
 }
 
+/** True once `pending` has lasted `ms`, and false as soon as it ends. */
+export function useSlow(pending: boolean, ms = 1500) {
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    if (!pending) return;
+    const t = setTimeout(() => setSlow(true), ms);
+    return () => { clearTimeout(t); setSlow(false); };
+  }, [pending, ms]);
+  return pending && slow;
+}
+
 /**
- * Announces loss of connection, and a service that is shedding load. The live region is always mounted so assistive technology announces the change.
+ * Announces a session check that is taking long (the hosted service starting after a quiet period, FE-P8-07), loss of
+ * connection, and a service that is shedding load. The live region is always mounted so assistive technology announces the change.
  * While offline the app keeps what the user typed (drafts persist) and retries when the connection returns.
  */
-export function ConnectionBanner() {
+export function ConnectionBanner({ waking = false }: { waking?: boolean }) {
   const online = useOnline();
   const busy = useServiceBusy();
+  const slowStart = useSlow(waking);
   return (
     <div role="status" aria-live="polite" data-testid="connection-status">
+      {online && slowStart && (
+        <div data-testid="service-waking" className="flex items-center gap-2 border-b border-accent/30 bg-accent-soft px-4 py-2 text-sm text-ink md:px-6">
+          <Loader2 className="size-4 shrink-0 animate-spin text-accent motion-reduce:animate-none" aria-hidden />
+          <span><b>Starting SupplyLens.</b> The service sleeps when nobody is using it, so the first visit after a quiet period
+            can take up to ten seconds. This page fills in by itself; if your session has ended you go to sign-in.</span>
+        </div>
+      )}
       {online && busy && (
         <div data-testid="service-busy" className="flex items-center gap-2 border-b border-accent/30 bg-accent-soft px-4 py-2 text-sm text-ink md:px-6">
           <Hourglass className="size-4 shrink-0 text-accent" aria-hidden />

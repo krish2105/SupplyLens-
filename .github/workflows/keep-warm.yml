@@ -4,10 +4,15 @@ name: keep-warm
 # (PERF-P7-02). A light request every ten minutes keeps an instance warm. It calls /api/v1/auth/config, which reads only
 # configuration and never the database, so the database can still suspend and costs no compute hours.
 # Delete this file to stop it.
+#
+# GitHub runs scheduled workflows on a best-effort basis and delays or drops runs at busy times, above all at the top of
+# the hour: in November 2026 this "every ten minutes" job ran only every few hours (FE-P8-07). The minutes are offset
+# from the hour as GitHub advises; a run can still be skipped, so the app also says when it is starting after a quiet
+# period instead of showing an empty screen.
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "3,13,23,33,43,53 * * * *"
   workflow_dispatch:
 
 permissions: {}

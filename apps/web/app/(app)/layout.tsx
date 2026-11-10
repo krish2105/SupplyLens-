@@ -267,7 +267,7 @@ function AppShell({ children }: { children: ReactNode }) {
                 </div>
               </div>
             </div>
-            <ConnectionBanner />
+            <ConnectionBanner waking={me.isPending} />
             {signOutError != null && (
               <div className="border-b border-line bg-surface px-4 py-2 md:px-6" data-testid="sign-out-error">
                 <p className="mb-2 text-sm font-medium">You are still signed in: sign-out did not reach the service.</p>

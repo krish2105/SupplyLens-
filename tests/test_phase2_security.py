@@ -95,7 +95,9 @@ def test_SEC_P2_02_an_idle_session_expires_and_is_revoked(demo_tenant):
         conn.execute(text("UPDATE auth_sessions SET checked_at = now() - interval '3 hours' WHERE id=:i"), {"i": sid})
     r = c.get("/api/v1/overview", headers=DEMO)
     assert r.status_code == 401 and r.json()["code"] == "session_expired"
-    assert _session_row(c)[1].revoked_reason == "idle timeout"
+    assert COOKIE not in c.cookies                     # the dead session's cookie is deleted too (FE-P8-07)
+    with control_session() as s:
+        assert s.execute(text("SELECT revoked_reason FROM auth_sessions WHERE id=:i"), {"i": sid}).scalar() == "idle timeout"
 
 
 def test_SEC_P2_02_stateless_cookies_from_before_phase_2_are_refused(demo_tenant):

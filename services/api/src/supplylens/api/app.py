@@ -38,6 +38,7 @@ from . import (
     routes_research,
     routes_setup,
 )
+from .deps import SessionCookie
 from .guards import BodyLimit, SignInThrottle
 from .schemas import Health
 
@@ -204,5 +205,6 @@ def health():
 
 # Added last, so they run first: refuse oversized bodies and sign-in bursts before back-pressure accounting, routing,
 # authentication or body parsing (guards.py).
+app.add_middleware(SessionCookie)
 app.add_middleware(SignInThrottle)
 app.add_middleware(BodyLimit)

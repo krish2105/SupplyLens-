@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { KeyRound, ShieldAlert } from "lucide-react";
 import { apiGet, apiPost } from "@/lib/api";
 import { Button, ErrorState, Loading } from "@/components/ui";
+import { useSlow } from "@/components/connection-banner";
 import { Illustration } from "@/components/illustration";
 
 const ROLE_COPY: Record<string, string> = {
@@ -21,6 +22,8 @@ export default function Login() {
   const devOn = cfg.data?.dev_login === true;
   const users = useQuery({ queryKey: ["dev-users"], queryFn: () => apiGet("/api/v1/auth/dev-users"), enabled: devOn });
   const [busy, setBusy] = useState<string | null>(null);
+  // the hosted service sleeps when unused: say so if the first answer is slow (FE-P8-07)
+  const waking = useSlow(cfg.isLoading || users.isLoading || busy !== null);
   // ?as=planner: the page the user came from needs that role (RoleNote's switch): list that account first and mark it
   const [suggested, setSuggested] = useState<string | null>(null);
   useEffect(() => setSuggested(new URLSearchParams(window.location.search).get("as")), []); // eslint-disable-line react-hooks/set-state-in-effect -- URL, after mount
@@ -43,6 +46,9 @@ export default function Login() {
           <p className="mt-2 text-muted">Roles decide what you can do. Approvals always need a different person from the one who prepared the draft.</p>
 
           {cfg.isLoading && <Loading label="Checking sign-in options" />}
+          {waking && <p role="status" data-testid="service-waking" className="mt-3 rounded-lg bg-accent-soft px-3 py-2 text-sm text-ink">
+            <b>Starting SupplyLens.</b> The service sleeps when nobody is using it, so the first visit after a quiet period can take up
+            to ten seconds.</p>}
           {cfg.error && <div className="mt-4"><ErrorState error={cfg.error} retry={() => cfg.refetch()} /></div>}
           {err != null && <div className="mt-4"><ErrorState error={err} /></div>}
 

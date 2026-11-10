@@ -18,6 +18,7 @@ from ..integrations import sandbox_erp
 from ..planning.classes import classify
 from .deps import (
     COOKIE,
+    DEV_IDLE_SECONDS,
     SESSION_MAX_AGE,
     actor,
     csrf_guard,
@@ -72,7 +73,8 @@ def dev_login(body: DevLogin, response: Response):
         raise HTTPException(401, {"code": "unknown_user", "message": "unknown development account"})
     if settings.environment == "demo":
         demo.release_stale_orders()          # P0-SEC-01: the next visitor starts from the reference state
-    response.set_cookie(COOKIE, start_dev_session(uid), max_age=SESSION_MAX_AGE, httponly=True,
+    # lives as long as the idle window; each use extends it, up to SESSION_MAX_AGE (deps.SessionCookie, FE-P8-07)
+    response.set_cookie(COOKIE, start_dev_session(uid), max_age=DEV_IDLE_SECONDS, httponly=True,
                         samesite="lax", secure=settings.cookie_secure, path="/")
     return {"ok": True}
 

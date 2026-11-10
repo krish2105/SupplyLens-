@@ -5,6 +5,7 @@ import hashlib
 import json
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import Depends, Header, HTTPException, Query, Request
@@ -33,7 +34,9 @@ def start_dev_session(user_id: uuid.UUID) -> str:
     return serializer.dumps({"uid": str(user_id), "sid": str(sid), "kind": "dev"})
 
 
-def _confirm_dev_session(sid: uuid.UUID, uid: uuid.UUID) -> None:
+def _confirm_dev_session(sid: uuid.UUID, uid: uuid.UUID) -> bool:
+    """Raise 401 if the session ended; return True when this request recorded a new last use (the cookie is then
+    refreshed, see SessionCookie)."""
     with control_session() as s:
         row = s.execute(text("""SELECT user_id, revoked_at, now() - checked_at AS idle FROM auth_sessions
             WHERE id = :i AND oidc_subject = :s"""), {"i": sid, "s": DEV_SUBJECT}).first()
@@ -49,6 +52,7 @@ def _confirm_dev_session(sid: uuid.UUID, uid: uuid.UUID) -> None:
                 s.execute(text("UPDATE auth_sessions SET checked_at = now() WHERE id = :i"), {"i": sid})
     if idle > DEV_IDLE_SECONDS:
         raise HTTPException(401, {"code": "session_expired", "message": "session expired after inactivity; sign in again"})
+    return idle > TOUCH_SECONDS
 
 
 def current_user_id(request: Request) -> uuid.UUID:
@@ -56,7 +60,16 @@ def current_user_id(request: Request) -> uuid.UUID:
     if not raw:
         raise HTTPException(401, {"code": "unauthenticated", "message": "sign in required"})
     try:
-        data = serializer.loads(raw, max_age=SESSION_MAX_AGE)
+        return _session_user(request, raw)
+    except HTTPException as e:
+        if e.status_code == 401:
+            request.state.session_cookie = None        # a dead session's cookie is deleted (SessionCookie)
+        raise
+
+
+def _session_user(request: Request, raw: str) -> uuid.UUID:
+    try:
+        data, signed_at = serializer.loads(raw, max_age=SESSION_MAX_AGE, return_timestamp=True)
     except BadSignature:
         raise HTTPException(401, {"code": "session_invalid", "message": "session expired or invalid"}) from None
     if not data.get("sid"):
@@ -65,7 +78,11 @@ def current_user_id(request: Request) -> uuid.UUID:
     if data.get("kind") == "dev":
         if not settings.dev_login_available:
             raise HTTPException(401, {"code": "session_invalid", "message": "development sessions are not accepted here"})
-        _confirm_dev_session(uuid.UUID(data["sid"]), uuid.UUID(data["uid"]))
+        if _confirm_dev_session(uuid.UUID(data["sid"]), uuid.UUID(data["uid"])):
+            # Sliding expiry (FE-P8-07): the browser keeps the cookie only as long as the server keeps the session idle-
+            # alive, never past its absolute lifetime. The value is unchanged, so its signed issue time stays the same.
+            left = SESSION_MAX_AGE - int((datetime.now(UTC) - signed_at).total_seconds())
+            request.state.session_cookie = (raw, max(0, min(DEV_IDLE_SECONDS, left)))
     else:
         # identity-provider session: re-confirmed with the provider periodically (deactivation ends it)
         from .oidc import confirm_session
@@ -165,3 +182,38 @@ def idempotent(a: Actor, key: str | None, route: str, body: Any, fn: Callable[[]
         s.execute(text("""UPDATE idempotency_keys SET state='DONE', status_code=:c, response=CAST(:b AS jsonb),
             claimed_until=NULL WHERE key=:k"""), {"c": status, "b": json.dumps(response, default=str), "k": key})
     return status, response
+
+
+class SessionCookie:
+    """ASGI middleware that applies what authentication decided about the session cookie (FE-P8-07): refresh its Max-Age
+    after a request recorded a new last use, or delete it when the request found the session dead (401). It never
+    overrides a cookie the route set or deleted itself (sign-in, sign-out). Pure ASGI, so streamed responses pass through."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+
+        async def send_with_cookie(message):
+            if message["type"] == "http.response.start":
+                state = scope.get("state") or {}
+                if "session_cookie" in state:
+                    headers = list(message.get("headers", []))
+                    prefix = f"{COOKIE}=".encode()
+                    if not any(k.lower() == b"set-cookie" and v.startswith(prefix) for k, v in headers):
+                        from starlette.responses import Response
+                        r = Response()
+                        decision = state["session_cookie"]
+                        if decision is None:
+                            r.delete_cookie(COOKIE, path="/")
+                        else:
+                            value, max_age = decision
+                            r.set_cookie(COOKIE, value, max_age=max_age, httponly=True, samesite="lax",
+                                         secure=settings.cookie_secure, path="/")
+                        headers += [(k, v) for k, v in r.raw_headers if k.lower() == b"set-cookie"]
+                        message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scope, receive, send_with_cookie)
