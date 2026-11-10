@@ -69,7 +69,7 @@ the owner tags it at the start of the 48-hour freeze.
 ### Illustrations (owner request in this session; brief WP-ART, normally 8B)
 Pull request https://github.com/krish2105/SupplyLens-/pull/16: A02, A13, A16 shown only in their briefed states; A17
 and A18 prepared and rendered nowhere until their 8B screens exist; final-deck skeleton with D01–D05. **Approved by the
-owner and merged on 2026-11-10 (D-108).** Review findings: content matches the briefs; subjects extend past the
+owner and merged on 2026-11-10 (D-108); deployed and checked on the hosted demo (P8-E16).** Review findings: content matches the briefs; subjects extend past the
 middle 70 %; faint background-removal residue, not visible at 144 or 96 px on either theme.
 
 ### Not done or blocked
