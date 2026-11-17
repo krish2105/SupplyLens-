@@ -3,7 +3,7 @@
 **Spec:** `docs/superpowers/specs/2026-11-17-gridlens-design.md` · **Branch:** `gridlens` · **Deadline:** presentation
 9 February 2027, 09:30 (40 minutes + peer Q&A); Blackboard submission by 23:59 the same day.
 
-Five plans, each leaving the repository working and tested. All five are written in full; execute them in order.
+Who owns which task: [`docs/TEAM_PLAN.md`](../../TEAM_PLAN.md). Five plans, each leaving the repository working and tested. All five are written in full; execute them in order.
 Nothing has been executed yet (owner's instruction on 2026-11-17: save the plans only).
 
 | # | Plan | Milestone | Owner area (CONTRIBUTIONS.md) | File |
@@ -37,4 +37,4 @@ Nothing has been executed yet (owner's instruction on 2026-11-17: save the plans
   `chflags nohidden .venv/lib/python3.12/site-packages/*.pth` after every `uv sync` (Plan 1, Task 1).
 - Plan 2 Task 11 downloads public data (UCI, Open-Meteo): ask the owner first.
 - Plan 3 Task 9 and Plan 5 Task 2 are long-running (RL training, benchmark): run them in the background.
-- Four team member names are still missing from `CONTRIBUTIONS.md`.
+- Names of Members 4–7 are still missing (`docs/TEAM_PLAN.md`, `CONTRIBUTIONS.md`).

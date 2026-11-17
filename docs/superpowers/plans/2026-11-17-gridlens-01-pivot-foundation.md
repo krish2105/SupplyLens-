@@ -527,22 +527,22 @@ Group 2 final project, *AI in Operations*, S P Jain, Dubai. Seven members.
 | 1 | Krishna Mathur |
 | 2 | Atharva Soundankar |
 | 3 | Yash Petkar |
-| 4 | (name to be added by the team) |
-| 5 | (name to be added by the team) |
-| 6 | (name to be added by the team) |
-| 7 | (name to be added by the team) |
+| 4 | Member 4 (name to be added) |
+| 5 | Member 5 (name to be added) |
+| 6 | Member 6 (name to be added) |
+| 7 | Member 7 (name to be added) |
 
-## Ownership (proposed; the team confirms each row and dates it)
+## Ownership (proposed in docs/TEAM_PLAN.md; the team confirms each row and dates it)
 
 | Area | Owner | Packages / documents | Agreed (date) |
 |---|---|---|---|
-| Data and forecasting | | `ml/`, ingestion, study GF1 | |
-| Simulator and disruptions | | `sim/`, frequency and load-shedding | |
-| Deep RL (PPO, SAC) | | `control/` RL, training jobs | |
-| Stochastic MPC and unit commitment | | `optimisation/`, study UC1 | |
-| Benchmarking and statistics | | `evaluations/`, studies MB1, MB2 | |
-| EMS dashboard and API | | `apps/web`, `services/api` | |
-| Ethics, cybersecurity, report | | studies FS1, CY1, report, GenAI log | |
+| Project lead, platform and integration | Krishna Mathur | Plan 1, Plan 4 T1–T6 and T11 | |
+| Data and forecasting | Atharva Soundankar | `ml/`, ingestion, GF1 (Plan 2 T1–T3, T11–T12; Plan 3 T7; Plan 5 T3) | |
+| Simulator and resilience | Yash Petkar | `sim/` (Plan 2 T4–T9; Plan 3 T1–T3; Plan 5 T4, FS1) | |
+| Deep RL (PPO, SAC) | Member 4 | `control/` RL (Plan 3 T8–T9) | |
+| Stochastic MPC and unit commitment | Member 5 | `optimisation/`, `control/mpc.py` (Plan 2 T10; Plan 3 T4–T6, T11; Plan 5 T6) | |
+| EMS dashboard and user experience | Member 6 | `apps/web` (Plan 3 T10; Plan 4 T7–T10) | |
+| Evaluation, ethics and report lead | Member 7 | `evaluations/`, CY1, course pack (Plan 2 T13; Plan 5 T1–T2, T5, T7) | |
 
 ## Meeting log
 
