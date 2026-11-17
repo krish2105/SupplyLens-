@@ -87,11 +87,11 @@ Renames: `supplylens` → `gridlens`, `supplylens_ml` → `gridlens_ml`, `supply
 | Grid carbon intensity | national average factors per site in `config/carbon.yaml`, each with a source | — | Observed or assumed, per value |
 | Diesel fuel curve and emissions (CO2, NOx, PM) | manufacturer-style linear fuel curve and emission factors in `config/diesel.yaml` | — | Assumed |
 | Tenants (5) and production schedules | generated: the observed load is split across five tenant factories with fixed shares and priority classes; shift calendars follow the dataset's `WeekStatus` and `Load_Type` | — | Simulated |
-| Shiftable machine jobs | generated per day from the production schedule: energy, duration, earliest start, deadline | — | Simulated |
+| Shiftable machine load | each tenant has a flexible share of its load; the controller may postpone it, and every postponed kWh must be served within 4 h and by the end of the day (an aggregate of machine jobs with deadlines) | — | Simulated |
 
 The load series is used as the aggregate park load. Datasets are not joined across sites: the Korea case uses only
-Korean data. The UAE case is a labelled what-if that reuses the Korean load profile, shifted to the UAE weekend, with
-UAE weather and tariff.
+Korean data. The UAE case is a labelled what-if that reuses the Korean load profile on its local wall clock (the UAE weekend has been
+Saturday–Sunday since 2022, as in the Korean data, so no shift is needed), with UAE weather and tariff.
 
 ### 4.2 Sites
 
