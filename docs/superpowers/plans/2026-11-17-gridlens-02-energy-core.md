@@ -89,7 +89,7 @@ packages = [
 testpaths = ["tests", "tests_energy"]
 timeout = 300
 ```
-Run `uv sync`.
+Run `uv sync && chflags nohidden .venv/lib/python3.12/site-packages/*.pth` (macOS hides the editable-install file; see Plan 1, Task 1).
 
 - [ ] **Step 2: Write the constants module**
 

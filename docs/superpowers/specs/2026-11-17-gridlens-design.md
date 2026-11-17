@@ -300,7 +300,7 @@ A visible label on every number states whether it is observed, simulated or assu
 | Market screen, inventory classes, extracted terms | delete |
 | Studies (the LSTM model code from W2 is first moved into `ml/gridlens_ml`): F1/F2, S2, IB, R1–R3, C1, X1, AS1, G1, D1, ET1, RT1, FE1, QC1, PM1, JS1, W1, W2, E1, LT, inventorybench and their tests, configs and artifacts | delete (kept in `archive/supplylens`) |
 | `data/synthetic/operations`, `fixtures/reference_case`, `fixtures/policy_change_case.json` | delete; new fixtures for the energy demo |
-| Alembic migrations 0001–0011 | replaced by a new baseline migration with platform tables plus energy tables (sites, assets, tenants, replays, dispatch actions, shed log, studies) |
+| Alembic migrations 0001–0011 | kept as history; a forward migration 0012 drops the supply-chain tables and creates the energy tables (sites, park tenants, replays, replay steps and events, shed log, dispatch requests, plant commands, sandbox plant) with forced RLS. Chosen over a squashed baseline (2026-11-17) because it keeps the rehearsed migration/rollback history and is lower risk |
 | `execution_pack/`, SupplyLens course docs and decks, `DECISIONS.md`, `EVIDENCE_INDEX.md`, `PROJECT_STATUS.md`, `TASKS.md`, `NEXT_SESSION.md` | rewrite for GridLens; old content stays in the tag |
 
 ## 12. Deliverables and delivery
@@ -374,3 +374,14 @@ the team:
 - Confirm with Dr Roy which unit the submission counts for (slide 22 footer differs from slides 19 and 20) and what
   contribution evidence is expected.
 - Rename the Vercel and Neon projects (account access is the owner's).
+
+## 16. Additions agreed on 2026-11-17
+
+The owner asked for every related feature end to end. Added to the scope (details and tests in the plans):
+demand-response programme events (§5.4 event kind `dr_event`; study DR1), power factor with battery VAR support from the
+observed reactive energy, battery ageing by rainflow counting, plain-language decision explanations, stress-test forks
+of a replay, what-if asset sizing, tenant bill allocation with shed compensation, approval-bound dispatch requests with
+HMAC-signed plant commands, a daily EMS report and energy alerts, sensor-spoofing scenarios with a plausibility guard
+(study CY1), a diesel running-hour cap (study EJ1), and conformal calibration of forecast intervals (GF1). Shiftable
+machine load is modelled as postponable energy with a 4-hour deadline (§4.1); the UAE what-if uses the Korean profile
+on its local wall clock (the UAE weekend is Saturday-Sunday since 2022).

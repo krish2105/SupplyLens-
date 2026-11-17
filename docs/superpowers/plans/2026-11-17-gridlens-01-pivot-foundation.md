@@ -45,11 +45,18 @@
 
 Run:
 ```bash
+uv sync
+chflags nohidden .venv/lib/python3.12/site-packages/*.pth   # see note below
+uv run python -c "import supplylens, supplylens_ml, supplylens_opt; print('imports ok')"
 ./scripts/dev_db.sh
-SUPPLYLENS_ADMIN_DATABASE_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens_test \
+SUPPLYLENS_MIGRATION_URL=postgresql+psycopg://supplylens_owner:supplylens_owner_dev@localhost:5432/supplylens_test \
   uv run alembic -c services/api/alembic.ini upgrade head
 ```
-Expected: `databases ready`, then Alembic prints upgrades or nothing (already at head). If `alembic` reads a different variable for its URL, check `services/api/migrations/env.py` and use that variable instead.
+Expected: `imports ok`, `databases ready`, then Alembic upgrades or prints nothing (already at head).
+
+Note (found on 2026-11-17): macOS marks the venv's editable-install file `_editable_impl_*.pth` as hidden, and Python
+3.12.14 skips hidden `.pth` files, so `import supplylens` fails with `ModuleNotFoundError`. `chflags nohidden` fixes it;
+repeat it after every `uv sync` that reinstalls the project.
 
 - [ ] **Step 2: Run every check and write down the numbers**
 
@@ -114,8 +121,9 @@ Expected: the last command prints nothing.
 - [ ] **Step 5: Create the renamed databases and migrate the test database**
 
 ```bash
+uv sync && chflags nohidden .venv/lib/python3.12/site-packages/*.pth
 ./scripts/dev_db.sh
-GRIDLENS_ADMIN_DATABASE_URL=postgresql+psycopg://gridlens_owner:gridlens_owner_dev@localhost:5432/gridlens_test \
+GRIDLENS_MIGRATION_URL=postgresql+psycopg://gridlens_owner:gridlens_owner_dev@localhost:5432/gridlens_test \
   uv run alembic -c services/api/alembic.ini upgrade head
 ```
 Expected: `databases ready`; Alembic upgrades 0001 → 0011 on the empty `gridlens_test`. (The old `supplylens*` databases stay; the owner may drop them later.)
@@ -123,7 +131,7 @@ Expected: `databases ready`; Alembic upgrades 0001 → 0011 on the empty `gridle
 - [ ] **Step 6: Run every check**
 
 ```bash
-uv sync
+uv run python -c "import gridlens, gridlens_ml, gridlens_opt, gridlens_worker; print('imports ok')"
 uv run ruff check .
 uv run pytest -q 2>&1 | tail -3
 npm --prefix apps/web run typecheck && npm --prefix apps/web run lint && npm --prefix apps/web test 2>&1 | tail -5
